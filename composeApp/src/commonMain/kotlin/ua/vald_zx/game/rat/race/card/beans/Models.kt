@@ -31,7 +31,7 @@ data class Business(
 
 enum class SharesType {
     GS,
-    SCGP,
+    ЩГП,
     TO,
     SCT
 }
