@@ -1,10 +1,11 @@
 [versions]
 
+appdirs = "1.2.2"
 kotlin = "1.9.23"
 compose = "1.6.1"
-agp = "8.3.1"
+agp = "8.3.2"
 androidx-activityCompose = "1.8.2"
-androidx-uiTest = "1.6.4"
+androidx-uiTest = "1.6.5"
 voyager = "1.1.0-alpha04"
 composeImageLoader = "1.7.8"
 napier = "2.7.1"
@@ -19,6 +20,7 @@ kstore = "0.7.2"
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 androidx-testManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-uiTest" }
 androidx-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidx-uiTest" }
+appdirs = { module = "net.harawata:appdirs", version.ref = "appdirs" }
 voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager" }
 voyager-bottom-sheet-navigator = { module = "cafe.adriel.voyager:voyager-bottom-sheet-navigator", version.ref = "voyager" }
 composeImageLoader = { module = "io.github.qdsfdhvh:image-loader", version.ref = "composeImageLoader" }
@@ -35,6 +37,7 @@ ktor-client-curl = { module = "io.ktor:ktor-client-curl", version.ref = "ktor" }
 ktor-client-winhttp = { module = "io.ktor:ktor-client-winhttp", version.ref = "ktor" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kstore = { module = "io.github.xxfast:kstore", version.ref = "kstore" }
+kstore-file = { module = "io.github.xxfast:kstore-file", version.ref = "kstore" }
 
 [plugins]
 

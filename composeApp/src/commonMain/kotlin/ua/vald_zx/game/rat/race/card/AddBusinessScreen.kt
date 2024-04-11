@@ -43,9 +43,8 @@ class AddBusinessScreen() : Screen {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             var businessType by remember {
-                mutableStateOf(
-                    store.observeState().value.business.firstOrNull()?.type ?: BusinessType.SMALL
-                )
+                val type = store.observeState().value.business.firstOrNull()?.type
+                mutableStateOf(if (type == null || type == BusinessType.WORK) BusinessType.SMALL else type)
             }
             var businessName by remember { mutableStateOf("") }
             var businessPrise by remember { mutableStateOf("") }

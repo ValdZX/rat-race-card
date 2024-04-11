@@ -20,7 +20,7 @@ import ua.vald_zx.game.rat.race.card.logic.AppAction
 class ActionsScreen() : Screen {
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.current
+        val navigator = LocalNavigator.current?.parent
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         Column(
             modifier = Modifier
@@ -64,7 +64,7 @@ class ActionsScreen() : Screen {
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     .widthIn(min = 200.dp),
                 onClick = {
-                    navigator?.replace(FillProfessionCardScreen())
+                    navigator?.replaceAll(FillProfessionCardScreen())
                 },
                 content = {
                     Text("Почати з початку")

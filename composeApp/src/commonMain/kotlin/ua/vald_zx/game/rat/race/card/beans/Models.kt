@@ -1,5 +1,8 @@
 package ua.vald_zx.game.rat.race.card.beans
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ProfessionCard(
     val profession: String = "",
     val salary: Int = 0,
@@ -17,6 +20,7 @@ enum class BusinessType {
     LARGE
 }
 
+@Serializable
 data class Business(
     val type: BusinessType,
     val name: String,
@@ -32,7 +36,7 @@ enum class SharesType {
     SCT
 }
 
-
+@Serializable
 data class Shares(
     val type: SharesType,
     val count: Int,

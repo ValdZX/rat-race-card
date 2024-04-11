@@ -32,11 +32,11 @@ kotlin {
     }
 
     jvm()
-
-    wasmJs {
-        browser()
-        binaries.executable()
-    }
+//
+//    wasmJs {
+//        browser()
+//        binaries.executable()
+//    }
 
     listOf(
         iosX64(),
@@ -66,6 +66,9 @@ kotlin {
             implementation(libs.napier)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kstore)
+            implementation(libs.kstore.file)
+            implementation(libs.composeImageLoader)
         }
 
         commonTest.dependencies {
@@ -81,8 +84,6 @@ kotlin {
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.ktor.core)
             implementation(libs.ktor.client.okhttp)
-            implementation(libs.composeImageLoader)
-            implementation(libs.kstore)
         }
 
         jvmMain.dependencies {
@@ -90,15 +91,12 @@ kotlin {
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.core)
             implementation(libs.ktor.client.okhttp)
-            implementation(libs.composeImageLoader)
-            implementation(libs.kstore)
+            implementation(libs.appdirs)
         }
 
         iosMain.dependencies {
             implementation(libs.ktor.core)
             implementation(libs.ktor.client.darwin)
-            implementation(libs.composeImageLoader)
-            implementation(libs.kstore)
         }
 
     }

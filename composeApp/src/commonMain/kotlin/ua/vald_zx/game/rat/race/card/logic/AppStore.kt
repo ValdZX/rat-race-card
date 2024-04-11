@@ -6,11 +6,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.ProfessionCard
 import ua.vald_zx.game.rat.race.card.beans.Shares
+import ua.vald_zx.game.rat.race.card.kStore
 
+@Serializable
 data class AppState(
     val professionCard: ProfessionCard = ProfessionCard(),
     val cash: Int = 0,
@@ -75,6 +79,7 @@ data class AppState(
 }
 
 sealed class AppAction : Action {
+    data class LoadState(val state: AppState) : AppAction()
     data class FillProfessionCard(val professionCard: ProfessionCard) : AppAction()
     data class EditFillProfessionCard(val professionCard: ProfessionCard) : AppAction()
     data object GetSalary : AppAction()
@@ -99,6 +104,7 @@ class AppStore constructor() : Store<AppState, AppAction, AppSideEffect>,
     override fun dispatch(action: AppAction) {
         val oldState = state.value
         val newState = when (action) {
+            is AppAction.LoadState -> action.state
             is AppAction.FillProfessionCard -> {
                 AppState(
                     professionCard = action.professionCard,
@@ -131,6 +137,7 @@ class AppStore constructor() : Store<AppState, AppAction, AppSideEffect>,
         }
         if (newState != oldState) {
             state.value = newState
+            launch { kStore.set(newState) }
         }
     }
 }

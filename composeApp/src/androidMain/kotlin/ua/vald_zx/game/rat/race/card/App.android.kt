@@ -36,3 +36,6 @@ internal actual fun openUrl(url: String?) {
     }
     AndroidApp.INSTANCE.startActivity(intent)
 }
+
+internal actual val storageDir: String
+    get() = AndroidApp.INSTANCE.filesDir.path
