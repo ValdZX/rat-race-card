@@ -62,12 +62,9 @@ kotlin {
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(libs.voyager.navigator)
-            implementation(libs.composeImageLoader)
             implementation(libs.napier)
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.ktor.core)
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.kstore)
         }
 
         commonTest.dependencies {
@@ -81,17 +78,26 @@ kotlin {
             implementation(compose.uiTooling)
             implementation(libs.androidx.activityCompose)
             implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.ktor.core)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.composeImageLoader)
+            implementation(libs.kstore)
         }
 
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation(libs.ktor.core)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.composeImageLoader)
+            implementation(libs.kstore)
         }
 
         iosMain.dependencies {
+            implementation(libs.ktor.core)
             implementation(libs.ktor.client.darwin)
+            implementation(libs.composeImageLoader)
+            implementation(libs.kstore)
         }
 
     }
@@ -102,7 +108,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
 
         applicationId = "ua.vald_zx.game.rat.race.card.androidApp"
