@@ -1,0 +1,40 @@
+package ua.vald_zx.game.rat.race.card.beans
+
+data class ProfessionCard(
+    val profession: String = "",
+    val salary: Int = 0,
+    val rent: Int = 0,
+    val food: Int = 0,
+    val cloth: Int = 0,
+    val transport: Int = 0,
+    val phone: Int = 0,
+)
+
+enum class BusinessType {
+    WORK,
+    SMALL,
+    MEDIUM,
+    LARGE
+}
+
+data class Business(
+    val type: BusinessType,
+    val name: String,
+    val price: Int,
+    val profit: Int,
+    val extentions: List<Int> = emptyList()
+)
+
+enum class SharesType {
+    GS,
+    SCGP,
+    TO,
+    SCT
+}
+
+
+data class Shares(
+    val type: SharesType,
+    val count: Int,
+    val price: Int,
+)
