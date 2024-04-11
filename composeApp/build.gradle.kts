@@ -142,6 +142,28 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.11"
     }
+    signingConfigs {
+        create("release") {
+            keyAlias = "ratracecard"
+            keyPassword = "pqxp3bSpFvj48rzSdjcNV5jFshdkKDdD"
+            storeFile = File(projectDir, "app.keystore")
+            storePassword = "fe7mV2B7su4ZPcVqBdxw34KDjJUWuvmu"
+        }
+    }
+    buildTypes {
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.txt")
+        }
+    }
 }
 
 compose.desktop {
