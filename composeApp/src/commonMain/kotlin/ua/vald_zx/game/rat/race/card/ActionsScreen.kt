@@ -118,12 +118,13 @@ class ActionsScreen() : Screen {
                     resetDialog = true
                 },
                 content = {
-                    Text("Почати з початку")
+                    Text("Нова гра")
                 }
             )
             if (resetDialog) {
                 AlertDialog(
                     title = { Text(text = "Точно?") },
+                    text = { Text(text = "Всі данні буде затерто.") },
                     onDismissRequest = { resetDialog = false },
                     confirmButton = {
                         TextButton(
