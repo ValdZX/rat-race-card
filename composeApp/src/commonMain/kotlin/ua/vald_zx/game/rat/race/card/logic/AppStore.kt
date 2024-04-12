@@ -12,7 +12,9 @@ import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.ProfessionCard
 import ua.vald_zx.game.rat.race.card.beans.Shares
+import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.kStore
+import ua.vald_zx.game.rat.race.card.replace
 
 @Serializable
 data class AppState(
@@ -76,6 +78,14 @@ data class AppState(
             else -> professionCard.profession
         }
     }
+
+    fun existsShares(): Set<SharesType> {
+        return sharesList.map { it.type }.toSet()
+    }
+
+    fun sharesCount(entry: SharesType): Int {
+        return sharesList.filter { it.type == entry }.sumOf { it.count }
+    }
 }
 
 sealed class AppAction : Action {
@@ -83,16 +93,19 @@ sealed class AppAction : Action {
     data class FillProfessionCard(val professionCard: ProfessionCard) : AppAction()
     data class EditFillProfessionCard(val professionCard: ProfessionCard) : AppAction()
     data object GetSalary : AppAction()
+    data object GetSalaryApproved : AppAction()
     data class BuyBusiness(val business: Business) : AppAction()
     data class BuyShares(val shares: Shares) : AppAction()
+    data class SellShares(val type: SharesType, val count: Int, val sellPrice: Int) : AppAction()
     data object Exit : AppAction()
 }
 
 sealed class AppSideEffect : Effect {
     data class SharesToExpensive(val shares: Shares) : AppSideEffect()
+    data object ShowSalaryApprove : AppSideEffect()
 }
 
-class AppStore constructor() : Store<AppState, AppAction, AppSideEffect>,
+class AppStore : Store<AppState, AppAction, AppSideEffect>,
     CoroutineScope by CoroutineScope(Dispatchers.Main) {
 
     private val state = MutableStateFlow(AppState())
@@ -144,7 +157,40 @@ class AppStore constructor() : Store<AppState, AppAction, AppSideEffect>,
             }
 
             AppAction.GetSalary -> {
+                launch { sideEffect.emit(AppSideEffect.ShowSalaryApprove) }
                 oldState
+            }
+
+            AppAction.GetSalaryApproved -> {
+                oldState.copy(cash = oldState.cash + oldState.cashFlow())
+            }
+
+            is AppAction.SellShares -> {
+                var resultList = oldState.sharesList.toMutableList()
+                val sharesByType = resultList.filter { it.type == action.type }
+                var needToSell = action.count
+                var index = 0
+                while (needToSell != 0 && index < sharesByType.size) {
+                    val shares = sharesByType[index]
+                    if (needToSell < shares.count) {
+                        resultList = resultList.replace(
+                            shares,
+                            shares.copy(count = shares.count - needToSell)
+                        ).toMutableList()
+                        break
+                    } else if (needToSell == shares.count) {
+                        resultList.remove(shares)
+                        break
+                    } else {
+                        resultList.remove(shares)
+                        needToSell -= shares.count
+                        index += 1
+                    }
+                }
+                oldState.copy(
+                    cash = oldState.cash + (action.count * action.sellPrice),
+                    sharesList = resultList
+                )
             }
         }
         if (newState != oldState) {

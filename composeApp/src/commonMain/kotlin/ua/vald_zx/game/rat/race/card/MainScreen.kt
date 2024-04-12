@@ -57,6 +57,7 @@ import rat_race_card.composeapp.generated.resources.ic_light_mode
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
+import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.logic.AppSideEffect
 import ua.vald_zx.game.rat.race.card.logic.AppState
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
@@ -143,44 +144,59 @@ class MainScreen : Screen {
                 }
             }
             var expensiveShares: Shares? by remember { mutableStateOf(null) }
+            var salaryApproveDialog by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
                 store.observeSideEffect().onEach { effect ->
                     when (effect) {
                         is AppSideEffect.SharesToExpensive -> {
                             expensiveShares = effect.shares
                         }
+
+                        is AppSideEffect.ShowSalaryApprove -> {
+                            salaryApproveDialog = true
+                        }
                     }
                 }.launchIn(this)
             }
             if (expensiveShares != null) {
                 AlertDialog(
-                    title = {
-                        Text(text = "Недостатньо готівки")
-                    },
-                    text = {
-                        Text(text = "Невистачило: ${state.cash - (expensiveShares?.price ?: 0)}")
-                    },
-                    onDismissRequest = {
-                        expensiveShares = null
-                    },
+                    title = { Text(text = "Недостатньо готівки") },
+                    text = { Text(text = "Не вистачило: ${state.cash - (expensiveShares?.price ?: 0)}") },
+                    onDismissRequest = { expensiveShares = null },
                     confirmButton = {
                         TextButton(
                             onClick = {
                                 bottomSheetNavigator.show(BuySharesScreen(expensiveShares!!))
                                 expensiveShares = null
                             }
-                        ) {
-                            Text("Редагувати")
-                        }
+                        ) { Text("Редагувати") }
                     },
                     dismissButton = {
+                        TextButton(onClick = { expensiveShares = null }) { Text("Гаразд") }
+                    }
+                )
+            }
+            if (salaryApproveDialog) {
+                AlertDialog(
+                    title = { Text(text = "Дохід") },
+                    text = {
+                        Text(
+                            text = "Дохід з урахуванням, активів, пасивів та кредитів: ${
+                                state.cashFlow().splitDecimal()
+                            }"
+                        )
+                    },
+                    onDismissRequest = { salaryApproveDialog = false },
+                    confirmButton = {
                         TextButton(
                             onClick = {
-                                expensiveShares = null
+                                store.dispatch(AppAction.GetSalaryApproved)
+                                salaryApproveDialog = false
                             }
-                        ) {
-                            Text("Гаразд")
-                        }
+                        ) { Text("Отримати") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { salaryApproveDialog = false }) { Text("Відміна") }
                     }
                 )
             }
@@ -221,7 +237,7 @@ class MainScreen : Screen {
     private fun BusinessListPage(state: AppState) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(state.business.filter { it.type != BusinessType.WORK }) { business ->
-                Column {
+                Column(modifier = Modifier.padding(8.dp)) {
                     val title = when (business.type) {
                         BusinessType.WORK -> ""
                         BusinessType.SMALL -> "Малий бізнес"
@@ -230,8 +246,16 @@ class MainScreen : Screen {
                     }
                     Text("$title: ${business.name}", style = MaterialTheme.typography.titleSmall)
                     Row {
-                        SDetailsField("Ціна", business.price.toString())
-                        SDetailsField("Прибуток", business.profit.toString())
+                        SDetailsField(
+                            name = "Ціна",
+                            value = business.price.toString(),
+                            modifier = Modifier.weight(1f)
+                        )
+                        SDetailsField(
+                            name = "Прибуток",
+                            value = business.profit.toString(),
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                     HorizontalDivider()
                 }
@@ -243,11 +267,19 @@ class MainScreen : Screen {
     private fun SharesPage(state: AppState) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(state.sharesList) { shares ->
-                Column {
+                Column(modifier = Modifier.padding(8.dp)) {
                     Text(shares.type.name, style = MaterialTheme.typography.titleSmall)
                     Row {
-                        SDetailsField("Кількість", shares.count.toString())
-                        SDetailsField("Ціна покупки", shares.buyPrice.toString())
+                        SDetailsField(
+                            name = "Кількість",
+                            value = shares.count.toString(),
+                            modifier = Modifier.weight(1f)
+                        )
+                        SDetailsField(
+                            name = "Ціна покупки",
+                            value = shares.buyPrice.toString(),
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                     HorizontalDivider()
                 }
@@ -258,16 +290,15 @@ class MainScreen : Screen {
 
 @Composable
 fun ColumnScope.DetailsField(name: String, value: String) {
-    SDetailsField(name, value)
+    SDetailsField(name, value, modifier = Modifier.fillMaxWidth())
     HorizontalDivider()
 }
 
 @Composable
-fun SDetailsField(name: String, value: String) {
+fun SDetailsField(name: String, value: String, modifier: Modifier) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .padding(8.dp)
     ) {
         Text(
