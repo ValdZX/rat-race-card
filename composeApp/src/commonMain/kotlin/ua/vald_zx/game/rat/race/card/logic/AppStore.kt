@@ -100,6 +100,10 @@ sealed class AppAction : Action {
     data class SellingAllBusinessConfirmed(val business: Business) : AppAction()
     data class SideProfit(val amount: Int) : AppAction()
     data class SideExpenses(val amount: Int) : AppAction()
+    data class GetLoan(val amount: Int) : AppAction()
+    data class RepayLoan(val amount: Int) : AppAction()
+    data class ToDeposit(val amount: Int) : AppAction()
+    data class FromDeposit(val amount: Int) : AppAction()
     data class BuyShares(val shares: Shares) : AppAction()
     data class SellShares(val type: SharesType, val count: Int, val sellPrice: Int) : AppAction()
     data object Exit : AppAction()
@@ -233,6 +237,34 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 oldState.copy(
                     cash = oldState.cash + (action.count * action.sellPrice),
                     sharesList = resultList
+                )
+            }
+
+            is AppAction.RepayLoan -> {
+                oldState.copy(
+                    cash = oldState.cash - action.amount,
+                    loan = oldState.loan - action.amount
+                )
+            }
+
+            is AppAction.GetLoan -> {
+                oldState.copy(
+                    cash = oldState.cash + action.amount,
+                    loan = oldState.loan + action.amount
+                )
+            }
+
+            is AppAction.FromDeposit -> {
+                oldState.copy(
+                    cash = oldState.cash + action.amount,
+                    deposit = oldState.deposit - action.amount
+                )
+            }
+
+            is AppAction.ToDeposit -> {
+                oldState.copy(
+                    cash = oldState.cash - action.amount,
+                    deposit = oldState.deposit + action.amount
                 )
             }
         }

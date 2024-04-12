@@ -62,6 +62,46 @@ class ActionsScreen() : Screen {
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     .widthIn(min = 200.dp),
                 onClick = {
+                    bottomSheetNavigator.replace(ToDepositScreen())
+                },
+                content = {
+                    Text("Покласти на депозит")
+                }
+            )
+            ElevatedButton(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    .widthIn(min = 200.dp),
+                onClick = {
+                    bottomSheetNavigator.replace(FromDepositScreen())
+                },
+                content = {
+                    Text("Зняти з депозиту")
+                }
+            )
+            ElevatedButton(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    .widthIn(min = 200.dp),
+                onClick = {
+                    bottomSheetNavigator.replace(GetLoanScreen())
+                },
+                content = {
+                    Text("Взяти в кредит")
+                }
+            )
+            ElevatedButton(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    .widthIn(min = 200.dp),
+                onClick = {
+                    bottomSheetNavigator.replace(RepayCreditScreen())
+                },
+                content = {
+                    Text("Погасити кредит")
+                }
+            )
+            ElevatedButton(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    .widthIn(min = 200.dp),
+                onClick = {
                     bottomSheetNavigator.replace(SideExpensesScreen())
                 },
                 content = {
