@@ -19,6 +19,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -29,9 +30,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -43,13 +47,17 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.vectorResource
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.ic_dark_mode
 import rat_race_card.composeapp.generated.resources.ic_light_mode
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
+import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
+import ua.vald_zx.game.rat.race.card.logic.AppSideEffect
 import ua.vald_zx.game.rat.race.card.logic.AppState
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
@@ -59,6 +67,7 @@ class MainScreen : Screen {
     override fun Content() {
         val state by store.observeState().collectAsState()
         BottomSheetNavigator {
+            val bottomSheetNavigator = LocalBottomSheetNavigator.current
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -121,7 +130,6 @@ class MainScreen : Screen {
                             2 -> SharesPage(state)
                         }
                     }
-                    val bottomSheetNavigator = LocalBottomSheetNavigator.current
                     ElevatedButton(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             .widthIn(min = 200.dp),
@@ -133,6 +141,48 @@ class MainScreen : Screen {
                         }
                     )
                 }
+            }
+            var expensiveShares: Shares? by remember { mutableStateOf(null) }
+            LaunchedEffect(Unit) {
+                store.observeSideEffect().onEach { effect ->
+                    when (effect) {
+                        is AppSideEffect.SharesToExpensive -> {
+                            expensiveShares = effect.shares
+                        }
+                    }
+                }.launchIn(this)
+            }
+            if (expensiveShares != null) {
+                AlertDialog(
+                    title = {
+                        Text(text = "Недостатньо готівки")
+                    },
+                    text = {
+                        Text(text = "Невистачило: ${state.cash - (expensiveShares?.price ?: 0)}")
+                    },
+                    onDismissRequest = {
+                        expensiveShares = null
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                bottomSheetNavigator.show(BuySharesScreen(expensiveShares!!))
+                                expensiveShares = null
+                            }
+                        ) {
+                            Text("Редагувати")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                expensiveShares = null
+                            }
+                        ) {
+                            Text("Гаразд")
+                        }
+                    }
+                )
             }
         }
     }
@@ -172,7 +222,7 @@ class MainScreen : Screen {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(state.business.filter { it.type != BusinessType.WORK }) { business ->
                 Column {
-                    val title = when(business.type) {
+                    val title = when (business.type) {
                         BusinessType.WORK -> ""
                         BusinessType.SMALL -> "Малий бізнес"
                         BusinessType.MEDIUM -> "Середній бізнес"
@@ -197,7 +247,7 @@ class MainScreen : Screen {
                     Text(shares.type.name, style = MaterialTheme.typography.titleSmall)
                     Row {
                         SDetailsField("Кількість", shares.count.toString())
-                        SDetailsField("Ціна покупки", shares.price.toString())
+                        SDetailsField("Ціна покупки", shares.buyPrice.toString())
                     }
                     HorizontalDivider()
                 }

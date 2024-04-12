@@ -40,5 +40,8 @@ enum class SharesType {
 data class Shares(
     val type: SharesType,
     val count: Int,
-    val price: Int,
-)
+    val buyPrice: Int,
+) {
+    val price: Int
+        get() = count * buyPrice
+}

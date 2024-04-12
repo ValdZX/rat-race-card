@@ -83,12 +83,13 @@ sealed class AppAction : Action {
     data class FillProfessionCard(val professionCard: ProfessionCard) : AppAction()
     data class EditFillProfessionCard(val professionCard: ProfessionCard) : AppAction()
     data object GetSalary : AppAction()
-    data class AddBusiness(val business: Business) : AppAction()
+    data class BuyBusiness(val business: Business) : AppAction()
+    data class BuyShares(val shares: Shares) : AppAction()
     data object Exit : AppAction()
 }
 
 sealed class AppSideEffect : Effect {
-    object Exit : AppSideEffect()
+    data class SharesToExpensive(val shares: Shares) : AppSideEffect()
 }
 
 class AppStore constructor() : Store<AppState, AppAction, AppSideEffect>,
@@ -127,8 +128,19 @@ class AppStore constructor() : Store<AppState, AppAction, AppSideEffect>,
                 oldState
             }
 
-            is AppAction.AddBusiness -> {
+            is AppAction.BuyBusiness -> {
                 oldState
+            }
+
+            is AppAction.BuyShares -> {
+                if (oldState.cash < action.shares.price) {
+                    launch { sideEffect.emit(AppSideEffect.SharesToExpensive(action.shares)) }
+                    oldState
+                } else {
+                    val cash = oldState.cash - action.shares.price
+                    val sharesList = oldState.sharesList + action.shares
+                    oldState.copy(cash = cash, sharesList = sharesList)
+                }
             }
 
             AppAction.GetSalary -> {

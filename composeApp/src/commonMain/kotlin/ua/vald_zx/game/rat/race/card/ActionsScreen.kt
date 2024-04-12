@@ -44,10 +44,20 @@ class ActionsScreen() : Screen {
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     .widthIn(min = 200.dp),
                 onClick = {
-                    bottomSheetNavigator.replace(AddBusinessScreen())
+                    bottomSheetNavigator.replace(BuyBusinessScreen())
                 },
                 content = {
                     Text("Купити бізнес")
+                }
+            )
+            ElevatedButton(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    .widthIn(min = 200.dp),
+                onClick = {
+                    bottomSheetNavigator.replace(BuySharesScreen())
+                },
+                content = {
+                    Text("Купити акції")
                 }
             )
             ElevatedButton(
