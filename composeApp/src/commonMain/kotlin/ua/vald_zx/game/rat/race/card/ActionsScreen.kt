@@ -44,6 +44,26 @@ class ActionsScreen() : Screen {
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     .widthIn(min = 200.dp),
                 onClick = {
+                    bottomSheetNavigator.replace(SideProfitScreen())
+                },
+                content = {
+                    Text("Сторонніх дохід")
+                }
+            )
+            ElevatedButton(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    .widthIn(min = 200.dp),
+                onClick = {
+                    bottomSheetNavigator.replace(SideExpensesScreen())
+                },
+                content = {
+                    Text("Сторонні витрати")
+                }
+            )
+            ElevatedButton(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    .widthIn(min = 200.dp),
+                onClick = {
                     bottomSheetNavigator.replace(BuyBusinessScreen())
                 },
                 content = {

@@ -95,6 +95,8 @@ sealed class AppAction : Action {
     data object GetSalary : AppAction()
     data object GetSalaryApproved : AppAction()
     data class BuyBusiness(val business: Business) : AppAction()
+    data class SideProfit(val amount: Int) : AppAction()
+    data class SideExpenses(val amount: Int) : AppAction()
     data class BuyShares(val shares: Shares) : AppAction()
     data class SellShares(val type: SharesType, val count: Int, val sellPrice: Int) : AppAction()
     data object Exit : AppAction()
@@ -139,6 +141,14 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
 
             AppAction.Exit -> {
                 oldState
+            }
+
+            is AppAction.SideProfit -> {
+                oldState.copy(cash = oldState.cash + action.amount)
+            }
+
+            is AppAction.SideExpenses -> {
+                oldState.copy(cash = oldState.cash - action.amount)
             }
 
             is AppAction.BuyBusiness -> {
