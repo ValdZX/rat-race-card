@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -54,6 +55,7 @@ import org.jetbrains.compose.resources.vectorResource
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.ic_dark_mode
 import rat_race_card.composeapp.generated.resources.ic_light_mode
+import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
@@ -145,6 +147,8 @@ class MainScreen : Screen {
             }
             var expensiveShares: Shares? by remember { mutableStateOf(null) }
             var salaryApproveDialog by remember { mutableStateOf(false) }
+            var confirmDismissalDialog: Business? by remember { mutableStateOf(null) }
+            var confirmSellingAllBusinessDialog: Business? by remember { mutableStateOf(null) }
             LaunchedEffect(Unit) {
                 store.observeSideEffect().onEach { effect ->
                     when (effect) {
@@ -154,6 +158,14 @@ class MainScreen : Screen {
 
                         is AppSideEffect.ShowSalaryApprove -> {
                             salaryApproveDialog = true
+                        }
+
+                        is AppSideEffect.ConfirmDismissal -> {
+                            confirmDismissalDialog = effect.business
+                        }
+
+                        is AppSideEffect.ConfirmSellingAllBusiness -> {
+                            confirmSellingAllBusinessDialog = effect.business
                         }
                     }
                 }.launchIn(this)
@@ -200,6 +212,56 @@ class MainScreen : Screen {
                     }
                 )
             }
+            if (confirmDismissalDialog != null) {
+                AlertDialog(
+                    title = { Text(text = "Звільнення з роботи") },
+                    text = {
+                        Text(
+                            text = "При купівлі другого бізнеса, втрачається робота з зарплатою ${state.professionCard.salary}"
+                        )
+                    },
+                    onDismissRequest = { confirmDismissalDialog = null },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                store.dispatch(AppAction.DismissalConfirmed(confirmDismissalDialog!!))
+                                confirmDismissalDialog = null
+                            }
+                        ) { Text("Звільнитися") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { confirmDismissalDialog = null }) { Text("Відміна") }
+                    }
+                )
+            }
+            if (confirmSellingAllBusinessDialog != null) {
+                AlertDialog(
+                    title = { Text(text = "Купівля бізнесу") },
+                    text = {
+                        Text(
+                            text = "Щоб купити бізнес вищого класу, потрібно продати всі наявні бізнеса. Сума продажу бізнесів: ${state.business.sumOf { it.price }}"
+                        )
+                    },
+                    onDismissRequest = { confirmSellingAllBusinessDialog = null },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                store.dispatch(
+                                    AppAction.SellingAllBusinessConfirmed(
+                                        confirmSellingAllBusinessDialog!!
+                                    )
+                                )
+                                confirmSellingAllBusinessDialog = null
+                            }
+                        ) { Text("Купити") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            confirmSellingAllBusinessDialog = null
+                        }) { Text("Відміна") }
+                    }
+                )
+            }
         }
     }
 
@@ -235,8 +297,9 @@ class MainScreen : Screen {
 
     @Composable
     private fun BusinessListPage(state: AppState) {
+        val bottomSheetNavigator = LocalBottomSheetNavigator.current
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(state.business.filter { it.type != BusinessType.WORK }) { business ->
+            itemsIndexed(state.business.filter { it.type != BusinessType.WORK }) { index, business ->
                 Column(modifier = Modifier.padding(8.dp)) {
                     val title = when (business.type) {
                         BusinessType.WORK -> ""
@@ -244,8 +307,11 @@ class MainScreen : Screen {
                         BusinessType.MEDIUM -> "Середній бізнес"
                         BusinessType.LARGE -> "Крупний бізнес"
                     }
-                    Text("$title: ${business.name}", style = MaterialTheme.typography.titleSmall)
-                    Row {
+                    Text(
+                        "${index + 1}) $title - ${business.name}",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         SDetailsField(
                             name = "Ціна",
                             value = business.price.toString(),
@@ -256,6 +322,9 @@ class MainScreen : Screen {
                             value = business.profit.toString(),
                             modifier = Modifier.weight(1f)
                         )
+                        TextButton(onClick = { bottomSheetNavigator.show(SellBusinessScreen(business)) }) {
+                            Text("Продати")
+                        }
                     }
                     HorizontalDivider()
                 }

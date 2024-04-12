@@ -95,6 +95,9 @@ sealed class AppAction : Action {
     data object GetSalary : AppAction()
     data object GetSalaryApproved : AppAction()
     data class BuyBusiness(val business: Business) : AppAction()
+    data class SellBusiness(val business: Business, val amount: Int) : AppAction()
+    data class DismissalConfirmed(val business: Business) : AppAction()
+    data class SellingAllBusinessConfirmed(val business: Business) : AppAction()
     data class SideProfit(val amount: Int) : AppAction()
     data class SideExpenses(val amount: Int) : AppAction()
     data class BuyShares(val shares: Shares) : AppAction()
@@ -104,6 +107,8 @@ sealed class AppAction : Action {
 
 sealed class AppSideEffect : Effect {
     data class SharesToExpensive(val shares: Shares) : AppSideEffect()
+    data class ConfirmDismissal(val business: Business) : AppSideEffect()
+    data class ConfirmSellingAllBusiness(val business: Business) : AppSideEffect()
     data object ShowSalaryApprove : AppSideEffect()
 }
 
@@ -152,7 +157,35 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
             }
 
             is AppAction.BuyBusiness -> {
-                oldState
+                val currentBusiness = oldState.business
+                if (action.business.type == BusinessType.SMALL && currentBusiness.any { it.type == BusinessType.WORK } && currentBusiness.count { it.type == BusinessType.SMALL } == 1) {
+                    launch { sideEffect.emit(AppSideEffect.ConfirmDismissal(action.business)) }
+                    oldState
+                } else if (currentBusiness.isNotEmpty() && currentBusiness.first().type != action.business.type && !currentBusiness.any { it.type == BusinessType.WORK }) {
+                    launch { sideEffect.emit(AppSideEffect.ConfirmSellingAllBusiness(action.business)) }
+                    oldState
+                } else oldState.copy(
+                    cash = oldState.cash - action.business.price,
+                    business = currentBusiness + action.business
+                )
+            }
+
+            is AppAction.SellBusiness -> {
+                val business = oldState.business.toMutableList()
+                business.remove(action.business)
+                oldState.copy(business = business, cash = oldState.cash + action.amount)
+            }
+
+            is AppAction.DismissalConfirmed -> {
+                val business =
+                    oldState.business.filter { it.type != BusinessType.WORK } + action.business
+                oldState.copy(cash = oldState.cash - action.business.price, business = business)
+            }
+
+            is AppAction.SellingAllBusinessConfirmed -> {
+                oldState.copy(
+                    business = listOf(action.business),
+                    cash = oldState.cash + oldState.business.sumOf { it.price } - action.business.price)
             }
 
             is AppAction.BuyShares -> {

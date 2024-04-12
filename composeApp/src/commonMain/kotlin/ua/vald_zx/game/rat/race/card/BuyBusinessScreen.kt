@@ -14,6 +14,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +32,7 @@ import ua.vald_zx.game.rat.race.card.logic.AppAction
 class BuyBusinessScreen() : Screen {
     @Composable
     override fun Content() {
+        val state by store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         Column(
             modifier = Modifier
@@ -47,37 +49,47 @@ class BuyBusinessScreen() : Screen {
             var businessName by remember { mutableStateOf("") }
             var businessPrise by remember { mutableStateOf("") }
             var businessProfit by remember { mutableStateOf("") }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                RadioButton(businessType == BusinessType.SMALL, onClick = {
-                    businessType = BusinessType.SMALL
-                })
-                Text("Малий бізнес")
+            val hasWork = state.business.any { it.type == BusinessType.WORK }
+            val hasSmall = state.business.any { it.type == BusinessType.SMALL }
+            val hasMedium = state.business.any { it.type == BusinessType.MEDIUM }
+            val hasLarge = state.business.any { it.type == BusinessType.LARGE }
+            if (!hasMedium && !hasLarge) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    RadioButton(businessType == BusinessType.SMALL, onClick = {
+                        businessType = BusinessType.SMALL
+                    })
+                    Text("Малий бізнес")
+                }
             }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                RadioButton(businessType == BusinessType.MEDIUM, onClick = {
-                    businessType = BusinessType.MEDIUM
-                })
-                Text("Середній бізнес")
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                RadioButton(businessType == BusinessType.LARGE, onClick = {
-                    businessType = BusinessType.LARGE
-                })
-                Text("Крупний бізнес")
+            if (!hasWork) {
+                if ((hasSmall || hasMedium) && !hasLarge) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        RadioButton(businessType == BusinessType.MEDIUM, onClick = {
+                            businessType = BusinessType.MEDIUM
+                        })
+                        Text("Середній бізнес")
+                    }
+                }
+                if (hasMedium || hasLarge) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        RadioButton(businessType == BusinessType.LARGE, onClick = {
+                            businessType = BusinessType.LARGE
+                        })
+                        Text("Крупний бізнес")
+                    }
+                }
             }
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
