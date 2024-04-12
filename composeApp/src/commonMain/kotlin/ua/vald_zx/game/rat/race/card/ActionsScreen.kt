@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 
 class ActionsScreen() : Screen {
@@ -118,6 +119,18 @@ class ActionsScreen() : Screen {
                     Text("Купити бізнес")
                 }
             )
+            if (state.business.any { it.type == BusinessType.SMALL }) {
+                ElevatedButton(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        .widthIn(min = 200.dp),
+                    onClick = {
+                        bottomSheetNavigator.replace(ExtendBusinessScreen())
+                    },
+                    content = {
+                        Text("Розширення малого бізнесу")
+                    }
+                )
+            }
             ElevatedButton(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     .widthIn(min = 200.dp),

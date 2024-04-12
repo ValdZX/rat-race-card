@@ -104,7 +104,7 @@ class MainScreen : Screen {
                     BalanceField("Депозит", state.deposit.toString())
                     BalanceField("Кредит", state.loan.toString())
                     val coroutineScope = rememberCoroutineScope()
-                    val titles = listOf("Стан", "Бізнеси", "Акції")
+                    val titles = listOf("Стан", "Бізнес", "Акції")
                     val pagerState = rememberPagerState(pageCount = { titles.size })
                     PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
                         titles.forEachIndexed { index, title ->
@@ -320,6 +320,7 @@ class MainScreen : Screen {
                         SDetailsField(
                             name = "Прибуток",
                             value = business.profit.toString(),
+                            additionalValue = business.extentions.map { it.toString() },
                             modifier = Modifier.weight(1f)
                         )
                         TextButton(onClick = { bottomSheetNavigator.show(SellBusinessScreen(business)) }) {
@@ -364,9 +365,15 @@ fun ColumnScope.DetailsField(name: String, value: String) {
 }
 
 @Composable
-fun SDetailsField(name: String, value: String, modifier: Modifier) {
+fun SDetailsField(
+    name: String,
+    value: String,
+    additionalValue: List<String> = emptyList(),
+    modifier: Modifier
+) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .padding(8.dp)
     ) {
@@ -374,10 +381,18 @@ fun SDetailsField(name: String, value: String, modifier: Modifier) {
             text = name,
             style = MaterialTheme.typography.bodySmall
         )
-        Text(
-            text = value.splitDecimal(),
-            style = MaterialTheme.typography.bodySmall
-        )
+        Column {
+            Text(
+                text = value.splitDecimal(),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            additionalValue.forEach { item ->
+                Text(
+                    text = "+ ${item.splitDecimal()}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
     }
 }
 

@@ -98,6 +98,7 @@ sealed class AppAction : Action {
     data class SellBusiness(val business: Business, val amount: Int) : AppAction()
     data class DismissalConfirmed(val business: Business) : AppAction()
     data class SellingAllBusinessConfirmed(val business: Business) : AppAction()
+    data class ExtendBusiness(val amount: Int) : AppAction()
     data class SideProfit(val amount: Int) : AppAction()
     data class SideExpenses(val amount: Int) : AppAction()
     data class GetLoan(val amount: Int) : AppAction()
@@ -106,7 +107,6 @@ sealed class AppAction : Action {
     data class FromDeposit(val amount: Int) : AppAction()
     data class BuyShares(val shares: Shares) : AppAction()
     data class SellShares(val type: SharesType, val count: Int, val sellPrice: Int) : AppAction()
-    data object Exit : AppAction()
 }
 
 sealed class AppSideEffect : Effect {
@@ -148,10 +148,6 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 oldState.copy(professionCard = action.professionCard)
             }
 
-            AppAction.Exit -> {
-                oldState
-            }
-
             is AppAction.SideProfit -> {
                 oldState.copy(cash = oldState.cash + action.amount)
             }
@@ -178,6 +174,12 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 val business = oldState.business.toMutableList()
                 business.remove(action.business)
                 oldState.copy(business = business, cash = oldState.cash + action.amount)
+            }
+
+            is AppAction.ExtendBusiness -> {
+                val business = oldState.business.last()
+                val extended = business.copy(extentions = business.extentions + action.amount)
+                oldState.copy(business = oldState.business.replace(business, extended))
             }
 
             is AppAction.DismissalConfirmed -> {
