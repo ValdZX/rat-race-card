@@ -52,7 +52,6 @@ class RepayCreditScreen : Screen {
 class GetLoanScreen : Screen {
     @Composable
     override fun Content() {
-        val state by store.observeState().collectAsState()
         InputScreen(
             inputLabel = "Сума кредиту",
             buttonText = "Взяти",
