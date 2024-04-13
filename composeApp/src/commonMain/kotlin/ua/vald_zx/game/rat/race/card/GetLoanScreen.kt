@@ -52,7 +52,7 @@ class GetLoanScreen : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(AppAction.GetLoan(amount = amount.toInt()))
+                    store.dispatch(AppAction.GetLoan(amount = amount.toLong()))
                 },
                 enabled = amount.isNotEmpty(),
                 content = { Text("Взяти") }

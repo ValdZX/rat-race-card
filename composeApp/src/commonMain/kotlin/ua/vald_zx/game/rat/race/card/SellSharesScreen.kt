@@ -57,7 +57,7 @@ class SellSharesScreen : Screen {
                 }
             }
             Text(
-                "Сумарно: ${((count.toIntOrNull() ?: 0) * (price.toIntOrNull() ?: 0)).splitDecimal()}",
+                "Сумарно: ${((count.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).splitDecimal()}",
                 style = MaterialTheme.typography.titleSmall
             )
             OutlinedTextField(
@@ -83,14 +83,14 @@ class SellSharesScreen : Screen {
                     store.dispatch(
                         AppAction.SellShares(
                             type = type,
-                            count = count.toInt(),
-                            sellPrice = price.toInt(),
+                            count = count.toLong(),
+                            sellPrice = price.toLong(),
                         )
                     )
                 },
                 enabled = count.isNotEmpty()
                         && price.isNotEmpty()
-                        && count.toInt() <= state.sharesCount(type),
+                        && count.toLong() <= state.sharesCount(type),
                 content = {
                     Text("Продати")
                 }

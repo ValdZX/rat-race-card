@@ -56,7 +56,7 @@ class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0))
                 }
             }
             Text(
-                "Сумарно: ${((count.toIntOrNull() ?: 0) * (price.toIntOrNull() ?: 0)).splitDecimal()}",
+                "Сумарно: ${((count.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).splitDecimal()}",
                 style = MaterialTheme.typography.titleSmall
             )
             OutlinedTextField(
@@ -83,8 +83,8 @@ class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0))
                         AppAction.BuyShares(
                             Shares(
                                 type = type,
-                                count = count.toInt(),
-                                buyPrice = price.toInt(),
+                                count = count.toLong(),
+                                buyPrice = price.toLong(),
                             )
                         )
                     )

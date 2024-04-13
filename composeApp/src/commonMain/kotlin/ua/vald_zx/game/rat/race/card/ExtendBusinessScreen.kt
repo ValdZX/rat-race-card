@@ -51,7 +51,7 @@ class ExtendBusinessScreen : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(AppAction.ExtendBusiness(amount = amount.toInt()))
+                    store.dispatch(AppAction.ExtendBusiness(amount = amount.toLong()))
                 },
                 enabled = amount.isNotEmpty(),
                 content = {

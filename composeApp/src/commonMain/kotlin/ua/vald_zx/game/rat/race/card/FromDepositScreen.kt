@@ -52,9 +52,9 @@ class FromDepositScreen : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(AppAction.FromDeposit(amount = amount.toInt()))
+                    store.dispatch(AppAction.FromDeposit(amount = amount.toLong()))
                 },
-                enabled = amount.isNotEmpty() && state.deposit >= amount.toInt(),
+                enabled = amount.isNotEmpty() && state.deposit >= amount.toLong(),
                 content = {
                     Text("Зняти")
                 }

@@ -137,12 +137,12 @@ fun ProfessionCardForm(filled: (ProfessionCard) -> Unit) {
             filled(
                 ProfessionCard(
                     profession = profession,
-                    salary = salary.toInt(),
-                    rent = rent.toInt(),
-                    food = food.toInt(),
-                    cloth = cloth.toInt(),
-                    transport = transport.toInt(),
-                    phone = phone.toInt(),
+                    salary = salary.toLong(),
+                    rent = rent.toLong(),
+                    food = food.toLong(),
+                    cloth = cloth.toLong(),
+                    transport = transport.toLong(),
+                    phone = phone.toLong(),
                 )
             )
         },

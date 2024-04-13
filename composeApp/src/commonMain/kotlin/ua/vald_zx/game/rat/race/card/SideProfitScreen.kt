@@ -50,7 +50,7 @@ class SideProfitScreen : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(AppAction.SideProfit(amount = amount.toInt()))
+                    store.dispatch(AppAction.SideProfit(amount = amount.toLong()))
                 },
                 enabled = amount.isNotEmpty(),
                 content = {

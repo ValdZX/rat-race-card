@@ -52,9 +52,9 @@ class ToDepositScreen : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(AppAction.ToDeposit(amount = amount.toInt()))
+                    store.dispatch(AppAction.ToDeposit(amount = amount.toLong()))
                 },
-                enabled = amount.isNotEmpty() && state.cash >= amount.toInt(),
+                enabled = amount.isNotEmpty() && state.cash >= amount.toLong(),
                 content = {
                     Text("Вкласти")
                 }

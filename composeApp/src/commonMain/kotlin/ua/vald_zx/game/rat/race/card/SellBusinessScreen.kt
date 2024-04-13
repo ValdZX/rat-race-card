@@ -74,7 +74,7 @@ class SellBusinessScreen(private val businessToSell: Business) : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(AppAction.SellBusiness(amount = amount.toInt(), business = businessToSell))
+                    store.dispatch(AppAction.SellBusiness(amount = amount.toLong(), business = businessToSell))
                 },
                 enabled = amount.isNotEmpty(),
                 content = {

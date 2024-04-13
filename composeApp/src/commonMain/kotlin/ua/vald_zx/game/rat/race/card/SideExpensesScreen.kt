@@ -50,7 +50,7 @@ class SideExpensesScreen : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(AppAction.SideExpenses(amount = amount.toInt()))
+                    store.dispatch(AppAction.SideExpenses(amount = amount.toLong()))
                 },
                 enabled = amount.isNotEmpty(),
                 content = {

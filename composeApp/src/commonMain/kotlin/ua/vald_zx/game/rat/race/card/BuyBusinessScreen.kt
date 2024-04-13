@@ -121,8 +121,8 @@ class BuyBusinessScreen() : Screen {
                             Business(
                                 type = businessType,
                                 name = businessName,
-                                price = businessPrise.toInt(),
-                                profit = businessProfit.toInt()
+                                price = businessPrise.toLong(),
+                                profit = businessProfit.toLong()
                             )
                         )
                     )

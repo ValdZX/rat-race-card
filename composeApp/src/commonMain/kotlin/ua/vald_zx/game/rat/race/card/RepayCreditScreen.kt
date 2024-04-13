@@ -52,9 +52,9 @@ class RepayCreditScreen : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(AppAction.RepayLoan(amount = amount.toInt()))
+                    store.dispatch(AppAction.RepayLoan(amount = amount.toLong()))
                 },
-                enabled = amount.isNotEmpty() && state.loan <= amount.toInt(),
+                enabled = amount.isNotEmpty() && state.loan <= amount.toLong(),
                 content = {
                     Text("Погасити")
                 }

@@ -19,38 +19,38 @@ import ua.vald_zx.game.rat.race.card.replace
 @Serializable
 data class AppState(
     val professionCard: ProfessionCard = ProfessionCard(),
-    val cash: Int = 0,
-    val deposit: Int = 0,
-    val loan: Int = 0,
+    val cash: Long = 0,
+    val deposit: Long = 0,
+    val loan: Long = 0,
     val business: List<Business> = emptyList(),
     val isMarried: Boolean = false,
-    val babies: Int = 0,
-    val cars: Int = 0,
-    val apartment: Int = 0,
-    val cottage: Int = 0,
-    val yacht: Int = 0,
-    val flight: Int = 0,
+    val babies: Long = 0,
+    val cars: Long = 0,
+    val apartment: Long = 0,
+    val cottage: Long = 0,
+    val yacht: Long = 0,
+    val flight: Long = 0,
     val sharesList: List<Shares> = emptyList(),
 ) : State {
 
-    fun activeProfit(): Int {
+    fun activeProfit(): Long {
         return business.sumOf { it.profit + it.extentions.sum() }
     }
 
-    fun passiveProfit(): Int {
-        return (deposit * 0.02).toInt()
+    fun passiveProfit(): Long {
+        return (deposit * 0.02).toLong()
     }
 
-    fun totalProfit(): Int {
+    fun totalProfit(): Long {
         return activeProfit() + passiveProfit()
     }
 
-    fun creditExpenses(): Int {
+    fun creditExpenses(): Long {
         return loan / 10
     }
 
-    fun totalExpenses(): Int {
-        var totalExpenses = 0
+    fun totalExpenses(): Long {
+        var totalExpenses = 0L
         totalExpenses += professionCard.food
         totalExpenses += professionCard.rent
         totalExpenses += professionCard.cloth
@@ -66,7 +66,7 @@ data class AppState(
         return totalExpenses
     }
 
-    fun cashFlow(): Int {
+    fun cashFlow(): Long {
         return totalProfit() - totalExpenses()
     }
 
@@ -83,7 +83,7 @@ data class AppState(
         return sharesList.map { it.type }.toSet()
     }
 
-    fun sharesCount(entry: SharesType): Int {
+    fun sharesCount(entry: SharesType): Long {
         return sharesList.filter { it.type == entry }.sumOf { it.count }
     }
 }
@@ -95,18 +95,18 @@ sealed class AppAction : Action {
     data object GetSalary : AppAction()
     data object GetSalaryApproved : AppAction()
     data class BuyBusiness(val business: Business) : AppAction()
-    data class SellBusiness(val business: Business, val amount: Int) : AppAction()
+    data class SellBusiness(val business: Business, val amount: Long) : AppAction()
     data class DismissalConfirmed(val business: Business) : AppAction()
     data class SellingAllBusinessConfirmed(val business: Business) : AppAction()
-    data class ExtendBusiness(val amount: Int) : AppAction()
-    data class SideProfit(val amount: Int) : AppAction()
-    data class SideExpenses(val amount: Int) : AppAction()
-    data class GetLoan(val amount: Int) : AppAction()
-    data class RepayLoan(val amount: Int) : AppAction()
-    data class ToDeposit(val amount: Int) : AppAction()
-    data class FromDeposit(val amount: Int) : AppAction()
+    data class ExtendBusiness(val amount: Long) : AppAction()
+    data class SideProfit(val amount: Long) : AppAction()
+    data class SideExpenses(val amount: Long) : AppAction()
+    data class GetLoan(val amount: Long) : AppAction()
+    data class RepayLoan(val amount: Long) : AppAction()
+    data class ToDeposit(val amount: Long) : AppAction()
+    data class FromDeposit(val amount: Long) : AppAction()
     data class BuyShares(val shares: Shares) : AppAction()
-    data class SellShares(val type: SharesType, val count: Int, val sellPrice: Int) : AppAction()
+    data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) : AppAction()
 }
 
 sealed class AppSideEffect : Effect {
@@ -219,7 +219,7 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 val sharesByType = resultList.filter { it.type == action.type }
                 var needToSell = action.count
                 var index = 0
-                while (needToSell != 0 && index < sharesByType.size) {
+                while (needToSell != 0L && index < sharesByType.size) {
                     val shares = sharesByType[index]
                     if (needToSell < shares.count) {
                         resultList = resultList.replace(
