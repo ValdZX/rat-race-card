@@ -105,8 +105,14 @@ sealed class AppAction : Action {
     data class RepayLoan(val amount: Long) : AppAction()
     data class ToDeposit(val amount: Long) : AppAction()
     data class FromDeposit(val amount: Long) : AppAction()
+    data class BuyCar(val price: Long) : AppAction()
+    data class BuyApartment(val price: Long) : AppAction()
+    data class BuyCottage(val price: Long) : AppAction()
+    data class BuyYacht(val price: Long) : AppAction()
+    data class BuyFlight(val price: Long) : AppAction()
     data class BuyShares(val shares: Shares) : AppAction()
     data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) : AppAction()
+    data class UpdateFamily(val isMarried: Boolean, val babies: Long) : AppAction()
 }
 
 sealed class AppSideEffect : Effect {
@@ -267,6 +273,45 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 oldState.copy(
                     cash = oldState.cash - action.amount,
                     deposit = oldState.deposit + action.amount
+                )
+            }
+
+            is AppAction.UpdateFamily -> {
+                oldState.copy(isMarried = action.isMarried, babies = action.babies)
+            }
+
+            is AppAction.BuyApartment -> {
+                oldState.copy(
+                    cash = oldState.cash - action.price,
+                    apartment = oldState.apartment + 1
+                )
+            }
+
+            is AppAction.BuyCar -> {
+                oldState.copy(
+                    cash = oldState.cash - action.price,
+                    cars = oldState.cars + 1
+                )
+            }
+
+            is AppAction.BuyCottage -> {
+                oldState.copy(
+                    cash = oldState.cash - action.price,
+                    cottage = oldState.cottage + 1
+                )
+            }
+
+            is AppAction.BuyFlight -> {
+                oldState.copy(
+                    cash = oldState.cash - action.price,
+                    flight = oldState.flight + 1
+                )
+            }
+
+            is AppAction.BuyYacht -> {
+                oldState.copy(
+                    cash = oldState.cash - action.price,
+                    yacht = oldState.yacht + 1
                 )
             }
         }
