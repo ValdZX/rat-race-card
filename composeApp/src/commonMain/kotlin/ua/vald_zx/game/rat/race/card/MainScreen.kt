@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import kotlinx.coroutines.flow.launchIn
@@ -55,6 +56,7 @@ import org.jetbrains.compose.resources.vectorResource
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.ic_dark_mode
 import rat_race_card.composeapp.generated.resources.ic_light_mode
+import rat_race_card.composeapp.generated.resources.settings
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.Shares
@@ -69,6 +71,7 @@ class MainScreen : Screen {
     @Composable
     override fun Content() {
         val state by store.observeState().collectAsState()
+        val navigator = LocalNavigator.current
         BottomSheetNavigator {
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
             Box(
@@ -87,6 +90,13 @@ class MainScreen : Screen {
                     onClick = { isDark = !isDark },
                     content = {
                         Icon(vectorResource(icon), contentDescription = null)
+                    }
+                )
+                IconButton(
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                    onClick = { navigator?.push(ConfigScreen()) },
+                    content = {
+                        Icon(vectorResource(Res.drawable.settings), contentDescription = null)
                     }
                 )
                 Column(

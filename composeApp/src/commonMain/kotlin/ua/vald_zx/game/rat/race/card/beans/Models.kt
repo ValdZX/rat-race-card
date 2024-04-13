@@ -45,3 +45,16 @@ data class Shares(
     val price: Long
         get() = count * buyPrice
 }
+
+
+@Serializable
+data class Config(
+    val depositRate: Long = 2,
+    val loadRate: Long = 10,
+    val babyCost: Long = 300,
+    val carCost: Long = 600,
+    val apartmentCost: Long = 200,
+    val cottageCost: Long = 1000,
+    val yachtCost: Long = 1500,
+    val flightCost: Long = 5000,
+)

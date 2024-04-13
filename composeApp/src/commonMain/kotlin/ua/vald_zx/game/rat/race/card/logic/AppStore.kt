@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
+import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.beans.ProfessionCard
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
@@ -31,6 +32,7 @@ data class AppState(
     val yacht: Long = 0,
     val flight: Long = 0,
     val sharesList: List<Shares> = emptyList(),
+    val config: Config = Config()
 ) : State {
 
     fun activeProfit(): Long {
@@ -38,7 +40,7 @@ data class AppState(
     }
 
     fun passiveProfit(): Long {
-        return (deposit * 0.02).toLong()
+        return ((deposit / 100.0) * config.depositRate).toLong()
     }
 
     fun totalProfit(): Long {
@@ -46,7 +48,7 @@ data class AppState(
     }
 
     fun creditExpenses(): Long {
-        return loan / 10
+        return ((loan / 100.0) * config.loadRate).toLong()
     }
 
     fun totalExpenses(): Long {
@@ -56,12 +58,12 @@ data class AppState(
         totalExpenses += professionCard.cloth
         totalExpenses += professionCard.phone
         totalExpenses += professionCard.transport
-        totalExpenses += babies * 300
-        totalExpenses += cars * 600
-        totalExpenses += apartment * 200
-        totalExpenses += cottage * 1000
-        totalExpenses += yacht * 1500
-        totalExpenses += flight * 5000
+        totalExpenses += babies * config.babyCost
+        totalExpenses += cars * config.carCost
+        totalExpenses += apartment * config.apartmentCost
+        totalExpenses += cottage * config.cottageCost
+        totalExpenses += yacht * config.yachtCost
+        totalExpenses += flight * config.flightCost
         totalExpenses += creditExpenses()
         return totalExpenses
     }
@@ -111,6 +113,7 @@ sealed class AppAction : Action {
     data class BuyYacht(val price: Long) : AppAction()
     data class BuyFlight(val price: Long) : AppAction()
     data class BuyShares(val shares: Shares) : AppAction()
+    data class UpdateConfig(val config: Config) : AppAction()
     data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) : AppAction()
     data class UpdateFamily(val isMarried: Boolean, val babies: Long) : AppAction()
 }
@@ -313,6 +316,10 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                     cash = oldState.cash - action.price,
                     yacht = oldState.yacht + 1
                 )
+            }
+
+            is AppAction.UpdateConfig -> {
+                oldState.copy(config = action.config)
             }
         }
         if (newState != oldState) {
