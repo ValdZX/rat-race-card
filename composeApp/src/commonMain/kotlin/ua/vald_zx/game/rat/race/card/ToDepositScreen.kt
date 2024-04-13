@@ -38,7 +38,7 @@ class ToDepositScreen : Screen {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            var amount by remember { mutableStateOf("") }
+            var amount by remember { mutableStateOf(state.cash.toString()) }
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Сума вкладу") },

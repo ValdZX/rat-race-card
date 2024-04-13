@@ -21,9 +21,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.logic.AppAction
+import kotlin.math.min
 
 class RepayCreditScreen : Screen {
     @Composable
@@ -38,7 +40,7 @@ class RepayCreditScreen : Screen {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            var amount by remember { mutableStateOf("") }
+            var amount by remember { mutableStateOf(min(state.loan, state.cash).toString()) }
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Сума погашення") },
