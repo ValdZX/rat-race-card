@@ -51,11 +51,12 @@ class BuyBusinessScreen() : Screen {
             var businessName by remember { mutableStateOf("") }
             var businessPrise by remember { mutableStateOf("") }
             var businessProfit by remember { mutableStateOf("") }
+            val noBusiness = state.business.isEmpty()
             val hasWork = state.business.any { it.type == BusinessType.WORK }
             val hasSmall = state.business.any { it.type == BusinessType.SMALL }
             val hasMedium = state.business.any { it.type == BusinessType.MEDIUM }
             val hasLarge = state.business.any { it.type == BusinessType.LARGE }
-            if (!hasMedium && !hasLarge) {
+            if (noBusiness || !hasMedium && !hasLarge) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -67,8 +68,8 @@ class BuyBusinessScreen() : Screen {
                     Text("Малий бізнес")
                 }
             }
-            if (!hasWork) {
-                if ((hasSmall || hasMedium) && !hasLarge) {
+            if (noBusiness || !hasWork) {
+                if (noBusiness || (hasSmall || hasMedium) && !hasLarge) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -80,7 +81,7 @@ class BuyBusinessScreen() : Screen {
                         Text("Середній бізнес")
                     }
                 }
-                if (hasMedium || hasLarge) {
+                if (noBusiness || hasMedium || hasLarge) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
