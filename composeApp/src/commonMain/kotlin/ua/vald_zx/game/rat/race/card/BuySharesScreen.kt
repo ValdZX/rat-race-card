@@ -41,8 +41,8 @@ class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0))
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             var type by remember { mutableStateOf(shares.type) }
-            var count by remember { mutableStateOf(shares.count.toString()) }
-            var price by remember { mutableStateOf(shares.buyPrice.toString()) }
+            var count by remember { mutableStateOf(shares.count.emptyIfZero()) }
+            var price by remember { mutableStateOf(shares.buyPrice.emptyIfZero()) }
             SharesType.entries.forEach { entry ->
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),

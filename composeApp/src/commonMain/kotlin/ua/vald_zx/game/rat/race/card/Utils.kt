@@ -36,3 +36,7 @@ fun <T> List<T>.replace(item: T, newItem: T): List<T> {
         this
     }
 }
+
+fun Int.emptyIfZero(): String {
+    return if (this == 0) "" else this.toString()
+}
