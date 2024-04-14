@@ -1,16 +1,12 @@
 package ua.vald_zx.game.rat.race.card
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -35,15 +31,7 @@ class BuyBusinessScreen() : Screen {
     override fun Content() {
         val state by store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp)
-                .imePadding()
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        BottomSheetContainer {
             var businessType by remember {
                 val type = store.observeState().value.business.firstOrNull()?.type
                 mutableStateOf(if (type == null || type == BusinessType.WORK) BusinessType.SMALL else type)

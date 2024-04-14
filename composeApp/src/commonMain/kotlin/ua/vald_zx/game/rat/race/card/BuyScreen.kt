@@ -3,6 +3,7 @@ package ua.vald_zx.game.rat.race.card
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.AlertDialog
@@ -30,13 +31,7 @@ class BuyScreen() : Screen {
     @Composable
     override fun Content() {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        BottomSheetContainer {
             Button("Купити авто") {
                 bottomSheetNavigator.replace(BuyCarScreen())
             }

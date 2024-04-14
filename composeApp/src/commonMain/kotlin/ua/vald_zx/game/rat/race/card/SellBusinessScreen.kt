@@ -34,15 +34,7 @@ class SellBusinessScreen(private val businessToSell: Business) : Screen {
     @Composable
     override fun Content() {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp)
-                .imePadding()
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        BottomSheetContainer {
             var amount by remember { mutableStateOf(businessToSell.price.toString()) }
             val title = when (businessToSell.type) {
                 BusinessType.WORK -> ""

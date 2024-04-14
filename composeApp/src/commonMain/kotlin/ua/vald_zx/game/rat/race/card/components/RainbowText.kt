@@ -29,7 +29,8 @@ val SkittlesRainbow = listOf(
     RainbowGreen,
     RainbowBlue,
     RainbowIndigo,
-    RainbowViolet
+    RainbowViolet,
+    RainbowRed,
 )
 
 @Composable

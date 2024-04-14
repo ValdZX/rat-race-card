@@ -57,14 +57,7 @@ class FillProfessionCardBottomSheetScreen() : Screen {
     @Composable
     override fun Content() {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        BottomSheetContainer {
             ProfessionCardForm {
                 store.dispatch(AppAction.EditFillProfessionCard(it))
                 bottomSheetNavigator.hide()

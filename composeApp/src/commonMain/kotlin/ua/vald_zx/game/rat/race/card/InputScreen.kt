@@ -32,15 +32,7 @@ fun InputScreen(
     value: String = ""
 ) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
-    Column(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
-            .imePadding()
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
+    BottomSheetContainer {
         var input by remember { mutableStateOf(value) }
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),

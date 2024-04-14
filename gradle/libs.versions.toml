@@ -6,6 +6,7 @@ compose = "1.6.1"
 agp = "8.3.2"
 androidx-activityCompose = "1.8.2"
 androidx-uiTest = "1.6.5"
+multiplatformSettings = "1.1.1"
 voyager = "1.1.0-alpha04"
 composeImageLoader = "1.7.8"
 napier = "2.7.1"
@@ -21,6 +22,8 @@ androidx-activityCompose = { module = "androidx.activity:activity-compose", vers
 androidx-testManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-uiTest" }
 androidx-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidx-uiTest" }
 appdirs = { module = "net.harawata:appdirs", version.ref = "appdirs" }
+multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatformSettings" }
+multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatformSettings" }
 voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager" }
 voyager-bottom-sheet-navigator = { module = "cafe.adriel.voyager:voyager-bottom-sheet-navigator", version.ref = "voyager" }
 composeImageLoader = { module = "io.github.qdsfdhvh:image-loader", version.ref = "composeImageLoader" }

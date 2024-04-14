@@ -6,6 +6,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
+import com.russhwolf.settings.get
+import ua.vald_zx.game.rat.race.card.settings
 
 private val LightColorScheme = lightColorScheme(
     primary = md_theme_light_primary,
@@ -77,7 +79,7 @@ internal val LocalThemeIsDark = compositionLocalOf { mutableStateOf(true) }
 internal fun AppTheme(
     content: @Composable() () -> Unit
 ) {
-    val systemIsDark = isSystemInDarkTheme()
+    val systemIsDark = settings["theme", isSystemInDarkTheme()]
     val isDarkState = remember { mutableStateOf(systemIsDark) }
     CompositionLocalProvider(
         LocalThemeIsDark provides isDarkState

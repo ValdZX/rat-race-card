@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.navigator.Navigator
+import com.russhwolf.settings.Settings
 import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.file.storeOf
 import okio.Path.Companion.toPath
@@ -20,11 +21,11 @@ internal expect val storageDir: String
 val kStore: KStore<AppState>
     get() = storeOf(file = "$storageDir/app.json".toPath())
 val store = AppStore()
+val settings: Settings = Settings()
 
 @Composable
 internal fun App() = AppTheme {
     var kStoreLoaded by remember { mutableStateOf(false) }
-
     if (kStoreLoaded) {
         val state by store.observeState().collectAsState()
         val startScreen = if (state.professionCard.profession.isNotEmpty()) {

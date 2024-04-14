@@ -35,15 +35,7 @@ class SellSharesScreen : Screen {
     override fun Content() {
         val state by store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp)
-                .imePadding()
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        BottomSheetContainer {
             val existsShares = state.existsShares()
             var type by remember { mutableStateOf(existsShares.first()) }
             var count by remember { mutableStateOf("") }

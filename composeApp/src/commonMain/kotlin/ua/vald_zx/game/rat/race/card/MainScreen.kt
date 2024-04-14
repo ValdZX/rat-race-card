@@ -43,12 +43,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import com.russhwolf.settings.set
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -87,7 +89,10 @@ class MainScreen : Screen {
                 }
                 IconButton(
                     modifier = Modifier.align(Alignment.TopEnd),
-                    onClick = { isDark = !isDark },
+                    onClick = {
+                        isDark = !isDark
+                        settings["theme"] = isDark
+                    },
                     content = {
                         Icon(vectorResource(icon), contentDescription = null)
                     }
@@ -111,8 +116,8 @@ class MainScreen : Screen {
                     NegativeField("Загальні витрати", state.totalExpenses().toString())
                     CashFlowField("Cash Flow", state.cashFlow().toString())
                     BalanceField("Готівка", state.cash.toString())
-                    BalanceField("Депозит", state.deposit.toString())
-                    BalanceField("Кредит", state.loan.toString())
+                    PositiveField("Депозит", state.deposit.toString())
+                    NegativeField("Кредит", state.loan.toString())
                     val coroutineScope = rememberCoroutineScope()
                     val titles = listOf("Стан", "Бізнес", "Акції")
                     val pagerState = rememberPagerState(pageCount = { titles.size })
@@ -407,7 +412,7 @@ fun SDetailsField(
 }
 
 @Composable
-fun ColumnScope.PositiveField(name: String, value: String) {
+fun ColumnScope.PositiveField(name: String, value: String, fontSize: TextUnit = 16.sp) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
@@ -415,13 +420,13 @@ fun ColumnScope.PositiveField(name: String, value: String) {
             .padding(8.dp)
     ) {
         Text(name, color = MaterialTheme.colorScheme.primary)
-        Text(value.splitDecimal(), fontSize = 16.sp)
+        Text(value.splitDecimal(), fontSize = fontSize)
     }
     HorizontalDivider()
 }
 
 @Composable
-fun ColumnScope.NegativeField(name: String, value: String) {
+fun ColumnScope.NegativeField(name: String, value: String, fontSize: TextUnit = 16.sp) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
@@ -429,7 +434,7 @@ fun ColumnScope.NegativeField(name: String, value: String) {
             .padding(8.dp)
     ) {
         Text(name, color = MaterialTheme.colorScheme.tertiary)
-        Text(value.splitDecimal(), fontSize = 16.sp)
+        Text(value.splitDecimal(), fontSize = fontSize)
     }
     HorizontalDivider()
 }
@@ -457,7 +462,7 @@ fun ColumnScope.BalanceField(name: String, value: String) {
             .padding(8.dp)
     ) {
         Text(name)
-        Text(value.splitDecimal(), fontSize = 16.sp)
+        Text(value.splitDecimal(), fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
     }
     HorizontalDivider()
 }

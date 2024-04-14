@@ -69,6 +69,7 @@ kotlin {
             implementation(libs.kstore)
             implementation(libs.kstore.file)
             implementation(libs.composeImageLoader)
+            implementation(libs.multiplatform.settings.no.arg)
         }
 
         commonTest.dependencies {

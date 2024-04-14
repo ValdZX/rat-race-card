@@ -44,7 +44,6 @@ class ConfigScreen : Screen {
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(16.dp),
         ) {
-
             IconButton(
                 modifier = Modifier.align(Alignment.TopStart),
                 onClick = { navigator?.pop() },

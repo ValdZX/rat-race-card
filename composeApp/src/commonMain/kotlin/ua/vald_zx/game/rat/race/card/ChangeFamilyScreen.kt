@@ -33,15 +33,7 @@ class ChangeFamilyScreen : Screen {
     override fun Content() {
         val state by store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp)
-                .imePadding()
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        BottomSheetContainer {
             var isMarried by remember { mutableStateOf(state.isMarried) }
             var babies by remember { mutableStateOf(state.babies.toString()) }
             Row(

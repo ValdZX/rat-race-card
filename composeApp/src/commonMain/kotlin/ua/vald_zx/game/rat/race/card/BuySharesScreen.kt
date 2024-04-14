@@ -33,15 +33,7 @@ class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0))
     @Composable
     override fun Content() {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp)
-                .imePadding()
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        BottomSheetContainer {
             var type by remember { mutableStateOf(shares.type) }
             var count by remember { mutableStateOf(shares.count.emptyIfZero()) }
             var price by remember { mutableStateOf(shares.buyPrice.emptyIfZero()) }
