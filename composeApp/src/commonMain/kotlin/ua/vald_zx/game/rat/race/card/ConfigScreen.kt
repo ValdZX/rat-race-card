@@ -58,6 +58,22 @@ class ConfigScreen : Screen {
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                ElevatedButton(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        .widthIn(min = 200.dp),
+                    onClick = {
+                        navigator?.push(ExportScreen())
+                    },
+                    content = { Text("Експорт картки") }
+                )
+                ElevatedButton(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        .widthIn(min = 200.dp),
+                    onClick = {
+                        navigator?.push(ImportScreen())
+                    },
+                    content = { Text("Імпорт картки") }
+                )
                 var depositRate by remember { mutableStateOf(state.config.depositRate.toString()) }
                 var loadRate by remember { mutableStateOf(state.config.loadRate.toString()) }
                 var babyCost by remember { mutableStateOf(state.config.babyCost.toString()) }

@@ -12,3 +12,6 @@ internal actual fun openUrl(url: String?) {
 internal actual val storageDir: String
     get() = AppDirsFactory.getInstance()
         .getUserDataDir("ua.vald_zx.game.rat.race.card", "1.0", "VALD_ZX")
+
+internal actual fun share(data: String?) {
+}

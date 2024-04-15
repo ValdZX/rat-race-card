@@ -20,6 +20,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,8 +69,14 @@ import ua.vald_zx.game.rat.race.card.logic.AppSideEffect
 import ua.vald_zx.game.rat.race.card.logic.AppState
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
+
 class MainScreen : Screen {
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+
+    @OptIn(
+        ExperimentalMaterialApi::class,
+        ExperimentalFoundationApi::class,
+        ExperimentalMaterial3Api::class
+    )
     @Composable
     override fun Content() {
         val state by store.observeState().collectAsState()

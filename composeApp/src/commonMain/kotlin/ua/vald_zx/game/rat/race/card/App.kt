@@ -47,3 +47,4 @@ internal fun App() = AppTheme {
 
 
 internal expect fun openUrl(url: String?)
+internal expect fun share(data: String?)

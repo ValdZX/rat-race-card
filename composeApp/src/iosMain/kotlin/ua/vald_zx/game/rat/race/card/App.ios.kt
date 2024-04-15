@@ -4,6 +4,7 @@ import io.github.xxfast.kstore.file.utils.CachesDirectory
 import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSURL
+import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 
 internal actual fun openUrl(url: String?) {
@@ -14,3 +15,15 @@ internal actual fun openUrl(url: String?) {
 @OptIn(ExperimentalKStoreApi::class)
 internal actual val storageDir: String
     get() = NSFileManager.defaultManager.CachesDirectory?.relativePath.orEmpty()
+
+internal actual fun share(data: String?) {
+    val activityItems = listOf(data)
+    val activityViewController = UIActivityViewController(activityItems, null)
+
+    val application = UIApplication.sharedApplication
+    application.keyWindow?.rootViewController?.presentViewController(
+        activityViewController,
+        animated = true,
+        completion = null
+    )
+}
