@@ -117,6 +117,10 @@ android {
         versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildOutputs.all {
+            val variantOutputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            variantOutputImpl.outputFileName = "RatRaceCard.apk"
+        }
     }
     sourceSets["main"].apply {
         manifest.srcFile("src/androidMain/AndroidManifest.xml")
