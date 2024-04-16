@@ -31,7 +31,7 @@ internal fun App() = AppTheme {
         val startScreen = if (state.professionCard.profession.isNotEmpty()) {
             MainScreen()
         } else {
-            FillProfessionCardScreen()
+            PersonCardScreen()
         }
         Navigator(startScreen)
     } else {

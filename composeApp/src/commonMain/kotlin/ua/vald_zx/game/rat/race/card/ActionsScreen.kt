@@ -102,7 +102,7 @@ class ActionsScreen() : Screen {
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                navigator?.replaceAll(FillProfessionCardScreen())
+                                navigator?.replaceAll(PersonCardScreen())
                                 resetDialog = false
                             }
                         ) { Text("Точно") }
