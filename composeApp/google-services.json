@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1033277102369",
+    "project_id": "valdzx-a482d",
+    "storage_bucket": "valdzx-a482d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1033277102369:android:754490608f3b3428bc4660",
+        "android_client_info": {
+          "package_name": "ua.vald_zx.game.rat.race.card.androidApp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkt79d7l-cT-g22CAQpeCLmZyj3RPY8Dg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1033277102369:android:87833e1eea7c9247bc4660",
+        "android_client_info": {
+          "package_name": "ua.vald_zx.game.rat.race.card.androidApp.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkt79d7l-cT-g22CAQpeCLmZyj3RPY8Dg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
