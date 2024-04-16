@@ -43,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -81,6 +82,7 @@ class MainScreen : Screen {
     override fun Content() {
         val state by store.observeState().collectAsState()
         val navigator = LocalNavigator.current
+        var isDark by LocalThemeIsDark.current
         BottomSheetNavigator {
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
             Box(
@@ -89,7 +91,6 @@ class MainScreen : Screen {
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .padding(16.dp),
             ) {
-                var isDark by LocalThemeIsDark.current
                 val icon = remember(isDark) {
                     if (isDark) Res.drawable.ic_light_mode
                     else Res.drawable.ic_dark_mode
@@ -116,11 +117,6 @@ class MainScreen : Screen {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(state.status(), style = MaterialTheme.typography.headlineMedium)
-                    PositiveField("Активний прибуток", state.activeProfit().toString())
-                    PositiveField("Пасивний прибуток", state.passiveProfit().toString())
-                    PositiveField("Загальний прибуток", state.totalProfit().toString())
-                    NegativeField("Витрати по кредиту", state.creditExpenses().toString())
-                    NegativeField("Загальні витрати", state.totalExpenses().toString())
                     CashFlowField("Cash Flow", state.cashFlow().toString())
                     BalanceField("Готівка", state.cash.toString())
                     PositiveField("Депозит", state.deposit.toString())
@@ -290,6 +286,31 @@ class MainScreen : Screen {
     @Composable
     private fun StatePage(state: AppState) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(state = rememberScrollState())) {
+            DetailsField(
+                "Активний прибуток",
+                state.activeProfit().toString(),
+                MaterialTheme.colorScheme.primary
+            )
+            DetailsField(
+                "Пасивний прибуток",
+                state.passiveProfit().toString(),
+                MaterialTheme.colorScheme.primary
+            )
+            DetailsField(
+                "Загальний прибуток",
+                state.totalProfit().toString(),
+                MaterialTheme.colorScheme.primary
+            )
+            DetailsField(
+                "Витрати по кредиту",
+                state.creditExpenses().toString(),
+                MaterialTheme.colorScheme.tertiary
+            )
+            DetailsField(
+                "Загальні витрати",
+                state.totalExpenses().toString(),
+                MaterialTheme.colorScheme.tertiary
+            )
             Text("Багатство", style = MaterialTheme.typography.titleSmall)
             DetailsField("Авто", "${state.cars}")
             DetailsField("Квартири", "${state.apartment}")
@@ -381,8 +402,12 @@ class MainScreen : Screen {
 }
 
 @Composable
-fun ColumnScope.DetailsField(name: String, value: String) {
-    SDetailsField(name, value, modifier = Modifier.fillMaxWidth())
+fun ColumnScope.DetailsField(
+    name: String,
+    value: String,
+    color: Color = Color.Unspecified,
+) {
+    SDetailsField(name, value, color, modifier = Modifier.fillMaxWidth())
     HorizontalDivider()
 }
 
@@ -390,6 +415,7 @@ fun ColumnScope.DetailsField(name: String, value: String) {
 fun SDetailsField(
     name: String,
     value: String,
+    nameColor: Color = Color.Unspecified,
     additionalValue: List<String> = emptyList(),
     modifier: Modifier
 ) {
@@ -401,7 +427,8 @@ fun SDetailsField(
     ) {
         Text(
             text = name,
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodySmall,
+            color = nameColor,
         )
         Column {
             Text(

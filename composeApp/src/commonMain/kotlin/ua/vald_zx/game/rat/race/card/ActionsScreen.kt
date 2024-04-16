@@ -27,10 +27,11 @@ import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.RainbowButton
 import ua.vald_zx.game.rat.race.card.logic.AppAction
+import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 class ActionsScreen() : Screen {
     @Composable
-    override fun Content() {
+    override fun Content() = AppTheme {
         val state by store.observeState().collectAsState()
         val navigator = LocalNavigator.current?.parent
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
