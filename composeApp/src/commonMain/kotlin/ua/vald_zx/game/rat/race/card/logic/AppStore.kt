@@ -11,10 +11,12 @@ import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.Config
+import ua.vald_zx.game.rat.race.card.beans.Fund
 import ua.vald_zx.game.rat.race.card.beans.ProfessionCard
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.kStore
+import ua.vald_zx.game.rat.race.card.remove
 import ua.vald_zx.game.rat.race.card.replace
 
 @Serializable
@@ -32,6 +34,7 @@ data class AppState(
     val yacht: Long = 0,
     val flight: Long = 0,
     val sharesList: List<Shares> = emptyList(),
+    val funds: List<Fund> = emptyList(),
     val config: Config = Config()
 ) : State {
 
@@ -74,9 +77,9 @@ data class AppState(
 
     fun status(): String {
         return when {
-            business.any { it.type == BusinessType.SMALL } && business.size > 1 -> "Підприємець"
-            business.any { it.type == BusinessType.MEDIUM } -> "Бізнесмен"
-            business.any { it.type == BusinessType.LARGE } -> "Мільйонер"
+            business.any { it.type == BusinessType.SMALL } -> "${professionCard.profession} - Підприємець"
+            business.any { it.type == BusinessType.MEDIUM } -> "${professionCard.profession} - Бізнесмен"
+            business.any { it.type == BusinessType.LARGE } -> "${professionCard.profession} - Мільйонер"
             else -> professionCard.profession
         }
     }
@@ -88,6 +91,14 @@ data class AppState(
     fun sharesCount(entry: SharesType): Long {
         return sharesList.filter { it.type == entry }.sumOf { it.count }
     }
+
+    fun capitalization(): Long {
+        return funds.sumOf { (it.rate / 100.0) * it.amount }.toLong()
+    }
+
+    fun capitalizationStart(): Long {
+        return funds.sumOf { (config.fundStartRate / 100.0) * it.amount }.toLong()
+    }
 }
 
 sealed class AppAction : Action {
@@ -96,6 +107,10 @@ sealed class AppAction : Action {
     data class EditFillProfessionCard(val professionCard: ProfessionCard) : AppAction()
     data object GetSalary : AppAction()
     data object GetSalaryApproved : AppAction()
+    data class AddFund(val fund: Fund) : AppAction()
+    data class FromFund(val fund: Fund, val amount: Long) : AppAction()
+    data object CapitalizeFunds : AppAction()
+    data object CapitalizeStarsFunds : AppAction()
     data class BuyBusiness(val business: Business) : AppAction()
     data class SellBusiness(val business: Business, val amount: Long) : AppAction()
     data class DismissalConfirmed(val business: Business) : AppAction()
@@ -320,6 +335,47 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
 
             is AppAction.UpdateConfig -> {
                 oldState.copy(config = action.config)
+            }
+
+            is AppAction.AddFund -> {
+                val currentFund = oldState.funds.find { it.rate == action.fund.rate }
+                val funds = if (currentFund != null) {
+                    oldState.funds.replace(
+                        currentFund,
+                        currentFund.copy(amount = currentFund.amount + action.fund.amount)
+                    )
+                } else {
+                    oldState.funds + action.fund
+                }
+                oldState.copy(funds = funds, cash = oldState.cash - action.fund.amount)
+            }
+
+            is AppAction.FromFund -> {
+                if ((action.fund.amount - action.amount) == 0L) {
+                    oldState.copy(
+                        funds = oldState.funds.remove(action.fund),
+                        cash = oldState.cash + action.amount
+                    )
+                } else {
+                    val newFund = action.fund.copy(amount = action.fund.amount - action.amount)
+                    val funds = oldState.funds.replace(action.fund, newFund)
+                    oldState.copy(
+                        funds = funds,
+                        cash = oldState.cash + action.amount
+                    )
+                }
+            }
+
+            AppAction.CapitalizeFunds -> {
+                val amount = oldState.funds.sumOf { it.amount } + oldState.capitalization()
+                val funds = listOf(Fund(rate = oldState.config.fundBaseRate, amount))
+                oldState.copy(funds = funds)
+            }
+
+            AppAction.CapitalizeStarsFunds -> {
+                val amount = oldState.funds.sumOf { it.amount } + oldState.capitalizationStart()
+                val funds = listOf(Fund(rate = oldState.config.fundBaseRate, amount))
+                oldState.copy(funds = funds)
             }
         }
         if (newState != oldState) {

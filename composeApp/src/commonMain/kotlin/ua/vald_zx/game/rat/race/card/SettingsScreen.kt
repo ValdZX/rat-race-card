@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,9 +33,10 @@ import org.jetbrains.compose.resources.vectorResource
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.back
 import ua.vald_zx.game.rat.race.card.beans.Config
+import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 
-class ConfigScreen : Screen {
+class SettingsScreen : Screen {
     @Composable
     override fun Content() {
         val state by store.observeState().collectAsState()
@@ -74,6 +77,31 @@ class ConfigScreen : Screen {
                     },
                     content = { Text("Імпорт картки") }
                 )
+                Button("Редагувати картку професії") {
+                    navigator?.push(EditPersonCardScreen())
+                }
+                var resetDialog by remember { mutableStateOf(false) }
+                Button("Нова гра") {
+                    resetDialog = true
+                }
+                if (resetDialog) {
+                    AlertDialog(
+                        title = { Text(text = "Точно?") },
+                        text = { Text(text = "Всі данні буде затерто.") },
+                        onDismissRequest = { resetDialog = false },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    navigator?.replaceAll(PersonCardScreen())
+                                    resetDialog = false
+                                }
+                            ) { Text("Точно") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { resetDialog = false }) { Text("Відміна") }
+                        }
+                    )
+                }
                 var depositRate by remember { mutableStateOf(state.config.depositRate.toString()) }
                 var loadRate by remember { mutableStateOf(state.config.loadRate.toString()) }
                 var babyCost by remember { mutableStateOf(state.config.babyCost.toString()) }
@@ -82,12 +110,26 @@ class ConfigScreen : Screen {
                 var cottageCost by remember { mutableStateOf(state.config.cottageCost.toString()) }
                 var yachtCost by remember { mutableStateOf(state.config.yachtCost.toString()) }
                 var flightCost by remember { mutableStateOf(state.config.flightCost.toString()) }
+                var fundBaseRate by remember { mutableStateOf(state.config.fundBaseRate.toString()) }
+                var fundStartRate by remember { mutableStateOf(state.config.fundStartRate.toString()) }
 
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Ставка депозиту %") },
                     value = depositRate,
                     onValueChange = { depositRate = it.getDigits() }
+                )
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Базова ставка фонду") },
+                    value = fundBaseRate,
+                    onValueChange = { fundBaseRate = it.getDigits() }
+                )
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Виграшна ставка фонду") },
+                    value = fundStartRate,
+                    onValueChange = { fundStartRate = it.getDigits() }
                 )
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
@@ -148,6 +190,8 @@ class ConfigScreen : Screen {
                                     cottageCost = cottageCost.toLong(),
                                     yachtCost = yachtCost.toLong(),
                                     flightCost = flightCost.toLong(),
+                                    fundBaseRate = fundBaseRate.toLong(),
+                                    fundStartRate = fundStartRate.toLong(),
                                 )
                             )
                         )

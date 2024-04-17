@@ -46,6 +46,12 @@ data class Shares(
         get() = count * buyPrice
 }
 
+@Serializable
+data class Fund(
+    val rate: Long,
+    val amount: Long,
+)
+
 
 @Serializable
 data class Config(
@@ -57,4 +63,6 @@ data class Config(
     val cottageCost: Long = 1000,
     val yachtCost: Long = 1500,
     val flightCost: Long = 5000,
+    val fundBaseRate: Long = 20,
+    val fundStartRate: Long = 30,
 )

@@ -13,9 +13,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,7 +29,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.vectorResource
+import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.back
 import ua.vald_zx.game.rat.race.card.beans.ProfessionCard
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 
@@ -51,28 +56,44 @@ class PersonCardScreen : Screen {
     }
 }
 
-class FillProfessionCardBottomSheetScreen() : Screen {
+class EditPersonCardScreen() : Screen {
     @Composable
     override fun Content() {
-        val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        BottomSheetContainer {
-            ProfessionCardForm {
+        val state by store.observeState().collectAsState()
+        val navigator = LocalNavigator.current
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            IconButton(
+                modifier = Modifier.align(Alignment.Start),
+                onClick = { navigator?.pop() },
+                content = {
+                    Icon(vectorResource(Res.drawable.back), contentDescription = null)
+                }
+            )
+            ProfessionCardForm(state.professionCard) {
                 store.dispatch(AppAction.EditFillProfessionCard(it))
-                bottomSheetNavigator.hide()
+                navigator?.popUntilRoot()
             }
         }
     }
 }
 
 @Composable
-fun ProfessionCardForm(filled: (ProfessionCard) -> Unit) {
-    var profession by remember { mutableStateOf("") }
-    var salary by remember { mutableStateOf("") }
-    var rent by remember { mutableStateOf("") }
-    var food by remember { mutableStateOf("") }
-    var cloth by remember { mutableStateOf("") }
-    var transport by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
+fun ProfessionCardForm(card: ProfessionCard? = null, filled: (ProfessionCard) -> Unit) {
+    var profession by remember { mutableStateOf(card?.profession.orEmpty()) }
+    var salary by remember { mutableStateOf(card?.salary?.toString().orEmpty()) }
+    var rent by remember { mutableStateOf(card?.rent?.toString().orEmpty()) }
+    var food by remember { mutableStateOf(card?.food?.toString().orEmpty()) }
+    var cloth by remember { mutableStateOf(card?.cloth?.toString().orEmpty()) }
+    var transport by remember { mutableStateOf(card?.transport?.toString().orEmpty()) }
+    var phone by remember { mutableStateOf(card?.phone?.toString().orEmpty()) }
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
         label = { Text("Професія") },

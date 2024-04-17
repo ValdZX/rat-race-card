@@ -61,6 +61,7 @@ import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.ic_dark_mode
 import rat_race_card.composeapp.generated.resources.ic_light_mode
 import rat_race_card.composeapp.generated.resources.settings
+import rat_race_card.composeapp.generated.resources.stars
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.Shares
@@ -107,7 +108,7 @@ class MainScreen : Screen {
                 )
                 IconButton(
                     modifier = Modifier.align(Alignment.BottomEnd),
-                    onClick = { navigator?.push(ConfigScreen()) },
+                    onClick = { navigator?.push(SettingsScreen()) },
                     content = {
                         Icon(vectorResource(Res.drawable.settings), contentDescription = null)
                     }
@@ -116,13 +117,19 @@ class MainScreen : Screen {
                     modifier = Modifier.padding(top = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(state.status(), style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        text = state.status(),
+                        maxLines = 2,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(horizontal = 24.dp),
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     CashFlowField("Cash Flow", state.cashFlow().toString())
                     BalanceField("Готівка", state.cash.toString())
                     PositiveField("Депозит", state.deposit.toString())
                     NegativeField("Кредит", state.loan.toString())
                     val coroutineScope = rememberCoroutineScope()
-                    val titles = listOf("Стан", "Бізнес", "Акції")
+                    val titles = listOf("Стан", "Бізнес", "Акції", "Фонди")
                     val pagerState = rememberPagerState(pageCount = { titles.size })
                     PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
                         titles.forEachIndexed { index, title ->
@@ -149,17 +156,14 @@ class MainScreen : Screen {
                             0 -> StatePage(state)
                             1 -> BusinessListPage(state)
                             2 -> SharesPage(state)
+                            3 -> FundsPage(state)
                         }
                     }
                     ElevatedButton(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             .widthIn(min = 200.dp),
-                        onClick = {
-                            bottomSheetNavigator.show(ActionsScreen())
-                        },
-                        content = {
-                            Text("Дія")
-                        }
+                        onClick = { bottomSheetNavigator.show(ActionsScreen()) },
+                        content = { Text("Дія") }
                     )
                 }
             }
@@ -396,6 +400,90 @@ class MainScreen : Screen {
                     }
                     HorizontalDivider()
                 }
+            }
+        }
+    }
+
+    @Composable
+    private fun FundsPage(state: AppState) {
+        val bottomSheetNavigator = LocalBottomSheetNavigator.current
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            LazyColumn(modifier = Modifier.weight(1f)) {
+                items(state.funds) { fund ->
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            SDetailsField(
+                                name = "Фонд на",
+                                value = "${fund.rate}%",
+                                modifier = Modifier.weight(1f)
+                            )
+                            SDetailsField(
+                                name = "Сума",
+                                value = fund.amount.toString(),
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(onClick = { bottomSheetNavigator.show(SellFundScreen(fund)) }) {
+                                Text("Зняти")
+                            }
+                        }
+                        HorizontalDivider()
+                    }
+                }
+            }
+            var capitalizationConfirm by remember { mutableStateOf(false) }
+            var capitalizationStarConfirm by remember { mutableStateOf(false) }
+            Row {
+                ElevatedButton(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        .widthIn(min = 200.dp),
+                    onClick = { capitalizationConfirm = true },
+                    content = { Text("Капіталізувати") }
+                )
+                ElevatedButton(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    onClick = { capitalizationStarConfirm = true },
+                    content = {
+                        Icon(vectorResource(Res.drawable.stars), contentDescription = null)
+                    }
+                )
+            }
+            if (capitalizationConfirm) {
+                AlertDialog(
+                    title = { Text(text = "Капіталізація") },
+                    text = { Text(text = "Сума капіталізації: ${state.capitalization()}") },
+                    onDismissRequest = { capitalizationConfirm = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                store.dispatch(AppAction.CapitalizeFunds)
+                                capitalizationConfirm = false
+                            }
+                        ) { Text("Капіталізувати") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { capitalizationConfirm = false }) { Text("Відміна") }
+                    }
+                )
+            }
+            if (capitalizationStarConfirm) {
+                AlertDialog(
+                    title = { Text(text = "Капіталізація") },
+                    text = { Text(text = "Сума капіталізації(${state.config.fundStartRate}%): ${state.capitalizationStart()}") },
+                    onDismissRequest = { capitalizationStarConfirm = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                store.dispatch(AppAction.CapitalizeStarsFunds)
+                                capitalizationStarConfirm = false
+                            }
+                        ) { Text("Капіталізувати") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            capitalizationStarConfirm = false
+                        }) { Text("Відміна") }
+                    }
+                )
             }
         }
     }

@@ -25,6 +25,17 @@ fun String.splitDecimal(step: Int = 3, divider: String = " "): String {
     return reverseResult.reverse().toString().trim { it <= ' ' }
 }
 
+fun <T> List<T>.remove(item: T): List<T> {
+    val index = indexOf(item)
+    return if (index >= 0) {
+        val newList = toMutableList()
+        newList.remove(item)
+        newList
+    } else {
+        this
+    }
+}
+
 fun <T> List<T>.replace(item: T, newItem: T): List<T> {
     val index = indexOf(item)
     return if (index >= 0) {
