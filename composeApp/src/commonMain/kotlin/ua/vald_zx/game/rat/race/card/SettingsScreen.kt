@@ -1,7 +1,9 @@
 package ua.vald_zx.game.rat.race.card
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +18,7 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -101,6 +104,20 @@ class SettingsScreen : Screen {
                             TextButton(onClick = { resetDialog = false }) { Text("Відміна") }
                         }
                     )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Механіка фондів")
+                    Switch(state.config.hasFunds, onCheckedChange = {
+                        store.dispatch(
+                            AppAction.UpdateConfig(
+                                state.config.copy(hasFunds = it)
+                            )
+                        )
+                    })
                 }
                 var depositRate by remember { mutableStateOf(state.config.depositRate.toString()) }
                 var loadRate by remember { mutableStateOf(state.config.loadRate.toString()) }

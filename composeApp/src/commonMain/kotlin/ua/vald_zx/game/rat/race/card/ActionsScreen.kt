@@ -82,8 +82,10 @@ class ActionsScreen() : Screen {
             Button("Сімейний стан", AppTheme.colors.family) {
                 bottomSheetNavigator.replace(ChangeFamilyScreen())
             }
-            Button("Інвестувати", AppTheme.colors.funds) {
-                bottomSheetNavigator.replace(BuyFundScreen())
+            if (state.config.hasFunds) {
+                Button("Інвестувати", AppTheme.colors.funds) {
+                    bottomSheetNavigator.replace(BuyFundScreen())
+                }
             }
         }
     }

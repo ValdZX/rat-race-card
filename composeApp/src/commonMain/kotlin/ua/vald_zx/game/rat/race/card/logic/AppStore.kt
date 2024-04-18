@@ -99,6 +99,10 @@ data class AppState(
     fun capitalizationStart(): Long {
         return funds.sumOf { (config.fundStartRate / 100.0) * it.amount }.toLong()
     }
+
+    fun fundAmount(): Long {
+        return funds.sumOf { it.amount }
+    }
 }
 
 sealed class AppAction : Action {

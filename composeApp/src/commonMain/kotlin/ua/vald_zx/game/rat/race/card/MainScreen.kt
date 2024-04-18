@@ -69,6 +69,7 @@ import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.logic.AppSideEffect
 import ua.vald_zx.game.rat.race.card.logic.AppState
+import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 
@@ -128,8 +129,14 @@ class MainScreen : Screen {
                     BalanceField("Готівка", state.cash.toString())
                     PositiveField("Депозит", state.deposit.toString())
                     NegativeField("Кредит", state.loan.toString())
+                    if (state.config.hasFunds) {
+                        FundsField("Фонди", state.fundAmount().toString())
+                    }
                     val coroutineScope = rememberCoroutineScope()
-                    val titles = listOf("Стан", "Бізнес", "Акції", "Фонди")
+                    val titles = mutableListOf("Стан", "Бізнес", "Акції")
+                    if (state.config.hasFunds) {
+                        titles += "Фонди"
+                    }
                     val pagerState = rememberPagerState(pageCount = { titles.size })
                     PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
                         titles.forEachIndexed { index, title ->
@@ -407,7 +414,10 @@ class MainScreen : Screen {
     @Composable
     private fun FundsPage(state: AppState) {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(state.funds) { fund ->
                     Column(modifier = Modifier.padding(8.dp)) {
@@ -542,6 +552,20 @@ fun ColumnScope.PositiveField(name: String, value: String, fontSize: TextUnit = 
             .padding(8.dp)
     ) {
         Text(name, color = MaterialTheme.colorScheme.primary)
+        Text(value.splitDecimal(), fontSize = fontSize)
+    }
+    HorizontalDivider()
+}
+
+@Composable
+fun ColumnScope.FundsField(name: String, value: String, fontSize: TextUnit = 16.sp) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
+        Text(name, color = AppTheme.colors.funds)
         Text(value.splitDecimal(), fontSize = fontSize)
     }
     HorizontalDivider()
