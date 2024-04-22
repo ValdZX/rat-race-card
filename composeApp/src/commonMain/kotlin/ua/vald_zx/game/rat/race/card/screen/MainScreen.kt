@@ -83,7 +83,7 @@ class MainScreen : Screen {
             ) {
                 IconButton(
                     modifier = Modifier.align(Alignment.TopStart),
-                    onClick = { bottomSheetNavigator.show(AllActionsScreen())  },
+                    onClick = { bottomSheetNavigator.show(AllActionsScreen()) },
                     content = {
                         Icon(Images.Menu, contentDescription = null)
                     }
@@ -159,17 +159,14 @@ class MainScreen : Screen {
                     }
                 }
             }
-            var expensiveShares: Shares? by remember { mutableStateOf(null) }
+            var depositWithdrawDialog by remember { mutableStateOf(0L) }
+            var loanAddedDialog by remember { mutableStateOf(0L) }
             var salaryApproveDialog by remember { mutableStateOf(false) }
             var confirmDismissalDialog: Business? by remember { mutableStateOf(null) }
             var confirmSellingAllBusinessDialog: Business? by remember { mutableStateOf(null) }
             LaunchedEffect(Unit) {
                 store.observeSideEffect().onEach { effect ->
                     when (effect) {
-                        is AppSideEffect.SharesToExpensive -> {
-                            expensiveShares = effect.shares
-                        }
-
                         is AppSideEffect.ShowSalaryApprove -> {
                             salaryApproveDialog = true
                         }
@@ -181,26 +178,16 @@ class MainScreen : Screen {
                         is AppSideEffect.ConfirmSellingAllBusiness -> {
                             confirmSellingAllBusinessDialog = effect.business
                         }
+
+                        is AppSideEffect.DepositWithdraw -> {
+                            depositWithdrawDialog = effect.balance
+                        }
+
+                        is AppSideEffect.LoanAdded -> {
+                            loanAddedDialog = effect.balance
+                        }
                     }
                 }.launchIn(this)
-            }
-            if (expensiveShares != null) {
-                AlertDialog(
-                    title = { Text(text = "Недостатньо готівки") },
-                    text = { Text(text = "Не вистачило: ${state.cash - (expensiveShares?.price ?: 0)}") },
-                    onDismissRequest = { expensiveShares = null },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                bottomSheetNavigator.show(BuySharesScreen(expensiveShares!!))
-                                expensiveShares = null
-                            }
-                        ) { Text("Редагувати") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { expensiveShares = null }) { Text("Гаразд") }
-                    }
-                )
             }
             if (salaryApproveDialog) {
                 AlertDialog(
@@ -274,6 +261,42 @@ class MainScreen : Screen {
                             confirmSellingAllBusinessDialog = null
                         }) { Text("Відміна") }
                     }
+                )
+            }
+            if (depositWithdrawDialog != 0L) {
+                AlertDialog(
+                    title = { Text(text = "Увага") },
+                    text = {
+                        Text(
+                            text = "Не вистачило готівки, тому було знато з депозита: $depositWithdrawDialog"
+                        )
+                    },
+                    onDismissRequest = { depositWithdrawDialog = 0 },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                depositWithdrawDialog = 0
+                            }
+                        ) { Text("Гаразд") }
+                    },
+                )
+            }
+            if (loanAddedDialog != 0L) {
+                AlertDialog(
+                    title = { Text(text = "Увага") },
+                    text = {
+                        Text(
+                            text = "Не вистачило готівки, тому взято в кредит на суму: $loanAddedDialog"
+                        )
+                    },
+                    onDismissRequest = { loanAddedDialog = 0 },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                loanAddedDialog = 0
+                            }
+                        ) { Text("Ех...") }
+                    },
                 )
             }
         }

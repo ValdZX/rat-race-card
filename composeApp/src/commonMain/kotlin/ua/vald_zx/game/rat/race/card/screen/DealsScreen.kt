@@ -15,7 +15,7 @@ class ToDepositScreen : Screen {
         InputScreen(
             inputLabel = "Сума вкладу",
             buttonText = "Вкласти",
-            validation = { amount -> amount.isNotEmpty() && state.cash >= amount.toLong() },
+            validation = { amount -> amount.isNotEmpty() },
             onClick = { amount -> store.dispatch(AppAction.ToDeposit(amount = amount.toLong())) },
             value = state.cash.toString()
         )
@@ -43,9 +43,9 @@ class RepayCreditScreen : Screen {
         InputScreen(
             inputLabel = "Сума погашення",
             buttonText = "Погасити",
-            validation = { amount -> amount.isNotEmpty() },
+            validation = { amount -> amount.isNotEmpty() && state.balance() >= amount.toInt() },
             onClick = { amount -> store.dispatch(AppAction.RepayLoan(amount = amount.toLong())) },
-            value = min(state.loan, state.cash).toString()
+            value = min(state.loan, state.balance()).toString()
         )
     }
 }

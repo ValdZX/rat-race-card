@@ -18,7 +18,6 @@ import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.kStore
 import ua.vald_zx.game.rat.race.card.remove
 import ua.vald_zx.game.rat.race.card.replace
-import kotlin.random.Random
 
 @Serializable
 data class AppState(
@@ -38,6 +37,10 @@ data class AppState(
     val funds: List<Fund> = emptyList(),
     val config: Config = Config()
 ) : State {
+
+    fun balance(): Long {
+        return cash + deposit
+    }
 
     fun activeProfit(): Long {
         return business.sumOf { it.profit + it.extentions.sum() }
@@ -141,9 +144,10 @@ sealed class AppAction : Action {
 }
 
 sealed class AppSideEffect : Effect {
-    data class SharesToExpensive(val shares: Shares) : AppSideEffect()
     data class ConfirmDismissal(val business: Business) : AppSideEffect()
     data class ConfirmSellingAllBusiness(val business: Business) : AppSideEffect()
+    data class DepositWithdraw(val balance: Long) : AppSideEffect()
+    data class LoanAdded(val balance: Long) : AppSideEffect()
     data object ShowSalaryApprove : AppSideEffect()
 }
 
@@ -184,7 +188,7 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
             }
 
             is AppAction.SideExpenses -> {
-                oldState.copy(cash = oldState.cash - action.amount)
+                oldState.minusCash(action.amount)
             }
 
             AppAction.HideAlarm -> {
@@ -207,9 +211,8 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                     launch { sideEffect.emit(AppSideEffect.ConfirmSellingAllBusiness(action.business)) }
                     oldState
                 } else oldState.copy(
-                    cash = oldState.cash - action.business.price,
                     business = currentBusiness + action.business
-                )
+                ).minusCash(action.business.price)
             }
 
             is AppAction.SellBusiness -> {
@@ -227,7 +230,7 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
             is AppAction.DismissalConfirmed -> {
                 val business =
                     oldState.business.filter { it.type != BusinessType.WORK } + action.business
-                oldState.copy(cash = oldState.cash - action.business.price, business = business)
+                oldState.copy(business = business).minusCash(action.business.price)
             }
 
             is AppAction.SellingAllBusinessConfirmed -> {
@@ -237,14 +240,8 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
             }
 
             is AppAction.BuyShares -> {
-                if (oldState.cash < action.shares.price) {
-                    launch { sideEffect.emit(AppSideEffect.SharesToExpensive(action.shares)) }
-                    oldState
-                } else {
-                    val cash = oldState.cash - action.shares.price
-                    val sharesList = oldState.sharesList + action.shares
-                    oldState.copy(cash = cash, sharesList = sharesList)
-                }
+                val sharesList = oldState.sharesList + action.shares
+                oldState.copy(sharesList = sharesList).minusCash(action.shares.price)
             }
 
             AppAction.GetSalary -> {
@@ -286,9 +283,8 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
 
             is AppAction.RepayLoan -> {
                 oldState.copy(
-                    cash = oldState.cash - action.amount,
                     loan = oldState.loan - action.amount
-                )
+                ).minusCash(action.amount)
             }
 
             is AppAction.GetLoan -> {
@@ -307,9 +303,8 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
 
             is AppAction.ToDeposit -> {
                 oldState.copy(
-                    cash = oldState.cash - action.amount,
                     deposit = oldState.deposit + action.amount
-                )
+                ).minusCash(action.amount)
             }
 
             is AppAction.UpdateFamily -> {
@@ -318,37 +313,32 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
 
             is AppAction.BuyApartment -> {
                 oldState.copy(
-                    cash = oldState.cash - action.price,
                     apartment = oldState.apartment + 1
-                )
+                ).minusCash(action.price)
             }
 
             is AppAction.BuyCar -> {
                 oldState.copy(
-                    cash = oldState.cash - action.price,
                     cars = oldState.cars + 1
-                )
+                ).minusCash(action.price)
             }
 
             is AppAction.BuyCottage -> {
                 oldState.copy(
-                    cash = oldState.cash - action.price,
                     cottage = oldState.cottage + 1
-                )
+                ).minusCash(action.price)
             }
 
             is AppAction.BuyFlight -> {
                 oldState.copy(
-                    cash = oldState.cash - action.price,
                     flight = oldState.flight + 1
-                )
+                ).minusCash(action.price)
             }
 
             is AppAction.BuyYacht -> {
                 oldState.copy(
-                    cash = oldState.cash - action.price,
                     yacht = oldState.yacht + 1
-                )
+                ).minusCash(action.price)
             }
 
             is AppAction.UpdateConfig -> {
@@ -365,7 +355,7 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 } else {
                     oldState.funds + action.fund
                 }
-                oldState.copy(funds = funds, cash = oldState.cash - action.fund.amount)
+                oldState.copy(funds = funds).minusCash(action.fund.amount)
             }
 
             is AppAction.FromFund -> {
@@ -399,6 +389,18 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
         if (newState != oldState) {
             state.value = newState
             launch { kStore.set(newState) }
+        }
+    }
+
+    private fun AppState.minusCash(value: Long): AppState {
+        if (cash > value) {
+            return this.copy(cash = cash - value)
+        } else if ((cash + deposit) > value) {
+            launch { sideEffect.emit(AppSideEffect.DepositWithdraw(value - cash)) }
+            return this.copy(cash = 0, deposit = (deposit + cash) - value)
+        } else {
+            launch { sideEffect.emit(AppSideEffect.LoanAdded(value - (cash + deposit))) }
+            return this.copy(cash = 0, deposit = 0, loan = loan + (value - (deposit + cash)))
         }
     }
 }

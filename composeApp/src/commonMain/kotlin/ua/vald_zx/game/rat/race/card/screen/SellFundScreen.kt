@@ -14,7 +14,7 @@ class SellFundScreen(val fund: Fund) : Screen {
         val state by store.observeState().collectAsState()
         InputScreen(
             inputLabel = "Сума зняття",
-            buttonText = "Зняни",
+            buttonText = "Зняти",
             validation = { amount -> amount.isNotEmpty() && fund.amount >= amount.toLong() },
             onClick = { amount -> store.dispatch(AppAction.FromFund(fund, amount.toLong())) },
             value = fund.amount.toString()

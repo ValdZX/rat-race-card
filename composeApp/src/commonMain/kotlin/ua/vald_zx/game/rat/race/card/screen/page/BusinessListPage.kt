@@ -44,7 +44,6 @@ fun BusinessListPage(state: AppState) {
                 Column(
                     modifier = Modifier
                         .clickable { store.dispatch(AppAction.HideAlarm) }
-                        .padding(top = 8.dp)
                         .background(
                             if (business.alarmed) {
                                 MaterialTheme.colorScheme.errorContainer
@@ -52,6 +51,7 @@ fun BusinessListPage(state: AppState) {
                                 MaterialTheme.colorScheme.background
                             }
                         )
+                        .padding(top = 8.dp)
                 ) {
                     val title = when (business.type) {
                         BusinessType.WORK -> ""

@@ -41,7 +41,7 @@ class BuyCarScreen : Screen {
         InputScreen(
             inputLabel = "Ціна авто",
             buttonText = "Купити",
-            validation = { price -> price.isNotEmpty() && state.cash >= price.toLong() },
+            validation = { price -> price.isNotEmpty() },
             onClick = { price -> store.dispatch(AppAction.BuyCar(price = price.toLong())) },
             value = state.cash.toString()
         )
@@ -55,7 +55,7 @@ class BuyApartmentScreen : Screen {
         InputScreen(
             inputLabel = "Ціна квартири",
             buttonText = "Купити",
-            validation = { price -> price.isNotEmpty() && state.cash >= price.toLong() },
+            validation = { price -> price.isNotEmpty() },
             onClick = { price -> store.dispatch(AppAction.BuyApartment(price = price.toLong())) },
             value = state.cash.toString()
         )
@@ -69,7 +69,7 @@ class BuyCottageScreen : Screen {
         InputScreen(
             inputLabel = "Ціна будинку",
             buttonText = "Купити",
-            validation = { price -> price.isNotEmpty() && state.cash >= price.toLong() },
+            validation = { price -> price.isNotEmpty() },
             onClick = { price -> store.dispatch(AppAction.BuyCottage(price = price.toLong())) },
             value = state.cash.toString()
         )
@@ -83,7 +83,7 @@ class BuyYachtScreen : Screen {
         InputScreen(
             inputLabel = "Ціна яхти",
             buttonText = "Купити",
-            validation = { price -> price.isNotEmpty() && state.cash >= price.toLong() },
+            validation = { price -> price.isNotEmpty() },
             onClick = { price -> store.dispatch(AppAction.BuyYacht(price = price.toLong())) },
             value = state.cash.toString()
         )
@@ -97,7 +97,7 @@ class BuyFlightScreen : Screen {
         InputScreen(
             inputLabel = "Ціна літака",
             buttonText = "Купити",
-            validation = { price -> price.isNotEmpty() && state.cash >= price.toLong() },
+            validation = { price -> price.isNotEmpty() },
             onClick = { price -> store.dispatch(AppAction.BuyFlight(price = price.toLong())) },
             value = state.cash.toString()
         )
