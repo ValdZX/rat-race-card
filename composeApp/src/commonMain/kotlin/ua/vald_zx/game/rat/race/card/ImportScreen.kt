@@ -19,7 +19,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,16 +30,14 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.ktor.util.decodeBase64String
 import kotlinx.serialization.json.Json
-import org.jetbrains.compose.resources.vectorResource
-import rat_race_card.composeapp.generated.resources.Res
-import rat_race_card.composeapp.generated.resources.back
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.logic.AppState
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.Back
 
 class ImportScreen : Screen {
     @Composable
     override fun Content() {
-        val state by store.observeState().collectAsState()
         val navigator = LocalNavigator.current
         var invalidData by remember { mutableStateOf(false) }
         Box(
@@ -53,7 +50,7 @@ class ImportScreen : Screen {
                 modifier = Modifier.align(Alignment.TopStart),
                 onClick = { navigator?.pop() },
                 content = {
-                    Icon(vectorResource(Res.drawable.back), contentDescription = null)
+                    Icon(Images.Back, contentDescription = null)
                 }
             )
             Column(

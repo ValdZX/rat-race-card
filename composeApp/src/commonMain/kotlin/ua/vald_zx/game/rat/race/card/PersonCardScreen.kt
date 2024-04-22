@@ -29,11 +29,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import org.jetbrains.compose.resources.vectorResource
-import rat_race_card.composeapp.generated.resources.Res
-import rat_race_card.composeapp.generated.resources.back
 import ua.vald_zx.game.rat.race.card.beans.ProfessionCard
 import ua.vald_zx.game.rat.race.card.logic.AppAction
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.Back
 
 class PersonCardScreen : Screen {
     @Composable
@@ -74,7 +73,7 @@ class EditPersonCardScreen() : Screen {
                 modifier = Modifier.align(Alignment.Start),
                 onClick = { navigator?.pop() },
                 content = {
-                    Icon(vectorResource(Res.drawable.back), contentDescription = null)
+                    Icon(Images.Back, contentDescription = null)
                 }
             )
             ProfessionCardForm(state.professionCard) {

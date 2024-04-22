@@ -56,12 +56,6 @@ import com.russhwolf.settings.set
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.vectorResource
-import rat_race_card.composeapp.generated.resources.Res
-import rat_race_card.composeapp.generated.resources.ic_dark_mode
-import rat_race_card.composeapp.generated.resources.ic_light_mode
-import rat_race_card.composeapp.generated.resources.settings
-import rat_race_card.composeapp.generated.resources.stars
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.Shares
@@ -69,6 +63,11 @@ import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.logic.AppSideEffect
 import ua.vald_zx.game.rat.race.card.logic.AppState
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.IcDarkMode
+import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.IcLightMode
+import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.Settings
+import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.Stars
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
@@ -94,8 +93,8 @@ class MainScreen : Screen {
                     .padding(16.dp),
             ) {
                 val icon = remember(isDark) {
-                    if (isDark) Res.drawable.ic_light_mode
-                    else Res.drawable.ic_dark_mode
+                    if (isDark) Images.IcLightMode
+                    else Images.IcDarkMode
                 }
                 IconButton(
                     modifier = Modifier.align(Alignment.TopEnd),
@@ -104,14 +103,14 @@ class MainScreen : Screen {
                         settings["theme"] = isDark
                     },
                     content = {
-                        Icon(vectorResource(icon), contentDescription = null)
+                        Icon(icon, contentDescription = null)
                     }
                 )
                 IconButton(
                     modifier = Modifier.align(Alignment.BottomEnd),
                     onClick = { navigator?.push(SettingsScreen()) },
                     content = {
-                        Icon(vectorResource(Res.drawable.settings), contentDescription = null)
+                        Icon(Images.Settings, contentDescription = null)
                     }
                 )
                 Column(
@@ -453,7 +452,7 @@ class MainScreen : Screen {
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     onClick = { capitalizationStarConfirm = true },
                     content = {
-                        Icon(vectorResource(Res.drawable.stars), contentDescription = null)
+                        Icon(Images.Stars, contentDescription = null)
                     }
                 )
             }

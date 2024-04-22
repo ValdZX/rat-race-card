@@ -23,7 +23,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -34,13 +33,10 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import io.ktor.util.encodeBase64
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.jetbrains.compose.resources.vectorResource
-import rat_race_card.composeapp.generated.resources.Res
-import rat_race_card.composeapp.generated.resources.back
-import rat_race_card.composeapp.generated.resources.copy
-import rat_race_card.composeapp.generated.resources.share
-import ua.vald_zx.game.rat.race.card.beans.Config
-import ua.vald_zx.game.rat.race.card.logic.AppAction
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.Back
+import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.Copy
+import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.Share
 
 class ExportScreen : Screen {
     @Composable
@@ -57,7 +53,7 @@ class ExportScreen : Screen {
                 modifier = Modifier.align(Alignment.TopStart),
                 onClick = { navigator?.pop() },
                 content = {
-                    Icon(vectorResource(Res.drawable.back), contentDescription = null)
+                    Icon(Images.Back, contentDescription = null)
                 }
             )
             Column(
@@ -83,7 +79,7 @@ class ExportScreen : Screen {
                     enabled = base64Card.isNotEmpty(),
                     content = {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Icon(vectorResource(Res.drawable.share), contentDescription = null)
+                            Icon(Images.Share, contentDescription = null)
                             Text("Віправити")
                         }
                     },
@@ -98,7 +94,7 @@ class ExportScreen : Screen {
                     enabled = base64Card.isNotEmpty(),
                     content = {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Icon(vectorResource(Res.drawable.copy), contentDescription = null)
+                            Icon(Images.Copy, contentDescription = null)
                             Text("Копіювати")
                         }
                     },

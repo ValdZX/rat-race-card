@@ -71,7 +71,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kstore)
             implementation(libs.kstore.file)
-            implementation(libs.composeImageLoader)
+            implementation(libs.ktor.core)
             implementation(libs.multiplatform.settings.no.arg)
         }
 
@@ -86,14 +86,12 @@ kotlin {
             implementation(compose.uiTooling)
             implementation(libs.androidx.activityCompose)
             implementation(libs.kotlinx.coroutines.android)
-            implementation(libs.ktor.core)
             implementation(libs.ktor.client.okhttp)
         }
 
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
-            implementation(libs.ktor.core)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.appdirs)
         }

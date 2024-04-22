@@ -1,12 +1,10 @@
 package ua.vald_zx.game.rat.race.card.theme
 
-import androidx.compose.material.Colors
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import io.github.aakira.napier.Napier
 
