@@ -18,6 +18,7 @@ import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.kStore
 import ua.vald_zx.game.rat.race.card.remove
 import ua.vald_zx.game.rat.race.card.replace
+import kotlin.random.Random
 
 @Serializable
 data class AppState(
@@ -115,6 +116,8 @@ sealed class AppAction : Action {
     data class FromFund(val fund: Fund, val amount: Long) : AppAction()
     data object CapitalizeFunds : AppAction()
     data object CapitalizeStarsFunds : AppAction()
+    data object RandomBusiness : AppAction()
+    data object HideAlarm : AppAction()
     data class BuyBusiness(val business: Business) : AppAction()
     data class SellBusiness(val business: Business, val amount: Long) : AppAction()
     data class DismissalConfirmed(val business: Business) : AppAction()
@@ -182,6 +185,17 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
 
             is AppAction.SideExpenses -> {
                 oldState.copy(cash = oldState.cash - action.amount)
+            }
+
+            AppAction.HideAlarm -> {
+                oldState.copy(business = oldState.business.map { it.copy(alarmed = false) })
+            }
+
+            AppAction.RandomBusiness -> {
+                val random = (0..<oldState.business.size).random()
+                val business = oldState.business[random]
+                val businessList = oldState.business.map { it.copy(alarmed = business == it) }
+                oldState.copy(business = businessList)
             }
 
             is AppAction.BuyBusiness -> {

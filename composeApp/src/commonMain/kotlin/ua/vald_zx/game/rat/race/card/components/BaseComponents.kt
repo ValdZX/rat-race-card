@@ -5,12 +5,20 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,18 +33,22 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 @Composable
 fun Button(
     text: String,
     containerColor: Color = ButtonDefaults.elevatedButtonColors().containerColor,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) = ElevatedButton(
-    modifier = Modifier
+    modifier = modifier
         .padding(horizontal = 8.dp, vertical = 4.dp)
-        .widthIn(min = 200.dp),
+        .widthIn(min = 240.dp),
     onClick = onClick,
     content = {
         Text(text)
@@ -65,7 +77,7 @@ fun RainbowButton(
             Box(
                 modifier = Modifier
                     .padding(horizontal = 8.dp, vertical = 4.dp)
-                    .widthIn(min = 200.dp)
+                    .widthIn(min = 240.dp)
                     .clip(CircleShape)
                     .drawWithCache {
                         val brush = Brush.linearGradient(
@@ -94,4 +106,140 @@ fun RainbowButton(
         },
         colors = ButtonDefaults.buttonColors().copy(containerColor = Color.Transparent)
     )
+}
+
+
+@Composable
+fun ColumnScope.DetailsField(
+    name: String,
+    value: String,
+    color: Color = Color.Unspecified,
+) {
+    SDetailsField(name, value, color, modifier = Modifier.fillMaxWidth())
+    HorizontalDivider()
+}
+
+@Composable
+fun SDetailsField(
+    name: String,
+    value: String,
+    nameColor: Color = Color.Unspecified,
+    additionalValue: List<String> = emptyList(),
+    modifier: Modifier
+) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .padding(8.dp)
+    ) {
+        Text(
+            text = name,
+            style = MaterialTheme.typography.bodySmall,
+            color = nameColor,
+        )
+        Column {
+            Text(
+                text = value.splitDecimal(),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            additionalValue.forEach { item ->
+                Text(
+                    text = "+ ${item.splitDecimal()}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ColumnScope.PositiveField(
+    name: String,
+    value: String,
+    fontSize: TextUnit = 16.sp,
+    onClick: () -> Unit = {}
+) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(8.dp)
+    ) {
+        Text(name, color = MaterialTheme.colorScheme.primary)
+        Text(value.splitDecimal(), fontSize = fontSize)
+    }
+    HorizontalDivider()
+}
+
+@Composable
+fun ColumnScope.FundsField(
+    name: String,
+    value: String,
+    fontSize: TextUnit = 16.sp,
+    onClick: () -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(8.dp),
+    ) {
+        Text(name, color = AppTheme.colors.funds)
+        Text(value.splitDecimal(), fontSize = fontSize)
+    }
+    HorizontalDivider()
+}
+
+@Composable
+fun ColumnScope.NegativeField(
+    name: String, value: String, fontSize: TextUnit = 16.sp,
+    onClick: () -> Unit = {}
+) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(8.dp)
+    ) {
+        Text(name, color = MaterialTheme.colorScheme.tertiary)
+        Text(value.splitDecimal(), fontSize = fontSize)
+    }
+    HorizontalDivider()
+}
+
+@Composable
+fun ColumnScope.CashFlowField(name: String, value: String, onClick: () -> Unit = {}) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(8.dp)
+    ) {
+        SmoothRainbowText(name, style = LocalTextStyle.current.copy(fontSize = 20.sp))
+        Text(value.splitDecimal(), fontSize = 20.sp)
+    }
+    HorizontalDivider()
+}
+
+@Composable
+fun ColumnScope.BalanceField(
+    name: String, value: String,
+    onClick: () -> Unit = {}
+) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(8.dp)
+    ) {
+        Text(name)
+        Text(value.splitDecimal(), fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+    }
+    HorizontalDivider()
 }

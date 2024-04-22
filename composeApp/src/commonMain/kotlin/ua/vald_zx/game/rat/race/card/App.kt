@@ -15,6 +15,8 @@ import okio.Path.Companion.toPath
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.logic.AppState
 import ua.vald_zx.game.rat.race.card.logic.AppStore
+import ua.vald_zx.game.rat.race.card.screen.MainScreen
+import ua.vald_zx.game.rat.race.card.screen.PersonCardScreen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 internal expect val storageDir: String

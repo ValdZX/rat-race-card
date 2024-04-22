@@ -3,6 +3,10 @@ package ua.vald_zx.game.rat.race.card
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import ua.vald_zx.game.rat.race.card.components.BalanceField
+import ua.vald_zx.game.rat.race.card.components.CashFlowField
+import ua.vald_zx.game.rat.race.card.components.NegativeField
+import ua.vald_zx.game.rat.race.card.components.PositiveField
 
 
 @Preview

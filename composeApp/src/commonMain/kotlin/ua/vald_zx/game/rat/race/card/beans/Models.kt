@@ -26,7 +26,8 @@ data class Business(
     val name: String,
     val price: Long,
     val profit: Long,
-    val extentions: List<Long> = emptyList()
+    val extentions: List<Long> = emptyList(),
+    val alarmed: Boolean = false,
 )
 
 enum class SharesType {
