@@ -42,7 +42,7 @@ class RepayCreditScreen : Screen {
         InputScreen(
             inputLabel = "Сума погашення",
             buttonText = "Погасити",
-            validation = { amount -> amount.isNotEmpty() && state.loan <= amount.toLong() },
+            validation = { amount -> amount.isNotEmpty() },
             onClick = { amount -> store.dispatch(AppAction.RepayLoan(amount = amount.toLong())) },
             value = min(state.loan, state.cash).toString()
         )
