@@ -83,7 +83,6 @@ class MainScreen : Screen {
     override fun Content() {
         val state by store.observeState().collectAsState()
         val navigator = LocalNavigator.current
-        var isDark by LocalThemeIsDark.current
         BottomSheetNavigator {
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
             Box(
@@ -92,22 +91,8 @@ class MainScreen : Screen {
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .padding(16.dp),
             ) {
-                val icon = remember(isDark) {
-                    if (isDark) Images.IcLightMode
-                    else Images.IcDarkMode
-                }
                 IconButton(
                     modifier = Modifier.align(Alignment.TopEnd),
-                    onClick = {
-                        isDark = !isDark
-                        settings["theme"] = isDark
-                    },
-                    content = {
-                        Icon(icon, contentDescription = null)
-                    }
-                )
-                IconButton(
-                    modifier = Modifier.align(Alignment.BottomEnd),
                     onClick = { navigator?.push(SettingsScreen()) },
                     content = {
                         Icon(Images.Settings, contentDescription = null)

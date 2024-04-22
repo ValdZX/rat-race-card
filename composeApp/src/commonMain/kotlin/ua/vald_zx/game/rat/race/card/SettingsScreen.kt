@@ -32,17 +32,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import com.russhwolf.settings.set
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.Back
+import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.IcDarkMode
+import ua.vald_zx.game.rat.race.card.resource.fromvectorimages.IcLightMode
+import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 class SettingsScreen : Screen {
     @Composable
     override fun Content() {
         val state by store.observeState().collectAsState()
         val navigator = LocalNavigator.current
+        var isDark by LocalThemeIsDark.current
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -54,6 +59,20 @@ class SettingsScreen : Screen {
                 onClick = { navigator?.pop() },
                 content = {
                     Icon(Images.Back, contentDescription = null)
+                }
+            )
+            val icon = remember(isDark) {
+                if (isDark) Images.IcLightMode
+                else Images.IcDarkMode
+            }
+            IconButton(
+                modifier = Modifier.align(Alignment.TopEnd),
+                onClick = {
+                    isDark = !isDark
+                    settings["theme"] = isDark
+                },
+                content = {
+                    Icon(icon, contentDescription = null)
                 }
             )
             Column(
