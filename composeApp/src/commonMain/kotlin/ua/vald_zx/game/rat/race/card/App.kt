@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.card
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,26 +28,31 @@ val settings: Settings = Settings()
 
 @Composable
 internal fun App() = AppTheme {
-    var kStoreLoaded by remember { mutableStateOf(false) }
-    if (kStoreLoaded) {
-        val state by store.observeState().collectAsState()
-        val startScreen = if (state.professionCard.profession.isNotEmpty()) {
-            MainScreen()
-        } else {
-            PersonCardScreen()
-        }
-        Navigator(startScreen)
-    } else {
-        LaunchedEffect(Unit) {
-            val state = kStore.get()
-            if (state != null) {
-                store.dispatch(AppAction.LoadState(state))
+    Box {
+        var kStoreLoaded by remember { mutableStateOf(false) }
+        if (kStoreLoaded) {
+            val state by store.observeState().collectAsState()
+            val startScreen = if (state.professionCard.profession.isNotEmpty()) {
+                MainScreen()
+            } else {
+                PersonCardScreen()
             }
-            kStoreLoaded = true
+            Navigator(startScreen)
+        } else {
+            LaunchedEffect(Unit) {
+                val state = kStore.get()
+                if (state != null) {
+                    store.dispatch(AppAction.LoadState(state))
+                }
+                kStoreLoaded = true
+            }
         }
+        GameLayer()
     }
 }
 
+@Composable
+internal expect fun GameLayer()
 
 internal expect fun openUrl(url: String?)
 internal expect fun share(data: String?)

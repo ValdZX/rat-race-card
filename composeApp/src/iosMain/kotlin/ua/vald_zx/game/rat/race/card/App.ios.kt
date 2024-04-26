@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.card
 
+import androidx.compose.runtime.Composable
 import io.github.xxfast.kstore.file.utils.CachesDirectory
 import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import platform.Foundation.NSFileManager
@@ -29,4 +30,9 @@ internal actual fun share(data: String?) {
 }
 
 internal actual fun playCoin() {
+}
+
+@Composable
+internal actual fun GameLayer() {
+
 }

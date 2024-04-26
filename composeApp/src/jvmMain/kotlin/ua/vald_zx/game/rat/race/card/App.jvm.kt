@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.card
 
+import androidx.compose.runtime.Composable
 import net.harawata.appdirs.AppDirsFactory
 import java.awt.Desktop
 import java.net.URI
@@ -17,4 +18,8 @@ internal actual fun share(data: String?) {
 }
 
 internal actual fun playCoin() {
+}
+
+@Composable
+internal actual fun GameLayer() {
 }

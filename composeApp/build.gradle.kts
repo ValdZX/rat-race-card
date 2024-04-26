@@ -81,6 +81,7 @@ kotlin {
             implementation(libs.androidx.activityCompose)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.androidx.ui.viewbinding)
         }
 
         jvmMain.dependencies {
@@ -147,6 +148,7 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true
     }
     signingConfigs {
         create("release") {

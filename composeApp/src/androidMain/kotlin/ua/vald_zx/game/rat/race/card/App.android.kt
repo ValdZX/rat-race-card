@@ -9,8 +9,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.viewinterop.AndroidViewBinding
+import androidx.fragment.app.FragmentActivity
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import ua.vald_zx.game.rat.race.card.databinding.FragmentGameLayerBinding
 
 class AndroidApp : Application() {
     companion object {
@@ -25,7 +29,7 @@ class AndroidApp : Application() {
     }
 }
 
-class AppActivity : ComponentActivity() {
+class AppActivity : FragmentActivity() {
     var mediaPlayer: MediaPlayer? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,4 +66,9 @@ internal actual fun share(data: String?) {
 
 internal actual fun playCoin() {
     AndroidApp.ACTIVITY.mediaPlayer?.start()
+}
+
+@Composable
+internal actual fun GameLayer() {
+    AndroidViewBinding(factory = FragmentGameLayerBinding::inflate)
 }
