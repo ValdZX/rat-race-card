@@ -12,6 +12,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.viewinterop.AndroidViewBinding
 import androidx.fragment.app.FragmentActivity
+import com.badlogic.gdx.backends.android.AndroidFragmentApplication.Callbacks
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import ua.vald_zx.game.rat.race.card.databinding.FragmentGameLayerBinding
@@ -29,7 +30,7 @@ class AndroidApp : Application() {
     }
 }
 
-class AppActivity : FragmentActivity() {
+class AppActivity : FragmentActivity() , Callbacks{
     var mediaPlayer: MediaPlayer? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,6 +38,10 @@ class AppActivity : FragmentActivity() {
         setContent { App() }
         AndroidApp.ACTIVITY = this
         mediaPlayer = MediaPlayer.create(this, R.raw.coin)
+    }
+
+    override fun exit() {
+        Napier.d("GDX Exit")
     }
 }
 

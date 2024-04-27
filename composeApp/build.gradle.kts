@@ -3,6 +3,8 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import com.android.build.api.dsl.ManagedVirtualDevice
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
+import com.android.build.gradle.internal.api.BaseVariantOutputImpl
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -99,10 +101,28 @@ kotlin {
     }
 }
 
+val natives = configurations.create("natives")
+
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
+    implementation(libs.gdx.controllers.android)
+    implementation(libs.gdx)
+    implementation(libs.gdx.bullet)
+    implementation(libs.gdx.backend.android)
+    implementation(libs.ktx.app)
+    implementation(libs.ktx.async)
+    val gdxVersion = libs.versions.gdx.get()
+    natives("com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-arm64-v8a")
+    natives("com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-armeabi-v7a")
+    natives("com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-x86")
+    natives("com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-x86_64")
+    natives("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a")
+    natives("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a")
+    natives("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86")
+    natives("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64")
 }
 version = "1.3"
 android {
@@ -122,8 +142,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildOutputs.all {
-            val variantOutputImpl =
-                this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            val variantOutputImpl = this as BaseVariantOutputImpl
             variantOutputImpl.outputFileName = "RatRaceCard.apk"
         }
     }
@@ -172,6 +191,11 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.txt")
         }
     }
+    sourceSets {
+        named("main") {
+            jniLibs.srcDir("libs")
+        }
+    }
 }
 
 compose.desktop {
@@ -190,3 +214,33 @@ buildConfig {
     // BuildConfig configuration here.
     // https://github.com/gmazzo/gradle-buildconfig-plugin#usage-in-kts
 }
+
+tasks.register("copyAndroidNatives") {
+    doFirst {
+        file("libs/armeabi-v7a/").mkdirs()
+        file("libs/arm64-v8a/").mkdirs()
+        file("libs/x86_64/").mkdirs()
+        file("libs/x86/").mkdirs()
+
+        natives.files.forEach { jar ->
+            val outputDir: File? =
+                when {
+                    jar.name.endsWith("natives-arm64-v8a.jar") -> file("libs/arm64-v8a")
+                    jar.name.endsWith("natives-armeabi-v7a.jar") -> file("libs/armeabi-v7a")
+                    jar.name.endsWith("natives-x86_64.jar") -> file("libs/x86_64")
+                    jar.name.endsWith("natives-x86.jar") -> file("libs/x86")
+                    else -> null
+                }
+
+            if (outputDir != null) {
+                copy {
+                    from(zipTree(jar))
+                    into(outputDir)
+                    include("*.so")
+                }
+            }
+        }
+    }
+}
+
+project.tasks.preBuild.dependsOn("copyAndroidNatives")
