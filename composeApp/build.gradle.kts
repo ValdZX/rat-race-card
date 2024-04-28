@@ -119,7 +119,7 @@ android {
         targetSdk = 34
 
         applicationId = "ua.vald_zx.game.rat.race.card.androidApp"
-        versionCode = 2
+        versionCode = 5
         versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

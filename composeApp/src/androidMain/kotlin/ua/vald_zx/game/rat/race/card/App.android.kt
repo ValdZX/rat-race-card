@@ -3,6 +3,7 @@ package ua.vald_zx.game.rat.race.card
 import android.app.Application
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,7 +15,7 @@ import io.github.aakira.napier.Napier
 class AndroidApp : Application() {
     companion object {
         lateinit var INSTANCE: AndroidApp
-        lateinit var ACTIVITY: ComponentActivity
+        lateinit var ACTIVITY: AppActivity
     }
 
     override fun onCreate() {
@@ -25,11 +26,13 @@ class AndroidApp : Application() {
 }
 
 class AppActivity : ComponentActivity() {
+    var mediaPlayer: MediaPlayer? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent { App() }
         AndroidApp.ACTIVITY = this
+        mediaPlayer = MediaPlayer.create(this, R.raw.coin)
     }
 }
 
@@ -55,4 +58,8 @@ internal actual fun share(data: String?) {
     AndroidApp.ACTIVITY.startActivity(
         Intent.createChooser(shareIntent, "Rat race card")
     )
+}
+
+internal actual fun playCoin() {
+    AndroidApp.ACTIVITY.mediaPlayer?.start()
 }

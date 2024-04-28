@@ -8,13 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,7 +41,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import ua.vald_zx.game.rat.race.card.beans.Business
-import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.components.BalanceField
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.FundsField
@@ -51,6 +48,7 @@ import ua.vald_zx.game.rat.race.card.components.NegativeField
 import ua.vald_zx.game.rat.race.card.components.PositiveField
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.logic.AppSideEffect
+import ua.vald_zx.game.rat.race.card.playCoin
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Menu
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
@@ -185,6 +183,10 @@ class MainScreen : Screen {
 
                         is AppSideEffect.LoanAdded -> {
                             loanAddedDialog = effect.balance
+                        }
+
+                        AppSideEffect.AddCash -> {
+                            playCoin()
                         }
                     }
                 }.launchIn(this)

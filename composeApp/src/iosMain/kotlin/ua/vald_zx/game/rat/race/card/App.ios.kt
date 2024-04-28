@@ -27,3 +27,6 @@ internal actual fun share(data: String?) {
         completion = null
     )
 }
+
+internal actual fun playCoin() {
+}

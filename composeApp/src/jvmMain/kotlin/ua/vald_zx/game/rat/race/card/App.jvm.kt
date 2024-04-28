@@ -15,3 +15,6 @@ internal actual val storageDir: String
 
 internal actual fun share(data: String?) {
 }
+
+internal actual fun playCoin() {
+}
