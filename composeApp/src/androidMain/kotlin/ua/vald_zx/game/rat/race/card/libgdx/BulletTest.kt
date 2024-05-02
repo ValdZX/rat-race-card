@@ -141,7 +141,7 @@ class BulletTest : KtxScreen {
     var environment: Environment? = null
     var model: Model? = null
     var instances: Array<GameObject>? = null
-    var constructors: ArrayMap<String, GameObject.Constructor>? = null
+    var constructors = mutableMapOf<String, GameObject.Constructor>()
     var spawnTimer: Float = 0f
 
     var collisionConfig: btCollisionConfiguration? = null
@@ -175,7 +175,12 @@ class BulletTest : KtxScreen {
         Gdx.input.inputProcessor = camController
         val jsonReader = UBJsonReader()
         val modelLoader = G3dModelLoader(jsonReader)
-        val dice = modelLoader.loadModel(Gdx.files.getFileHandle("data/dice.g3db", Files.FileType.Internal))
+        val dice = modelLoader.loadModel(
+            Gdx.files.getFileHandle(
+                "data/dice.g3db",
+                Files.FileType.Internal
+            )
+        )
 
         val mb = ModelBuilder()
         mb.begin()
@@ -196,19 +201,16 @@ class BulletTest : KtxScreen {
         mb.node("dice", dice)
         model = mb.end()
 
-        constructors = ArrayMap(
-            String::class.java,
-            GameObject.Constructor::class.java
-        )
-        constructors?.put(
+        constructors.clear()
+        constructors.put(
             "ground",
             GameObject.Constructor(model, "ground", btBoxShape(Vector3(2.5f, 0.5f, 2.5f)), 0f)
         )
-        constructors?.put(
+        constructors.put(
             "box",
             GameObject.Constructor(model, "box", btBoxShape(Vector3(0.5f, 0.5f, 0.5f)), 1f)
         )
-        constructors?.put(
+        constructors.put(
             "dice",
             GameObject.Constructor(model, "dice", btBoxShape(Vector3(1f, 1f, 1f)), 2f)
         )
@@ -223,7 +225,7 @@ class BulletTest : KtxScreen {
         contactListener = MyContactListener()
 
         instances = Array()
-        val obj = constructors!!["ground"].construct()
+        val obj = constructors["ground"]?.construct() ?: return
         obj.body.collisionFlags =
             obj.body.collisionFlags or btCollisionObject.CollisionFlags.CF_KINEMATIC_OBJECT
         instances?.add(obj)
@@ -234,9 +236,8 @@ class BulletTest : KtxScreen {
     }
 
     fun spawn() {
-        val obj = constructors!!.values[1 + MathUtils.random(
-            constructors!!.size - 2
-        )].construct()
+        val randomType = 1 + MathUtils.random(constructors.size - 2)
+        val obj = constructors.values.toList()[randomType].construct()
         obj.transform.setFromEulerAngles(
             MathUtils.random(360f),
             MathUtils.random(360f),
@@ -283,8 +284,8 @@ class BulletTest : KtxScreen {
         for (obj in instances!!) obj.dispose()
         instances?.clear()
 
-        for (ctor in constructors!!.values()) ctor.dispose()
-        constructors?.clear()
+        for (ctor in constructors.values) ctor.dispose()
+        constructors.clear()
 
         dynamicsWorld?.dispose()
         constraintSolver?.dispose()
