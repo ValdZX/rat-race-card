@@ -244,7 +244,8 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
 
             is AppAction.SellingAllBusinessConfirmed -> {
                 oldState.copy(business = listOf(action.business))
-                    .plusCash(oldState.business.sumOf { it.price } - action.business.price)
+                    .plusCash(oldState.business.sumOf { it.price })
+                    .minusCash(action.business.price)
             }
 
             is AppAction.BuyShares -> {
