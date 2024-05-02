@@ -125,7 +125,7 @@ sealed class AppAction : Action {
     data class SellBusiness(val business: Business, val amount: Long) : AppAction()
     data class DismissalConfirmed(val business: Business) : AppAction()
     data class SellingAllBusinessConfirmed(val business: Business) : AppAction()
-    data class ExtendBusiness(val amount: Long) : AppAction()
+    data class ExtendBusiness(val amount: Long, val business: Business) : AppAction()
     data class SideProfit(val amount: Long) : AppAction()
     data class SideExpenses(val amount: Long) : AppAction()
     data class GetLoan(val amount: Long) : AppAction()
@@ -223,7 +223,7 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
             }
 
             is AppAction.ExtendBusiness -> {
-                val business = oldState.business.last()
+                val business = action.business
                 val extended = business.copy(extentions = business.extentions + action.amount)
                 oldState.copy(business = oldState.business.replace(business, extended))
             }

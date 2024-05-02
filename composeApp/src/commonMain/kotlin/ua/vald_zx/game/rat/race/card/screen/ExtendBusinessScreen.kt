@@ -17,12 +17,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.getDigits
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.store
 
-class ExtendBusinessScreen : Screen {
+class ExtendBusinessScreen(private val business: Business) : Screen {
     @Composable
     override fun Content() {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
@@ -41,7 +42,7 @@ class ExtendBusinessScreen : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(AppAction.ExtendBusiness(amount = amount.toLong()))
+                    store.dispatch(AppAction.ExtendBusiness(amount = amount.toLong(), business))
                 },
                 enabled = amount.isNotEmpty(),
                 content = {

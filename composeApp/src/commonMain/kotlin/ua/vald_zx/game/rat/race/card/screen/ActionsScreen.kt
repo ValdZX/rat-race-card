@@ -55,11 +55,6 @@ class AllActionsScreen() : Screen {
         Button("Купити бізнес", AppTheme.colors.action) {
             bottomSheetNavigator.replace(BuyBusinessScreen())
         }
-        if (state.business.any { it.type == BusinessType.SMALL }) {
-            Button("Розширення малого бізнесу", AppTheme.colors.action) {
-                bottomSheetNavigator.replace(ExtendBusinessScreen())
-            }
-        }
         Button("Купити акції", AppTheme.colors.action) {
             bottomSheetNavigator.replace(BuySharesScreen())
         }

@@ -81,7 +81,7 @@ fun BusinessListPage(state: AppState) {
                             }) { Text("Продати") }
                             if (business.type == BusinessType.SMALL) {
                                 TextButton(onClick = {
-                                    bottomSheetNavigator.show(ExtendBusinessScreen())
+                                    bottomSheetNavigator.show(ExtendBusinessScreen(business))
                                 }) { Text("Розширити") }
                             }
                         }
