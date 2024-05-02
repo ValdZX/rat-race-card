@@ -160,6 +160,7 @@ class MainScreen : Screen {
             var depositWithdrawDialog by remember { mutableStateOf(0L) }
             var loanAddedDialog by remember { mutableStateOf(0L) }
             var salaryApproveDialog by remember { mutableStateOf(false) }
+            var confirmFiredDialog by remember { mutableStateOf(false) }
             var confirmDismissalDialog: Business? by remember { mutableStateOf(null) }
             var confirmSellingAllBusinessDialog: Business? by remember { mutableStateOf(null) }
             LaunchedEffect(Unit) {
@@ -187,6 +188,10 @@ class MainScreen : Screen {
 
                         AppSideEffect.AddCash -> {
                             playCoin()
+                        }
+
+                        AppSideEffect.ConfirmFired -> {
+                            confirmFiredDialog = true
                         }
                     }
                 }.launchIn(this)
@@ -234,6 +239,28 @@ class MainScreen : Screen {
                     },
                     dismissButton = {
                         TextButton(onClick = { confirmDismissalDialog = null }) { Text("Відміна") }
+                    }
+                )
+            }
+            if (confirmFiredDialog) {
+                AlertDialog(
+                    title = { Text(text = "Звільнення з роботи") },
+                    text = {
+                        Text(
+                            text = "При звільненні, втрачається дохід на сумму ${state.professionCard.salary}"
+                        )
+                    },
+                    onDismissRequest = { confirmFiredDialog = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                store.dispatch(AppAction.FiredConfirmed)
+                                confirmFiredDialog = false
+                            }
+                        ) { Text("Звільнитися") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { confirmFiredDialog = false }) { Text("Відміна") }
                     }
                 )
             }

@@ -58,10 +58,16 @@ fun BusinessListPage(state: AppState) {
                         BusinessType.SMALL -> "Малий бізнес"
                         BusinessType.MEDIUM -> "Середній бізнес"
                         BusinessType.LARGE -> "Крупний бізнес"
+                        BusinessType.CORRUPTION -> "Корупційний бізнес"
                     }
                     Text(
                         "${index + 1}) $title - ${business.name}",
-                        style = MaterialTheme.typography.titleSmall
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (business.type == BusinessType.CORRUPTION) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         SDetailsField(

@@ -113,6 +113,8 @@ sealed class AppAction : Action {
     data class LoadState(val state: AppState) : AppAction()
     data class FillProfessionCard(val professionCard: ProfessionCard) : AppAction()
     data class EditFillProfessionCard(val professionCard: ProfessionCard) : AppAction()
+    data object Fired : AppAction()
+    data object FiredConfirmed : AppAction()
     data object GetSalary : AppAction()
     data object GetSalaryApproved : AppAction()
     data class AddFund(val fund: Fund) : AppAction()
@@ -148,6 +150,7 @@ sealed class AppSideEffect : Effect {
     data class ConfirmSellingAllBusiness(val business: Business) : AppSideEffect()
     data class DepositWithdraw(val balance: Long) : AppSideEffect()
     data class LoanAdded(val balance: Long) : AppSideEffect()
+    data object ConfirmFired : AppSideEffect()
     data object AddCash : AppSideEffect()
     data object ShowSalaryApprove : AppSideEffect()
 }
@@ -205,15 +208,20 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
 
             is AppAction.BuyBusiness -> {
                 val currentBusiness = oldState.business
-                if (action.business.type == BusinessType.SMALL && currentBusiness.any { it.type == BusinessType.WORK } && currentBusiness.count { it.type == BusinessType.SMALL } == 1) {
+                if (action.business.type == BusinessType.SMALL
+                    && currentBusiness.any { it.type == BusinessType.WORK }
+                    && currentBusiness.count { it.type == BusinessType.SMALL } == 1
+                ) {
                     launch { sideEffect.emit(AppSideEffect.ConfirmDismissal(action.business)) }
                     oldState
-                } else if (currentBusiness.isNotEmpty() && currentBusiness.first().type != action.business.type && !currentBusiness.any { it.type == BusinessType.WORK }) {
+                } else if (currentBusiness.isNotEmpty()
+                    && currentBusiness.first().type.klass != action.business.type.klass
+                    && !currentBusiness.any { it.type == BusinessType.WORK }
+                ) {
                     launch { sideEffect.emit(AppSideEffect.ConfirmSellingAllBusiness(action.business)) }
                     oldState
-                } else oldState.copy(
-                    business = currentBusiness + action.business
-                ).minusCash(action.business.price)
+                } else oldState.copy(business = currentBusiness + action.business)
+                    .minusCash(action.business.price)
             }
 
             is AppAction.SellBusiness -> {
@@ -370,6 +378,15 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 val amount = oldState.funds.sumOf { it.amount } + oldState.capitalizationStart()
                 val funds = listOf(Fund(rate = oldState.config.fundBaseRate, amount))
                 oldState.copy(funds = funds)
+            }
+
+            AppAction.Fired -> {
+                launch { sideEffect.emit(AppSideEffect.ConfirmFired) }
+                oldState
+            }
+
+            AppAction.FiredConfirmed -> {
+                oldState.copy(business = oldState.business.filter { it.type != BusinessType.WORK })
             }
         }
         if (newState != oldState) {

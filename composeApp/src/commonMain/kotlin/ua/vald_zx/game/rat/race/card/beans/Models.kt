@@ -13,11 +13,12 @@ data class ProfessionCard(
     val phone: Long = 0,
 )
 
-enum class BusinessType {
-    WORK,
-    SMALL,
-    MEDIUM,
-    LARGE
+enum class BusinessType(val klass: Int) {
+    WORK(0),
+    SMALL(1),
+    MEDIUM(2),
+    LARGE(3),
+    CORRUPTION(3)
 }
 
 @Serializable

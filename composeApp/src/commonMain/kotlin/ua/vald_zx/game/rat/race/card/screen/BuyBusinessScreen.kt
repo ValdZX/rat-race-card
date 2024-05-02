@@ -47,41 +47,58 @@ class BuyBusinessScreen() : Screen {
             val hasSmall = state.business.any { it.type == BusinessType.SMALL }
             val hasMedium = state.business.any { it.type == BusinessType.MEDIUM }
             val hasLarge = state.business.any { it.type == BusinessType.LARGE }
-            if (noBusiness || !hasMedium && !hasLarge) {
+            val hasCorruption = state.business.any { it.type == BusinessType.CORRUPTION }
+            if (noBusiness || !hasMedium && !hasLarge && !hasCorruption) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    RadioButton(businessType == BusinessType.SMALL, onClick = {
-                        businessType = BusinessType.SMALL
-                    })
+                    RadioButton(
+                        selected = businessType == BusinessType.SMALL,
+                        onClick = { businessType = BusinessType.SMALL }
+                    )
                     Text("Малий бізнес")
                 }
             }
             if (noBusiness || !hasWork) {
-                if (noBusiness || (hasSmall || hasMedium) && !hasLarge) {
+                if (noBusiness || (hasSmall || hasMedium) && !hasLarge && !hasCorruption) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        RadioButton(businessType == BusinessType.MEDIUM, onClick = {
-                            businessType = BusinessType.MEDIUM
-                        })
+                        RadioButton(
+                            selected = businessType == BusinessType.MEDIUM,
+                            onClick = { businessType = BusinessType.MEDIUM }
+                        )
                         Text("Середній бізнес")
                     }
                 }
-                if (noBusiness || hasMedium || hasLarge) {
+                if (noBusiness || hasMedium || hasLarge || hasCorruption) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        RadioButton(businessType == BusinessType.LARGE, onClick = {
-                            businessType = BusinessType.LARGE
-                        })
+                        RadioButton(
+                            selected = businessType == BusinessType.LARGE,
+                            onClick = { businessType = BusinessType.LARGE }
+                        )
                         Text("Крупний бізнес")
+                    }
+                }
+                if (noBusiness || hasLarge) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        RadioButton(
+                            selected = businessType == BusinessType.CORRUPTION,
+                            onClick = { businessType = BusinessType.CORRUPTION }
+                        )
+                        Text("Корупційний бізнес")
                     }
                 }
             }
@@ -114,7 +131,7 @@ class BuyBusinessScreen() : Screen {
                         AppAction.BuyBusiness(
                             Business(
                                 type = businessType,
-                                name = businessName,
+                                name = businessName.trim(),
                                 price = businessPrise.toLong(),
                                 profit = businessProfit.toLong()
                             )

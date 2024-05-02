@@ -52,6 +52,11 @@ class AllActionsScreen() : Screen {
         Button("Взяти кредит", AppTheme.colors.negative) {
             bottomSheetNavigator.replace(GetLoanScreen())
         }
+        if (state.business.any { it.type == BusinessType.WORK }) {
+            Button("Звільнитися", AppTheme.colors.negative) {
+                store.dispatch(AppAction.Fired)
+            }
+        }
         Button("Купити бізнес", AppTheme.colors.action) {
             bottomSheetNavigator.replace(BuyBusinessScreen())
         }

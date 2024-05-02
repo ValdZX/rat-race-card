@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.DetailsField
 import ua.vald_zx.game.rat.race.card.logic.AppState
 
@@ -48,20 +49,67 @@ fun StatePage(state: AppState) {
         Text("Сімейний стан", style = MaterialTheme.typography.titleSmall)
         DetailsField("Шлюб", if (state.isMarried) "Так" else "Hi")
         DetailsField("Діти", "${state.babies}")
-        Text("Витрати", style = MaterialTheme.typography.titleSmall)
-        DetailsField("Оренда житла", state.professionCard.rent.toString())
-        DetailsField("Витрати на їжу", state.professionCard.food.toString())
-        DetailsField("Витрати на одяг", state.professionCard.cloth.toString())
-        DetailsField("Витрати на проїзд", state.professionCard.transport.toString())
-        DetailsField("Витрати на телефонні переговори", state.professionCard.phone.toString())
-        DetailsField("Витрати на дітей", "${state.babies * 300} (${state.babies} * 300)")
+        if (state.business.any { it.type == BusinessType.WORK }) {
+            Text(
+                text = "Робота",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+            DetailsField(
+                name = state.professionCard.profession,
+                value = state.professionCard.salary.toString(),
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        Text(
+            text = "Витрати",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.tertiary
+        )
+        DetailsField(
+            "Оренда житла", state.professionCard.rent.toString(),
+            color = MaterialTheme.colorScheme.tertiary
+        )
+        DetailsField(
+            "Витрати на їжу", state.professionCard.food.toString(),
+            color = MaterialTheme.colorScheme.tertiary
+        )
+        DetailsField(
+            "Витрати на одяг", state.professionCard.cloth.toString(),
+            color = MaterialTheme.colorScheme.tertiary
+        )
+        DetailsField(
+            "Витрати на проїзд", state.professionCard.transport.toString(),
+            color = MaterialTheme.colorScheme.tertiary
+        )
+        DetailsField(
+            "Витрати на телефонні переговори", state.professionCard.phone.toString(),
+            color = MaterialTheme.colorScheme.tertiary
+        )
+        DetailsField(
+            "Витрати на дітей", "${state.babies * 300} (${state.babies} * 300)",
+            color = MaterialTheme.colorScheme.tertiary
+        )
         DetailsField(
             "Витрати на квартиру",
-            "${state.apartment * 200} (${state.apartment} * 200)"
+            "${state.apartment * 200} (${state.apartment} * 200)",
+            color = MaterialTheme.colorScheme.tertiary
         )
-        DetailsField("Витрати на машину", "${state.cars * 600} (${state.cars} * 600)")
-        DetailsField("Утримання котеджу", "${state.cottage * 1000} (${state.cottage} * 1000)")
-        DetailsField("Утримання яхти", "${state.yacht * 1500} (${state.yacht} * 1500)")
-        DetailsField("Утримання літака", "${state.flight * 5000} (${state.flight} * 5000)")
+        DetailsField(
+            "Витрати на машину", "${state.cars * 600} (${state.cars} * 600)",
+            color = MaterialTheme.colorScheme.tertiary
+        )
+        DetailsField(
+            "Утримання котеджу", "${state.cottage * 1000} (${state.cottage} * 1000)",
+            color = MaterialTheme.colorScheme.tertiary
+        )
+        DetailsField(
+            "Утримання яхти", "${state.yacht * 1500} (${state.yacht} * 1500)",
+            color = MaterialTheme.colorScheme.tertiary
+        )
+        DetailsField(
+            "Утримання літака", "${state.flight * 5000} (${state.flight} * 5000)",
+            color = MaterialTheme.colorScheme.tertiary
+        )
     }
 }

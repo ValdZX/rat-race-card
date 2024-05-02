@@ -149,7 +149,7 @@ fun ProfessionCardForm(card: ProfessionCard? = null, filled: (ProfessionCard) ->
         onClick = {
             filled(
                 ProfessionCard(
-                    profession = profession,
+                    profession = profession.trim(),
                     salary = salary.toLong(),
                     rent = rent.toLong(),
                     food = food.toLong(),

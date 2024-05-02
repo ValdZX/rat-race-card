@@ -38,6 +38,7 @@ class SellBusinessScreen(private val businessToSell: Business) : Screen {
                 BusinessType.SMALL -> "Малий бізнес"
                 BusinessType.MEDIUM -> "Середній бізнес"
                 BusinessType.LARGE -> "Крупний бізнес"
+                BusinessType.CORRUPTION -> "Корупційний бізнес"
             }
             Text("$title: ${businessToSell.name}", style = MaterialTheme.typography.titleSmall)
             Row {
