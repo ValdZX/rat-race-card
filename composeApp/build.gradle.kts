@@ -109,7 +109,7 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
 }
-
+version = "1.3"
 android {
     namespace = "ua.vald_zx.game.rat.race.card"
     compileSdk = 34
@@ -119,12 +119,16 @@ android {
         targetSdk = 34
 
         applicationId = "ua.vald_zx.game.rat.race.card.androidApp"
-        versionCode = 6
-        versionName = "1.3"
+        versionCode = version.toString().let {
+            val split = it.split(".")
+            split[0].toInt() * 100 + split[1].toInt()
+        }
+        versionName = version.toString()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildOutputs.all {
-            val variantOutputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            val variantOutputImpl =
+                this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
             variantOutputImpl.outputFileName = "RatRaceCard.apk"
         }
     }
