@@ -6,10 +6,14 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidViewBinding
 import androidx.fragment.app.FragmentActivity
 import com.badlogic.gdx.backends.android.AndroidFragmentApplication.Callbacks
@@ -30,7 +34,7 @@ class AndroidApp : Application() {
     }
 }
 
-class AppActivity : FragmentActivity() , Callbacks{
+class AppActivity : FragmentActivity(), Callbacks {
     var mediaPlayer: MediaPlayer? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,5 +79,9 @@ internal actual fun playCoin() {
 
 @Composable
 internal actual fun GameLayer() {
-    AndroidViewBinding(factory = FragmentGameLayerBinding::inflate)
+    Box(modifier = Modifier
+        .padding(16.dp)
+        .fillMaxHeight(0.5f)) {
+        AndroidViewBinding(factory = FragmentGameLayerBinding::inflate)
+    }
 }

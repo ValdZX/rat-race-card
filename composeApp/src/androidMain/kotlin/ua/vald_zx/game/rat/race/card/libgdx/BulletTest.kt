@@ -59,12 +59,15 @@ class BulletTest : KtxScreen {
             index1: Int,
             match1: Boolean
         ): Boolean {
-            if (match0) (instances!![userValue0].materials[0][ColorAttribute.Diffuse] as ColorAttribute).color.set(
-                Color.WHITE
-            )
-            if (match1) (instances!![userValue1].materials[0][ColorAttribute.Diffuse] as ColorAttribute).color.set(
-                Color.WHITE
-            )
+            val instances = instances ?: return true
+            if (match0) {
+                (instances[userValue0].materials[0][ColorAttribute.Diffuse] as ColorAttribute)
+                    .color.set(Color.WHITE)
+            }
+            if (match1) {
+                (instances[userValue1].materials[0][ColorAttribute.Diffuse] as ColorAttribute)
+                    .color.set(Color.WHITE)
+            }
             return true
         }
     }
@@ -102,8 +105,7 @@ class BulletTest : KtxScreen {
             val node: String,
             val shape: btCollisionShape,
             mass: Float
-        ) :
-            Disposable {
+        ) : Disposable {
             val constructionInfo: btRigidBodyConstructionInfo
 
             init {
@@ -154,7 +156,11 @@ class BulletTest : KtxScreen {
         environment?.set(ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f))
         environment?.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
 
-        cam = PerspectiveCamera(67f, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat()).apply {
+        cam = PerspectiveCamera(
+            67f,
+            Gdx.graphics.width.toFloat(),
+            Gdx.graphics.height.toFloat()
+        ).apply {
             position[3f, 7f] = 10f
             lookAt(0f, 4f, 0f)
             near = 1f
@@ -293,8 +299,10 @@ class BulletTest : KtxScreen {
 
         camController?.update()
 
-        Gdx.gl.glClearColor(0.3f, 0.3f, 0.3f, 1f)
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
+        Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+        Gdx.gl.glEnable(GL20.GL_BLEND)
 
         modelBatch?.begin(cam)
         modelBatch?.render(instances, environment)
