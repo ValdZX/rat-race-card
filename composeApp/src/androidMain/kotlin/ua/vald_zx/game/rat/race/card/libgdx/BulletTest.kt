@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.card.libgdx
 
+import com.badlogic.gdx.Files
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
@@ -12,6 +13,7 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch
 import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
+import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.BoxShapeBuilder
@@ -44,6 +46,7 @@ import com.badlogic.gdx.physics.bullet.linearmath.btMotionState
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.ArrayMap
 import com.badlogic.gdx.utils.Disposable
+import com.badlogic.gdx.utils.UBJsonReader
 import ktx.app.KtxScreen
 
 
@@ -170,6 +173,9 @@ class BulletTest : KtxScreen {
 
         camController = CameraInputController(cam)
         Gdx.input.inputProcessor = camController
+        val jsonReader = UBJsonReader()
+        val modelLoader = G3dModelLoader(jsonReader)
+        val dice = modelLoader.loadModel(Gdx.files.getFileHandle("data/dice.g3db", Files.FileType.Internal))
 
         val mb = ModelBuilder()
         mb.begin()
@@ -187,6 +193,7 @@ class BulletTest : KtxScreen {
                 ColorAttribute.createDiffuse(Color.BLUE)
             )
         ).box(1f, 1f, 1f)
+        mb.node("dice", dice)
         model = mb.end()
 
         constructors = ArrayMap(
@@ -200,6 +207,10 @@ class BulletTest : KtxScreen {
         constructors?.put(
             "box",
             GameObject.Constructor(model, "box", btBoxShape(Vector3(0.5f, 0.5f, 0.5f)), 1f)
+        )
+        constructors?.put(
+            "dice",
+            GameObject.Constructor(model, "dice", btBoxShape(Vector3(1f, 1f, 1f)), 2f)
         )
 
         collisionConfig = btDefaultCollisionConfiguration()
