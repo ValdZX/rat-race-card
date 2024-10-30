@@ -28,22 +28,25 @@ task<JavaExec>("runFunction") {
     classpath(invoker)
     inputs.files(configurations.runtimeClasspath, sourceSets["main"].output)
     args(
-        "--target", project.findProperty("runFunction.target") ?: "ua.vald_zx.game.rat.race.server.App",
-        "--port", project.findProperty("runFunction.port") ?: 8080
+        "--target",
+        project.findProperty("runFunction.target") ?: "ua.vald_zx.game.rat.race.server.App",
+        "--port",
+        project.findProperty("runFunction.port") ?: 8080
     )
     doFirst {
-        args("--classpath", files(configurations.runtimeClasspath, sourceSets["main"].output).asPath)
+        args(
+            "--classpath",
+            files(configurations.runtimeClasspath, sourceSets["main"].output).asPath
+        )
     }
 }
 
 tasks.named("build") {
-    dependsOn(":shadowJar")
+    dependsOn(":server:shadowJar")
 }
 
-task("buildFunction") {
+tasks.register<Copy>("buildFunction") {
     dependsOn("build")
-    copy {
-        from("build/libs/" + rootProject.name + "-all.jar")
-        into("build/deploy")
-    }
+    from("build/libs/" + project.name + "-all.jar")
+    into("build/deploy")
 }
