@@ -25,6 +25,7 @@ kstore = "0.9.0"
 [libraries]
 
 functions-framework-api = { module = "com.google.cloud.functions:functions-framework-api", version.ref = "functionsFrameworkApi" }
+google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.28.0" }
 guava-testlib = { module = "com.google.guava:guava-testlib", version.ref = "guavaTestlib" }
 java-function-invoker = { module = "com.google.cloud.functions.invoker:java-function-invoker", version.ref = "javaFunctionInvoker" }
 kotlin-logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlinLogging" }

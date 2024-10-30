@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlin.logging)
     implementation(libs.functions.framework.api)
+    implementation(libs.google.cloud.firestore)
     invoker(libs.java.function.invoker)
 
     testImplementation(libs.kotlin.test)
