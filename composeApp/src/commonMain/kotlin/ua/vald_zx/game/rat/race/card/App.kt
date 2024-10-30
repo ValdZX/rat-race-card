@@ -11,7 +11,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
 import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.file.storeOf
-import okio.Path.Companion.toPath
+import kotlinx.io.files.Path
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.logic.AppState
 import ua.vald_zx.game.rat.race.card.logic.AppStore
@@ -21,7 +21,7 @@ import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 internal expect val storageDir: String
 val kStore: KStore<AppState>
-    get() = storeOf(file = "$storageDir/app.json".toPath())
+    get() = storeOf(file = Path("$storageDir/app.json"))
 val store = AppStore()
 val settings: Settings = Settings()
 

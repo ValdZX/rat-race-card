@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.compose)
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.application)
     alias(libs.plugins.buildConfig)
     alias(libs.plugins.kotlinx.serialization)
@@ -16,13 +17,6 @@ plugins {
 
 kotlin {
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "${JavaVersion.VERSION_1_8}"
-                freeCompilerArgs += "-Xjdk-release=${JavaVersion.VERSION_1_8}"
-            }
-        }
-        //https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-test.html
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         instrumentedTestVariant {
             sourceSetTree.set(KotlinSourceSetTree.test)
@@ -148,14 +142,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.11"
     }
     signingConfigs {
         create("release") {

@@ -1,5 +1,6 @@
 rootProject.name = "Rat-race-card"
 include(":composeApp")
+include(":server")
 
 pluginManagement {
     repositories {
