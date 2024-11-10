@@ -402,14 +402,31 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
     }
 
     private fun AppState.minusCash(value: Long): AppState {
-        if (cash > value) {
-            return this.copy(cash = cash - value)
+        return if (cash > value) {
+            copy(cash = cash - value)
         } else if ((cash + deposit) > value) {
             launch { sideEffect.emit(AppSideEffect.DepositWithdraw(value - cash)) }
-            return this.copy(cash = 0, deposit = (deposit + cash) - value)
+            copy(cash = 0, deposit = (deposit + cash) - value)
+        } else if (config.hasFunds && funds.isNotEmpty()) {
+            var stub = cash + deposit
+            var newFunds = funds.toList()
+            funds.sortedBy { it.rate }.forEach { fund ->
+                if (stub + fund.amount > value) {
+                    newFunds = funds.replace(fund, fund.copy(rate = stub + fund.amount - value))
+                    return@forEach
+                } else {
+                    stub += fund.amount
+                    newFunds = newFunds.remove(fund)
+                }
+            }
+            if (newFunds.isEmpty() && stub < value) {
+                copy(cash = 0, deposit = 0, funds = emptyList(), loan = loan + (value - stub))
+            } else {
+                copy(cash = 0, deposit = 0, funds = newFunds)
+            }
         } else {
             launch { sideEffect.emit(AppSideEffect.LoanAdded(value - (cash + deposit))) }
-            return this.copy(cash = 0, deposit = 0, loan = loan + (value - (deposit + cash)))
+            copy(cash = 0, deposit = 0, loan = loan + (value - (deposit + cash)))
         }
     }
 }

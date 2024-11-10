@@ -2,8 +2,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import java.awt.Dimension
 import ua.vald_zx.game.rat.race.card.App
+import java.awt.Dimension
 
 fun main() = application {
     Window(

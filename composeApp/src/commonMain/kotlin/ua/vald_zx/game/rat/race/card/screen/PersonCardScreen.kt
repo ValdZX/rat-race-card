@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ElevatedButton
@@ -25,12 +26,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import ua.vald_zx.game.rat.race.card.beans.ProfessionCard
-import ua.vald_zx.game.rat.race.card.getDigits
+import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
@@ -57,7 +61,7 @@ class PersonCardScreen : Screen {
     }
 }
 
-class EditPersonCardScreen() : Screen {
+class EditPersonCardScreen : Screen {
     @Composable
     override fun Content() {
         val state by store.observeState().collectAsState()
@@ -89,59 +93,46 @@ class EditPersonCardScreen() : Screen {
 @Composable
 fun ProfessionCardForm(card: ProfessionCard? = null, filled: (ProfessionCard) -> Unit) {
     var profession by remember { mutableStateOf(card?.profession.orEmpty()) }
-    var salary by remember { mutableStateOf(card?.salary?.toString().orEmpty()) }
-    var rent by remember { mutableStateOf(card?.rent?.toString().orEmpty()) }
-    var food by remember { mutableStateOf(card?.food?.toString().orEmpty()) }
-    var cloth by remember { mutableStateOf(card?.cloth?.toString().orEmpty()) }
-    var transport by remember { mutableStateOf(card?.transport?.toString().orEmpty()) }
-    var phone by remember { mutableStateOf(card?.phone?.toString().orEmpty()) }
+    val salary = remember { mutableStateOf(TextFieldValue(card?.salary?.toString().orEmpty())) }
+    val rent = remember { mutableStateOf(TextFieldValue(card?.rent?.toString().orEmpty())) }
+    val food = remember { mutableStateOf(TextFieldValue(card?.food?.toString().orEmpty())) }
+    val cloth = remember { mutableStateOf(TextFieldValue(card?.cloth?.toString().orEmpty())) }
+    val transport = remember { mutableStateOf(TextFieldValue(card?.transport?.toString().orEmpty())) }
+    val phone = remember { mutableStateOf(TextFieldValue(card?.phone?.toString().orEmpty())) }
+    val focusManager = LocalFocusManager.current
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
         label = { Text("Професія") },
         value = profession,
-        onValueChange = { profession = it }
+        onValueChange = { profession = it },
+        keyboardOptions = KeyboardOptions( imeAction = ImeAction.Next ),
+        keyboardActions = KeyboardActions(
+            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+        )
     )
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text("Зарплата") },
-        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-        value = salary,
-        onValueChange = { salary = it.getDigits() }
+    NumberTextField(
+        input = salary,
+        inputLabel = "Зарплата",
     )
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text("Оренда житла") },
-        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-        value = rent,
-        onValueChange = { rent = it.getDigits() }
+    NumberTextField(
+        input = rent,
+        inputLabel = "Оренда житла",
     )
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text("Витрати на харчування") },
-        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-        value = food,
-        onValueChange = { food = it.getDigits() }
+    NumberTextField(
+        input = food,
+        inputLabel = "Витрати на харчування",
     )
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text("Витрати на одяг") },
-        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-        value = cloth,
-        onValueChange = { cloth = it.getDigits() }
+    NumberTextField(
+        input = cloth,
+        inputLabel = "Витрати на одяг",
     )
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text("Витрати на проїзд") },
-        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-        value = transport,
-        onValueChange = { transport = it.getDigits() }
+    NumberTextField(
+        input = transport,
+        inputLabel = "Витрати на проїзд",
     )
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text("Витрати на телефонні переговори") },
-        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-        value = phone,
-        onValueChange = { phone = it.getDigits() }
+    NumberTextField(
+        input = phone,
+        inputLabel = "Витрати на телефонні переговори",
     )
     ElevatedButton(
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -150,22 +141,22 @@ fun ProfessionCardForm(card: ProfessionCard? = null, filled: (ProfessionCard) ->
             filled(
                 ProfessionCard(
                     profession = profession.trim(),
-                    salary = salary.toLong(),
-                    rent = rent.toLong(),
-                    food = food.toLong(),
-                    cloth = cloth.toLong(),
-                    transport = transport.toLong(),
-                    phone = phone.toLong(),
+                    salary = salary.value.text.toLong(),
+                    rent = rent.value.text.toLong(),
+                    food = food.value.text.toLong(),
+                    cloth = cloth.value.text.toLong(),
+                    transport = transport.value.text.toLong(),
+                    phone = phone.value.text.toLong(),
                 )
             )
         },
         enabled = profession.isNotEmpty()
-                && salary.isNotEmpty()
-                && rent.isNotEmpty()
-                && food.isNotEmpty()
-                && cloth.isNotEmpty()
-                && transport.isNotEmpty()
-                && phone.isNotEmpty(),
+                && salary.value.text.isNotEmpty()
+                && rent.value.text.isNotEmpty()
+                && food.value.text.isNotEmpty()
+                && cloth.value.text.isNotEmpty()
+                && transport.value.text.isNotEmpty()
+                && phone.value.text.isNotEmpty(),
         content = {
             Text("Готово")
         }

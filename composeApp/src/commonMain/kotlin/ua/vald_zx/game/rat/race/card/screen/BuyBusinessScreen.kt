@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.OutlinedTextField
@@ -18,14 +19,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
-import ua.vald_zx.game.rat.race.card.getDigits
+import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.store
 
@@ -40,8 +44,10 @@ class BuyBusinessScreen() : Screen {
                 mutableStateOf(if (type == null || type == BusinessType.WORK) BusinessType.SMALL else type)
             }
             var businessName by remember { mutableStateOf("") }
-            var businessPrise by remember { mutableStateOf("") }
-            var businessProfit by remember { mutableStateOf("") }
+            val inputBusinessPrise = remember { mutableStateOf(TextFieldValue("")) }
+            val inputBusinessProfit = remember { mutableStateOf(TextFieldValue("")) }
+            val businessPrise = inputBusinessPrise.value.text
+            val businessProfit = inputBusinessProfit.value.text
             val noBusiness = state.business.isEmpty()
             val hasWork = state.business.any { it.type == BusinessType.WORK }
             val hasSmall = state.business.any { it.type == BusinessType.SMALL }
@@ -102,25 +108,26 @@ class BuyBusinessScreen() : Screen {
                     }
                 }
             }
+            val focusManager = LocalFocusManager.current
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Назва бізнеса") },
                 value = businessName,
-                onValueChange = { businessName = it }
+                onValueChange = { businessName = it },
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Next,
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
             )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Ціна бізнеса") },
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                value = businessPrise,
-                onValueChange = { businessPrise = it.getDigits() }
+            NumberTextField(
+                input = inputBusinessPrise,
+                inputLabel = "Ціна бізнеса",
             )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Дохід бізнеса") },
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                value = businessProfit,
-                onValueChange = { businessProfit = it.getDigits() }
+            NumberTextField(
+                input = inputBusinessProfit,
+                inputLabel = "Дохід бізнеса",
             )
             ElevatedButton(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)

@@ -17,7 +17,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,13 +28,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import com.russhwolf.settings.set
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.components.Button
-import ua.vald_zx.game.rat.race.card.getDigits
+import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
@@ -140,79 +140,36 @@ class SettingsScreen : Screen {
                         )
                     })
                 }
-                var depositRate by remember { mutableStateOf(state.config.depositRate.toString()) }
-                var loadRate by remember { mutableStateOf(state.config.loadRate.toString()) }
-                var babyCost by remember { mutableStateOf(state.config.babyCost.toString()) }
-                var carCost by remember { mutableStateOf(state.config.carCost.toString()) }
-                var apartmentCost by remember { mutableStateOf(state.config.apartmentCost.toString()) }
-                var cottageCost by remember { mutableStateOf(state.config.cottageCost.toString()) }
-                var yachtCost by remember { mutableStateOf(state.config.yachtCost.toString()) }
-                var flightCost by remember { mutableStateOf(state.config.flightCost.toString()) }
-                var fundBaseRate by remember { mutableStateOf(state.config.fundBaseRate.toString()) }
-                var fundStartRate by remember { mutableStateOf(state.config.fundStartRate.toString()) }
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Ставка депозиту %") },
-                    value = depositRate,
-                    onValueChange = { depositRate = it.getDigits() }
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Базова ставка фонду") },
-                    value = fundBaseRate,
-                    onValueChange = { fundBaseRate = it.getDigits() }
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Виграшна ставка фонду") },
-                    value = fundStartRate,
-                    onValueChange = { fundStartRate = it.getDigits() }
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Процент кредиту %") },
-                    value = loadRate,
-                    onValueChange = { loadRate = it.getDigits() }
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Витрати на дитину") },
-                    value = babyCost,
-                    onValueChange = { babyCost = it.getDigits() }
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Витрати на автомобіль") },
-                    value = carCost,
-                    onValueChange = { carCost = it.getDigits() }
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Витрати на квариру") },
-                    value = apartmentCost,
-                    onValueChange = { apartmentCost = it.getDigits() }
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Витрати на маєток") },
-                    value = cottageCost,
-                    onValueChange = { cottageCost = it.getDigits() }
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Витрати на яхту") },
-                    value = yachtCost,
-                    onValueChange = { yachtCost = it.getDigits() }
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Витрати на літак") },
-                    value = flightCost,
-                    onValueChange = { flightCost = it.getDigits() }
-                )
-
-
+                val inputDepositRate =
+                    remember { mutableStateOf(TextFieldValue(state.config.depositRate.toString())) }
+                val inputLoadRate =
+                    remember { mutableStateOf(TextFieldValue(state.config.loadRate.toString())) }
+                val inputBabyCost =
+                    remember { mutableStateOf(TextFieldValue(state.config.babyCost.toString())) }
+                val inputCarCost =
+                    remember { mutableStateOf(TextFieldValue(state.config.carCost.toString())) }
+                val inputApartmentCost =
+                    remember { mutableStateOf(TextFieldValue(state.config.apartmentCost.toString())) }
+                val inputCottageCost =
+                    remember { mutableStateOf(TextFieldValue(state.config.cottageCost.toString())) }
+                val inputYachtCost =
+                    remember { mutableStateOf(TextFieldValue(state.config.yachtCost.toString())) }
+                val inputFlightCost =
+                    remember { mutableStateOf(TextFieldValue(state.config.flightCost.toString())) }
+                val inputFundBaseRate =
+                    remember { mutableStateOf(TextFieldValue(state.config.fundBaseRate.toString())) }
+                val inputFundStartRate =
+                    remember { mutableStateOf(TextFieldValue(state.config.fundStartRate.toString())) }
+                NumberTextField(input = inputDepositRate, inputLabel = "Ставка депозиту %")
+                NumberTextField(input = inputFundBaseRate, inputLabel = "Базова ставка фонду")
+                NumberTextField(input = inputFundStartRate, inputLabel = "Виграшна ставка фонду")
+                NumberTextField(input = inputLoadRate, inputLabel = "Процент кредиту %")
+                NumberTextField(input = inputBabyCost, inputLabel = "Витрати на дитину")
+                NumberTextField(input = inputCarCost, inputLabel = "Витрати на автомобіль")
+                NumberTextField(input = inputApartmentCost, inputLabel = "Витрати на квариру")
+                NumberTextField(input = inputCottageCost, inputLabel = "Витрати на маєток")
+                NumberTextField(input = inputYachtCost, inputLabel = "Витрати на яхту")
+                NumberTextField(input = inputFlightCost, inputLabel = "Витрати на літак")
                 ElevatedButton(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         .widthIn(min = 200.dp),
@@ -220,29 +177,29 @@ class SettingsScreen : Screen {
                         store.dispatch(
                             AppAction.UpdateConfig(
                                 Config(
-                                    depositRate = depositRate.toLong(),
-                                    loadRate = loadRate.toLong(),
-                                    babyCost = babyCost.toLong(),
-                                    carCost = carCost.toLong(),
-                                    apartmentCost = apartmentCost.toLong(),
-                                    cottageCost = cottageCost.toLong(),
-                                    yachtCost = yachtCost.toLong(),
-                                    flightCost = flightCost.toLong(),
-                                    fundBaseRate = fundBaseRate.toLong(),
-                                    fundStartRate = fundStartRate.toLong(),
+                                    depositRate = inputDepositRate.value.text.toLong(),
+                                    loadRate = inputLoadRate.value.text.toLong(),
+                                    babyCost = inputBabyCost.value.text.toLong(),
+                                    carCost = inputCarCost.value.text.toLong(),
+                                    apartmentCost = inputApartmentCost.value.text.toLong(),
+                                    cottageCost = inputCottageCost.value.text.toLong(),
+                                    yachtCost = inputYachtCost.value.text.toLong(),
+                                    flightCost = inputFlightCost.value.text.toLong(),
+                                    fundBaseRate = inputFundBaseRate.value.text.toLong(),
+                                    fundStartRate = inputFundStartRate.value.text.toLong(),
                                 )
                             )
                         )
                         navigator?.pop()
                     },
-                    enabled = depositRate.isNotEmpty()
-                            && loadRate.isNotEmpty()
-                            && babyCost.isNotEmpty()
-                            && carCost.isNotEmpty()
-                            && apartmentCost.isNotEmpty()
-                            && cottageCost.isNotEmpty()
-                            && yachtCost.isNotEmpty()
-                            && flightCost.isNotEmpty(),
+                    enabled = inputDepositRate.value.text.isNotEmpty()
+                            && inputLoadRate.value.text.isNotEmpty()
+                            && inputBabyCost.value.text.isNotEmpty()
+                            && inputCarCost.value.text.isNotEmpty()
+                            && inputApartmentCost.value.text.isNotEmpty()
+                            && inputCottageCost.value.text.isNotEmpty()
+                            && inputYachtCost.value.text.isNotEmpty()
+                            && inputFlightCost.value.text.isNotEmpty(),
                     content = { Text("Зберегти") }
                 )
             }

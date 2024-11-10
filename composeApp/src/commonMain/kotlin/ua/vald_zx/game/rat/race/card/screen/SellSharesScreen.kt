@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,12 +17,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
-import ua.vald_zx.game.rat.race.card.getDigits
+import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.store
@@ -37,8 +35,8 @@ class SellSharesScreen : Screen {
         BottomSheetContainer {
             val existsShares = state.existsShares()
             var type by remember { mutableStateOf(existsShares.first()) }
-            var count by remember { mutableStateOf("") }
-            var price by remember { mutableStateOf("") }
+            val inputCount = remember { mutableStateOf(TextFieldValue("")) }
+            val inputPrice = remember { mutableStateOf(TextFieldValue("")) }
             existsShares.forEach { entry ->
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -49,23 +47,19 @@ class SellSharesScreen : Screen {
                     Text("${entry.name}: ${state.sharesCount(entry)}")
                 }
             }
+            val count = inputCount.value.text
+            val price = inputPrice.value.text
             Text(
                 "Сумарно: ${((count.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).splitDecimal()}",
                 style = MaterialTheme.typography.titleSmall
             )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Кількість") },
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                value = count,
-                onValueChange = { count = it.getDigits() }
+            NumberTextField(
+                input = inputCount,
+                inputLabel = "Кількість",
             )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Ціна продажу") },
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                value = price,
-                onValueChange = { price = it.getDigits() }
+            NumberTextField(
+                input = inputPrice,
+                inputLabel = "Ціна продажу",
             )
             ElevatedButton(
                 modifier = Modifier

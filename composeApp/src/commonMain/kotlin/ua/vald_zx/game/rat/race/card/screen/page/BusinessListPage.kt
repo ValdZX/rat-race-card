@@ -18,7 +18,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
@@ -28,12 +27,10 @@ import ua.vald_zx.game.rat.race.card.logic.AppAction
 import ua.vald_zx.game.rat.race.card.logic.AppState
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Dice
-import ua.vald_zx.game.rat.race.card.resource.images.Stars
 import ua.vald_zx.game.rat.race.card.screen.BuyBusinessScreen
 import ua.vald_zx.game.rat.race.card.screen.ExtendBusinessScreen
 import ua.vald_zx.game.rat.race.card.screen.SellBusinessScreen
 import ua.vald_zx.game.rat.race.card.store
-import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 @Composable
 fun BusinessListPage(state: AppState) {
