@@ -39,7 +39,7 @@ data class AppState(
 ) : State {
 
     fun balance(): Long {
-        return cash + deposit
+        return cash + deposit + funds.sumOf { it.amount }
     }
 
     fun activeProfit(): Long {
@@ -410,13 +410,14 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
         } else if (config.hasFunds && funds.isNotEmpty()) {
             var stub = cash + deposit
             var newFunds = funds.toList()
-            funds.sortedBy { it.rate }.forEach { fund ->
+            funds.sortedBy { it.rate }.first { fund ->
                 if (stub + fund.amount > value) {
-                    newFunds = funds.replace(fund, fund.copy(rate = stub + fund.amount - value))
-                    return@forEach
+                    newFunds = funds.replace(fund, fund.copy(amount = stub + fund.amount - value))
+                    true
                 } else {
                     stub += fund.amount
                     newFunds = newFunds.remove(fund)
+                    false
                 }
             }
             if (newFunds.isEmpty() && stub < value) {
