@@ -355,7 +355,7 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 } else {
                     oldState.funds + action.fund
                 }
-                oldState.copy(funds = funds).minusCash(action.fund.amount)
+                oldState.copy(funds = funds).minusCash(action.fund.amount, true)
             }
 
             is AppAction.FromFund -> {
@@ -401,16 +401,16 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
         return copy(cash = cash + value)
     }
 
-    private fun AppState.minusCash(value: Long): AppState {
+    private fun AppState.minusCash(value: Long, isFundBuy: Boolean = false): AppState {
         return if (cash > value) {
             copy(cash = cash - value)
         } else if ((cash + deposit) > value) {
             launch { sideEffect.emit(AppSideEffect.DepositWithdraw(value - cash)) }
             copy(cash = 0, deposit = (deposit + cash) - value)
-        } else if (config.hasFunds && funds.isNotEmpty()) {
+        } else if (!isFundBuy && config.hasFunds && funds.isNotEmpty()) {
             var stub = cash + deposit
             var newFunds = funds.toList()
-            funds.sortedBy { it.rate }.first { fund ->
+            funds.sortedBy { it.rate }.firstOrNull { fund ->
                 if (stub + fund.amount > value) {
                     newFunds = funds.replace(fund, fund.copy(amount = stub + fund.amount - value))
                     true
