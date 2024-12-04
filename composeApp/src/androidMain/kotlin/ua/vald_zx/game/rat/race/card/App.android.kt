@@ -7,7 +7,7 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
-import android.speech.tts.TextToSpeech.LANG_AVAILABLE
+import android.speech.tts.TextToSpeech.LANG_COUNTRY_AVAILABLE
 import android.speech.tts.TextToSpeech.OnInitListener
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -102,7 +102,7 @@ internal actual fun playCoin() {
 
 
 internal actual fun ttsIsUkraineSupported(): Boolean {
-    return AndroidApp.ACTIVITY.textToSpeech?.isLanguageAvailable(uk) == LANG_AVAILABLE
+    return AndroidApp.ACTIVITY.textToSpeech?.isLanguageAvailable(uk) == LANG_COUNTRY_AVAILABLE
 }
 
 internal actual fun tts(string: String) {
