@@ -56,8 +56,10 @@ import ua.vald_zx.game.rat.race.card.screen.page.BusinessListPage
 import ua.vald_zx.game.rat.race.card.screen.page.FundsPage
 import ua.vald_zx.game.rat.race.card.screen.page.SharesPage
 import ua.vald_zx.game.rat.race.card.screen.page.StatePage
+import ua.vald_zx.game.rat.race.card.settings
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.tts
 
 
 class MainScreen : Screen {
@@ -186,8 +188,20 @@ class MainScreen : Screen {
                             loanAddedDialog = effect.balance
                         }
 
-                        AppSideEffect.AddCash -> {
-                            playCoin()
+                        is AppSideEffect.AddCash -> {
+                            if(state.config.tts) {
+                                tts("Зараховано ${effect.amount}")
+                            }else {
+                                playCoin()
+                            }
+                        }
+
+                        is AppSideEffect.SubCash -> {
+                            if(state.config.tts) {
+                                tts("Списано ${effect.amount}")
+                            }else {
+                                playCoin()
+                            }
                         }
 
                         AppSideEffect.ConfirmFired -> {

@@ -68,4 +68,5 @@ data class Config(
     val fundBaseRate: Long = 20,
     val fundStartRate: Long = 30,
     val hasFunds: Boolean = false,
+    val tts: Boolean = false,
 )

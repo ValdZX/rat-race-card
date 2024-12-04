@@ -106,11 +106,11 @@ dependencies {
 version = "1.7"
 android {
     namespace = "ua.vald_zx.game.rat.race.card"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
 
         applicationId = "ua.vald_zx.game.rat.race.card.androidApp"
         versionCode = version.toString().let {

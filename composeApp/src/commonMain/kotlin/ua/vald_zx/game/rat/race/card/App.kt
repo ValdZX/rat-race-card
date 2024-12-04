@@ -47,7 +47,7 @@ internal fun App() = AppTheme {
     }
 }
 
-
 internal expect fun openUrl(url: String?)
 internal expect fun share(data: String?)
 internal expect fun playCoin()
+internal expect fun tts(string: String)

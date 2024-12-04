@@ -151,7 +151,8 @@ sealed class AppSideEffect : Effect {
     data class DepositWithdraw(val balance: Long) : AppSideEffect()
     data class LoanAdded(val balance: Long) : AppSideEffect()
     data object ConfirmFired : AppSideEffect()
-    data object AddCash : AppSideEffect()
+    data class AddCash(val amount: Long) : AppSideEffect()
+    data class SubCash(val amount: Long) : AppSideEffect()
     data object ShowSalaryApprove : AppSideEffect()
 }
 
@@ -397,11 +398,12 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
     }
 
     private fun AppState.plusCash(value: Long): AppState {
-        launch { sideEffect.emit(AppSideEffect.AddCash) }
+        launch { sideEffect.emit(AppSideEffect.AddCash(value)) }
         return copy(cash = cash + value)
     }
 
     private fun AppState.minusCash(value: Long, isFundBuy: Boolean = false): AppState {
+        launch { sideEffect.emit(AppSideEffect.SubCash(value)) }
         return if (cash > value) {
             copy(cash = cash - value)
         } else if ((cash + deposit) > value) {

@@ -140,6 +140,20 @@ class SettingsScreen : Screen {
                         )
                     })
                 }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("TTS")
+                    Switch(state.config.tts, onCheckedChange = {
+                        store.dispatch(
+                            AppAction.UpdateConfig(
+                                state.config.copy(tts = it)
+                            )
+                        )
+                    })
+                }
                 val inputDepositRate =
                     remember { mutableStateOf(TextFieldValue(state.config.depositRate.toString())) }
                 val inputLoadRate =

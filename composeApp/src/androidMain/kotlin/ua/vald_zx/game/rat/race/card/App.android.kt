@@ -6,11 +6,14 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
+import android.speech.tts.TextToSpeech.OnInitListener
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import java.util.Locale
 
 class AndroidApp : Application() {
     companion object {
@@ -27,12 +30,38 @@ class AndroidApp : Application() {
 
 class AppActivity : ComponentActivity() {
     var mediaPlayer: MediaPlayer? = null
+    var textToSpeech: TextToSpeech? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent { App() }
         AndroidApp.ACTIVITY = this
         mediaPlayer = MediaPlayer.create(this, R.raw.coin)
+        textToSpeech = TextToSpeech(this, object : OnInitListener {
+            override fun onInit(status: Int) {
+
+                if (status == TextToSpeech.SUCCESS) {
+
+                    val result = textToSpeech?.setLanguage(Locale("uk", "UA"))
+
+                    // tts.setPitch(5); // set pitch level
+
+                    // tts.setSpeechRate(2); // set speech speed rate
+
+                    if (result == TextToSpeech.LANG_MISSING_DATA
+                        || result == TextToSpeech.LANG_NOT_SUPPORTED
+                    ) {
+                        Napier.e("Language is not supported")
+                    } else {
+                        Napier.d("TTS inited")
+                    }
+
+                } else {
+                    Napier.e("Initilization Failed");
+                }
+            }
+        })
     }
 }
 
@@ -62,4 +91,8 @@ internal actual fun share(data: String?) {
 
 internal actual fun playCoin() {
     AndroidApp.ACTIVITY.mediaPlayer?.start()
+}
+
+internal actual fun tts(string: String) {
+    AndroidApp.ACTIVITY.textToSpeech?.speak(string, TextToSpeech.QUEUE_FLUSH, null, null)
 }

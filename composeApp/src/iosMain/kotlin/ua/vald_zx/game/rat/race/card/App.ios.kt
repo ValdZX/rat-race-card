@@ -30,3 +30,6 @@ internal actual fun share(data: String?) {
 
 internal actual fun playCoin() {
 }
+
+internal actual fun tts(string: String) {
+}
