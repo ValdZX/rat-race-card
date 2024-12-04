@@ -31,5 +31,7 @@ internal actual fun share(data: String?) {
 internal actual fun playCoin() {
 }
 
+internal actual fun ttsIsUkraineSupported(): Boolean  = false
+
 internal actual fun tts(string: String) {
 }

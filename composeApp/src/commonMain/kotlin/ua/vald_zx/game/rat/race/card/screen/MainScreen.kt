@@ -56,10 +56,10 @@ import ua.vald_zx.game.rat.race.card.screen.page.BusinessListPage
 import ua.vald_zx.game.rat.race.card.screen.page.FundsPage
 import ua.vald_zx.game.rat.race.card.screen.page.SharesPage
 import ua.vald_zx.game.rat.race.card.screen.page.StatePage
-import ua.vald_zx.game.rat.race.card.settings
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.store
 import ua.vald_zx.game.rat.race.card.tts
+import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
 
 class MainScreen : Screen {
@@ -190,7 +190,11 @@ class MainScreen : Screen {
 
                         is AppSideEffect.AddCash -> {
                             if(state.config.tts) {
-                                tts("Зараховано ${effect.amount}")
+                                if(ttsIsUkraineSupported()) {
+                                    tts("Зараховано ${effect.amount}")
+                                }else {
+                                    tts("${effect.amount} is credited")
+                                }
                             }else {
                                 playCoin()
                             }
@@ -198,7 +202,11 @@ class MainScreen : Screen {
 
                         is AppSideEffect.SubCash -> {
                             if(state.config.tts) {
-                                tts("Списано ${effect.amount}")
+                                if(ttsIsUkraineSupported()) {
+                                    tts("Списано ${effect.amount}")
+                                }else {
+                                    tts("${effect.amount} is debited")
+                                }
                             }else {
                                 playCoin()
                             }

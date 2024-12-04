@@ -7,6 +7,7 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
+import android.speech.tts.TextToSpeech.LANG_AVAILABLE
 import android.speech.tts.TextToSpeech.OnInitListener
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,6 +29,8 @@ class AndroidApp : Application() {
     }
 }
 
+val uk = Locale("uk", "UA")
+
 class AppActivity : ComponentActivity() {
     var mediaPlayer: MediaPlayer? = null
     var textToSpeech: TextToSpeech? = null
@@ -42,8 +45,11 @@ class AppActivity : ComponentActivity() {
             override fun onInit(status: Int) {
 
                 if (status == TextToSpeech.SUCCESS) {
-
-                    val result = textToSpeech?.setLanguage(Locale("uk", "UA"))
+                    val result = if (ttsIsUkraineSupported()) {
+                        textToSpeech?.setLanguage(uk)
+                    } else {
+                        textToSpeech?.setLanguage(Locale.UK)
+                    }
 
                     // tts.setPitch(5); // set pitch level
 
@@ -53,6 +59,7 @@ class AppActivity : ComponentActivity() {
                         || result == TextToSpeech.LANG_NOT_SUPPORTED
                     ) {
                         Napier.e("Language is not supported")
+                        textToSpeech?.setLanguage(Locale.UK)
                     } else {
                         Napier.d("TTS inited")
                     }
@@ -91,6 +98,11 @@ internal actual fun share(data: String?) {
 
 internal actual fun playCoin() {
     AndroidApp.ACTIVITY.mediaPlayer?.start()
+}
+
+
+internal actual fun ttsIsUkraineSupported(): Boolean {
+    return AndroidApp.ACTIVITY.textToSpeech?.isLanguageAvailable(uk) == LANG_AVAILABLE
 }
 
 internal actual fun tts(string: String) {
