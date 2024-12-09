@@ -9,8 +9,8 @@ import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
 import io.github.xxfast.kstore.KStore
-import io.github.xxfast.kstore.file.storeOf
 import kotlinx.io.files.Path
+import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
@@ -20,11 +20,11 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace4CardStore
 import ua.vald_zx.game.rat.race.card.screen.SelectBoardScreen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
-internal expect val storageDir: String
+internal expect inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T>
 val raceRate2KStore: KStore<RatRace2CardState>
-    get() = storeOf(file = Path("$storageDir/raceRate2.json"))
+    get() = getStore("raceRate2.json")
 val raceRate4KStore: KStore<RatRace4CardState>
-    get() = storeOf(file = Path("$storageDir/raceRate4.json"))
+    get() = getStore("raceRate4.json")
 val raceRate2store = RatRace2CardStore()
 val raceRate4store = RatRace4CardStore()
 val settings: Settings = Settings()

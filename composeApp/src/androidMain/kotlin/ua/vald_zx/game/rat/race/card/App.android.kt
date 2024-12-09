@@ -14,6 +14,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import io.github.xxfast.kstore.KStore
+import io.github.xxfast.kstore.file.storeOf
+import kotlinx.io.files.Path
+import kotlinx.serialization.Serializable
 import java.util.Locale
 
 class AndroidApp : Application() {
@@ -82,8 +86,12 @@ internal actual fun openUrl(url: String?) {
     AndroidApp.INSTANCE.startActivity(intent)
 }
 
-internal actual val storageDir: String
+internal val storageDir: String
     get() = AndroidApp.INSTANCE.filesDir.path
+
+internal actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
+    return storeOf(file = Path("$storageDir/$name"))
+}
 
 internal actual fun share(data: String?) {
     val shareIntent = Intent().apply {

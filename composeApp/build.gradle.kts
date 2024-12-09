@@ -2,7 +2,9 @@ import com.android.build.api.dsl.ManagedVirtualDevice
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -28,11 +30,25 @@ kotlin {
     }
 
     jvm()
-//
-//    wasmJs {
-//        browser()
-//        binaries.executable()
-//    }
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        moduleName = "composeApp"
+        browser {
+            val rootDirPath = project.rootDir.path
+            val projectDirPath = project.projectDir.path
+            commonWebpackConfig {
+                outputFileName = "composeApp.js"
+                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+                    static = (static ?: mutableListOf()).apply {
+                        // Serve sources to debug inside browser
+                        add(rootDirPath)
+                        add(projectDirPath)
+                    }
+                }
+            }
+        }
+        binaries.executable()
+    }
 
     listOf(
         iosX64(),
@@ -64,7 +80,6 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kstore)
-            implementation(libs.kstore.file)
             implementation(libs.ktor.core)
             implementation(libs.multiplatform.settings.no.arg)
         }
@@ -81,6 +96,7 @@ kotlin {
             implementation(libs.androidx.activityCompose)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.kstore.file)
         }
 
         jvmMain.dependencies {
@@ -88,13 +104,17 @@ kotlin {
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.appdirs)
+            implementation(libs.kstore.file)
         }
 
         iosMain.dependencies {
             implementation(libs.ktor.core)
             implementation(libs.ktor.client.darwin)
+            implementation(libs.kstore.file)
         }
-
+        wasmJsMain.dependencies {
+            implementation(libs.kstore.storage)
+        }
     }
 }
 
