@@ -2,7 +2,6 @@ package ua.vald_zx.game.rat.race.card
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -12,35 +11,38 @@ import com.russhwolf.settings.Settings
 import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.file.storeOf
 import kotlinx.io.files.Path
-import ua.vald_zx.game.rat.race.card.logic.AppAction
-import ua.vald_zx.game.rat.race.card.logic.AppState
-import ua.vald_zx.game.rat.race.card.logic.AppStore
-import ua.vald_zx.game.rat.race.card.screen.MainScreen
-import ua.vald_zx.game.rat.race.card.screen.PersonCardScreen
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
+import ua.vald_zx.game.rat.race.card.logic.RatRace4CardAction
+import ua.vald_zx.game.rat.race.card.logic.RatRace4CardState
+import ua.vald_zx.game.rat.race.card.logic.RatRace4CardStore
+import ua.vald_zx.game.rat.race.card.screen.SelectBoardScreen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 internal expect val storageDir: String
-val kStore: KStore<AppState>
-    get() = storeOf(file = Path("$storageDir/app.json"))
-val store = AppStore()
+val raceRate2KStore: KStore<RatRace2CardState>
+    get() = storeOf(file = Path("$storageDir/raceRate2.json"))
+val raceRate4KStore: KStore<RatRace4CardState>
+    get() = storeOf(file = Path("$storageDir/raceRate4.json"))
+val raceRate2store = RatRace2CardStore()
+val raceRate4store = RatRace4CardStore()
 val settings: Settings = Settings()
 
 @Composable
 internal fun App() = AppTheme {
     var kStoreLoaded by remember { mutableStateOf(false) }
     if (kStoreLoaded) {
-        val state by store.observeState().collectAsState()
-        val startScreen = if (state.professionCard.profession.isNotEmpty()) {
-            MainScreen()
-        } else {
-            PersonCardScreen()
-        }
-        Navigator(startScreen)
+        Navigator(SelectBoardScreen())
     } else {
         LaunchedEffect(Unit) {
-            val state = kStore.get()
-            if (state != null) {
-                store.dispatch(AppAction.LoadState(state))
+            val state2 = raceRate2KStore.get()
+            if (state2 != null) {
+                raceRate2store.dispatch(RatRace2CardAction.LoadState(state2))
+            }
+            val state4 = raceRate4KStore.get()
+            if (state4 != null) {
+                raceRate4store.dispatch(RatRace4CardAction.LoadState(state4))
             }
             kStoreLoaded = true
         }

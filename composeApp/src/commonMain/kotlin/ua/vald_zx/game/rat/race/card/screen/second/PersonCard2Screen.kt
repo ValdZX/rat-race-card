@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen
+package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,12 +35,12 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import ua.vald_zx.game.rat.race.card.beans.ProfessionCard
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
-import ua.vald_zx.game.rat.race.card.logic.AppAction
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.raceRate2store
 
-class PersonCardScreen : Screen {
+class PersonCard2Screen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
@@ -54,8 +54,8 @@ class PersonCardScreen : Screen {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             ProfessionCardForm {
-                store.dispatch(AppAction.FillProfessionCard(it))
-                navigator?.replace(MainScreen())
+                raceRate2store.dispatch(RatRace2CardAction.FillProfessionCardRat(it))
+                navigator?.replace(BornRaceRate2Screen())
             }
         }
     }
@@ -64,7 +64,7 @@ class PersonCardScreen : Screen {
 class EditPersonCardScreen : Screen {
     @Composable
     override fun Content() {
-        val state by store.observeState().collectAsState()
+        val state by raceRate2store.observeState().collectAsState()
         val navigator = LocalNavigator.current
         Column(
             modifier = Modifier
@@ -83,7 +83,7 @@ class EditPersonCardScreen : Screen {
                 }
             )
             ProfessionCardForm(state.professionCard) {
-                store.dispatch(AppAction.EditFillProfessionCard(it))
+                raceRate2store.dispatch(RatRace2CardAction.EditFillProfessionCardRat(it))
                 navigator?.popUntilRoot()
             }
         }

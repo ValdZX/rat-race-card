@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen
+package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -15,8 +15,8 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.beans.Fund
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
-import ua.vald_zx.game.rat.race.card.logic.AppAction
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.raceRate2store
 
 class BuyFundScreen() : Screen {
     @Composable
@@ -41,8 +41,8 @@ class BuyFundScreen() : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(
-                        AppAction.AddFund(
+                    raceRate2store.dispatch(
+                        RatRace2CardAction.AddFund(
                             Fund(
                                 rate = rate.toLong(),
                                 amount = amount.toLong(),

@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen
+package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,11 +30,11 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.ktor.util.decodeBase64String
 import kotlinx.serialization.json.Json
-import ua.vald_zx.game.rat.race.card.logic.AppAction
-import ua.vald_zx.game.rat.race.card.logic.AppState
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.raceRate2store
 
 class ImportScreen : Screen {
     @Composable
@@ -73,10 +73,10 @@ class ImportScreen : Screen {
                         .widthIn(min = 200.dp),
                     onClick = {
                         runCatching {
-                            val importedState: AppState =
+                            val importedState: RatRace2CardState =
                                 Json.decodeFromString(base64Card.decodeBase64String())
-                            store.dispatch(AppAction.LoadState(importedState))
-                            navigator?.replaceAll(MainScreen())
+                            raceRate2store.dispatch(RatRace2CardAction.LoadState(importedState))
+                            navigator?.replaceAll(BornRaceRate2Screen())
                         }.onFailure {
                             invalidData = true
                         }

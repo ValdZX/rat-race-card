@@ -38,12 +38,12 @@ import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.Copy
 import ua.vald_zx.game.rat.race.card.resource.images.Share
 import ua.vald_zx.game.rat.race.card.share
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.raceRate2store
 
 class ExportScreen : Screen {
     @Composable
     override fun Content() {
-        val state by store.observeState().collectAsState()
+        val state by raceRate2store.observeState().collectAsState()
         val navigator = LocalNavigator.current
         Box(
             modifier = Modifier

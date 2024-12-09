@@ -15,12 +15,12 @@ import ua.vald_zx.game.rat.race.card.beans.Fund
 import ua.vald_zx.game.rat.race.card.beans.ProfessionCard
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
-import ua.vald_zx.game.rat.race.card.kStore
+import ua.vald_zx.game.rat.race.card.raceRate2KStore
 import ua.vald_zx.game.rat.race.card.remove
 import ua.vald_zx.game.rat.race.card.replace
 
 @Serializable
-data class AppState(
+data class RatRace2CardState(
     val professionCard: ProfessionCard = ProfessionCard(),
     val cash: Long = 0,
     val deposit: Long = 0,
@@ -109,69 +109,69 @@ data class AppState(
     }
 }
 
-sealed class AppAction : Action {
-    data class LoadState(val state: AppState) : AppAction()
-    data class FillProfessionCard(val professionCard: ProfessionCard) : AppAction()
-    data class EditFillProfessionCard(val professionCard: ProfessionCard) : AppAction()
-    data object Fired : AppAction()
-    data object FiredConfirmed : AppAction()
-    data object GetSalary : AppAction()
-    data object GetSalaryApproved : AppAction()
-    data class AddFund(val fund: Fund) : AppAction()
-    data class FromFund(val fund: Fund, val amount: Long) : AppAction()
-    data object CapitalizeFunds : AppAction()
-    data object CapitalizeStarsFunds : AppAction()
-    data object RandomBusiness : AppAction()
-    data object HideAlarm : AppAction()
-    data class BuyBusiness(val business: Business) : AppAction()
-    data class SellBusiness(val business: Business, val amount: Long) : AppAction()
-    data class DismissalConfirmed(val business: Business) : AppAction()
-    data class SellingAllBusinessConfirmed(val business: Business) : AppAction()
-    data class ExtendBusiness(val amount: Long, val business: Business) : AppAction()
-    data class SideProfit(val amount: Long) : AppAction()
-    data class SideExpenses(val amount: Long) : AppAction()
-    data class GetLoan(val amount: Long) : AppAction()
-    data class RepayLoan(val amount: Long) : AppAction()
-    data class ToDeposit(val amount: Long) : AppAction()
-    data class FromDeposit(val amount: Long) : AppAction()
-    data class BuyCar(val price: Long) : AppAction()
-    data class BuyApartment(val price: Long) : AppAction()
-    data class BuyCottage(val price: Long) : AppAction()
-    data class BuyYacht(val price: Long) : AppAction()
-    data class BuyFlight(val price: Long) : AppAction()
-    data class BuyShares(val shares: Shares) : AppAction()
-    data class UpdateConfig(val config: Config) : AppAction()
-    data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) : AppAction()
-    data class UpdateFamily(val isMarried: Boolean, val babies: Long) : AppAction()
+sealed class RatRace2CardAction : Action {
+    data class LoadState(val state: RatRace2CardState) : RatRace2CardAction()
+    data class FillProfessionCardRat(val professionCard: ProfessionCard) : RatRace2CardAction()
+    data class EditFillProfessionCardRat(val professionCard: ProfessionCard) : RatRace2CardAction()
+    data object Fired : RatRace2CardAction()
+    data object FiredConfirmed : RatRace2CardAction()
+    data object GetSalary : RatRace2CardAction()
+    data object GetSalaryApproved : RatRace2CardAction()
+    data class AddFund(val fund: Fund) : RatRace2CardAction()
+    data class FromFund(val fund: Fund, val amount: Long) : RatRace2CardAction()
+    data object CapitalizeFunds : RatRace2CardAction()
+    data object CapitalizeStarsFunds : RatRace2CardAction()
+    data object RandomBusiness : RatRace2CardAction()
+    data object HideAlarm : RatRace2CardAction()
+    data class BuyBusiness(val business: Business) : RatRace2CardAction()
+    data class SellBusiness(val business: Business, val amount: Long) : RatRace2CardAction()
+    data class DismissalConfirmed(val business: Business) : RatRace2CardAction()
+    data class SellingAllBusinessConfirmed(val business: Business) : RatRace2CardAction()
+    data class ExtendBusiness(val amount: Long, val business: Business) : RatRace2CardAction()
+    data class SideProfit(val amount: Long) : RatRace2CardAction()
+    data class SideExpenses(val amount: Long) : RatRace2CardAction()
+    data class GetLoan(val amount: Long) : RatRace2CardAction()
+    data class RepayLoan(val amount: Long) : RatRace2CardAction()
+    data class ToDeposit(val amount: Long) : RatRace2CardAction()
+    data class FromDeposit(val amount: Long) : RatRace2CardAction()
+    data class BuyCar(val price: Long) : RatRace2CardAction()
+    data class BuyApartment(val price: Long) : RatRace2CardAction()
+    data class BuyCottage(val price: Long) : RatRace2CardAction()
+    data class BuyYacht(val price: Long) : RatRace2CardAction()
+    data class BuyFlight(val price: Long) : RatRace2CardAction()
+    data class BuyShares(val shares: Shares) : RatRace2CardAction()
+    data class UpdateConfig(val config: Config) : RatRace2CardAction()
+    data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) : RatRace2CardAction()
+    data class UpdateFamily(val isMarried: Boolean, val babies: Long) : RatRace2CardAction()
 }
 
-sealed class AppSideEffect : Effect {
-    data class ConfirmDismissal(val business: Business) : AppSideEffect()
-    data class ConfirmSellingAllBusiness(val business: Business) : AppSideEffect()
-    data class DepositWithdraw(val balance: Long) : AppSideEffect()
-    data class LoanAdded(val balance: Long) : AppSideEffect()
-    data object ConfirmFired : AppSideEffect()
-    data class AddCash(val amount: Long) : AppSideEffect()
-    data class SubCash(val amount: Long) : AppSideEffect()
-    data object ShowSalaryApprove : AppSideEffect()
+sealed class RatRace2CardSideEffect : Effect {
+    data class ConfirmDismissal(val business: Business) : RatRace2CardSideEffect()
+    data class ConfirmSellingAllBusiness(val business: Business) : RatRace2CardSideEffect()
+    data class DepositWithdraw(val balance: Long) : RatRace2CardSideEffect()
+    data class LoanAdded(val balance: Long) : RatRace2CardSideEffect()
+    data object ConfirmFired : RatRace2CardSideEffect()
+    data class AddCash(val amount: Long) : RatRace2CardSideEffect()
+    data class SubCash(val amount: Long) : RatRace2CardSideEffect()
+    data object ShowSalaryApprove : RatRace2CardSideEffect()
 }
 
-class AppStore : Store<AppState, AppAction, AppSideEffect>,
+class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2CardSideEffect>,
     CoroutineScope by CoroutineScope(Dispatchers.Main) {
 
-    private val state = MutableStateFlow(AppState())
-    private val sideEffect = MutableSharedFlow<AppSideEffect>()
+    private val state = MutableStateFlow(RatRace2CardState())
+    private val sideEffect = MutableSharedFlow<RatRace2CardSideEffect>()
 
-    override fun observeState(): StateFlow<AppState> = state
+    override fun observeState(): StateFlow<RatRace2CardState> = state
 
-    override fun observeSideEffect(): Flow<AppSideEffect> = sideEffect
+    override fun observeSideEffect(): Flow<RatRace2CardSideEffect> = sideEffect
 
-    override fun dispatch(action: AppAction) {
+    override fun dispatch(action: RatRace2CardAction) {
         val oldState = state.value
         val newState = when (action) {
-            is AppAction.LoadState -> action.state
-            is AppAction.FillProfessionCard -> {
-                AppState(
+            is RatRace2CardAction.LoadState -> action.state
+            is RatRace2CardAction.FillProfessionCardRat -> {
+                RatRace2CardState(
                     professionCard = action.professionCard,
                     business = listOf(
                         Business(
@@ -184,86 +184,86 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 )
             }
 
-            is AppAction.EditFillProfessionCard -> {
+            is RatRace2CardAction.EditFillProfessionCardRat -> {
                 oldState.copy(professionCard = action.professionCard)
             }
 
-            is AppAction.SideProfit -> {
+            is RatRace2CardAction.SideProfit -> {
                 oldState.plusCash(action.amount)
             }
 
-            is AppAction.SideExpenses -> {
+            is RatRace2CardAction.SideExpenses -> {
                 oldState.minusCash(action.amount)
             }
 
-            AppAction.HideAlarm -> {
+            RatRace2CardAction.HideAlarm -> {
                 oldState.copy(business = oldState.business.map { it.copy(alarmed = false) })
             }
 
-            AppAction.RandomBusiness -> {
+            RatRace2CardAction.RandomBusiness -> {
                 val random = (0..<oldState.business.size).random()
                 val business = oldState.business[random]
                 val businessList = oldState.business.map { it.copy(alarmed = business == it) }
                 oldState.copy(business = businessList)
             }
 
-            is AppAction.BuyBusiness -> {
+            is RatRace2CardAction.BuyBusiness -> {
                 val currentBusiness = oldState.business
                 if (action.business.type == BusinessType.SMALL
                     && currentBusiness.any { it.type == BusinessType.WORK }
                     && currentBusiness.count { it.type == BusinessType.SMALL } == 1
                 ) {
-                    launch { sideEffect.emit(AppSideEffect.ConfirmDismissal(action.business)) }
+                    launch { sideEffect.emit(RatRace2CardSideEffect.ConfirmDismissal(action.business)) }
                     oldState
                 } else if (currentBusiness.isNotEmpty()
                     && currentBusiness.first().type.klass != action.business.type.klass
                     && !currentBusiness.any { it.type == BusinessType.WORK }
                 ) {
-                    launch { sideEffect.emit(AppSideEffect.ConfirmSellingAllBusiness(action.business)) }
+                    launch { sideEffect.emit(RatRace2CardSideEffect.ConfirmSellingAllBusiness(action.business)) }
                     oldState
                 } else oldState.copy(business = currentBusiness + action.business)
                     .minusCash(action.business.price)
             }
 
-            is AppAction.SellBusiness -> {
+            is RatRace2CardAction.SellBusiness -> {
                 val business = oldState.business.toMutableList()
                 business.remove(action.business)
                 oldState.copy(business = business).plusCash(action.amount)
             }
 
-            is AppAction.ExtendBusiness -> {
+            is RatRace2CardAction.ExtendBusiness -> {
                 val business = action.business
                 val extended = business.copy(extentions = business.extentions + action.amount)
                 oldState.copy(business = oldState.business.replace(business, extended))
             }
 
-            is AppAction.DismissalConfirmed -> {
+            is RatRace2CardAction.DismissalConfirmed -> {
                 val business =
                     oldState.business.filter { it.type != BusinessType.WORK } + action.business
                 oldState.copy(business = business).minusCash(action.business.price)
             }
 
-            is AppAction.SellingAllBusinessConfirmed -> {
+            is RatRace2CardAction.SellingAllBusinessConfirmed -> {
                 oldState.copy(business = listOf(action.business))
                     .plusCash(oldState.business.sumOf { it.price })
                     .minusCash(action.business.price)
             }
 
-            is AppAction.BuyShares -> {
+            is RatRace2CardAction.BuyShares -> {
                 val sharesList = oldState.sharesList + action.shares
                 oldState.copy(sharesList = sharesList).minusCash(action.shares.price)
             }
 
-            AppAction.GetSalary -> {
-                launch { sideEffect.emit(AppSideEffect.ShowSalaryApprove) }
+            RatRace2CardAction.GetSalary -> {
+                launch { sideEffect.emit(RatRace2CardSideEffect.ShowSalaryApprove) }
                 oldState
             }
 
-            AppAction.GetSalaryApproved -> {
+            RatRace2CardAction.GetSalaryApproved -> {
                 oldState.plusCash(oldState.cashFlow())
             }
 
-            is AppAction.SellShares -> {
+            is RatRace2CardAction.SellShares -> {
                 var resultList = oldState.sharesList.toMutableList()
                 val sharesByType = resultList.filter { it.type == action.type }
                 var needToSell = action.count
@@ -288,65 +288,65 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 oldState.copy(sharesList = resultList).plusCash(action.count * action.sellPrice)
             }
 
-            is AppAction.RepayLoan -> {
+            is RatRace2CardAction.RepayLoan -> {
                 oldState.copy(
                     loan = oldState.loan - action.amount
                 ).minusCash(action.amount)
             }
 
-            is AppAction.GetLoan -> {
+            is RatRace2CardAction.GetLoan -> {
                 oldState.copy(loan = oldState.loan + action.amount).plusCash(action.amount)
             }
 
-            is AppAction.FromDeposit -> {
+            is RatRace2CardAction.FromDeposit -> {
                 oldState.copy(deposit = oldState.deposit - action.amount).plusCash(action.amount)
             }
 
-            is AppAction.ToDeposit -> {
+            is RatRace2CardAction.ToDeposit -> {
                 oldState.copy(
                     deposit = oldState.deposit + action.amount
                 ).minusCash(action.amount)
             }
 
-            is AppAction.UpdateFamily -> {
+            is RatRace2CardAction.UpdateFamily -> {
                 oldState.copy(isMarried = action.isMarried, babies = action.babies)
             }
 
-            is AppAction.BuyApartment -> {
+            is RatRace2CardAction.BuyApartment -> {
                 oldState.copy(
                     apartment = oldState.apartment + 1
                 ).minusCash(action.price)
             }
 
-            is AppAction.BuyCar -> {
+            is RatRace2CardAction.BuyCar -> {
                 oldState.copy(
                     cars = oldState.cars + 1
                 ).minusCash(action.price)
             }
 
-            is AppAction.BuyCottage -> {
+            is RatRace2CardAction.BuyCottage -> {
                 oldState.copy(
                     cottage = oldState.cottage + 1
                 ).minusCash(action.price)
             }
 
-            is AppAction.BuyFlight -> {
+            is RatRace2CardAction.BuyFlight -> {
                 oldState.copy(
                     flight = oldState.flight + 1
                 ).minusCash(action.price)
             }
 
-            is AppAction.BuyYacht -> {
+            is RatRace2CardAction.BuyYacht -> {
                 oldState.copy(
                     yacht = oldState.yacht + 1
                 ).minusCash(action.price)
             }
 
-            is AppAction.UpdateConfig -> {
+            is RatRace2CardAction.UpdateConfig -> {
                 oldState.copy(config = action.config)
             }
 
-            is AppAction.AddFund -> {
+            is RatRace2CardAction.AddFund -> {
                 val currentFund = oldState.funds.find { it.rate == action.fund.rate }
                 val funds = if (currentFund != null) {
                     oldState.funds.replace(
@@ -359,7 +359,7 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 oldState.copy(funds = funds).minusCash(action.fund.amount, true)
             }
 
-            is AppAction.FromFund -> {
+            is RatRace2CardAction.FromFund -> {
                 if ((action.fund.amount - action.amount) == 0L) {
                     oldState.copy(funds = oldState.funds.remove(action.fund))
                         .plusCash(action.amount)
@@ -370,44 +370,44 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 }
             }
 
-            AppAction.CapitalizeFunds -> {
+            RatRace2CardAction.CapitalizeFunds -> {
                 val amount = oldState.funds.sumOf { it.amount } + oldState.capitalization()
                 val funds = listOf(Fund(rate = oldState.config.fundBaseRate, amount))
                 oldState.copy(funds = funds)
             }
 
-            AppAction.CapitalizeStarsFunds -> {
+            RatRace2CardAction.CapitalizeStarsFunds -> {
                 val amount = oldState.funds.sumOf { it.amount } + oldState.capitalizationStart()
                 val funds = listOf(Fund(rate = oldState.config.fundBaseRate, amount))
                 oldState.copy(funds = funds)
             }
 
-            AppAction.Fired -> {
-                launch { sideEffect.emit(AppSideEffect.ConfirmFired) }
+            RatRace2CardAction.Fired -> {
+                launch { sideEffect.emit(RatRace2CardSideEffect.ConfirmFired) }
                 oldState
             }
 
-            AppAction.FiredConfirmed -> {
+            RatRace2CardAction.FiredConfirmed -> {
                 oldState.copy(business = oldState.business.filter { it.type != BusinessType.WORK })
             }
         }
         if (newState != oldState) {
             state.value = newState
-            launch { kStore.set(newState) }
+            launch { raceRate2KStore.set(newState) }
         }
     }
 
-    private fun AppState.plusCash(value: Long): AppState {
-        launch { sideEffect.emit(AppSideEffect.AddCash(value)) }
+    private fun RatRace2CardState.plusCash(value: Long): RatRace2CardState {
+        launch { sideEffect.emit(RatRace2CardSideEffect.AddCash(value)) }
         return copy(cash = cash + value)
     }
 
-    private fun AppState.minusCash(value: Long, isFundBuy: Boolean = false): AppState {
-        launch { sideEffect.emit(AppSideEffect.SubCash(value)) }
+    private fun RatRace2CardState.minusCash(value: Long, isFundBuy: Boolean = false): RatRace2CardState {
+        launch { sideEffect.emit(RatRace2CardSideEffect.SubCash(value)) }
         return if (cash > value) {
             copy(cash = cash - value)
         } else if ((cash + deposit) > value) {
-            launch { sideEffect.emit(AppSideEffect.DepositWithdraw(value - cash)) }
+            launch { sideEffect.emit(RatRace2CardSideEffect.DepositWithdraw(value - cash)) }
             copy(cash = 0, deposit = (deposit + cash) - value)
         } else if (!isFundBuy && config.hasFunds && funds.isNotEmpty()) {
             var stub = cash + deposit
@@ -428,7 +428,7 @@ class AppStore : Store<AppState, AppAction, AppSideEffect>,
                 copy(cash = 0, deposit = 0, funds = newFunds)
             }
         } else {
-            launch { sideEffect.emit(AppSideEffect.LoanAdded(value - (cash + deposit))) }
+            launch { sideEffect.emit(RatRace2CardSideEffect.LoanAdded(value - (cash + deposit))) }
             copy(cash = 0, deposit = 0, loan = loan + (value - (deposit + cash)))
         }
     }

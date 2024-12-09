@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen
+package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -10,7 +10,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,34 +20,37 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import ua.vald_zx.game.rat.race.card.beans.Shares
+import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
-import ua.vald_zx.game.rat.race.card.logic.AppAction
+import ua.vald_zx.game.rat.race.card.emptyIfZero
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.splitDecimal
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.raceRate2store
 
-class SellSharesScreen : Screen {
+class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0)) : Screen {
     @Composable
     override fun Content() {
-        val state by store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         BottomSheetContainer {
-            val existsShares = state.existsShares()
-            var type by remember { mutableStateOf(existsShares.first()) }
-            val inputCount = remember { mutableStateOf(TextFieldValue("")) }
-            val inputPrice = remember { mutableStateOf(TextFieldValue("")) }
-            existsShares.forEach { entry ->
+            var type by remember { mutableStateOf(shares.type) }
+            val inputCount = remember { mutableStateOf(TextFieldValue(shares.count.emptyIfZero())) }
+            val inputPrice = remember { mutableStateOf(TextFieldValue(shares.buyPrice.emptyIfZero())) }
+            val count = inputCount.value.text
+            val price = inputPrice.value.text
+            SharesType.entries.forEach { entry ->
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    RadioButton(type == entry, onClick = { type = entry })
-                    Text("${entry.name}: ${state.sharesCount(entry)}")
+                    RadioButton(type == entry, onClick = {
+                        type = entry
+                    })
+                    Text(entry.name)
                 }
             }
-            val count = inputCount.value.text
-            val price = inputPrice.value.text
             Text(
                 "Сумарно: ${((count.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).splitDecimal()}",
                 style = MaterialTheme.typography.titleSmall
@@ -59,7 +61,7 @@ class SellSharesScreen : Screen {
             )
             NumberTextField(
                 input = inputPrice,
-                inputLabel = "Ціна продажу",
+                inputLabel = "Ціна покупки",
             )
             ElevatedButton(
                 modifier = Modifier
@@ -67,19 +69,19 @@ class SellSharesScreen : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(
-                        AppAction.SellShares(
-                            type = type,
-                            count = count.toLong(),
-                            sellPrice = price.toLong(),
+                    raceRate2store.dispatch(
+                        RatRace2CardAction.BuyShares(
+                            Shares(
+                                type = type,
+                                count = count.toLong(),
+                                buyPrice = price.toLong(),
+                            )
                         )
                     )
                 },
-                enabled = count.isNotEmpty()
-                        && price.isNotEmpty()
-                        && count.toLong() <= state.sharesCount(type),
+                enabled = count.isNotEmpty() && price.isNotEmpty(),
                 content = {
-                    Text("Продати")
+                    Text("Купити")
                 }
             )
         }

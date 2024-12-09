@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen.page
+package ua.vald_zx.game.rat.race.card.screen.second.page
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,10 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.DetailsField
-import ua.vald_zx.game.rat.race.card.logic.AppState
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 
 @Composable
-fun StatePage(state: AppState) {
+fun StatePage(state: RatRace2CardState) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(state = rememberScrollState())) {
         DetailsField(
             "Активний прибуток",

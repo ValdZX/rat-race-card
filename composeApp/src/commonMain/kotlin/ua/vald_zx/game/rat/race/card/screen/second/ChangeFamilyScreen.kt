@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen
+package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -24,13 +24,13 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.getDigits
-import ua.vald_zx.game.rat.race.card.logic.AppAction
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.raceRate2store
 
 class ChangeFamilyScreen : Screen {
     @Composable
     override fun Content() {
-        val state by store.observeState().collectAsState()
+        val state by raceRate2store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         BottomSheetContainer {
             var isMarried by remember { mutableStateOf(state.isMarried) }
@@ -56,8 +56,8 @@ class ChangeFamilyScreen : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(
-                        AppAction.UpdateFamily(
+                    raceRate2store.dispatch(
+                        RatRace2CardAction.UpdateFamily(
                             isMarried = isMarried,
                             babies = babies.toLong()
                         )

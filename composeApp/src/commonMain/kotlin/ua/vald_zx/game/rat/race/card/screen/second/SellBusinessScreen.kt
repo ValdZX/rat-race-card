@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen
+package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -19,8 +19,8 @@ import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
-import ua.vald_zx.game.rat.race.card.logic.AppAction
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.raceRate2store
 
 class SellBusinessScreen(private val businessToSell: Business) : Screen {
     @Composable
@@ -59,7 +59,7 @@ class SellBusinessScreen(private val businessToSell: Business) : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(AppAction.SellBusiness(amount = amount.toLong(), business = businessToSell))
+                    raceRate2store.dispatch(RatRace2CardAction.SellBusiness(amount = amount.toLong(), business = businessToSell))
                 },
                 enabled = amount.isNotEmpty(),
                 content = {

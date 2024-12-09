@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen
+package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
@@ -46,23 +46,23 @@ import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.FundsField
 import ua.vald_zx.game.rat.race.card.components.NegativeField
 import ua.vald_zx.game.rat.race.card.components.PositiveField
-import ua.vald_zx.game.rat.race.card.logic.AppAction
-import ua.vald_zx.game.rat.race.card.logic.AppSideEffect
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect
 import ua.vald_zx.game.rat.race.card.playCoin
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Menu
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
-import ua.vald_zx.game.rat.race.card.screen.page.BusinessListPage
-import ua.vald_zx.game.rat.race.card.screen.page.FundsPage
-import ua.vald_zx.game.rat.race.card.screen.page.SharesPage
-import ua.vald_zx.game.rat.race.card.screen.page.StatePage
+import ua.vald_zx.game.rat.race.card.screen.second.page.BusinessListPage
+import ua.vald_zx.game.rat.race.card.screen.second.page.FundsPage
+import ua.vald_zx.game.rat.race.card.screen.second.page.SharesPage
+import ua.vald_zx.game.rat.race.card.screen.second.page.StatePage
 import ua.vald_zx.game.rat.race.card.splitDecimal
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.tts
 import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
 
-class MainScreen : Screen {
+class BornRaceRate2Screen : Screen {
 
     @OptIn(
         ExperimentalMaterialApi::class,
@@ -71,7 +71,7 @@ class MainScreen : Screen {
     )
     @Composable
     override fun Content() {
-        val state by store.observeState().collectAsState()
+        val state by raceRate2store.observeState().collectAsState()
         val navigator = LocalNavigator.current
         BottomSheetNavigator {
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
@@ -107,7 +107,7 @@ class MainScreen : Screen {
                         overflow = TextOverflow.Ellipsis,
                     )
                     CashFlowField("Cash Flow", state.cashFlow().toString()) {
-                        store.dispatch(AppAction.GetSalary)
+                        raceRate2store.dispatch(RatRace2CardAction.GetSalary)
                     }
                     BalanceField("Готівка", state.cash.toString()) {
                         bottomSheetNavigator.show(CashActionsScreen())
@@ -166,29 +166,29 @@ class MainScreen : Screen {
             var confirmDismissalDialog: Business? by remember { mutableStateOf(null) }
             var confirmSellingAllBusinessDialog: Business? by remember { mutableStateOf(null) }
             LaunchedEffect(Unit) {
-                store.observeSideEffect().onEach { effect ->
+                raceRate2store.observeSideEffect().onEach { effect ->
                     when (effect) {
-                        is AppSideEffect.ShowSalaryApprove -> {
+                        is RatRace2CardSideEffect.ShowSalaryApprove -> {
                             salaryApproveDialog = true
                         }
 
-                        is AppSideEffect.ConfirmDismissal -> {
+                        is RatRace2CardSideEffect.ConfirmDismissal -> {
                             confirmDismissalDialog = effect.business
                         }
 
-                        is AppSideEffect.ConfirmSellingAllBusiness -> {
+                        is RatRace2CardSideEffect.ConfirmSellingAllBusiness -> {
                             confirmSellingAllBusinessDialog = effect.business
                         }
 
-                        is AppSideEffect.DepositWithdraw -> {
+                        is RatRace2CardSideEffect.DepositWithdraw -> {
                             depositWithdrawDialog = effect.balance
                         }
 
-                        is AppSideEffect.LoanAdded -> {
+                        is RatRace2CardSideEffect.LoanAdded -> {
                             loanAddedDialog = effect.balance
                         }
 
-                        is AppSideEffect.AddCash -> {
+                        is RatRace2CardSideEffect.AddCash -> {
                             if(state.config.tts) {
                                 if(ttsIsUkraineSupported()) {
                                     tts("Зараховано ${effect.amount}")
@@ -200,7 +200,7 @@ class MainScreen : Screen {
                             }
                         }
 
-                        is AppSideEffect.SubCash -> {
+                        is RatRace2CardSideEffect.SubCash -> {
                             if(state.config.tts) {
                                 if(ttsIsUkraineSupported()) {
                                     tts("Списано ${effect.amount}")
@@ -212,7 +212,7 @@ class MainScreen : Screen {
                             }
                         }
 
-                        AppSideEffect.ConfirmFired -> {
+                        RatRace2CardSideEffect.ConfirmFired -> {
                             confirmFiredDialog = true
                         }
                     }
@@ -232,7 +232,7 @@ class MainScreen : Screen {
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                store.dispatch(AppAction.GetSalaryApproved)
+                                raceRate2store.dispatch(RatRace2CardAction.GetSalaryApproved)
                                 salaryApproveDialog = false
                             }
                         ) { Text("Отримати") }
@@ -254,7 +254,7 @@ class MainScreen : Screen {
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                store.dispatch(AppAction.DismissalConfirmed(confirmDismissalDialog!!))
+                                raceRate2store.dispatch(RatRace2CardAction.DismissalConfirmed(confirmDismissalDialog!!))
                                 confirmDismissalDialog = null
                             }
                         ) { Text("Звільнитися") }
@@ -276,7 +276,7 @@ class MainScreen : Screen {
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                store.dispatch(AppAction.FiredConfirmed)
+                                raceRate2store.dispatch(RatRace2CardAction.FiredConfirmed)
                                 confirmFiredDialog = false
                             }
                         ) { Text("Звільнитися") }
@@ -298,8 +298,8 @@ class MainScreen : Screen {
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                store.dispatch(
-                                    AppAction.SellingAllBusinessConfirmed(
+                                raceRate2store.dispatch(
+                                    RatRace2CardAction.SellingAllBusinessConfirmed(
                                         confirmSellingAllBusinessDialog!!
                                     )
                                 )

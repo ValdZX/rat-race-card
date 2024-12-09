@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen
+package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -30,17 +30,17 @@ import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
-import ua.vald_zx.game.rat.race.card.logic.AppAction
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.raceRate2store
 
 class BuyBusinessScreen() : Screen {
     @Composable
     override fun Content() {
-        val state by store.observeState().collectAsState()
+        val state by raceRate2store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         BottomSheetContainer {
             var businessType by remember {
-                val type = store.observeState().value.business.firstOrNull()?.type
+                val type = raceRate2store.observeState().value.business.firstOrNull()?.type
                 mutableStateOf(if (type == null || type == BusinessType.WORK) BusinessType.SMALL else type)
             }
             var businessName by remember { mutableStateOf("") }
@@ -134,8 +134,8 @@ class BuyBusinessScreen() : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(
-                        AppAction.BuyBusiness(
+                    raceRate2store.dispatch(
+                        RatRace2CardAction.BuyBusiness(
                             Business(
                                 type = businessType,
                                 name = businessName.trim(),

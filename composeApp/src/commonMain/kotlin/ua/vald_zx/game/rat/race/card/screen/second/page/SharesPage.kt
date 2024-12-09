@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen.page
+package ua.vald_zx.game.rat.race.card.screen.second.page
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,13 +16,13 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
-import ua.vald_zx.game.rat.race.card.logic.AppState
-import ua.vald_zx.game.rat.race.card.screen.BuySharesScreen
-import ua.vald_zx.game.rat.race.card.screen.SellSharesScreen
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
+import ua.vald_zx.game.rat.race.card.screen.second.BuySharesScreen
+import ua.vald_zx.game.rat.race.card.screen.second.SellSharesScreen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 @Composable
-fun SharesPage(state: AppState) {
+fun SharesPage(state: RatRace2CardState) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     Column {
         LazyColumn(modifier = Modifier.weight(1f)) {

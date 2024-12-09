@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen
+package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,19 +36,20 @@ import com.russhwolf.settings.set
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
-import ua.vald_zx.game.rat.race.card.logic.AppAction
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
+import ua.vald_zx.game.rat.race.card.screen.ExportScreen
 import ua.vald_zx.game.rat.race.card.settings
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 class SettingsScreen : Screen {
     @Composable
     override fun Content() {
-        val state by store.observeState().collectAsState()
+        val state by raceRate2store.observeState().collectAsState()
         val navigator = LocalNavigator.current
         var isDark by LocalThemeIsDark.current
         Box(
@@ -116,7 +117,7 @@ class SettingsScreen : Screen {
                         confirmButton = {
                             TextButton(
                                 onClick = {
-                                    navigator?.replaceAll(PersonCardScreen())
+                                    navigator?.replaceAll(PersonCard2Screen())
                                     resetDialog = false
                                 }
                             ) { Text("Точно") }
@@ -133,8 +134,8 @@ class SettingsScreen : Screen {
                 ) {
                     Text("Механіка фондів")
                     Switch(state.config.hasFunds, onCheckedChange = {
-                        store.dispatch(
-                            AppAction.UpdateConfig(
+                        raceRate2store.dispatch(
+                            RatRace2CardAction.UpdateConfig(
                                 state.config.copy(hasFunds = it)
                             )
                         )
@@ -147,8 +148,8 @@ class SettingsScreen : Screen {
                 ) {
                     Text("TTS")
                     Switch(state.config.tts, onCheckedChange = {
-                        store.dispatch(
-                            AppAction.UpdateConfig(
+                        raceRate2store.dispatch(
+                            RatRace2CardAction.UpdateConfig(
                                 state.config.copy(tts = it)
                             )
                         )
@@ -188,8 +189,8 @@ class SettingsScreen : Screen {
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         .widthIn(min = 200.dp),
                     onClick = {
-                        store.dispatch(
-                            AppAction.UpdateConfig(
+                        raceRate2store.dispatch(
+                            RatRace2CardAction.UpdateConfig(
                                 Config(
                                     depositRate = inputDepositRate.value.text.toLong(),
                                     loadRate = inputLoadRate.value.text.toLong(),

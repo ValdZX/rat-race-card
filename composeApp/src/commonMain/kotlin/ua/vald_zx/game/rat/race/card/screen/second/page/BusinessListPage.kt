@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen.page
+package ua.vald_zx.game.rat.race.card.screen.second.page
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,24 +23,24 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
-import ua.vald_zx.game.rat.race.card.logic.AppAction
-import ua.vald_zx.game.rat.race.card.logic.AppState
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Dice
-import ua.vald_zx.game.rat.race.card.screen.BuyBusinessScreen
-import ua.vald_zx.game.rat.race.card.screen.ExtendBusinessScreen
-import ua.vald_zx.game.rat.race.card.screen.SellBusinessScreen
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.screen.second.BuyBusinessScreen
+import ua.vald_zx.game.rat.race.card.screen.second.ExtendBusinessScreen
+import ua.vald_zx.game.rat.race.card.screen.second.SellBusinessScreen
+import ua.vald_zx.game.rat.race.card.raceRate2store
 
 @Composable
-fun BusinessListPage(state: AppState) {
+fun BusinessListPage(state: RatRace2CardState) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     Column {
         LazyColumn(modifier = Modifier.weight(1f)) {
             itemsIndexed(state.business.filter { it.type != BusinessType.WORK }) { index, business ->
                 Column(
                     modifier = Modifier
-                        .clickable { store.dispatch(AppAction.HideAlarm) }
+                        .clickable { raceRate2store.dispatch(RatRace2CardAction.HideAlarm) }
                         .background(
                             if (business.alarmed) {
                                 MaterialTheme.colorScheme.errorContainer
@@ -103,7 +103,7 @@ fun BusinessListPage(state: AppState) {
             if (state.business.size > 1)
                 ElevatedButton(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    onClick = { store.dispatch(AppAction.RandomBusiness) },
+                    onClick = { raceRate2store.dispatch(RatRace2CardAction.RandomBusiness) },
                     content = { Icon(Images.Dice, contentDescription = null) }
                 )
         }

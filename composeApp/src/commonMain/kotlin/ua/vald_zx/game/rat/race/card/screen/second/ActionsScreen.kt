@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen
+package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -21,18 +21,18 @@ import io.github.aakira.napier.Napier
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.RainbowButton
-import ua.vald_zx.game.rat.race.card.logic.AppAction
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 class AllActionsScreen() : Screen {
     @Composable
     override fun Content() = ActionsScreen {
-        val state by store.observeState().collectAsState()
+        val state by raceRate2store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         RainbowButton("Отримати дохід") {
             bottomSheetNavigator.hide()
-            store.dispatch(AppAction.GetSalary)
+            raceRate2store.dispatch(RatRace2CardAction.GetSalary)
         }
         Button("Сторонній дохід", AppTheme.colors.positive) {
             bottomSheetNavigator.replace(SideProfitScreen())
@@ -54,7 +54,7 @@ class AllActionsScreen() : Screen {
         }
         if (state.business.any { it.type == BusinessType.WORK }) {
             Button("Звільнитися", AppTheme.colors.negative) {
-                store.dispatch(AppAction.Fired)
+                raceRate2store.dispatch(RatRace2CardAction.Fired)
             }
         }
         Button("Купити бізнес", AppTheme.colors.action) {

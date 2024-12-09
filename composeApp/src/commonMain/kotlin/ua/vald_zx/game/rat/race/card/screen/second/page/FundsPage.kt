@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen.page
+package ua.vald_zx.game.rat.race.card.screen.second.page
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,17 +22,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
-import ua.vald_zx.game.rat.race.card.logic.AppAction
-import ua.vald_zx.game.rat.race.card.logic.AppState
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Plus
 import ua.vald_zx.game.rat.race.card.resource.images.Stars
-import ua.vald_zx.game.rat.race.card.screen.BuyFundScreen
-import ua.vald_zx.game.rat.race.card.screen.SellFundScreen
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.screen.second.BuyFundScreen
+import ua.vald_zx.game.rat.race.card.screen.second.SellFundScreen
+import ua.vald_zx.game.rat.race.card.raceRate2store
 
 @Composable
-fun FundsPage(state: AppState) {
+fun FundsPage(state: RatRace2CardState) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -87,7 +87,7 @@ fun FundsPage(state: AppState) {
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            store.dispatch(AppAction.CapitalizeFunds)
+                            raceRate2store.dispatch(RatRace2CardAction.CapitalizeFunds)
                             capitalizationConfirm = false
                         }
                     ) { Text("Капіталізувати") }
@@ -105,7 +105,7 @@ fun FundsPage(state: AppState) {
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            store.dispatch(AppAction.CapitalizeStarsFunds)
+                            raceRate2store.dispatch(RatRace2CardAction.CapitalizeStarsFunds)
                             capitalizationStarConfirm = false
                         }
                     ) { Text("Капіталізувати") }

@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen
+package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -14,10 +14,10 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
-import ua.vald_zx.game.rat.race.card.logic.AppAction
-import ua.vald_zx.game.rat.race.card.store
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.raceRate2store
 
-class SideProfitScreen : Screen {
+class SideExpensesScreen : Screen {
     @Composable
     override fun Content() {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
@@ -26,7 +26,7 @@ class SideProfitScreen : Screen {
             val amount = inputAmount.value.text
             NumberTextField(
                 input = inputAmount,
-                inputLabel = "Сума доходу",
+                inputLabel = "Сума витрат",
             )
             ElevatedButton(
                 modifier = Modifier
@@ -34,11 +34,11 @@ class SideProfitScreen : Screen {
                     .widthIn(min = 200.dp),
                 onClick = {
                     bottomSheetNavigator.hide()
-                    store.dispatch(AppAction.SideProfit(amount = amount.toLong()))
+                    raceRate2store.dispatch(RatRace2CardAction.SideExpenses(amount = amount.toLong()))
                 },
                 enabled = amount.isNotEmpty(),
                 content = {
-                    Text("Отримати")
+                    Text("Віддати")
                 }
             )
         }
