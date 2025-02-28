@@ -11,6 +11,9 @@ import platform.Foundation.NSURL
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 
+internal actual val platformContext: Any
+    get() = Unit
+
 internal actual fun openUrl(url: String?) {
     val nsUrl = url?.let { NSURL.URLWithString(it) } ?: return
     UIApplication.sharedApplication.openURL(nsUrl)
@@ -34,9 +37,6 @@ internal actual fun share(data: String?) {
         animated = true,
         completion = null
     )
-}
-
-internal actual fun playCoin() {
 }
 
 internal actual fun ttsIsUkraineSupported(): Boolean = false

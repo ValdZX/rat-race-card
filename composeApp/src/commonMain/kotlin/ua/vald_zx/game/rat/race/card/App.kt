@@ -6,11 +6,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import app.lexilabs.basic.sound.AudioByte
+import app.lexilabs.basic.sound.ExperimentalBasicSound
 import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
 import io.github.xxfast.kstore.KStore
-import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
+import rat_race_card.composeapp.generated.resources.Res
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
@@ -49,8 +51,20 @@ internal fun App() = AppTheme {
     }
 }
 
+private val audioByte by lazy {
+    AudioByte()
+}
+
+private val coin: Any by lazy {
+    audioByte.load(platformContext, Res.getUri("files/coin.mp3"))
+}
+
+@OptIn(ExperimentalBasicSound::class)
+internal fun playCoin() {
+    audioByte.play(coin)
+}
+internal expect val platformContext: Any
 internal expect fun openUrl(url: String?)
 internal expect fun share(data: String?)
-internal expect fun playCoin()
 internal expect fun ttsIsUkraineSupported(): Boolean
 internal expect fun tts(string: String)

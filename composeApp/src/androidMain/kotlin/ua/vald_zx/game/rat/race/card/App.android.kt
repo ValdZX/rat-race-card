@@ -36,7 +36,6 @@ class AndroidApp : Application() {
 val uk = Locale("uk", "UA")
 
 class AppActivity : ComponentActivity() {
-    var mediaPlayer: MediaPlayer? = null
     var textToSpeech: TextToSpeech? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,7 +43,6 @@ class AppActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent { App() }
         AndroidApp.ACTIVITY = this
-        mediaPlayer = MediaPlayer.create(this, R.raw.coin)
         textToSpeech = TextToSpeech(this, object : OnInitListener {
             override fun onInit(status: Int) {
 
@@ -76,6 +74,9 @@ class AppActivity : ComponentActivity() {
     }
 }
 
+internal actual val platformContext: Any
+    get() = AndroidApp.ACTIVITY
+
 internal actual fun openUrl(url: String?) {
     val uri = url?.let { Uri.parse(it) } ?: return
     val intent = Intent().apply {
@@ -103,11 +104,6 @@ internal actual fun share(data: String?) {
         Intent.createChooser(shareIntent, "Rat race card")
     )
 }
-
-internal actual fun playCoin() {
-    AndroidApp.ACTIVITY.mediaPlayer?.start()
-}
-
 
 internal actual fun ttsIsUkraineSupported(): Boolean {
     return AndroidApp.ACTIVITY.textToSpeech?.isLanguageAvailable(uk) == LANG_COUNTRY_AVAILABLE

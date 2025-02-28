@@ -82,6 +82,7 @@ kotlin {
             implementation(libs.kstore)
             implementation(libs.ktor.core)
             implementation(libs.multiplatform.settings.no.arg)
+            implementation(libs.lexilabs.basic.sound)
         }
 
         commonTest.dependencies {

@@ -21,6 +21,7 @@ kotlinx-coroutines = "1.9.0"
 ktor = "3.0.1"
 kotlinx-serialization = "1.7.3"
 kstore = "0.9.1"
+lexilabs-basic = "+"
 
 [libraries]
 
@@ -56,6 +57,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kstore = { module = "io.github.xxfast:kstore", version.ref = "kstore" }
 kstore-file = { module = "io.github.xxfast:kstore-file", version.ref = "kstore" }
 kstore-storage = { module = "io.github.xxfast:kstore-storage", version.ref = "kstore" }
+lexilabs-basic-sound = { group = "app.lexilabs.basic", name = "basic-sound", version.ref = "lexilabs-basic" }
 
 [plugins]
 
