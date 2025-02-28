@@ -33,12 +33,12 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import io.ktor.util.encodeBase64
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.Copy
 import ua.vald_zx.game.rat.race.card.resource.images.Share
 import ua.vald_zx.game.rat.race.card.share
-import ua.vald_zx.game.rat.race.card.raceRate2store
 
 class ExportScreen : Screen {
     @Composable
