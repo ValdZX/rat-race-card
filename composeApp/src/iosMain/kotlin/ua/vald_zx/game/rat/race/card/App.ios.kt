@@ -1,13 +1,18 @@
 package ua.vald_zx.game.rat.race.card
 
+import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.file.storeOf
-import io.github.xxfast.kstore.file.utils.CachesDirectory
-import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
+import nl.marc_apps.tts.TextToSpeechFactory
+import nl.marc_apps.tts.TextToSpeechInstance
+import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
+import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSURL
+import platform.Foundation.NSUserDomainMask
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 
@@ -19,12 +24,19 @@ internal actual fun openUrl(url: String?) {
     UIApplication.sharedApplication.openURL(nsUrl)
 }
 
-@OptIn(ExperimentalKStoreApi::class)
-val storageDir: String
-    get() = NSFileManager.defaultManager.CachesDirectory?.relativePath.orEmpty()
+val fileManager:NSFileManager = NSFileManager.defaultManager
+
+@OptIn(ExperimentalForeignApi::class)
+val cachesUrl:NSURL = fileManager.URLForDirectory(
+    directory = NSCachesDirectory,
+    appropriateForURL = null,
+    create = false,
+    inDomain = NSUserDomainMask,
+    error = null
+)!!
 
 internal actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
-    return storeOf(file = Path("$storageDir/$name"))
+    return storeOf(file = Path("$cachesUrl/$name"))
 }
 
 internal actual fun share(data: String?) {
@@ -39,7 +51,16 @@ internal actual fun share(data: String?) {
     )
 }
 
-internal actual fun ttsIsUkraineSupported(): Boolean = false
-
-internal actual fun tts(string: String) {
+private var tts: TextToSpeechInstance? = null
+@OptIn(ExperimentalVoiceApi::class)
+actual suspend fun getTts(): TextToSpeechInstance? {
+    if (tts != null) return tts
+    TextToSpeechFactory().create()
+        .onSuccess { newTts ->
+            newTts.voices.find { it.language == "Ukrainian" }?.let { newTts.currentVoice = it }
+            tts = newTts
+        }.onFailure {
+            Napier.e("tts failed", it)
+        }
+    return tts
 }

@@ -11,8 +11,13 @@ import app.lexilabs.basic.sound.AudioByte
 import app.lexilabs.basic.sound.ExperimentalBasicSound
 import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
+import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
 import kotlinx.serialization.Serializable
+import nl.marc_apps.tts.TextToSpeechEngine
+import nl.marc_apps.tts.TextToSpeechFactory
+import nl.marc_apps.tts.TextToSpeechInstance
+import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 import rat_race_card.composeapp.generated.resources.Res
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
@@ -74,8 +79,17 @@ private val coin: Any by lazy {
 internal fun playCoin() {
     audioByte.play(coin)
 }
+
 internal expect val platformContext: Any
 internal expect fun openUrl(url: String?)
 internal expect fun share(data: String?)
-internal expect fun ttsIsUkraineSupported(): Boolean
-internal expect fun tts(string: String)
+internal expect suspend fun getTts(): TextToSpeechInstance?
+
+@OptIn(ExperimentalVoiceApi::class)
+internal suspend fun ttsIsUkraineSupported(): Boolean {
+    return getTts()?.voices?.find { it.language == "Ukrainian" } != null
+}
+
+internal suspend fun tts(string: String) {
+    getTts()?.say(string)
+}

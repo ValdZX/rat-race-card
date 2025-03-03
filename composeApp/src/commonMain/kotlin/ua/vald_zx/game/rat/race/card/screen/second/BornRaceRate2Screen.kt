@@ -40,6 +40,8 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import nl.marc_apps.tts.TextToSpeechEngine
+import nl.marc_apps.tts.rememberTextToSpeechOrNull
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.components.BalanceField
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
@@ -189,25 +191,25 @@ class BornRaceRate2Screen : Screen {
                         }
 
                         is RatRace2CardSideEffect.AddCash -> {
-                            if(state.config.tts) {
-                                if(ttsIsUkraineSupported()) {
+                            if (state.config.tts) {
+                                if (ttsIsUkraineSupported()) {
                                     tts("Зараховано ${effect.amount}")
-                                }else {
+                                } else {
                                     tts("${effect.amount} is credited")
                                 }
-                            }else {
+                            } else {
                                 playCoin()
                             }
                         }
 
                         is RatRace2CardSideEffect.SubCash -> {
-                            if(state.config.tts) {
-                                if(ttsIsUkraineSupported()) {
+                            if (state.config.tts) {
+                                if (ttsIsUkraineSupported()) {
                                     tts("Списано ${effect.amount}")
-                                }else {
+                                } else {
                                     tts("${effect.amount} is debited")
                                 }
-                            }else {
+                            } else {
                                 playCoin()
                             }
                         }
@@ -254,7 +256,11 @@ class BornRaceRate2Screen : Screen {
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                raceRate2store.dispatch(RatRace2CardAction.DismissalConfirmed(confirmDismissalDialog!!))
+                                raceRate2store.dispatch(
+                                    RatRace2CardAction.DismissalConfirmed(
+                                        confirmDismissalDialog!!
+                                    )
+                                )
                                 confirmDismissalDialog = null
                             }
                         ) { Text("Звільнитися") }

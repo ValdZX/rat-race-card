@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalVoiceApi::class)
+
 package ua.vald_zx.game.rat.race.card
 
 import android.app.Application
@@ -18,6 +20,10 @@ import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.file.storeOf
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
+import nl.marc_apps.tts.TextToSpeechEngine
+import nl.marc_apps.tts.TextToSpeechFactory
+import nl.marc_apps.tts.TextToSpeechInstance
+import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 import java.util.Locale
 
 class AndroidApp : Application() {
@@ -36,41 +42,11 @@ class AndroidApp : Application() {
 val uk = Locale("uk", "UA")
 
 class AppActivity : ComponentActivity() {
-    var textToSpeech: TextToSpeech? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent { App() }
         AndroidApp.ACTIVITY = this
-        textToSpeech = TextToSpeech(this, object : OnInitListener {
-            override fun onInit(status: Int) {
-
-                if (status == TextToSpeech.SUCCESS) {
-                    val result = if (ttsIsUkraineSupported()) {
-                        textToSpeech?.setLanguage(uk)
-                    } else {
-                        textToSpeech?.setLanguage(Locale.UK)
-                    }
-
-                    // tts.setPitch(5); // set pitch level
-
-                    // tts.setSpeechRate(2); // set speech speed rate
-
-                    if (result == TextToSpeech.LANG_MISSING_DATA
-                        || result == TextToSpeech.LANG_NOT_SUPPORTED
-                    ) {
-                        Napier.e("Language is not supported")
-                        textToSpeech?.setLanguage(Locale.UK)
-                    } else {
-                        Napier.d("TTS inited")
-                    }
-
-                } else {
-                    Napier.e("Initilization Failed");
-                }
-            }
-        })
     }
 }
 
@@ -105,10 +81,16 @@ internal actual fun share(data: String?) {
     )
 }
 
-internal actual fun ttsIsUkraineSupported(): Boolean {
-    return AndroidApp.ACTIVITY.textToSpeech?.isLanguageAvailable(uk) == LANG_COUNTRY_AVAILABLE
-}
 
-internal actual fun tts(string: String) {
-    AndroidApp.ACTIVITY.textToSpeech?.speak(string, TextToSpeech.QUEUE_FLUSH, null, null)
+private var tts: TextToSpeechInstance? = null
+actual suspend fun getTts(): TextToSpeechInstance? {
+    if (tts != null) return tts
+    TextToSpeechFactory(AndroidApp.ACTIVITY, TextToSpeechEngine.SystemDefault).create()
+        .onSuccess { newTts ->
+            newTts.voices.find { it.language == "Ukrainian" }?.let { newTts.currentVoice = it }
+            tts = newTts
+        }.onFailure {
+            Napier.e("tts failed", it)
+        }
+    return tts
 }
