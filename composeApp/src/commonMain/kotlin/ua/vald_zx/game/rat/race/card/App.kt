@@ -2,6 +2,7 @@ package ua.vald_zx.game.rat.race.card
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,6 +21,8 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace4CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardStore
 import ua.vald_zx.game.rat.race.card.screen.SelectBoardScreen
+import ua.vald_zx.game.rat.race.card.screen.second.BornRaceRate2Screen
+import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 internal expect inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T>
@@ -35,7 +38,15 @@ val settings: Settings = Settings()
 internal fun App() = AppTheme {
     var kStoreLoaded by remember { mutableStateOf(false) }
     if (kStoreLoaded) {
-        Navigator(SelectBoardScreen())
+        val raceRate2State by raceRate2store.observeState().collectAsState()
+        val startScreen =
+            if (raceRate2State.professionCard.profession.isNotEmpty()) {
+                BornRaceRate2Screen()
+            } else {
+                PersonCard2Screen()
+            }
+        Navigator(startScreen)
+//        Navigator(SelectBoardScreen())
     } else {
         LaunchedEffect(Unit) {
             val state2 = raceRate2KStore.get()
