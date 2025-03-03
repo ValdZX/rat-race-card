@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
+import ua.vald_zx.game.rat.race.card.label
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.screen.second.BuySharesScreen
 import ua.vald_zx.game.rat.race.card.screen.second.SellSharesScreen
@@ -28,7 +29,7 @@ fun SharesPage(state: RatRace2CardState) {
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(state.sharesList) { shares ->
                 Column(modifier = Modifier.padding(top = 8.dp)) {
-                    Text(shares.type.name, style = MaterialTheme.typography.titleSmall)
+                    Text(shares.type.label(), style = MaterialTheme.typography.titleSmall)
                     Row {
                         SDetailsField(
                             name = "Кількість",

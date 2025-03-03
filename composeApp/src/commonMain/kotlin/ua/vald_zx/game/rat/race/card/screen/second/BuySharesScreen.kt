@@ -25,6 +25,7 @@ import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.emptyIfZero
+import ua.vald_zx.game.rat.race.card.label
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.raceRate2store
@@ -48,7 +49,7 @@ class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0))
                     RadioButton(type == entry, onClick = {
                         type = entry
                     })
-                    Text(entry.name)
+                    Text(entry.label())
                 }
             }
             Text(

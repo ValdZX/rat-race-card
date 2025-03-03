@@ -23,6 +23,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.label
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.raceRate2store
@@ -44,7 +45,7 @@ class SellSharesScreen : Screen {
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     RadioButton(type == entry, onClick = { type = entry })
-                    Text("${entry.name}: ${state.sharesCount(entry)}")
+                    Text("${entry.label()}: ${state.sharesCount(entry)}")
                 }
             }
             val count = inputCount.value.text

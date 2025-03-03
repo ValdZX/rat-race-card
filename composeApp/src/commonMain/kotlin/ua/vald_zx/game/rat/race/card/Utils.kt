@@ -1,5 +1,8 @@
 package ua.vald_zx.game.rat.race.card
 
+import ua.vald_zx.game.rat.race.card.beans.SharesType
+import kotlin.text.replace
+
 fun String.getDigits() = this.replace("\\D".toRegex(), "").toLongOrNull()?.toString().orEmpty()
 
 fun Long.splitDecimal(step: Int = 3, divider: String = " "): String {
@@ -50,4 +53,8 @@ fun <T> List<T>.replace(item: T, newItem: T): List<T> {
 
 fun Long.emptyIfZero(): String {
     return if (this == 0L) "" else this.toString()
+}
+
+fun SharesType.label(): String {
+    return name.replace("SCT", "CST")
 }
