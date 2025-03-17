@@ -56,5 +56,5 @@ fun Long.emptyIfZero(): String {
 }
 
 fun SharesType.label(): String {
-    return name.replace("SCT", "CST")
+    return name.replace("SCT", "CST").replace("GC", "GS")
 }

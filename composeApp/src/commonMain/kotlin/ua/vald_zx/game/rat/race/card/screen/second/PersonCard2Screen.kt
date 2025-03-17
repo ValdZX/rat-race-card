@@ -55,7 +55,7 @@ class PersonCard2Screen : Screen {
         ) {
             ProfessionCardForm {
                 raceRate2store.dispatch(RatRace2CardAction.FillProfessionCardRat(it))
-                navigator?.replace(BornRaceRate2Screen())
+                navigator?.replace(RaceRate2Screen())
             }
         }
     }

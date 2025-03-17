@@ -16,6 +16,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
@@ -33,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
@@ -40,16 +42,17 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import nl.marc_apps.tts.TextToSpeechEngine
-import nl.marc_apps.tts.rememberTextToSpeechOrNull
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.components.BalanceField
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.FundsField
+import ua.vald_zx.game.rat.race.card.components.GrayRainbow
 import ua.vald_zx.game.rat.race.card.components.NegativeField
 import ua.vald_zx.game.rat.race.card.components.PositiveField
+import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect
+import ua.vald_zx.game.rat.race.card.logic.total
 import ua.vald_zx.game.rat.race.card.playCoin
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Menu
@@ -64,7 +67,7 @@ import ua.vald_zx.game.rat.race.card.tts
 import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
 
-class BornRaceRate2Screen : Screen {
+class RaceRate2Screen : Screen {
 
     @OptIn(
         ExperimentalMaterialApi::class,
@@ -108,18 +111,35 @@ class BornRaceRate2Screen : Screen {
                         modifier = Modifier.padding(horizontal = 48.dp),
                         overflow = TextOverflow.Ellipsis,
                     )
+
+                    SmoothRainbowText(
+                        state.total().splitDecimal().toString(),
+                        rainbow = GrayRainbow,
+                        style = LocalTextStyle.current.copy(fontSize = 30.sp),
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        duration = 4000
+                    )
                     CashFlowField("Cash Flow", state.cashFlow().toString()) {
                         raceRate2store.dispatch(RatRace2CardAction.GetSalary)
                     }
-                    BalanceField("Готівка", state.cash.toString()) {
-                        bottomSheetNavigator.show(CashActionsScreen())
-                    }
-                    PositiveField("Депозит", state.deposit.toString()) {
-                        bottomSheetNavigator.show(DepositActionsScreen())
-                    }
-                    NegativeField("Кредит", state.loan.toString()) {
-                        bottomSheetNavigator.show(LoanActionsScreen())
-                    }
+                    BalanceField(
+                        name = "Готівка",
+                        value = state.cash.toString(),
+                        add = { bottomSheetNavigator.show(SideProfitScreen()) },
+                        sub = { bottomSheetNavigator.show(SideExpensesScreen()) },
+                        onClick = { bottomSheetNavigator.show(CashActionsScreen()) },
+                    )
+                    PositiveField(
+                        name = "Депозит",
+                        value = state.deposit.toString(),
+                        onClick = { bottomSheetNavigator.show(DepositActionsScreen()) },
+                        deposit = { bottomSheetNavigator.show(ToDepositScreen()) },
+                    )
+                    NegativeField(
+                        name = "Кредит", value = state.loan.toString(),
+                        onClick = { bottomSheetNavigator.show(LoanActionsScreen()) },
+                        repay = { bottomSheetNavigator.show(RepayCreditScreen()) },
+                    )
                     if (state.config.hasFunds) {
                         FundsField("Фонди", state.fundAmount().toString()) {
                             bottomSheetNavigator.show(BuyFundScreen())
@@ -352,7 +372,7 @@ class BornRaceRate2Screen : Screen {
                             onClick = {
                                 loanAddedDialog = 0
                             }
-                        ) { Text("Ех...") }
+                        ) { Text("Гаразд") }
                     },
                 )
             }

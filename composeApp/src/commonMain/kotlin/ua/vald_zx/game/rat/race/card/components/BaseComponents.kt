@@ -20,6 +20,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -46,6 +48,13 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ua.vald_zx.game.rat.race.card.getDigits
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Add
+import ua.vald_zx.game.rat.race.card.resource.images.Deposit
+import ua.vald_zx.game.rat.race.card.resource.images.Repay
+import ua.vald_zx.game.rat.race.card.resource.images.Settings
+import ua.vald_zx.game.rat.race.card.resource.images.Substract
+import ua.vald_zx.game.rat.race.card.screen.second.SettingsScreen
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
@@ -168,17 +177,27 @@ fun ColumnScope.PositiveField(
     name: String,
     value: String,
     fontSize: TextUnit = 16.sp,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    deposit: () -> Unit = {},
 ) {
     Row(
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(8.dp)
+            .padding(start = 8.dp)
     ) {
         Text(name, color = MaterialTheme.colorScheme.primary)
-        Text(value.splitDecimal(), fontSize = fontSize)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(value.splitDecimal(), fontSize = fontSize)
+            IconButton(
+                onClick = deposit,
+                content = {
+                    Icon(Images.Deposit, contentDescription = null)
+                }
+            )
+        }
     }
     HorizontalDivider()
 }
@@ -191,6 +210,7 @@ fun ColumnScope.FundsField(
     onClick: () -> Unit
 ) {
     Row(
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxWidth()
@@ -206,17 +226,27 @@ fun ColumnScope.FundsField(
 @Composable
 fun ColumnScope.NegativeField(
     name: String, value: String, fontSize: TextUnit = 16.sp,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    repay: () -> Unit = {},
 ) {
     Row(
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(8.dp)
+            .padding(start = 8.dp)
     ) {
         Text(name, color = MaterialTheme.colorScheme.tertiary)
-        Text(value.splitDecimal(), fontSize = fontSize)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(value.splitDecimal(), fontSize = fontSize)
+            IconButton(
+                onClick = repay,
+                content = {
+                    Icon(Images.Repay, contentDescription = null)
+                }
+            )
+        }
     }
     HorizontalDivider()
 }
@@ -224,11 +254,12 @@ fun ColumnScope.NegativeField(
 @Composable
 fun ColumnScope.CashFlowField(name: String, value: String, onClick: () -> Unit = {}) {
     Row(
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(8.dp)
+            .padding(start = 8.dp)
     ) {
         SmoothRainbowText(name, style = LocalTextStyle.current.copy(fontSize = 20.sp))
         Text(value.splitDecimal(), fontSize = 20.sp)
@@ -238,18 +269,36 @@ fun ColumnScope.CashFlowField(name: String, value: String, onClick: () -> Unit =
 
 @Composable
 fun ColumnScope.BalanceField(
-    name: String, value: String,
-    onClick: () -> Unit = {}
+    name: String,
+    value: String,
+    onClick: () -> Unit = {},
+    add: () -> Unit = {},
+    sub: () -> Unit = {},
 ) {
     Row(
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(8.dp)
+            .padding(start = 8.dp)
     ) {
         Text(name)
-        Text(value.splitDecimal(), fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = sub,
+                content = {
+                    Icon(Images.Substract, contentDescription = null)
+                }
+            )
+            Text(value.splitDecimal(), fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+            IconButton(
+                onClick = add,
+                content = {
+                    Icon(Images.Add, contentDescription = null)
+                }
+            )
+        }
     }
     HorizontalDivider()
 }
@@ -273,5 +322,6 @@ fun NumberTextField(
         ),
         value = input.value,
         onValueChange = { input.value = it.copy(text = it.text.getDigits()) },
+        visualTransformation = AmountTransformation
     )
 }

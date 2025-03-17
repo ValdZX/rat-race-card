@@ -33,6 +33,15 @@ val SkittlesRainbow = listOf(
     RainbowRed,
 )
 
+val GrayRainbow = listOf(
+    Color(0xFF444444),
+    RainbowBlue,
+    Color(0xFF888888),
+    RainbowGreen,
+    Color.Gray,
+    RainbowIndigo
+)
+
 @Composable
 fun MultiColorSmoothText(
     modifier: Modifier = Modifier,

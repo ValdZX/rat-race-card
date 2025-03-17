@@ -76,7 +76,7 @@ class ImportScreen : Screen {
                             val importedState: RatRace2CardState =
                                 Json.decodeFromString(base64Card.decodeBase64String())
                             raceRate2store.dispatch(RatRace2CardAction.LoadState(importedState))
-                            navigator?.replaceAll(BornRaceRate2Screen())
+                            navigator?.replaceAll(RaceRate2Screen())
                         }.onFailure {
                             invalidData = true
                         }

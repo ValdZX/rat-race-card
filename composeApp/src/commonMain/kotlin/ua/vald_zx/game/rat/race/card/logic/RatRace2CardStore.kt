@@ -18,6 +18,7 @@ import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
 import ua.vald_zx.game.rat.race.card.remove
 import ua.vald_zx.game.rat.race.card.replace
+import kotlin.math.absoluteValue
 
 @Serializable
 data class RatRace2CardState(
@@ -141,7 +142,9 @@ sealed class RatRace2CardAction : Action {
     data class BuyFlight(val price: Long) : RatRace2CardAction()
     data class BuyShares(val shares: Shares) : RatRace2CardAction()
     data class UpdateConfig(val config: Config) : RatRace2CardAction()
-    data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) : RatRace2CardAction()
+    data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) :
+        RatRace2CardAction()
+
     data class UpdateFamily(val isMarried: Boolean, val babies: Long) : RatRace2CardAction()
 }
 
@@ -260,7 +263,12 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             RatRace2CardAction.GetSalaryApproved -> {
-                oldState.plusCash(oldState.cashFlow())
+                val cashFlow = oldState.cashFlow()
+                if (cashFlow >= 0) {
+                    oldState.plusCash(cashFlow)
+                } else {
+                    oldState.minusCash(cashFlow.absoluteValue)
+                }
             }
 
             is RatRace2CardAction.SellShares -> {
@@ -402,7 +410,10 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
         return copy(cash = cash + value)
     }
 
-    private fun RatRace2CardState.minusCash(value: Long, isFundBuy: Boolean = false): RatRace2CardState {
+    private fun RatRace2CardState.minusCash(
+        value: Long,
+        isFundBuy: Boolean = false
+    ): RatRace2CardState {
         launch { sideEffect.emit(RatRace2CardSideEffect.SubCash(value)) }
         return if (cash > value) {
             copy(cash = cash - value)
@@ -432,4 +443,13 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             copy(cash = 0, deposit = 0, loan = loan + (value - (deposit + cash)))
         }
     }
+}
+
+fun RatRace2CardState.total(): Long {
+    return cash +
+            deposit +
+            funds.sumOf { it.amount } +
+            sharesList.sumOf { it.count * it.price } +
+            business.sumOf { it.price } -
+            loan
 }

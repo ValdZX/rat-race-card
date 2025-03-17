@@ -1,7 +1,6 @@
 package ua.vald_zx.game.rat.race.card.screen
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,14 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material.Colors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
@@ -30,7 +27,7 @@ import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.raceRate4store
 import ua.vald_zx.game.rat.race.card.screen.fourth.BornRaceRate4Screen
 import ua.vald_zx.game.rat.race.card.screen.fourth.PersonCard4Screen
-import ua.vald_zx.game.rat.race.card.screen.second.BornRaceRate2Screen
+import ua.vald_zx.game.rat.race.card.screen.second.RaceRate2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
 
 class SelectBoardScreen : Screen {
@@ -51,7 +48,7 @@ class SelectBoardScreen : Screen {
                     .clickable {
                         val startScreen =
                             if (raceRate2State.professionCard.profession.isNotEmpty()) {
-                                BornRaceRate2Screen()
+                                RaceRate2Screen()
                             } else {
                                 PersonCard2Screen()
                             }

@@ -11,11 +11,8 @@ import app.lexilabs.basic.sound.AudioByte
 import app.lexilabs.basic.sound.ExperimentalBasicSound
 import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
-import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
 import kotlinx.serialization.Serializable
-import nl.marc_apps.tts.TextToSpeechEngine
-import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 import rat_race_card.composeapp.generated.resources.Res
@@ -25,9 +22,8 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardStore
-import ua.vald_zx.game.rat.race.card.screen.SelectBoardScreen
-import ua.vald_zx.game.rat.race.card.screen.second.BornRaceRate2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
+import ua.vald_zx.game.rat.race.card.screen.second.RaceRate2Screen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 internal expect inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T>
@@ -46,7 +42,7 @@ internal fun App() = AppTheme {
         val raceRate2State by raceRate2store.observeState().collectAsState()
         val startScreen =
             if (raceRate2State.professionCard.profession.isNotEmpty()) {
-                BornRaceRate2Screen()
+                RaceRate2Screen()
             } else {
                 PersonCard2Screen()
             }
