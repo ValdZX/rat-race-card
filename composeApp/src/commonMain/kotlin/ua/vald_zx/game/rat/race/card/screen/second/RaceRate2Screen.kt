@@ -40,7 +40,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
-import io.github.xxfast.kstore.extensions.cached
 import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -49,7 +48,7 @@ import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.components.BalanceField
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.FundsField
-import ua.vald_zx.game.rat.race.card.components.GrayRainbow
+import ua.vald_zx.game.rat.race.card.components.GoldRainbow
 import ua.vald_zx.game.rat.race.card.components.NegativeField
 import ua.vald_zx.game.rat.race.card.components.PositiveField
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
@@ -66,7 +65,6 @@ import ua.vald_zx.game.rat.race.card.screen.second.page.SharesPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.StatePage
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.raceRate2store
-import ua.vald_zx.game.rat.race.card.statistics2KStore
 import ua.vald_zx.game.rat.race.card.tts
 import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
@@ -119,7 +117,7 @@ class RaceRate2Screen : Screen {
 
                     SmoothRainbowText(
                         state.total().splitDecimal().toString(),
-                        rainbow = GrayRainbow,
+                        rainbow = GoldRainbow,
                         style = LocalTextStyle.current.copy(fontSize = 30.sp),
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                             .clickable {

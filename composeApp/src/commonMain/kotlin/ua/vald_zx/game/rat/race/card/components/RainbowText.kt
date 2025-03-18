@@ -33,13 +33,17 @@ val SkittlesRainbow = listOf(
     RainbowRed,
 )
 
-val GrayRainbow = listOf(
-    Color(0xFF444444),
-    RainbowBlue,
-    Color(0xFF888888),
-    RainbowGreen,
-    Color.Gray,
-    RainbowIndigo
+val GoldRainbow = listOf(
+    Color(0xFFFFD700),
+    Color(0xFFFFFCE0),
+    Color(0xFFFFDB58),
+    Color(0xFFFFF8DB),
+    Color(0xFFFFF4C7),
+    Color(0xFFFFDF00),
+    Color(0xFFFFF0B2),
+    Color(0xFFFFE44D),
+    Color(0xFFFFEC9E),
+    Color(0xFFFFE87D),
 )
 
 @Composable

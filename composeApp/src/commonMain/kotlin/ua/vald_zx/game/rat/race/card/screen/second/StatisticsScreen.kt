@@ -39,7 +39,7 @@ import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
 import ir.ehsannarmani.compose_charts.models.Line
 import ir.ehsannarmani.compose_charts.models.PopupProperties
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
-import ua.vald_zx.game.rat.race.card.components.GrayRainbow
+import ua.vald_zx.game.rat.race.card.components.GoldRainbow
 import ua.vald_zx.game.rat.race.card.components.RainbowBlue
 import ua.vald_zx.game.rat.race.card.components.RainbowOrange
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
@@ -82,8 +82,8 @@ class StatisticsScreen : Screen {
                                         Line(
                                             label = "Загальні статки",
                                             values = statistics.log.map { it.total().toDouble() },
-                                            color = Brush.horizontalGradient(GrayRainbow),
-                                            firstGradientFillColor = RainbowBlue.copy(alpha = .4f),
+                                            color = Brush.horizontalGradient(GoldRainbow),
+                                            firstGradientFillColor = Color(0xFFb48811).copy(alpha = .4f),
                                             curvedEdges = true,
                                             secondGradientFillColor = Color.Transparent,
                                             strokeAnimationSpec = spring(
@@ -211,7 +211,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SmoothRainbowText("Загальні статки", rainbow = GrayRainbow)
+                    SmoothRainbowText("Загальні статки", rainbow = GoldRainbow)
                     Switch(needTotal, onCheckedChange = { needTotal = it })
                 }
                 Row(
