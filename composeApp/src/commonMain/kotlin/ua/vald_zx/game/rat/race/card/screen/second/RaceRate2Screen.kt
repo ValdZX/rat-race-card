@@ -1,6 +1,7 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -39,6 +40,8 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import io.github.xxfast.kstore.extensions.cached
+import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -63,6 +66,7 @@ import ua.vald_zx.game.rat.race.card.screen.second.page.SharesPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.StatePage
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.raceRate2store
+import ua.vald_zx.game.rat.race.card.statistics2KStore
 import ua.vald_zx.game.rat.race.card.tts
 import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
@@ -72,7 +76,8 @@ class RaceRate2Screen : Screen {
     @OptIn(
         ExperimentalMaterialApi::class,
         ExperimentalFoundationApi::class,
-        ExperimentalMaterial3Api::class
+        ExperimentalMaterial3Api::class,
+        ExperimentalKStoreApi::class
     )
     @Composable
     override fun Content() {
@@ -116,7 +121,12 @@ class RaceRate2Screen : Screen {
                         state.total().splitDecimal().toString(),
                         rainbow = GrayRainbow,
                         style = LocalTextStyle.current.copy(fontSize = 30.sp),
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                            .clickable {
+                                if (raceRate2store.statistics != null) {
+                                    bottomSheetNavigator.show(StatisticsScreen())
+                                }
+                            },
                         duration = 4000
                     )
                     CashFlowField("Cash Flow", state.cashFlow().toString()) {

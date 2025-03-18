@@ -83,6 +83,7 @@ kotlin {
             implementation(libs.ktor.core)
             implementation(libs.multiplatform.settings.no.arg)
             implementation(libs.lexilabs.basic.sound)
+            implementation(libs.charts)
             implementation(libs.tts)
             implementation(libs.tts.compose)
         }

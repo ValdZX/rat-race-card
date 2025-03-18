@@ -18,7 +18,14 @@ import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
 import ua.vald_zx.game.rat.race.card.remove
 import ua.vald_zx.game.rat.race.card.replace
+import ua.vald_zx.game.rat.race.card.statistics2KStore
 import kotlin.math.absoluteValue
+
+@Serializable
+data class Statistics(
+    val log: MutableList<RatRace2CardState> = mutableListOf(),
+    var salaryCount: Long = 0,
+)
 
 @Serializable
 data class RatRace2CardState(
@@ -164,6 +171,8 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
 
     private val state = MutableStateFlow(RatRace2CardState())
     private val sideEffect = MutableSharedFlow<RatRace2CardSideEffect>()
+    var statistics: Statistics? = null
+        private set
 
     override fun observeState(): StateFlow<RatRace2CardState> = state
 
@@ -263,6 +272,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             RatRace2CardAction.GetSalaryApproved -> {
+                statistics?.salaryCount += 1
                 val cashFlow = oldState.cashFlow()
                 if (cashFlow >= 0) {
                     oldState.plusCash(cashFlow)
@@ -401,7 +411,13 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
         }
         if (newState != oldState) {
             state.value = newState
-            launch { raceRate2KStore.set(newState) }
+            launch {
+                raceRate2KStore.set(newState)
+                val storedStatistics = statistics ?: statistics2KStore.get() ?: Statistics()
+                storedStatistics.log += newState
+                statistics2KStore.set(storedStatistics)
+                statistics = storedStatistics
+            }
         }
     }
 

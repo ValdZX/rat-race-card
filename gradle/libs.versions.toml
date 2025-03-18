@@ -23,6 +23,7 @@ kotlinx-serialization = "1.8.0"
 kstore = "0.9.1"
 lexilabs-basic = "+"
 tts = "3.0.0-beta.1"
+charts = "0.1.2"
 
 [libraries]
 
@@ -60,6 +61,7 @@ kstore-file = { module = "io.github.xxfast:kstore-file", version.ref = "kstore" 
 kstore-storage = { module = "io.github.xxfast:kstore-storage", version.ref = "kstore" }
 tts = { module = "nl.marc-apps:tts", version.ref = "tts" }
 tts-compose = { module = "nl.marc-apps:tts-compose", version.ref = "tts" }
+charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "charts" }
 lexilabs-basic-sound = { group = "app.lexilabs.basic", name = "basic-sound", version.ref = "lexilabs-basic" }
 
 [plugins]

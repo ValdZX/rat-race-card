@@ -22,6 +22,7 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardStore
+import ua.vald_zx.game.rat.race.card.logic.Statistics
 import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.RaceRate2Screen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -29,6 +30,8 @@ import ua.vald_zx.game.rat.race.card.theme.AppTheme
 internal expect inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T>
 val raceRate2KStore: KStore<RatRace2CardState>
     get() = getStore("raceRate2.json")
+val statistics2KStore: KStore<Statistics>
+    get() = getStore("statistics2.json")
 val raceRate4KStore: KStore<RatRace4CardState>
     get() = getStore("raceRate4.json")
 val raceRate2store = RatRace2CardStore()
