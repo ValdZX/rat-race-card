@@ -127,9 +127,11 @@ class RaceRate2Screen : Screen {
                             },
                         duration = 4000
                     )
-                    CashFlowField("Cash Flow", state.cashFlow().toString()) {
-                        raceRate2store.dispatch(RatRace2CardAction.GetSalary)
-                    }
+                    CashFlowField(
+                        name = "Cash Flow",
+                        value = state.cashFlow().toString(),
+                        onClick = { raceRate2store.dispatch(RatRace2CardAction.GetSalary) },
+                        salary = { raceRate2store.dispatch(RatRace2CardAction.GetSalary) })
                     BalanceField(
                         name = "Готівка",
                         value = state.cash.toString(),

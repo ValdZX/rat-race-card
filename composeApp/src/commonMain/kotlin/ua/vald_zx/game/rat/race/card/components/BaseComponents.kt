@@ -52,6 +52,7 @@ import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Add
 import ua.vald_zx.game.rat.race.card.resource.images.Deposit
 import ua.vald_zx.game.rat.race.card.resource.images.Repay
+import ua.vald_zx.game.rat.race.card.resource.images.Salary
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
 import ua.vald_zx.game.rat.race.card.resource.images.Substract
 import ua.vald_zx.game.rat.race.card.screen.second.SettingsScreen
@@ -252,7 +253,7 @@ fun ColumnScope.NegativeField(
 }
 
 @Composable
-fun ColumnScope.CashFlowField(name: String, value: String, onClick: () -> Unit = {}) {
+fun ColumnScope.CashFlowField(name: String, value: String, onClick: () -> Unit = {}, salary: () -> Unit = {}) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -262,7 +263,15 @@ fun ColumnScope.CashFlowField(name: String, value: String, onClick: () -> Unit =
             .padding(start = 8.dp)
     ) {
         SmoothRainbowText(name, style = LocalTextStyle.current.copy(fontSize = 20.sp))
-        Text(value.splitDecimal(), fontSize = 20.sp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(value.splitDecimal(), fontSize = 20.sp)
+            IconButton(
+                onClick = salary,
+                content = {
+                    Icon(Images.Salary, contentDescription = null)
+                }
+            )
+        }
     }
     HorizontalDivider()
 }
