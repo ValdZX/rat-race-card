@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
@@ -38,6 +39,11 @@ import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
 import ir.ehsannarmani.compose_charts.models.Line
 import ir.ehsannarmani.compose_charts.models.PopupProperties
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.GrayRainbow
+import ua.vald_zx.game.rat.race.card.components.RainbowBlue
+import ua.vald_zx.game.rat.race.card.components.RainbowOrange
+import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
+import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
 import ua.vald_zx.game.rat.race.card.logic.total
 import ua.vald_zx.game.rat.race.card.raceRate2store
 
@@ -54,6 +60,9 @@ class StatisticsScreen : Screen {
                 var needCash by remember { mutableStateOf(true) }
                 var needDeposit by remember { mutableStateOf(true) }
                 var needLoan by remember { mutableStateOf(true) }
+                val primary = MaterialTheme.colorScheme.primary
+                val onSurface = MaterialTheme.colorScheme.onSurface
+                val tertiary = MaterialTheme.colorScheme.tertiary
                 Card(
                     modifier = Modifier.height(270.dp).fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent)
@@ -73,8 +82,8 @@ class StatisticsScreen : Screen {
                                         Line(
                                             label = "Загальні статки",
                                             values = statistics.log.map { it.total().toDouble() },
-                                            color = SolidColor(Color(0xFF2B8130)),
-                                            firstGradientFillColor = Color(0xFF66BB6A).copy(alpha = .4f),
+                                            color = Brush.horizontalGradient(GrayRainbow),
+                                            firstGradientFillColor = RainbowBlue.copy(alpha = .4f),
                                             curvedEdges = true,
                                             secondGradientFillColor = Color.Transparent,
                                             strokeAnimationSpec = spring(
@@ -94,8 +103,8 @@ class StatisticsScreen : Screen {
                                             values = statistics.log.map {
                                                 it.cashFlow().toDouble()
                                             },
-                                            color = SolidColor(Color(0xFFDA860C)),
-                                            firstGradientFillColor = Color(0xFFFFA726).copy(alpha = .4f),
+                                            color = Brush.horizontalGradient(SkittlesRainbow),
+                                            firstGradientFillColor = RainbowOrange.copy(alpha = .4f),
                                             curvedEdges = true,
                                             secondGradientFillColor = Color.Transparent,
                                             strokeAnimationSpec = spring(
@@ -113,8 +122,8 @@ class StatisticsScreen : Screen {
                                         Line(
                                             label = "Готівка",
                                             values = statistics.log.map { it.cash.toDouble() },
-                                            color = SolidColor(Color(0xFF23af92)),
-                                            firstGradientFillColor = Color(0xFF2BC0A1).copy(alpha = .5f),
+                                            color = SolidColor(onSurface),
+                                            firstGradientFillColor = onSurface.copy(alpha = .5f),
                                             curvedEdges = true,
                                             secondGradientFillColor = Color.Transparent,
                                             strokeAnimationSpec = spring(
@@ -132,8 +141,8 @@ class StatisticsScreen : Screen {
                                         Line(
                                             label = "Депозит",
                                             values = statistics.log.map { it.deposit.toDouble() },
-                                            color = SolidColor(Color(0xFF0F73C4)),
-                                            firstGradientFillColor = Color(0xFF42A5F5).copy(alpha = .4f),
+                                            color = SolidColor(primary),
+                                            firstGradientFillColor = primary.copy(alpha = .4f),
                                             curvedEdges = true,
                                             secondGradientFillColor = Color.Transparent,
                                             strokeAnimationSpec = spring(
@@ -151,8 +160,8 @@ class StatisticsScreen : Screen {
                                         Line(
                                             label = "Кредит",
                                             values = statistics.log.map { it.loan.toDouble() },
-                                            color = SolidColor(Color.Red),
-                                            firstGradientFillColor = Color.Red.copy(alpha = .5f),
+                                            color = SolidColor(tertiary),
+                                            firstGradientFillColor = tertiary.copy(alpha = .5f),
                                             curvedEdges = true,
                                             secondGradientFillColor = Color.Transparent,
                                             strokeAnimationSpec = spring(
@@ -202,7 +211,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Загальні статки")
+                    SmoothRainbowText("Загальні статки", rainbow = GrayRainbow)
                     Switch(needTotal, onCheckedChange = { needTotal = it })
                 }
                 Row(
@@ -210,7 +219,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("CashFlow")
+                    SmoothRainbowText("CashFlow", rainbow = SkittlesRainbow)
                     Switch(needCashFlow, onCheckedChange = { needCashFlow = it })
                 }
                 Row(
@@ -218,7 +227,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Готівка")
+                    Text("Готівка", color = onSurface)
                     Switch(needCash, onCheckedChange = { needCash = it })
                 }
                 Row(
@@ -226,7 +235,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Депозит")
+                    Text("Депозит", color = primary)
                     Switch(needDeposit, onCheckedChange = { needDeposit = it })
                 }
                 Row(
@@ -234,7 +243,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Кредит")
+                    Text("Кредит", color = tertiary)
                     Switch(needLoan, onCheckedChange = { needLoan = it })
                 }
             }
