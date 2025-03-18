@@ -86,9 +86,12 @@ internal expect suspend fun getTts(): TextToSpeechInstance?
 
 @OptIn(ExperimentalVoiceApi::class)
 internal suspend fun ttsIsUkraineSupported(): Boolean {
-    return getTts()?.voices?.find { it.language == "Ukrainian" } != null
+    val voices = getTts()?.voices
+    return voices?.find { it.languageTag == "uk-UA" } != null
 }
 
 internal suspend fun tts(string: String) {
-    getTts()?.say(string)
+    runCatching {
+        getTts()?.say(string)
+    }
 }

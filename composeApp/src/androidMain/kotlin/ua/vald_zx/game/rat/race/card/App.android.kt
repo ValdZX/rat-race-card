@@ -85,7 +85,7 @@ internal actual fun share(data: String?) {
 private var tts: TextToSpeechInstance? = null
 actual suspend fun getTts(): TextToSpeechInstance? {
     if (tts != null) return tts
-    TextToSpeechFactory(AndroidApp.ACTIVITY, TextToSpeechEngine.SystemDefault).create()
+    TextToSpeechFactory(AndroidApp.ACTIVITY, TextToSpeechEngine.Google).create()
         .onSuccess { newTts ->
             newTts.voices.find { it.language == "Ukrainian" }?.let { newTts.currentVoice = it }
             tts = newTts
