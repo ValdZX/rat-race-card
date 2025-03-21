@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.ktor.util.encodeBase64
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
