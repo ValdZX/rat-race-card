@@ -102,6 +102,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kstore.file)
             implementation(libs.app.update.ktx)
+            implementation(libs.fragment)
         }
 
         jvmMain.dependencies {
