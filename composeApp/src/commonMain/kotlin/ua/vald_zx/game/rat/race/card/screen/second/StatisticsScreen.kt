@@ -77,13 +77,20 @@ class StatisticsScreen : Screen {
                                 needLoan
                             ) {
                                 val lines = mutableListOf<Line>()
+                                if (!(needTotal || needCashFlow || needCash || needDeposit || needLoan)) {
+                                    needCashFlow = true
+                                }
                                 if (needTotal) {
                                     lines.add(
                                         Line(
                                             label = "Загальні статки",
-                                            values = statistics.log.map { it.total().toDouble() },
+                                            values = statistics.log.map {
+                                                it.total().toDouble()
+                                            },
                                             color = Brush.horizontalGradient(GoldRainbow),
-                                            firstGradientFillColor = Color(0xFFb48811).copy(alpha = .4f),
+                                            firstGradientFillColor = Color(0xFFb48811).copy(
+                                                alpha = .4f
+                                            ),
                                             curvedEdges = true,
                                             secondGradientFillColor = Color.Transparent,
                                             strokeAnimationSpec = spring(
