@@ -127,7 +127,7 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
 }
-version = "2.0"
+version = "2.1"
 android {
     namespace = "ua.vald_zx.game.rat.race.card"
     compileSdk = 35
