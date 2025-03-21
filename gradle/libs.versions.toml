@@ -24,6 +24,7 @@ kstore = "0.9.1"
 lexilabs-basic = "+"
 tts = "3.0.0-beta.1"
 charts = "0.1.2"
+app-update = "2.1.0"
 
 [libraries]
 
@@ -36,6 +37,7 @@ kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 androidx-testManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-uiTest" }
 androidx-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidx-uiTest" }
+app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "app-update" }
 appdirs = { module = "net.harawata:appdirs", version.ref = "appdirs" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }

@@ -5,15 +5,16 @@ package ua.vald_zx.game.rat.race.card
 import android.app.Application
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
-import android.speech.tts.TextToSpeech
-import android.speech.tts.TextToSpeech.LANG_COUNTRY_AVAILABLE
-import android.speech.tts.TextToSpeech.OnInitListener
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.UpdateAvailability
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
@@ -42,11 +43,44 @@ class AndroidApp : Application() {
 val uk = Locale("uk", "UA")
 
 class AppActivity : ComponentActivity() {
+    private val activityResultLauncher =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            val resultCode = result.resultCode
+            when (resultCode) {
+                RESULT_OK -> {
+                    Napier.d("Update flow completed!")
+                }
+                RESULT_CANCELED -> {
+                    Napier.d("User cancelled Update flow!")
+                }
+                else -> {
+                    Napier.d("Update flow failed with resultCode:$resultCode")
+                }
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent { App() }
         AndroidApp.ACTIVITY = this
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val appUpdateManager = AppUpdateManagerFactory.create(this)
+        appUpdateManager
+            .appUpdateInfo
+            .addOnSuccessListener { appUpdateInfo ->
+                if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
+                    // If an in-app update is already running, resume the update.
+                    appUpdateManager.startUpdateFlowForResult(
+                        appUpdateInfo,
+                        activityResultLauncher,
+                        AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
+                    )
+                }
+            }
     }
 }
 
