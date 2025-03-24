@@ -46,3 +46,5 @@ actual suspend fun getTts(): TextToSpeechInstance? {
 actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
     return storeOf(file = Path("$storageDir/$name"))
 }
+
+actual val noIme: Boolean = false

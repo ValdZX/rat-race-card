@@ -24,10 +24,10 @@ internal actual fun openUrl(url: String?) {
     UIApplication.sharedApplication.openURL(nsUrl)
 }
 
-val fileManager:NSFileManager = NSFileManager.defaultManager
+val fileManager: NSFileManager = NSFileManager.defaultManager
 
 @OptIn(ExperimentalForeignApi::class)
-val cachesUrl:NSURL = fileManager.URLForDirectory(
+val cachesUrl: NSURL = fileManager.URLForDirectory(
     directory = NSCachesDirectory,
     appropriateForURL = null,
     create = false,
@@ -52,6 +52,7 @@ internal actual fun share(data: String?) {
 }
 
 private var tts: TextToSpeechInstance? = null
+
 @OptIn(ExperimentalVoiceApi::class)
 actual suspend fun getTts(): TextToSpeechInstance? {
     if (tts != null) return tts
@@ -64,3 +65,5 @@ actual suspend fun getTts(): TextToSpeechInstance? {
         }
     return tts
 }
+
+actual val noIme: Boolean = false

@@ -79,6 +79,7 @@ internal fun playCoin() {
     audioByte.play(coin)
 }
 
+internal expect val noIme: Boolean
 internal expect val platformContext: Any
 internal expect fun openUrl(url: String?)
 internal expect fun share(data: String?)

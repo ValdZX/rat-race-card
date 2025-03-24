@@ -37,3 +37,5 @@ actual suspend fun getTts(): TextToSpeechInstance? {
         }
     return tts
 }
+
+actual val noIme: Boolean = true
