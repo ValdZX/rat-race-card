@@ -1,4 +1,5 @@
 import com.android.build.api.dsl.ManagedVirtualDevice
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
@@ -32,7 +33,7 @@ kotlin {
     jvm()
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        moduleName = "composeApp"
+        outputModuleName = "composeApp"
         browser {
             val rootDirPath = project.rootDir.path
             val projectDirPath = project.projectDir.path
@@ -214,3 +215,11 @@ buildConfig {
     // BuildConfig configuration here.
     // https://github.com/gmazzo/gradle-buildconfig-plugin#usage-in-kts
 }
+
+tasks.register("buildDist") {
+    doFirst {
+        val file = File("docs")
+        file.deleteRecursively()
+        File("composeApp/build/dist/wasmJs/productionExecutable").copyRecursively(file)
+    }
+}.dependsOn("wasmJsBrowserDistribution")
