@@ -465,7 +465,7 @@ fun RatRace2CardState.total(): Long {
     return cash +
             deposit +
             funds.sumOf { it.amount } +
-            sharesList.sumOf { it.count * it.price } +
+            sharesList.sumOf { it.price } +
             business.sumOf { it.price } -
             loan
 }
