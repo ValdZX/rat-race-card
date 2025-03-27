@@ -92,9 +92,7 @@ class RaceRate2Screen : Screen {
                 IconButton(
                     modifier = Modifier.align(Alignment.TopStart),
                     onClick = { bottomSheetNavigator.show(AllActionsScreen()) },
-                    content = {
-                        Icon(Images.Menu, contentDescription = null)
-                    }
+                    content = { Icon(Images.Menu, contentDescription = null) }
                 )
                 IconButton(
                     modifier = Modifier.align(Alignment.TopEnd),
@@ -116,7 +114,7 @@ class RaceRate2Screen : Screen {
                     )
 
                     SmoothRainbowText(
-                        state.total().splitDecimal().toString(),
+                        state.total().splitDecimal(),
                         rainbow = GoldRainbow,
                         style = LocalTextStyle.current.copy(fontSize = 30.sp),
                         modifier = Modifier.align(Alignment.CenterHorizontally)

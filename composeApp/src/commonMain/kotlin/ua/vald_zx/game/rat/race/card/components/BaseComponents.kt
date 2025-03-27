@@ -179,7 +179,7 @@ fun ColumnScope.PositiveField(
     value: String,
     fontSize: TextUnit = 16.sp,
     onClick: () -> Unit = {},
-    deposit: () -> Unit = {},
+    deposit: (() -> Unit)? = null
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -192,12 +192,14 @@ fun ColumnScope.PositiveField(
         Text(name, color = MaterialTheme.colorScheme.primary)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(value.splitDecimal(), fontSize = fontSize)
-            IconButton(
-                onClick = deposit,
-                content = {
-                    Icon(Images.Deposit, contentDescription = null)
-                }
-            )
+            if (deposit != null) {
+                IconButton(
+                    onClick = deposit,
+                    content = {
+                        Icon(Images.Deposit, contentDescription = null)
+                    }
+                )
+            }
         }
     }
     HorizontalDivider()
@@ -228,7 +230,7 @@ fun ColumnScope.FundsField(
 fun ColumnScope.NegativeField(
     name: String, value: String, fontSize: TextUnit = 16.sp,
     onClick: () -> Unit = {},
-    repay: () -> Unit = {},
+    repay: (() -> Unit)? = null
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -241,19 +243,26 @@ fun ColumnScope.NegativeField(
         Text(name, color = MaterialTheme.colorScheme.tertiary)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(value.splitDecimal(), fontSize = fontSize)
-            IconButton(
-                onClick = repay,
-                content = {
-                    Icon(Images.Repay, contentDescription = null)
-                }
-            )
+            if (repay != null) {
+                IconButton(
+                    onClick = repay,
+                    content = {
+                        Icon(Images.Repay, contentDescription = null)
+                    }
+                )
+            }
         }
     }
     HorizontalDivider()
 }
 
 @Composable
-fun ColumnScope.CashFlowField(name: String, value: String, onClick: () -> Unit = {}, salary: () -> Unit = {}) {
+fun ColumnScope.CashFlowField(
+    name: String,
+    value: String,
+    onClick: () -> Unit = {},
+    salary: (() -> Unit)? = null
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -265,12 +274,14 @@ fun ColumnScope.CashFlowField(name: String, value: String, onClick: () -> Unit =
         SmoothRainbowText(name, style = LocalTextStyle.current.copy(fontSize = 20.sp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(value.splitDecimal(), fontSize = 20.sp)
-            IconButton(
-                onClick = salary,
-                content = {
-                    Icon(Images.Salary, contentDescription = null)
-                }
-            )
+            if (salary != null) {
+                IconButton(
+                    onClick = salary,
+                    content = {
+                        Icon(Images.Salary, contentDescription = null)
+                    }
+                )
+            }
         }
     }
     HorizontalDivider()
@@ -281,8 +292,8 @@ fun ColumnScope.BalanceField(
     name: String,
     value: String,
     onClick: () -> Unit = {},
-    add: () -> Unit = {},
-    sub: () -> Unit = {},
+    add: (() -> Unit)? = null,
+    sub: (() -> Unit)? = null,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -294,19 +305,23 @@ fun ColumnScope.BalanceField(
     ) {
         Text(name)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = sub,
-                content = {
-                    Icon(Images.Substract, contentDescription = null)
-                }
-            )
+            if (sub != null) {
+                IconButton(
+                    onClick = sub,
+                    content = {
+                        Icon(Images.Substract, contentDescription = null)
+                    }
+                )
+            }
             Text(value.splitDecimal(), fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
-            IconButton(
-                onClick = add,
-                content = {
-                    Icon(Images.Add, contentDescription = null)
-                }
-            )
+            if (add != null) {
+                IconButton(
+                    onClick = add,
+                    content = {
+                        Icon(Images.Add, contentDescription = null)
+                    }
+                )
+            }
         }
     }
     HorizontalDivider()

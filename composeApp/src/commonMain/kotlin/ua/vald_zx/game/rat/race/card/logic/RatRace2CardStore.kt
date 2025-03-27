@@ -149,6 +149,7 @@ sealed class RatRace2CardAction : Action {
     data class BuyFlight(val price: Long) : RatRace2CardAction()
     data class BuyShares(val shares: Shares) : RatRace2CardAction()
     data class UpdateConfig(val config: Config) : RatRace2CardAction()
+    data class BackToState(val state: RatRace2CardState, val backCount: Int) : RatRace2CardAction()
     data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) :
         RatRace2CardAction()
 
@@ -407,6 +408,11 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
 
             RatRace2CardAction.FiredConfirmed -> {
                 oldState.copy(business = oldState.business.filter { it.type != BusinessType.WORK })
+            }
+
+            is RatRace2CardAction.BackToState -> {
+                repeat(action.backCount) { statistics?.log?.removeLastOrNull() }
+                action.state
             }
         }
         if (newState != oldState) {
