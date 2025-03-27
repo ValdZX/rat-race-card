@@ -38,9 +38,7 @@ class BackLogScreen : Screen {
         val log = raceRate2store.statistics?.log ?: return
         var backCount by remember { mutableStateOf(0) }
         var state by remember(backCount) {
-            mutableStateOf(
-                log[log.lastIndex - backCount]
-            )
+            mutableStateOf(log[log.lastIndex - backCount])
         }
         BottomSheetContainer {
             SmoothRainbowText(
@@ -70,7 +68,7 @@ class BackLogScreen : Screen {
             }
             Row(horizontalArrangement = Arrangement.SpaceBetween) {
                 if (backCount != log.lastIndex) {
-                    Button("Відмінити останню дію") {
+                    Button("Відмінити дію") {
                         backCount += 1
                     }
                 }
