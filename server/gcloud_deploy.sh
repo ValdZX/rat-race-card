@@ -1,1 +1,0 @@
-gcloud functions deploy racerat-function --entry-point=ua.vald_zx.game.rat.race.server.App --source=build/deploy --runtime=java17 --trigger-http --allow-unauthenticated
