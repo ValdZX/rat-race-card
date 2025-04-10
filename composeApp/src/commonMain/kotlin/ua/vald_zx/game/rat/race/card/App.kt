@@ -34,8 +34,8 @@ val statistics2KStore: KStore<Statistics>
     get() = getStore("statistics2.json")
 val raceRate4KStore: KStore<RatRace4CardState>
     get() = getStore("raceRate4.json")
-val raceRate2store = RatRace2CardStore()
-val raceRate4store = RatRace4CardStore()
+val raceRate2store by lazy { RatRace2CardStore() }
+val raceRate4store by lazy { RatRace4CardStore() }
 val settings: Settings = Settings()
 
 @Composable
@@ -64,6 +64,8 @@ internal fun App() = AppTheme {
             kStoreLoaded = true
         }
     }
+
+
 }
 
 private val audioByte by lazy {

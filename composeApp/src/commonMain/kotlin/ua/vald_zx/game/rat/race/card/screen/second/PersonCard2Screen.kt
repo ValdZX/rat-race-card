@@ -33,12 +33,12 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import ua.vald_zx.game.rat.race.card.beans.ProfessionCard
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.raceRate2store
+import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 
 class PersonCard2Screen : Screen {
     @Composable

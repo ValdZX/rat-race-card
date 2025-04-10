@@ -4,11 +4,12 @@ import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
-    alias(libs.plugins.multiplatform)
+    alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.application)
@@ -69,6 +70,7 @@ kotlin {
             }
         }
         commonMain.dependencies {
+            implementation(project(":shared"))
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
@@ -81,7 +83,11 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kstore)
-            implementation(libs.ktor.core)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.websockets)
+            implementation(libs.kotlinx.rpc.krpc.client)
+            implementation(libs.kotlinx.rpc.krpc.serialization.json)
+            implementation(libs.kotlinx.rpc.krpc.ktor.client)
             implementation(libs.multiplatform.settings.no.arg)
             implementation(libs.lexilabs.basic.sound)
             implementation(libs.charts)
@@ -100,7 +106,7 @@ kotlin {
             implementation(compose.uiTooling)
             implementation(libs.androidx.activityCompose)
             implementation(libs.kotlinx.coroutines.android)
-            implementation(libs.ktor.client.okhttp)
+            implementation(libs.ktor.client.cio)
             implementation(libs.kstore.file)
             implementation(libs.app.update.ktx)
             implementation(libs.fragment)
@@ -109,17 +115,17 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
-            implementation(libs.ktor.client.okhttp)
+            implementation(libs.ktor.client.cio)
             implementation(libs.appdirs)
             implementation(libs.kstore.file)
         }
 
         iosMain.dependencies {
-            implementation(libs.ktor.core)
             implementation(libs.ktor.client.darwin)
             implementation(libs.kstore.file)
         }
         wasmJsMain.dependencies {
+            implementation(libs.ktor.client.js)
             implementation(libs.kstore.storage)
         }
     }
@@ -133,11 +139,11 @@ dependencies {
 version = "2.2"
 android {
     namespace = "ua.vald_zx.game.rat.race.card"
-    compileSdk = 35
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 26
-        targetSdk = 35
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        targetSdk = libs.versions.android.targetSdk.get().toInt()
 
         applicationId = "ua.vald_zx.game.rat.race.card.androidApp"
         versionCode = version.toString().let {
@@ -205,7 +211,7 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "ua.vald_zx.game.rat.race.card.desktopApp"
+            packageName = "ua.vald_zx.game.rat.race.card"
             packageVersion = "1.0.0"
         }
     }

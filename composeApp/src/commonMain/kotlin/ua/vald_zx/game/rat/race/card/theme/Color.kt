@@ -77,7 +77,7 @@ internal val md_theme_dark_scrim = Color(0xFF000000)
 internal val seed = Color(0xFF2C3639)
 
 internal val LocalAppColors = staticCompositionLocalOf<AppColors> {
-    error("No IfobsColorPalette provided")
+    error("No ColorPalette provided")
 }
 
 @Stable

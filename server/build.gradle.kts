@@ -1,18 +1,32 @@
 plugins {
-    kotlin("jvm")
-    id("io.ktor.plugin") version "3.1.2"
+    alias(libs.plugins.kotlinJvm)
+    alias(libs.plugins.kotlinx.rpc)
+    alias(libs.plugins.ktor)
+    application
 }
 
+group = "ua.vald_zx.game.rat.race.server"
+version = "0.0.6"
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
 }
 
 dependencies {
-    implementation(libs.kotlin.stdlib)
-    implementation(libs.kotlin.logging)
-    implementation("io.ktor:ktor-server-status-pages:3.1.2")
-    implementation("io.ktor:ktor-server-core-jvm")
-    implementation("io.ktor:ktor-server-netty-jvm")
+    implementation(projects.shared)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.logback)
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.cors.jvm)
+    implementation(libs.ktor.server.websockets.jvm)
+    implementation(libs.ktor.server.host.common.jvm)
+    implementation(libs.kotlinx.rpc.krpc.server)
+    implementation(libs.kotlinx.rpc.krpc.serialization.json)
+    implementation(libs.kotlinx.rpc.krpc.ktor.server)
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.kotlinx.rpc.krpc.client)
+    testImplementation(libs.kotlinx.rpc.krpc.ktor.client)
+    testImplementation(libs.kotlin.test.junit)
     implementation(libs.google.cloud.firestore)
 }
 
@@ -20,7 +34,7 @@ ktor {
     docker {
         jreVersion.set(JavaVersion.VERSION_17)
         localImageName.set("kharvin/race-rat")
-        imageTag.set("0.0.2")
+        imageTag.set(version.toString())
         portMappings.set(listOf(
             io.ktor.plugin.features.DockerPortMapping(
                 80,

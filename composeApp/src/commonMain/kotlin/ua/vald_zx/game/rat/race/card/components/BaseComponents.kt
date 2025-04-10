@@ -260,6 +260,8 @@ fun ColumnScope.NegativeField(
 fun ColumnScope.CashFlowField(
     name: String,
     value: String,
+    fontSize: TextUnit = 20.sp,
+    rainbow: List<Color> = SkittlesRainbow,
     onClick: () -> Unit = {},
     salary: (() -> Unit)? = null
 ) {
@@ -271,9 +273,13 @@ fun ColumnScope.CashFlowField(
             .clickable(onClick = onClick)
             .padding(start = 8.dp)
     ) {
-        SmoothRainbowText(name, style = LocalTextStyle.current.copy(fontSize = 20.sp))
+        SmoothRainbowText(
+            name,
+            rainbow = rainbow,
+            style = LocalTextStyle.current.copy(fontSize = fontSize)
+        )
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(value.splitDecimal(), fontSize = 20.sp)
+            Text(value.splitDecimal(), fontSize = fontSize)
             if (salary != null) {
                 IconButton(
                     onClick = salary,

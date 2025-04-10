@@ -5,6 +5,7 @@ import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.storage.storeOf
 import kotlinx.browser.window
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
@@ -17,7 +18,7 @@ internal actual fun openUrl(url: String?) {
 }
 
 actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
-    return storeOf(name)
+    return storeOf(name, format = Json { ignoreUnknownKeys = true })
 }
 
 actual fun share(data: String?) {
@@ -25,6 +26,7 @@ actual fun share(data: String?) {
 }
 
 private var tts: TextToSpeechInstance? = null
+
 @OptIn(ExperimentalVoiceApi::class)
 actual suspend fun getTts(): TextToSpeechInstance? {
     if (tts != null) return tts
