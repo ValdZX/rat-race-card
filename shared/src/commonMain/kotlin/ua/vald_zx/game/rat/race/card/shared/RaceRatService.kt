@@ -6,6 +6,6 @@ import kotlinx.rpc.annotations.Rpc
 
 @Rpc
 interface RaceRatService : RemoteService {
-    suspend fun init(name: String)
+    suspend fun init(name: String): String
     suspend fun getListOfUsers(): Flow<List<String>>
 }

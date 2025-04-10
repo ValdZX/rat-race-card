@@ -21,6 +21,7 @@ import kotlinx.rpc.krpc.ktor.client.installKrpc
 import kotlinx.rpc.krpc.ktor.client.rpc
 import kotlinx.rpc.krpc.ktor.client.rpcConfig
 import kotlinx.rpc.krpc.serialization.json.json
+import kotlinx.rpc.krpc.streamScoped
 import kotlinx.rpc.withService
 import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
@@ -48,13 +49,6 @@ val raceRate4KStore: KStore<RatRace4CardState>
 val raceRate2store = RatRace2CardStore()
 val raceRate4store = RatRace4CardStore()
 val settings: Settings = Settings()
-val client by lazy {
-    HttpClient {
-        installKrpc()
-    }
-}
-
-private var service: RaceRatService? = null
 
 @Composable
 internal fun App() = AppTheme {
@@ -69,29 +63,6 @@ internal fun App() = AppTheme {
             }
         Navigator(startScreen)
 //        Navigator(SelectBoardScreen())
-
-        LaunchedEffect(Unit) {
-            service = client.rpc {
-                url {
-                    host = "race-rat-1033277102369.us-central1.run.app"
-                    port = 80
-                    encodedPath = "/api"
-                }
-
-                rpcConfig {
-                    serialization {
-                        json()
-                    }
-                }
-            }.withService()
-            service?.getListOfUsers()?.onEach { list ->
-                Napier.d("\nUser added")
-                list.forEach { name ->
-                    Napier.d("\t$name")
-                }
-            }?.launchIn(this)
-            service?.init(name = raceRate2State.professionCard.profession)
-        }
     } else {
         LaunchedEffect(Unit) {
             val state2 = raceRate2KStore.get()

@@ -5,10 +5,6 @@ plugins {
     application
 }
 
-application {
-    mainClass.set("io.ktor.server.netty.EngineMain")
-}
-
 group = "ua.vald_zx.game.rat.race.server"
 version = "0.0.4"
 application {
@@ -39,7 +35,7 @@ ktor {
     docker {
         jreVersion.set(JavaVersion.VERSION_17)
         localImageName.set("kharvin/race-rat")
-        imageTag.set("0.0.3")
+        imageTag.set(version.toString())
         portMappings.set(listOf(
             io.ktor.plugin.features.DockerPortMapping(
                 80,

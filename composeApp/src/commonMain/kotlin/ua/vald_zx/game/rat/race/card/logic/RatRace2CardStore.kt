@@ -1,5 +1,9 @@
 package ua.vald_zx.game.rat.race.card.logic
 
+import io.github.aakira.napier.Napier
+import io.ktor.client.HttpClient
+import io.ktor.http.encodedPath
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -7,6 +11,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.rpc.krpc.ktor.client.installKrpc
+import kotlinx.rpc.krpc.ktor.client.rpc
+import kotlinx.rpc.krpc.ktor.client.rpcConfig
+import kotlinx.rpc.krpc.serialization.json.json
+import kotlinx.rpc.krpc.streamScoped
+import kotlinx.rpc.withService
 import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
@@ -18,8 +28,15 @@ import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
 import ua.vald_zx.game.rat.race.card.remove
 import ua.vald_zx.game.rat.race.card.replace
+import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.card.statistics2KStore
 import kotlin.math.absoluteValue
+
+val client by lazy {
+    HttpClient {
+        installKrpc()
+    }
+}
 
 @Serializable
 data class Statistics(
@@ -175,9 +192,40 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
     var statistics: Statistics? = null
         private set
 
+    private var service: RaceRatService? = null
+
     override fun observeState(): StateFlow<RatRace2CardState> = state
 
     override fun observeSideEffect(): Flow<RatRace2CardSideEffect> = sideEffect
+
+    init {
+        launch(CoroutineExceptionHandler { _, exception ->
+            println("CoroutineExceptionHandler got $exception")
+        }) {
+            service = client.rpc {
+                url {
+                    host = "192.168.31.109"
+                    port = 8080
+                    encodedPath = "/api"
+                }
+
+                rpcConfig {
+                    serialization {
+                        json()
+                    }
+                }
+            }.withService()
+            Napier.d(service?.init(name = state.value.professionCard.profession).orEmpty())
+            streamScoped {
+                service?.getListOfUsers()?.collect { list ->
+                    Napier.d("\nUser added")
+                    list.forEach { name ->
+                        Napier.d("\t$name")
+                    }
+                }
+            }
+        }
+    }
 
     override fun dispatch(action: RatRace2CardAction) {
         val oldState = state.value

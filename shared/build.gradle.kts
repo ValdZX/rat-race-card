@@ -25,28 +25,24 @@ kotlin {
         }
     }
 
-    androidTarget {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            jvmTarget = JvmTarget.JVM_1_8
-        }
-    }
+    androidTarget()
 
     iosX64()
     iosArm64()
     iosSimulatorArm64()
 
     jvm()
+
     sourceSets {
         commonMain {
             dependencies {
+                api(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlin.stdlib)
                 implementation(libs.kotlinx.rpc.core)
                 implementation(libs.kotlinx.serialization.json)
             }
         }
     }
-
 }
 
 android {
