@@ -285,8 +285,8 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
     suspend fun subscribeOnListUpdate() {
         service = client.rpc {
             url {
-                host = "192.168.31.109"
-                port = 8080
+                host = "race-rat-1033277102369.us-central1.run.app"
+                port = 80
                 encodedPath = "/api"
             }
 
