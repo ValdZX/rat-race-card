@@ -207,6 +207,7 @@ class RaceRate2Screen : Screen {
             }
             var depositWithdrawDialog by remember { mutableStateOf(0L) }
             var loanAddedDialog by remember { mutableStateOf(0L) }
+            var receivedCashDialog by remember { mutableStateOf(0L) }
             var salaryApproveDialog by remember { mutableStateOf(false) }
             var confirmFiredDialog by remember { mutableStateOf(false) }
             var confirmDismissalDialog: Business? by remember { mutableStateOf(null) }
@@ -232,6 +233,10 @@ class RaceRate2Screen : Screen {
 
                         is RatRace2CardSideEffect.LoanAdded -> {
                             loanAddedDialog = effect.balance
+                        }
+
+                        is RatRace2CardSideEffect.ReceivedCash -> {
+                            receivedCashDialog = effect.amount
                         }
 
                         is RatRace2CardSideEffect.AddCash -> {
@@ -397,6 +402,23 @@ class RaceRate2Screen : Screen {
                                 loanAddedDialog = 0
                             }
                         ) { Text("Гаразд") }
+                    },
+                )
+            }
+            if (receivedCashDialog != 0L) {
+                AlertDialog(
+                    text = {
+                        Text(
+                            text = "Вам прислали готівку: $receivedCashDialog"
+                        )
+                    },
+                    onDismissRequest = { receivedCashDialog = 0 },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                receivedCashDialog = 0
+                            }
+                        ) { Text("Чудово") }
                     },
                 )
             }

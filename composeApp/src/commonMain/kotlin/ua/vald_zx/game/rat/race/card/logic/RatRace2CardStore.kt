@@ -71,6 +71,7 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.ConfirmFired
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.ConfirmSellingAllBusiness
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.DepositWithdraw
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.LoanAdded
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.ReceivedCash
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.ShowSalaryApprove
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.SubCash
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
@@ -236,6 +237,7 @@ sealed class RatRace2CardSideEffect : Effect {
     data object ConfirmFired : RatRace2CardSideEffect()
     data class AddCash(val amount: Long) : RatRace2CardSideEffect()
     data class SubCash(val amount: Long) : RatRace2CardSideEffect()
+    data class ReceivedCash(val amount: Long) : RatRace2CardSideEffect()
     data object ShowSalaryApprove : RatRace2CardSideEffect()
 }
 
@@ -318,6 +320,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
         launch {
             streamScoped {
                 service?.inputCashObserve()?.collect { cash ->
+                    sideEffect.emit(ReceivedCash(cash))
                     dispatch(SideProfit(cash))
                 }
             }
