@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.rpc.RemoteService
 import kotlinx.rpc.annotations.Rpc
 import kotlinx.serialization.Serializable
+
 @Serializable
 data class Player(
     val professionCard: ProfessionCard,
@@ -32,4 +33,6 @@ interface RaceRatService : RemoteService {
     suspend fun init(player: Player): String
     suspend fun update(state: Card2State)
     suspend fun playersObserve(): Flow<Map<String, Player>>
+    suspend fun sendMoney(id: String, cash: Long)
+    suspend fun inputCashObserve(): Flow<Long>
 }
