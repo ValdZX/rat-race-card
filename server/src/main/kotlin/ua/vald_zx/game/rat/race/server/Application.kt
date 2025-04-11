@@ -11,16 +11,23 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.rpc.krpc.ktor.server.Krpc
 import kotlinx.rpc.krpc.ktor.server.rpc
 import kotlinx.rpc.krpc.serialization.json.json
+import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
+
+val players = MutableStateFlow(mapOf<String, Player>())
+
+@OptIn(ExperimentalUuidApi::class)
 fun Application.module() {
     install(Krpc)
-
     installCORS()
     routing {
         staticResources("/content", "mycontent")
@@ -39,13 +46,21 @@ fun Application.module() {
         }
 
         rpc("/api") {
+            val uuid = Uuid.random().toString()
             rpcConfig {
                 serialization {
                     json()
                 }
             }
 
-            registerService<RaceRatService> { ctx -> RaceRatServiceImpl(ctx) }
+            registerService<RaceRatService> { ctx ->
+                RaceRatServiceImpl(uuid, ctx)
+            }
+            closeReason.invokeOnCompletion {
+                val toMutableMap = players.value.toMutableMap()
+                toMutableMap.remove(uuid)
+                players.value = toMutableMap
+            }
         }
     }
 }

@@ -2,17 +2,6 @@ package ua.vald_zx.game.rat.race.card.beans
 
 import kotlinx.serialization.Serializable
 
-@Serializable
-data class ProfessionCard(
-    val profession: String = "",
-    val salary: Long = 0,
-    val rent: Long = 0,
-    val food: Long = 0,
-    val cloth: Long = 0,
-    val transport: Long = 0,
-    val phone: Long = 0,
-)
-
 enum class BusinessType(val klass: Int) {
     WORK(0),
     SMALL(1),

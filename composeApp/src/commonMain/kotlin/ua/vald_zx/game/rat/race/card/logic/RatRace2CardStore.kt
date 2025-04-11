@@ -6,11 +6,13 @@ import io.ktor.http.encodedPath
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.rpc.krpc.ktor.client.installKrpc
 import kotlinx.rpc.krpc.ktor.client.rpc
 import kotlinx.rpc.krpc.ktor.client.rpcConfig
@@ -22,12 +24,14 @@ import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.beans.Fund
-import ua.vald_zx.game.rat.race.card.beans.ProfessionCard
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
 import ua.vald_zx.game.rat.race.card.remove
 import ua.vald_zx.game.rat.race.card.replace
+import ua.vald_zx.game.rat.race.card.shared.Card2State
+import ua.vald_zx.game.rat.race.card.shared.Player
+import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.card.statistics2KStore
 import kotlin.math.absoluteValue
@@ -198,30 +202,64 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
 
     override fun observeSideEffect(): Flow<RatRace2CardSideEffect> = sideEffect
 
-    init {
-        launch(CoroutineExceptionHandler { _, exception ->
-            println("CoroutineExceptionHandler got $exception")
-        }) {
-            service = client.rpc {
-                url {
-                    host = "192.168.31.109"
-                    port = 8080
-                    encodedPath = "/api"
-                }
+    val exceptionHandler = CoroutineExceptionHandler { _, exception ->
+        Napier.e("CoroutineExceptionHandler", exception)
+        recallService()
+    }
 
-                rpcConfig {
-                    serialization {
-                        json()
+    private fun recallService() {
+        launch(exceptionHandler) {
+            var delayToRecall = 0
+            while (true) {
+                try {
+                    supervisorScope {
+                        delay(delayToRecall)
+                        delayToRecall = 5000
+                        subscribeOnListUpdate()
                     }
+                    return@launch
+                } catch (e: Exception) {
+                    Napier.e("subscribeOnListUpdate", e)
                 }
-            }.withService()
-            Napier.d(service?.init(name = state.value.professionCard.profession).orEmpty())
-            streamScoped {
-                service?.getListOfUsers()?.collect { list ->
-                    Napier.d("\nUser added")
-                    list.forEach { name ->
-                        Napier.d("\t$name")
-                    }
+            }
+        }
+    }
+
+    init {
+        recallService()
+    }
+
+    suspend fun subscribeOnListUpdate() {
+        service = client.rpc {
+            url {
+                host = "192.168.31.109"
+                port = 8080
+                encodedPath = "/api"
+            }
+
+            rpcConfig {
+                serialization {
+                    json()
+                }
+            }
+        }.withService()
+        val state = state.value
+        val message = service?.init(
+            Player(
+                professionCard = state.professionCard,
+                state = Card2State(
+                    totalExpenses = state.totalProfit(),
+                    cashFlow = state.cashFlow()
+                )
+            )
+        )
+            .orEmpty()
+        Napier.d(message)
+        streamScoped {
+            service?.playersObserve()?.collect { map ->
+                Napier.d("\nList updated")
+                map.forEach { player ->
+                    Napier.d("\t$player")
                 }
             }
         }
@@ -471,6 +509,12 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
                 storedStatistics.log += newState
                 statistics2KStore.set(storedStatistics)
                 statistics = storedStatistics
+                service?.update(
+                    Card2State(
+                        totalExpenses = newState.totalExpenses(),
+                        cashFlow = newState.cashFlow()
+                    )
+                )
             }
         }
     }

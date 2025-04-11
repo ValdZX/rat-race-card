@@ -3,9 +3,33 @@ package ua.vald_zx.game.rat.race.card.shared
 import kotlinx.coroutines.flow.Flow
 import kotlinx.rpc.RemoteService
 import kotlinx.rpc.annotations.Rpc
+import kotlinx.serialization.Serializable
+@Serializable
+data class Player(
+    val professionCard: ProfessionCard,
+    val state: Card2State,
+)
+
+@Serializable
+data class ProfessionCard(
+    val profession: String = "",
+    val salary: Long = 0,
+    val rent: Long = 0,
+    val food: Long = 0,
+    val cloth: Long = 0,
+    val transport: Long = 0,
+    val phone: Long = 0,
+)
+
+@Serializable
+data class Card2State(
+    val totalExpenses: Long,
+    val cashFlow: Long,
+)
 
 @Rpc
 interface RaceRatService : RemoteService {
-    suspend fun init(name: String): String
-    suspend fun getListOfUsers(): Flow<List<String>>
+    suspend fun init(player: Player): String
+    suspend fun update(state: Card2State)
+    suspend fun playersObserve(): Flow<Map<String, Player>>
 }
