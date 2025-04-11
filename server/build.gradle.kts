@@ -6,10 +6,9 @@ plugins {
 }
 
 group = "ua.vald_zx.game.rat.race.server"
-version = "0.0.4"
+version = "0.0.5"
 application {
-    mainClass.set("ua.vald_zx.game.rat.race.server.ApplicationKt")
-    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=${extra["development"] ?: "false"}")
+    mainClass.set("io.ktor.server.netty.EngineMain")
 }
 
 dependencies {
