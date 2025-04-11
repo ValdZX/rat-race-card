@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 data class Player(
     val professionCard: ProfessionCard,
     val state: Card2State,
+    val uuid: String = "",
 )
 
 @Serializable
@@ -32,7 +33,7 @@ data class Card2State(
 interface RaceRatService : RemoteService {
     suspend fun init(player: Player): String
     suspend fun update(state: Card2State)
-    suspend fun playersObserve(): Flow<Map<String, Player>>
+    suspend fun playersObserve(): Flow<List<Player>>
     suspend fun sendMoney(id: String, cash: Long)
     suspend fun inputCashObserve(): Flow<Long>
 }

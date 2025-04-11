@@ -23,7 +23,7 @@ import kotlin.uuid.Uuid
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
 
-val players = MutableStateFlow(mapOf<String, Player>())
+val players = MutableStateFlow(listOf<Player>())
 
 @OptIn(ExperimentalUuidApi::class)
 fun Application.module() {
@@ -57,9 +57,7 @@ fun Application.module() {
                 RaceRatServiceImpl(uuid, ctx)
             }
             closeReason.invokeOnCompletion {
-                val toMutableMap = players.value.toMutableMap()
-                toMutableMap.remove(uuid)
-                players.value = toMutableMap
+                players.value = players.value.filter { it.uuid != uuid }
             }
         }
     }

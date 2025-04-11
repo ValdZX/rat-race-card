@@ -29,25 +29,31 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun init(player: Player): String {
-        val mutableMap = players.value.toMutableMap()
-        mutableMap[uuid] = player
-        players.value = mutableMap
+        players.value = players.value + player.copy(uuid = uuid)
         LOGGER.debug("Added user ${player.professionCard.profession}")
-        return "Hello ${player.professionCard.profession}"
+        return uuid
     }
 
     override suspend fun update(state: Card2State) {
-        val player = players.value[uuid] ?: return
-        val mutableMap = players.value.toMutableMap()
-        mutableMap[uuid] = player.copy(state = state)
-        players.value = mutableMap
+        val player = players.value.find { it.uuid == uuid } ?: return
+        players.value = players.value.replaceItem(player, player.copy(state = state))
     }
 
-    override suspend fun playersObserve(): Flow<Map<String, Player>> = players
+    override suspend fun playersObserve(): Flow<List<Player>> = players
 
     override suspend fun sendMoney(id: String, cash: Long) {
         cashSendBus.emit(id to cash)
     }
 
     override suspend fun inputCashObserve(): Flow<Long> = inputCashFlow
+}
+
+fun <T> List<T>.replaceItem(item: T, newItem: T): List<T> {
+    val list = toMutableList()
+    val index = list.indexOf(item)
+    if (index >= 0) {
+        list.remove(item)
+        list.add(index, newItem)
+    }
+    return list
 }

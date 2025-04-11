@@ -6,6 +6,7 @@ import io.github.xxfast.kstore.file.storeOf
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
@@ -36,7 +37,7 @@ val cachesUrl: NSURL = fileManager.URLForDirectory(
 )!!
 
 internal actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
-    return storeOf(file = Path("$cachesUrl/$name"))
+    return storeOf(file = Path("$cachesUrl/$name"), json = Json { ignoreUnknownKeys = true })
 }
 
 internal actual fun share(data: String?) {

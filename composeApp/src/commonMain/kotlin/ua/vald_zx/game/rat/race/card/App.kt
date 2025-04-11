@@ -11,18 +11,7 @@ import app.lexilabs.basic.sound.AudioByte
 import app.lexilabs.basic.sound.ExperimentalBasicSound
 import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
-import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
-import io.ktor.client.HttpClient
-import io.ktor.http.encodedPath
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.rpc.krpc.ktor.client.installKrpc
-import kotlinx.rpc.krpc.ktor.client.rpc
-import kotlinx.rpc.krpc.ktor.client.rpcConfig
-import kotlinx.rpc.krpc.serialization.json.json
-import kotlinx.rpc.krpc.streamScoped
-import kotlinx.rpc.withService
 import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
@@ -36,7 +25,6 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace4CardStore
 import ua.vald_zx.game.rat.race.card.logic.Statistics
 import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.RaceRate2Screen
-import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 internal expect inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T>
@@ -46,8 +34,8 @@ val statistics2KStore: KStore<Statistics>
     get() = getStore("statistics2.json")
 val raceRate4KStore: KStore<RatRace4CardState>
     get() = getStore("raceRate4.json")
-val raceRate2store = RatRace2CardStore()
-val raceRate4store = RatRace4CardStore()
+val raceRate2store by lazy { RatRace2CardStore() }
+val raceRate4store by lazy { RatRace4CardStore() }
 val settings: Settings = Settings()
 
 @Composable

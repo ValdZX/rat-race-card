@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -54,17 +55,19 @@ import ua.vald_zx.game.rat.race.card.components.PositiveField
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect
+import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.logic.total
 import ua.vald_zx.game.rat.race.card.playCoin
+import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Menu
+import ua.vald_zx.game.rat.race.card.resource.images.Rat
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
 import ua.vald_zx.game.rat.race.card.screen.second.page.BusinessListPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.FundsPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.SharesPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.StatePage
 import ua.vald_zx.game.rat.race.card.splitDecimal
-import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.tts
 import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
@@ -105,13 +108,26 @@ class RaceRate2Screen : Screen {
                     modifier = Modifier.padding(top = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = state.status(),
-                        maxLines = 2,
-                        style = MaterialTheme.typography.titleLarge,
+                    Row(
                         modifier = Modifier.padding(horizontal = 48.dp),
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = state.status(),
+                            maxLines = 2,
+                            style = MaterialTheme.typography.titleLarge,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        val players by players
+                        if (players.size > 1) {
+                            IconButton(
+                                onClick = { bottomSheetNavigator.show(PlayersScreen()) },
+                                content = {
+                                    Icon(Images.Rat, contentDescription = null)
+                                }
+                            )
+                        }
+                    }
 
                     SmoothRainbowText(
                         state.total().splitDecimal(),

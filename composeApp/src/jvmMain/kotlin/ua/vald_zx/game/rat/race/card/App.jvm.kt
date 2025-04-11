@@ -5,6 +5,7 @@ import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.file.storeOf
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import net.harawata.appdirs.AppDirsFactory
 import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
@@ -44,7 +45,7 @@ actual suspend fun getTts(): TextToSpeechInstance? {
 }
 
 actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
-    return storeOf(file = Path("$storageDir/$name"))
+    return storeOf(file = Path("$storageDir/$name"), json = Json { ignoreUnknownKeys = true })
 }
 
 actual val noIme: Boolean = false

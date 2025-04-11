@@ -21,6 +21,7 @@ import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.file.storeOf
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import nl.marc_apps.tts.TextToSpeechEngine
 import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
@@ -101,7 +102,7 @@ internal val storageDir: String
     get() = AndroidApp.INSTANCE.filesDir.path
 
 internal actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
-    return storeOf(file = Path("$storageDir/$name"))
+    return storeOf(file = Path("$storageDir/$name"), json = Json { ignoreUnknownKeys = true })
 }
 
 internal actual fun share(data: String?) {
