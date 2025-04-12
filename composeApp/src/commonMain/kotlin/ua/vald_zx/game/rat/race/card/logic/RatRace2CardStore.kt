@@ -9,6 +9,8 @@ import io.ktor.http.encodedPath
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -202,6 +204,8 @@ sealed class RatRace2CardAction : Action {
     data object CapitalizeStarsFunds : RatRace2CardAction()
     data object RandomBusiness : RatRace2CardAction()
     data object HideAlarm : RatRace2CardAction()
+    data object OnPause : RatRace2CardAction()
+    data object OnResume : RatRace2CardAction()
     data class BuyBusiness(val business: Business) : RatRace2CardAction()
     data class SellBusiness(val business: Business, val amount: Long) : RatRace2CardAction()
     data class DismissalConfirmed(val business: Business) : RatRace2CardAction()
@@ -250,6 +254,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
         private set
 
     private var service: RaceRatService? = null
+    private var serviceJob: Job? = null
 
     override fun observeState(): StateFlow<RatRace2CardState> = state
 
@@ -257,11 +262,11 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
 
     val exceptionHandler = CoroutineExceptionHandler { _, exception ->
         Napier.e("CoroutineExceptionHandler", exception)
-        recallService()
     }
 
     private fun recallService() {
-        launch(exceptionHandler) {
+        serviceJob?.cancel()
+        serviceJob = launch(exceptionHandler) {
             var delayToRecall = 0L
             while (true) {
                 try {
@@ -308,16 +313,16 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
         }
         launch {
             streamScoped {
-            service?.playersObserve()?.collect { list ->
-                players.value = list
+                service?.playersObserve()?.collect { list ->
+                    players.value = list
                 }
             }
         }
         launch {
             streamScoped {
-            service?.inputCashObserve()?.collect { cash ->
-                sideEffect.emit(ReceivedCash(cash))
-                dispatch(SideProfit(cash))
+                service?.inputCashObserve()?.collect { cash ->
+                    sideEffect.emit(ReceivedCash(cash))
+                    dispatch(SideProfit(cash))
                 }
             }
         }
@@ -327,11 +332,10 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
         val oldState = state.value
         val newState = when (action) {
             is LoadState -> {
-                recallService()
                 action.state
             }
+
             is FillProfessionCardRat -> {
-                recallService()
                 RatRace2CardState(
                     professionCard = action.professionCard,
                     business = listOf(
@@ -574,6 +578,17 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             is UpdateServiceUuid -> {
                 oldState.copy(uuid = action.uuid)
             }
+
+            RatRace2CardAction.OnPause -> {
+                service?.cancel()
+                serviceJob?.cancel()
+                oldState
+            }
+
+            RatRace2CardAction.OnResume -> {
+                recallService()
+                oldState
+            }
         }
         if (newState != oldState) {
             state.value = newState
@@ -585,7 +600,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
                 statistics = storedStatistics
                 service?.update(
                     Card2State(
-                        totalExpenses = newState.totalExpenses(),
+                        totalExpenses = newState.total(),
                         cashFlow = newState.cashFlow()
                     )
                 )

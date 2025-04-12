@@ -7,10 +7,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import app.lexilabs.basic.sound.AudioByte
 import app.lexilabs.basic.sound.ExperimentalBasicSound
 import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
+import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
 import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
@@ -64,7 +66,17 @@ internal fun App() = AppTheme {
             kStoreLoaded = true
         }
     }
-
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
+    LaunchedEffect(lifecycleState) {
+        Napier.d(lifecycleState.toString())
+        if(lifecycleState.name == "RESUMED") {
+            raceRate2store.dispatch(RatRace2CardAction.OnResume)
+        }
+        if(lifecycleState.name == "CREATED") {
+            raceRate2store.dispatch(RatRace2CardAction.OnPause)
+        }
+    }
 
 }
 
