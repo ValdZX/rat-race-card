@@ -110,6 +110,7 @@ kotlin {
             implementation(libs.kstore.file)
             implementation(libs.app.update.ktx)
             implementation(libs.fragment)
+            implementation(libs.lifecycle.runtime.compose)
         }
 
         jvmMain.dependencies {

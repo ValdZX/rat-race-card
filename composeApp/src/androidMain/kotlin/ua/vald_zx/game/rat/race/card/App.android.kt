@@ -11,6 +11,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
 import com.google.android.play.core.install.model.AppUpdateType
@@ -26,6 +31,7 @@ import nl.marc_apps.tts.TextToSpeechEngine
 import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import java.util.Locale
 
 class AndroidApp : Application() {
@@ -51,9 +57,11 @@ class AppActivity : ComponentActivity() {
                 RESULT_OK -> {
                     Napier.d("Update flow completed!")
                 }
+
                 RESULT_CANCELED -> {
                     Napier.d("User cancelled Update flow!")
                 }
+
                 else -> {
                     Napier.d("Update flow failed with resultCode:$resultCode")
                 }
@@ -63,7 +71,21 @@ class AppActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { App() }
+        setContent {
+            App()
+            val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+            val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
+
+            LaunchedEffect(lifecycleState) {
+                Napier.d(lifecycleState.toString())
+                if (lifecycleState == Lifecycle.State.RESUMED) {
+                    raceRate2store.dispatch(RatRace2CardAction.OnResume)
+                }
+                if (lifecycleState == Lifecycle.State.CREATED) {
+                    raceRate2store.dispatch(RatRace2CardAction.OnPause)
+                }
+            }
+        }
         AndroidApp.ACTIVITY = this
     }
 

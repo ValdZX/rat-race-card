@@ -66,18 +66,6 @@ internal fun App() = AppTheme {
             kStoreLoaded = true
         }
     }
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
-    LaunchedEffect(lifecycleState) {
-        Napier.d(lifecycleState.toString())
-        if(lifecycleState.name == "RESUMED") {
-            raceRate2store.dispatch(RatRace2CardAction.OnResume)
-        }
-        if(lifecycleState.name == "CREATED") {
-            raceRate2store.dispatch(RatRace2CardAction.OnPause)
-        }
-    }
-
 }
 
 private val audioByte by lazy {

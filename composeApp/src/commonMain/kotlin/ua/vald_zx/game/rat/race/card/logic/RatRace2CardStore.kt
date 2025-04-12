@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -311,14 +312,14 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             dispatch(UpdateServiceUuid(uuid))
             Napier.d(uuid)
         }
-        launch {
+        async {
             streamScoped {
                 service?.playersObserve()?.collect { list ->
                     players.value = list
                 }
             }
         }
-        launch {
+        async {
             streamScoped {
                 service?.inputCashObserve()?.collect { cash ->
                     sideEffect.emit(ReceivedCash(cash))
@@ -580,7 +581,8 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             RatRace2CardAction.OnPause -> {
-                service?.cancel()
+                client.close()
+                client.engine.close()
                 serviceJob?.cancel()
                 oldState
             }
