@@ -162,7 +162,11 @@ class RaceRate2Screen : Screen {
                     NegativeField(
                         name = "Кредит", value = state.loan.toString(),
                         onClick = { bottomSheetNavigator.show(LoanActionsScreen()) },
-                        repay = { bottomSheetNavigator.show(RepayCreditScreen()) },
+                        repay = {
+                            if (state.loan > 0) {
+                                bottomSheetNavigator.show(RepayCreditScreen())
+                            }
+                        },
                     )
                     if (state.config.hasFunds) {
                         FundsField("Фонди", state.fundAmount().toString()) {

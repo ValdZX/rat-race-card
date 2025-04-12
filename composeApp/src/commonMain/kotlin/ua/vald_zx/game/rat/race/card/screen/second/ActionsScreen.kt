@@ -111,9 +111,12 @@ class DepositActionsScreen() : Screen {
 class LoanActionsScreen() : Screen {
     @Composable
     override fun Content() = ActionsScreen {
+        val state by raceRate2store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        Button("Погасити кредит", AppTheme.colors.positive) {
-            bottomSheetNavigator.replace(RepayCreditScreen())
+        if (state.loan > 0) {
+            Button("Погасити кредит", AppTheme.colors.positive) {
+                bottomSheetNavigator.replace(RepayCreditScreen())
+            }
         }
         Button("Взяти кредит", AppTheme.colors.negative) {
             bottomSheetNavigator.replace(GetLoanScreen())
