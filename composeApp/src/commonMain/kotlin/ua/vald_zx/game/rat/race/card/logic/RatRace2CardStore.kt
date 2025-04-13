@@ -5,13 +5,12 @@ package ua.vald_zx.game.rat.race.card.logic
 import androidx.compose.runtime.mutableStateOf
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
-import io.ktor.http.encodedPath
+import io.ktor.client.request.url
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -286,11 +285,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
 
     suspend fun subscribeOnListUpdate() {
         service = client.rpc {
-            url {
-                host = "race-rat-1033277102369.us-central1.run.app"
-                port = 80
-                encodedPath = "/api"
-            }
+            url("wss://race-rat-1033277102369.us-central1.run.app/api")
 
             rpcConfig {
                 serialization {

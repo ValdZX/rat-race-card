@@ -1,6 +1,5 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +40,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
-import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -76,9 +74,7 @@ class RaceRate2Screen : Screen {
 
     @OptIn(
         ExperimentalMaterialApi::class,
-        ExperimentalFoundationApi::class,
         ExperimentalMaterial3Api::class,
-        ExperimentalKStoreApi::class
     )
     @Composable
     override fun Content() {
