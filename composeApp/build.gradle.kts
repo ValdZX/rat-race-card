@@ -4,14 +4,15 @@ import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
+import org.jetbrains.compose.reload.ComposeHotRun
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.compose.hot.reload)
     alias(libs.plugins.android.application)
     alias(libs.plugins.buildConfig)
     alias(libs.plugins.kotlinx.serialization)
@@ -93,6 +94,7 @@ kotlin {
             implementation(libs.charts)
             implementation(libs.tts)
             implementation(libs.tts.compose)
+//            implementation(libs.zoomable)//add after wasm support
         }
 
         commonTest.dependencies {
@@ -230,3 +232,7 @@ tasks.register("buildDist") {
         File("composeApp/build/dist/wasmJs/productionExecutable").copyRecursively(file)
     }
 }.dependsOn("wasmJsBrowserDistribution")
+
+tasks.withType<ComposeHotRun>().configureEach {
+    mainClass.set("MainKt")
+}

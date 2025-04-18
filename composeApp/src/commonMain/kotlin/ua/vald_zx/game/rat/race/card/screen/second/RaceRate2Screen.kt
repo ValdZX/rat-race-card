@@ -1,6 +1,7 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,9 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +36,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,12 +97,17 @@ class RaceRate2Screen : Screen {
                     onClick = { bottomSheetNavigator.show(AllActionsScreen()) },
                     content = { Icon(Images.Menu, contentDescription = null) }
                 )
-                IconButton(
-                    modifier = Modifier.align(Alignment.TopEnd),
-                    onClick = { navigator?.push(SettingsScreen()) },
-                    content = {
-                        Icon(Images.Settings, contentDescription = null)
-                    }
+                Icon(
+                    imageVector = Images.Settings,
+                    contentDescription = null,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .combinedClickable(
+                            onLongClick = {
+                                navigator?.push(Board2Screen())
+                            }, onClick = { navigator?.push(SettingsScreen()) })
+                        .padding(8.dp),
                 )
                 Column(
                     modifier = Modifier.padding(top = 8.dp),
