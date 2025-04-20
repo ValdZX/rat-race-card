@@ -9,7 +9,7 @@
         android:theme="@android:style/Theme.Material.NoActionBar">
         <activity
             android:name=".AppActivity"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="${appIcon}"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:launchMode="singleInstance"
             android:windowSoftInputMode="adjustResize"

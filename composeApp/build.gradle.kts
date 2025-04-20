@@ -112,7 +112,6 @@ kotlin {
             implementation(libs.kstore.file)
             implementation(libs.app.update.ktx)
             implementation(libs.fragment)
-            implementation(libs.lifecycle.runtime.compose)
         }
 
         jvmMain.dependencies {
@@ -196,11 +195,13 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".debug"
             signingConfig = signingConfigs.getByName("debug")
+            manifestPlaceholders["appIcon"]="@mipmap/ic_launcher_debug"
             isMinifyEnabled = false
             isShrinkResources = false
         }
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
+            manifestPlaceholders["appIcon"]="@mipmap/ic_launcher"
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.txt")
