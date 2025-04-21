@@ -1,33 +1,34 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.TextMeasurer
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.min
+import androidx.compose.ui.zIndex
 import cafe.adriel.voyager.core.screen.Screen
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
-import kotlin.math.roundToInt
 
 enum class Side(val isHorizontal: Boolean) {
     TOP(true), LEFT(false), BOTTOM(true), RIGHT(false)
@@ -66,168 +67,130 @@ class Board2Screen : Screen {
     override fun Content() {
         val zoomState =
             rememberZoomState(contentSize = Size.Zero, initialScale = 1f, maxScale = 20f)
-        val textMeasurer = rememberTextMeasurer()
         Box(modifier = Modifier.fillMaxSize().zoomable(zoomState)) {
-            Canvas(modifier = Modifier.fillMaxSize().padding(24.dp).clip(RectangleShape)) {
-                val outSpotWidth = size.width / cellOutX
-                val outSpotHeight = size.width / cellOutX
-                drawPlaces(
+            BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+                val minSide = min(maxWidth, maxHeight)
+                val outSpotWidth = minSide / cellOutX
+                val outSpotHeight = minSide / cellOutX
+                Places(
                     places = outPlaces,
                     spotWidth = outSpotWidth,
                     spotHeight = outSpotHeight,
                     cellX = cellOutX,
                     cellY = cellY,
-                    textMeasurer = textMeasurer,
                 )
+
                 val inPadding = outSpotWidth / 3
-                val inSpotWidth = (size.width - outSpotWidth * 4 - inPadding * 2) / cellInX
+                val inSpotWidth = (minSide - outSpotWidth * 4 - inPadding * 2) / cellInX
                 val inSpotHeight =
                     ((outSpotWidth * cellY) - outSpotWidth * 4 - inPadding * 2) / cellY
                 val inLineOffset = (outSpotWidth * 2) + inPadding
-                drawPlaces(
+                Places(
                     places = inPlaces,
                     spotWidth = inSpotWidth,
                     spotHeight = inSpotHeight,
                     cellX = cellInX,
                     cellY = cellY,
-                    offset = Offset(inLineOffset, inLineOffset),
-                    textMeasurer = textMeasurer,
+                    offset = DpOffset(inLineOffset, inLineOffset),
                 )
             }
         }
     }
 
-    private fun DrawScope.drawPlaces(
+    @Composable
+    private fun Places(
         places: List<Place>,
-        spotWidth: Float,
-        spotHeight: Float,
+        spotWidth: Dp,
+        spotHeight: Dp,
         cellX: Int,
         cellY: Int,
-        textMeasurer: TextMeasurer,
-        offset: Offset = Offset(0f, 0f),
+        offset: DpOffset = DpOffset(0.dp, 0.dp),
     ) {
         var placeOffset = 0
         places.forEach { place ->
             val location = place.getLocationOnBoard(placeOffset, cellX, cellY)
-            val cellSize = place.getSize(location, spotWidth, spotHeight)
-            val cellOffset = place.offset(location, spotWidth, spotHeight, cellX, cellY, offset)
-            drawRect(
+            val cellSize = place.getDpSize(location, spotWidth, spotHeight)
+            val cellOffset = place.dpOffset(location, spotWidth, spotHeight, cellX, cellY, offset)
+            PlaceItem(
                 color = place.color,
                 size = cellSize,
-                topLeft = cellOffset
+                offset = cellOffset
             )
-            if (location.side.isHorizontal) {
-                drawVerticalPlaceText(place, textMeasurer, cellSize, cellOffset)
-            } else {
-                drawHorizontalPlaceText(place, textMeasurer, cellSize, cellOffset)
-            }
+//            if (location.side.isHorizontal) {
+//                drawVerticalPlaceText(place, textMeasurer, cellSize, cellOffset)
+//            } else {
+//                drawHorizontalPlaceText(place, textMeasurer, cellSize, cellOffset)
+//            }
             placeOffset += if (place.isBig) 2 else 1
         }
     }
 
-    private fun DrawScope.drawVerticalPlaceText(
-        place: Place,
-        measurer: TextMeasurer,
-        cellSize: Size,
-        cellOffset: Offset
-    ) {
-        val layoutResult = measurer.measure(
-            text = place.name,
-            style = TextStyle(
-                color = Color.White,
-                fontSize = (cellSize.width / 3).toSp(),
-                textAlign = TextAlign.Center,
-            ),
-            overflow = TextOverflow.Ellipsis,
-            softWrap = true,
-            maxLines = 1,
-            constraints = Constraints(
-                maxWidth = cellSize.height.roundToInt(),
-                maxHeight = cellSize.width.roundToInt()
-            )
+    @Composable
+    private fun PlaceItem(color: Color, size: DpSize, offset: DpOffset) {
+        var isSelected by remember { mutableStateOf(false) }
+        val animation by animateFloatAsState(
+            if (isSelected) 1f else 0f,
+            animationSpec = tween(durationMillis = 300)
         )
-        rotate(90f, cellOffset + Offset(cellSize.width / 2f, cellSize.height / 2f)) {
-            drawText(
-                textLayoutResult = layoutResult,
-                topLeft = cellOffset + Offset(
-                    x = (cellSize.width - layoutResult.size.width) / 2f,
-                    y = (cellSize.height - layoutResult.size.height) / 2f
-                ),
-            )
-        }
-    }
+        val width = size.width + size.width * (0.3f * animation)
+        val height = size.height + size.height * (0.3f * animation)
+        val offsetX = offset.x - ((width - size.width) / 2) * animation
+        val offsetY = offset.y - ((height - size.height) / 2) * animation
 
-    private fun DrawScope.drawHorizontalPlaceText(
-        place: Place,
-        measurer: TextMeasurer,
-        cellSize: Size,
-        cellOffset: Offset
-    ) {
-        val layoutResult = measurer.measure(
-            text = place.name,
-            style = TextStyle(
-                color = Color.White,
-                fontSize = (cellSize.height / 2).toSp(),
-                textAlign = TextAlign.Center,
-            ),
-            overflow = TextOverflow.Ellipsis,
-            softWrap = true,
-            maxLines = 1,
-            constraints = Constraints(
-                maxWidth = cellSize.width.roundToInt(), maxHeight = cellSize.height.roundToInt()
-            )
-        )
-        drawText(
-            textLayoutResult = layoutResult,
-            topLeft = cellOffset + Offset(
-                x = (cellSize.width - layoutResult.size.width) / 2f,
-                y = (cellSize.height - layoutResult.size.height) / 2f
-            )
+        Box(
+            modifier = Modifier
+                .zIndex(if (isSelected) 1f else 0f)
+                .size(height = height, width = width)
+                .offset(offsetX, offsetY)
+                .background(color)
+                .clickable {
+                    isSelected = !isSelected
+                }
         )
     }
 
-    private fun Place.getSize(
+    private fun Place.getDpSize(
         location: Location,
-        spotWidth: Float,
-        spotHeight: Float,
-    ): Size {
+        spotWidth: Dp,
+        spotHeight: Dp,
+    ): DpSize {
         return if (isBig) {
-            Size(spotWidth * 2, spotHeight * 2)
+            DpSize(spotWidth * 2, spotHeight * 2)
         } else {
             if (location.side.isHorizontal) {
-                Size(spotWidth, spotHeight * 2)
+                DpSize(spotWidth, spotHeight * 2)
             } else {
-                Size(spotWidth * 2, spotHeight)
+                DpSize(spotWidth * 2, spotHeight)
             }
         }
     }
 
-    private fun Place.offset(
+    private fun Place.dpOffset(
         location: Location,
-        spotWidth: Float,
-        spotHeight: Float,
+        spotWidth: Dp,
+        spotHeight: Dp,
         cellX: Int,
         cellY: Int,
-        offset: Offset
-    ): Offset {
+        offset: DpOffset
+    ): DpOffset {
         return offset + when (location.side) {
-            Side.TOP -> Offset(
+            Side.TOP -> DpOffset(
                 x = spotWidth * location.position,
-                y = 0f
+                y = 0.dp
             )
 
-            Side.LEFT -> Offset(
-                x = (cellX - 2) * spotWidth,
+            Side.LEFT -> DpOffset(
+                x = spotWidth * (cellX - 2),
                 y = spotHeight * location.position
             )
 
-            Side.BOTTOM -> Offset(
+            Side.BOTTOM -> DpOffset(
                 x = spotWidth * (location.position - if (isBig) 1 else 0),
-                y = (cellY - 2) * spotHeight,
+                y = spotHeight * (cellY - 2),
             )
 
-            Side.RIGHT -> Offset(
-                x = 0f,
+            Side.RIGHT -> DpOffset(
+                x = 0.dp,
                 y = spotHeight * (location.position - if (isBig) 1 else 0)
             )
         }
@@ -253,7 +216,7 @@ class Board2Screen : Screen {
 }
 
 
-private val inPlaces = listOf<Place>(
+private val inPlaces = listOf(
     Place.Salary,
     Place.Start,
     Place.Business,
@@ -337,7 +300,7 @@ private val inPlaces = listOf<Place>(
     Place.Expenses,
 )
 
-private val outPlaces = listOf<Place>(
+private val outPlaces = listOf(
     Place.Salary,
     Place.Start,
     Place.Desire,
