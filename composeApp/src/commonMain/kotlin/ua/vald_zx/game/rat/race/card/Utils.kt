@@ -1,7 +1,10 @@
 package ua.vald_zx.game.rat.race.card
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import ua.vald_zx.game.rat.race.card.beans.SharesType
-import kotlin.text.replace
 
 fun String.getDigits() = this.replace("\\D".toRegex(), "").toLongOrNull()?.toString().orEmpty()
 
@@ -57,4 +60,9 @@ fun Long.emptyIfZero(): String {
 
 fun SharesType.label(): String {
     return name.replace("SCT", "CST").replace("GC", "GS")
+}
+
+@Composable
+internal fun Dp.dpToSp(): TextUnit {
+    return (this.value).sp
 }
