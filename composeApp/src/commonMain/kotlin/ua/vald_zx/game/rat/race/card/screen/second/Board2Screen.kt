@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -10,7 +11,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -24,9 +28,15 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import cafe.adriel.voyager.core.screen.Screen
+import io.github.alexzhirkevich.compottie.animateLottieCompositionAsState
 import io.github.aakira.napier.Napier
+import io.github.alexzhirkevich.compottie.Compottie
+import io.github.alexzhirkevich.compottie.LottieCompositionSpec
+import io.github.alexzhirkevich.compottie.rememberLottieComposition
+import io.github.alexzhirkevich.compottie.rememberLottiePainter
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
+import rat_race_card.composeapp.generated.resources.Res
 import ua.vald_zx.game.rat.race.card.dpToSp
 
 enum class Side(val isHorizontal: Boolean) {
@@ -115,6 +125,20 @@ class Board2Screen : Screen {
 //                    }
 //                }
             }
+            val composition by rememberLottieComposition {
+                LottieCompositionSpec.JsonString(
+                    Res.readBytes("files/cube_1.json").decodeToString()
+                )
+            }
+
+            Image(
+                painter = rememberLottiePainter(
+                    composition = composition,
+                    iterations = Compottie.IterateForever
+                ),
+                contentDescription = "Lottie animation",
+                modifier = Modifier.align(Alignment.BottomCenter).size(100.dp)
+            )
         }
     }
 

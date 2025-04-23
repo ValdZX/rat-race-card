@@ -94,6 +94,8 @@ kotlin {
             implementation(libs.charts)
             implementation(libs.tts)
             implementation(libs.tts.compose)
+            implementation(libs.compottie)
+            implementation(libs.compottie.resources)
 //            implementation(libs.zoomable)//add after wasm support
         }
 

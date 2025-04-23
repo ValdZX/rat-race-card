@@ -27,7 +27,8 @@ fragment = "1.8.6"
 kotlinx-rpc = "0.6.1"
 logback = "1.5.18"
 zoomable = "2.6.0"
-lifecycle_version = "2.9.0-beta1"
+lifecycle_version = "2.9.0-rc01"
+compottie = "2.0.0-rc04"
 
 [libraries]
 
@@ -85,6 +86,10 @@ tts-compose = { module = "nl.marc-apps:tts-compose", version.ref = "tts" }
 charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "charts" }
 fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
 lexilabs-basic-sound = { group = "app.lexilabs.basic", name = "basic-sound", version.ref = "lexilabs-basic" }
+compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "compottie" }
+compottie-dot = { module = "io.github.alexzhirkevich:compottie-dot", version.ref = "compottie" }
+compottie-network = { module = "io.github.alexzhirkevich:compottie-network", version.ref = "compottie" }
+compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources", version.ref = "compottie" }
 
 [plugins]
 
