@@ -8,9 +8,9 @@ firebaseBom = "33.12.0"
 kotlin = "2.1.20"
 compose = "1.8.0-beta02"
 compose-hot-reload = "1.0.0-alpha05"
-agp = "8.9.1"
+agp = "8.9.2"
 androidx-activityCompose = "1.10.1"
-androidx-uiTest = "1.7.8"
+androidx-uiTest = "1.8.0"
 multiplatformSettings = "1.3.0"
 voyager = "1.1.0-beta03"
 napier = "2.7.1"
@@ -29,6 +29,7 @@ logback = "1.5.18"
 zoomable = "2.6.0"
 lifecycle_version = "2.9.0-rc01"
 compottie = "2.0.0-rc04"
+uiAndroid = "1.8.0"
 
 [libraries]
 
@@ -37,7 +38,6 @@ kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 androidx-testManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-uiTest" }
 androidx-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidx-uiTest" }
-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle_version" }
 app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "app-update" }
 appdirs = { module = "net.harawata:appdirs", version.ref = "appdirs" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
@@ -87,9 +87,8 @@ charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "char
 fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
 lexilabs-basic-sound = { group = "app.lexilabs.basic", name = "basic-sound", version.ref = "lexilabs-basic" }
 compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "compottie" }
-compottie-dot = { module = "io.github.alexzhirkevich:compottie-dot", version.ref = "compottie" }
-compottie-network = { module = "io.github.alexzhirkevich:compottie-network", version.ref = "compottie" }
 compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources", version.ref = "compottie" }
+androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 
 [plugins]
 

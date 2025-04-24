@@ -3,41 +3,54 @@ package ua.vald_zx.game.rat.race.card.screen.second
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.Text
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
+import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
-import io.github.alexzhirkevich.compottie.animateLottieCompositionAsState
-import io.github.aakira.napier.Napier
-import io.github.alexzhirkevich.compottie.Compottie
+import io.github.alexzhirkevich.compottie.LottieComposition
 import io.github.alexzhirkevich.compottie.LottieCompositionSpec
+import io.github.alexzhirkevich.compottie.rememberLottieAnimatable
 import io.github.alexzhirkevich.compottie.rememberLottieComposition
 import io.github.alexzhirkevich.compottie.rememberLottiePainter
+import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
+import org.jetbrains.compose.resources.Font
+import rat_race_card.composeapp.generated.resources.Bubbleboddy
 import rat_race_card.composeapp.generated.resources.Res
-import ua.vald_zx.game.rat.race.card.dpToSp
+import ua.vald_zx.game.rat.race.card.components.OutlinedText
+import ua.vald_zx.game.rat.race.card.components.Rotation
+import ua.vald_zx.game.rat.race.card.components.optionalModifier
+import ua.vald_zx.game.rat.race.card.components.rotateLayout
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Dice
+import ua.vald_zx.game.rat.race.card.resource.images.Money
 
 enum class Side(val isHorizontal: Boolean) {
     TOP(true), LEFT(false), BOTTOM(true), RIGHT(false)
@@ -75,21 +88,22 @@ class Board2Screen : Screen {
 
     @Composable
     override fun Content() {
-        val zoomState =
-            rememberZoomState(contentSize = Size.Zero, initialScale = 1f, maxScale = 20f)
-        BoxWithConstraints(modifier = Modifier.fillMaxSize().zoomable(zoomState)) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
+            val zoomState =
+                rememberZoomState(contentSize = Size.Zero, initialScale = 1f, maxScale = 20f)
             BoxWithConstraints(
-                modifier = Modifier.fillMaxSize().padding(24.dp).align(Alignment.Center)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .align(Alignment.Center)
+                    .padding(24.dp)
+                    .zoomable(zoomState)
             ) {
                 val minSide = min(maxWidth, maxHeight)
-                val outSpotWidth = minSide / cellOutX
-                LaunchedEffect(outSpotWidth) {
-                    Napier.d("outSpotWidth: " + outSpotWidth.value)
-                }
-                val outSpotHeight = minSide / cellOutX
+                val outSpotWidth = (minSide / cellOutX)//.value.toInt().dp
+                val outSpotHeight = (minSide / cellOutX)//.value.toInt().dp
                 val boardOffset = remember(minSide) {
-                    val x = (maxWidth - outSpotWidth * cellOutX) / 2
-                    val y = (maxHeight - outSpotHeight * cellOutY) / 2
+                    val x = ((maxWidth - outSpotWidth * cellOutX) / 2)//.value.toInt().dp
+                    val y = ((maxHeight - outSpotHeight * cellOutY) / 2)//.value.toInt().dp
                     DpOffset(x, y)
                 }
                 Places(
@@ -101,9 +115,10 @@ class Board2Screen : Screen {
                     offset = boardOffset,
                 )
                 val inPadding = outSpotWidth / 3
-                val inSpotWidth = (minSide - outSpotWidth * 4 - inPadding * 2) / cellInX
+                val inSpotWidth =
+                    ((minSide - outSpotWidth * 4 - inPadding * 2) / cellInX)//.value.toInt().dp
                 val inSpotHeight =
-                    ((outSpotWidth * cellInY) - outSpotWidth * 4 - inPadding * 2) / cellInY
+                    (((outSpotWidth * cellInY) - outSpotWidth * 4 - inPadding * 2) / cellInY)//.value.toInt().dp
                 val inLineOffset = (outSpotWidth * 2) + inPadding
                 Places(
                     places = inPlaces,
@@ -125,16 +140,63 @@ class Board2Screen : Screen {
 //                    }
 //                }
             }
-            val composition by rememberLottieComposition {
+
+
+            val cube1 by rememberLottieComposition {
                 LottieCompositionSpec.JsonString(
                     Res.readBytes("files/cube_1.json").decodeToString()
                 )
             }
-
+            val cube2 by rememberLottieComposition {
+                LottieCompositionSpec.JsonString(
+                    Res.readBytes("files/cube_2.json").decodeToString()
+                )
+            }
+            val cube3 by rememberLottieComposition {
+                LottieCompositionSpec.JsonString(
+                    Res.readBytes("files/cube_3.json").decodeToString()
+                )
+            }
+            val cube4 by rememberLottieComposition {
+                LottieCompositionSpec.JsonString(
+                    Res.readBytes("files/cube_4.json").decodeToString()
+                )
+            }
+            val cube5 by rememberLottieComposition {
+                LottieCompositionSpec.JsonString(
+                    Res.readBytes("files/cube_5.json").decodeToString()
+                )
+            }
+            val cube6 by rememberLottieComposition {
+                LottieCompositionSpec.JsonString(
+                    Res.readBytes("files/cube_6.json").decodeToString()
+                )
+            }
+            val animatable = rememberLottieAnimatable()
+            val coroutineScope = rememberCoroutineScope()
+            var composition by remember { mutableStateOf<LottieComposition?>(null) }
+            ElevatedButton(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    .align(Alignment.BottomEnd),
+                onClick = {
+                    composition = when ((1..6).random()) {
+                        1 -> cube1
+                        2 -> cube2
+                        3 -> cube3
+                        4 -> cube4
+                        5 -> cube5
+                        else -> cube6
+                    }
+                    coroutineScope.launch {
+                        animatable.animate(composition, iterations = 1, initialProgress = 0f)
+                    }
+                },
+                content = { Icon(Images.Dice, contentDescription = null) }
+            )
             Image(
                 painter = rememberLottiePainter(
                     composition = composition,
-                    iterations = Compottie.IterateForever
+                    progress = animatable::value
                 ),
                 contentDescription = "Lottie animation",
                 modifier = Modifier.align(Alignment.BottomCenter).size(100.dp)
@@ -156,32 +218,48 @@ class Board2Screen : Screen {
             val location = getLocationOnBoard(placeOffset, cellX, cellY)
             val cellSize = place.getDpSize(location, spotWidth, spotHeight)
             val cellOffset = place.dpOffset(location, spotWidth, spotHeight, cellX, cellY, offset)
-            val fontSize = (spotHeight / 3).dpToSp()
             PlaceItemContainer(
                 place = place,
                 size = cellSize,
                 offset = cellOffset,
-                fontSize = fontSize,
+                isVertical = (location.side == Side.TOP || location.side == Side.BOTTOM) && !place.isBig,
             )
             placeOffset += if (place.isBig) 2 else 1
         }
     }
 
     @Composable
-    private fun PlaceItem(
+    private fun BoxScope.PlaceItem(
         place: Place,
-        fontSize: TextUnit,
+        cellSize: DpSize,
+        isVertical: Boolean,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(place.color)
-        ) {
-            Text(
-                text = place.name,
-                fontSize = fontSize,
-                modifier = Modifier.align(Alignment.Center)
-            )
+        when (place) {
+            Place.Salary -> {
+                Image(Images.Money, contentDescription = null)
+            }
+
+            else -> {
+                OutlinedText(
+                    text = place.text,
+                    autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
+                    fontFamily = FontFamily(
+                        Font(
+                            Res.font.Bubbleboddy,
+                            weight = FontWeight.Medium
+                        )
+                    ),
+                    modifier = Modifier.align(Alignment.Center)
+                        .padding(min(cellSize.height, cellSize.width) / 14)
+                        .optionalModifier(isVertical) {
+                            rotateLayout(Rotation.ROT_90)
+                        },
+                    fillColor = Color.White,
+                    outlineColor = Color(0xFF8A8A8A),
+                    outlineDrawStyle = Stroke(2f),
+                    maxLines = 1
+                )
+            }
         }
     }
 
@@ -190,30 +268,15 @@ class Board2Screen : Screen {
         place: Place,
         size: DpSize,
         offset: DpOffset,
-        fontSize: TextUnit,
+        isVertical: Boolean,
     ) {
-        if (size.height > size.width) {
-            Box(
-                modifier = Modifier
-                    .offset(x = offset.x, y = offset.y)
-                    .offset(
-                        y = size.height / 2f - size.width / 2f,
-                        x = size.width / 2f - size.height / 2f
-                    )
-                    .size(width = size.height, height = size.width)
-                    .rotate(90f)
-                    .background(place.color)
-            ) {
-                PlaceItem(place, fontSize)
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(width = size.width, height = size.height)
-                    .offset(x = offset.x, y = offset.y)
-            ) {
-                PlaceItem(place, fontSize)
-            }
+        Box(
+            modifier = Modifier
+                .size(width = size.width, height = size.height)
+                .offset(x = offset.x, y = offset.y)
+                .background(place.color)
+        ) {
+            PlaceItem(place, size, isVertical)
         }
     }
 
@@ -223,11 +286,7 @@ class Board2Screen : Screen {
         spotHeight: Dp,
     ): DpSize {
         return if (isBig) {
-            if (location.side.isHorizontal) {
-                DpSize(spotHeight * 2, spotWidth * 2)
-            } else {
-                DpSize(spotWidth * 2, spotHeight * 2)
-            }
+            DpSize(spotWidth * 2, spotHeight * 2)
         } else {
             if (location.side.isHorizontal) {
                 DpSize(spotWidth, spotHeight * 2)
@@ -270,23 +329,34 @@ class Board2Screen : Screen {
 
     private fun getLocationOnBoard(
         position: Int,
-        horizontalSize: Int,
-        verticalSize: Int
+        cellX: Int,
+        cellY: Int
     ): Location {
-        val leftSideMax = horizontalSize + verticalSize - 2
-        val bottomSideMax = leftSideMax + horizontalSize - 2
-        return if (position < horizontalSize) {
+        val leftSideMax = cellX + cellY - 2
+        val bottomSideMax = leftSideMax + cellX - 2
+        return if (position < cellX) {
             Location(Side.TOP, position)
-        } else if (position in horizontalSize..<leftSideMax) {
-            Location(Side.LEFT, position - horizontalSize + 2)
+        } else if (position in cellX..<leftSideMax) {
+            Location(Side.LEFT, position - cellX + 2)
         } else if (position in leftSideMax..<bottomSideMax) {
-            Location(Side.BOTTOM, horizontalSize - (position - leftSideMax) - 3)
+            Location(Side.BOTTOM, cellX - (position - leftSideMax) - 3)
         } else {
-            Location(Side.RIGHT, verticalSize - (position - bottomSideMax + 3))
+            Location(Side.RIGHT, cellY - (position - bottomSideMax + 3))
         }
     }
 }
 
+private val Place.text: String
+    get() {
+        return when (this) {
+            Place.Salary -> "Прибуток"
+            Place.Chance -> "Шанс!"
+            Place.Store -> "Ринок"
+            Place.Business -> "Бізнес"
+            Place.Deputy -> "Депутат"
+            else -> name
+        }
+    }
 
 private val inPlaces = listOf(
     Place.Salary,
