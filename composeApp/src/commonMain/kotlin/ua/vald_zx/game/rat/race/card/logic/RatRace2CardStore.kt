@@ -301,7 +301,8 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
                     totalExpenses = state.totalProfit(),
                     cashFlow = state.cashFlow()
                 )
-            )
+            ),
+            uuid = state.uuid
         ).orEmpty()
         if (uuid.isNotEmpty()) {
             dispatch(UpdateServiceUuid(uuid))
@@ -421,7 +422,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             GetSalaryApproved -> {
-                statistics?.salaryCount += 1
+                statistics?.salaryCount = statistics?.salaryCount?.plus(1) ?: 0
                 val cashFlow = oldState.cashFlow()
                 if (cashFlow >= 0) {
                     oldState.plusCash(cashFlow)

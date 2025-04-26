@@ -31,7 +31,7 @@ data class Card2State(
 
 @Rpc
 interface RaceRatService : RemoteService {
-    suspend fun init(player: Player): String
+    suspend fun init(player: Player, uuid: String = ""): String
     suspend fun update(state: Card2State)
     suspend fun playersObserve(): Flow<List<Player>>
     suspend fun sendMoney(id: String, cash: Long)

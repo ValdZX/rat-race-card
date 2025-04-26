@@ -28,10 +28,13 @@ class RaceRatServiceImpl(
         }.launchIn(this)
     }
 
-    override suspend fun init(player: Player): String {
-        players.value = players.value + player.copy(uuid = uuid)
+    override suspend fun init(player: Player, uuid: String): String {
+        if(this.uuid != uuid) {
+            players.value = players.value.filter { it.uuid != uuid }
+        }
+        players.value += player.copy(uuid = uuid)
         LOGGER.debug("Added user ${player.professionCard.profession}")
-        return uuid
+        return this.uuid
     }
 
     override suspend fun update(state: Card2State) {

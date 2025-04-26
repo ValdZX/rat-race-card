@@ -15,7 +15,7 @@ plugins {
 
 buildscript {
     dependencies {
-        classpath("commons-codec:commons-codec:1.16.1")
+        classpath("commons-codec:commons-codec:1.18.0")
     }
     configurations.all {
         resolutionStrategy {
