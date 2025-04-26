@@ -32,7 +32,7 @@ class RaceRatServiceImpl(
         if(this.uuid != uuid) {
             players.value = players.value.filter { it.uuid != uuid }
         }
-        players.value += player.copy(uuid = uuid)
+        players.value += player.copy(uuid = this.uuid)
         LOGGER.debug("Added user ${player.professionCard.profession}")
         return this.uuid
     }
