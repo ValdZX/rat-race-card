@@ -53,7 +53,7 @@ public class ZoomState(
     public val maxScale: Float = 5f,
     private var contentSize: Size = Size.Zero,
     private val velocityDecay: DecayAnimationSpec<Float> = exponentialDecay(),
-    private val initialScale: Float = 1f,
+    private var initialScale: Float = 1f,
 ) {
     init {
         require(maxScale >= 1.0f) { "maxScale must be at least 1.0." }
@@ -130,6 +130,12 @@ public class ZoomState(
         } else {
             contentSize * (layoutSize.height / contentSize.height)
         }
+    }
+
+    suspend fun resetTo(scale: Float) {
+        val size = fitContentSize * this.scale
+        initialScale = scale
+        changeScale(initialScale, Offset(size.width / 2, size.height / 2))
     }
 
     /**
@@ -258,6 +264,23 @@ public class ZoomState(
             _scale.animateTo(newScale, animationSpec)
         }
     }
+
+    /**
+     * Toggle the scale between [targetScale] and 1.0f.
+     *
+     * @param targetScale Scale to be set if this function is called when the scale is 1.0f.
+     * @param position Zoom around this point.
+     * @param animationSpec The animation configuration.
+     */
+    public suspend fun toggleScale(
+        targetScale: Float,
+        position: Offset,
+        animationSpec: AnimationSpec<Float> = spring(),
+    ) {
+        val newScale = if (scale == initialScale) targetScale else initialScale
+        changeScale(newScale, position, animationSpec)
+    }
+
 
     private fun calculateNewOffset(newScale: Float, position: Offset, pan: Offset): Offset {
         val size = fitContentSize * scale

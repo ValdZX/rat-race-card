@@ -1,5 +1,8 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -14,6 +17,8 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +26,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -48,9 +56,15 @@ import ua.vald_zx.game.rat.race.card.components.OutlinedText
 import ua.vald_zx.game.rat.race.card.components.Rotation
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.components.rotateLayout
+import ua.vald_zx.game.rat.race.card.logic.BoardLayer
+import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction
+import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.Dice
 import ua.vald_zx.game.rat.race.card.resource.images.Money
+import ua.vald_zx.game.rat.race.card.resource.images.RatPlayer1
+import ua.vald_zx.game.rat.race.card.resource.images.UpDoubleArrow
 
 enum class Side(val isHorizontal: Boolean) {
     TOP(true), LEFT(false), BOTTOM(true), RIGHT(false)
@@ -61,23 +75,30 @@ data class Location(
     val position: Int,
 )
 
-sealed class Place(val name: String, val color: Color, val isBig: Boolean = false) {
-    data object Start : Place("Start", Color.Yellow)
-    data object Salary : Place("Salary", Color(0xffa1e64c), isBig = true)
-    data object Business : Place("Business", Color(0xff00ba87))
-    data object Shopping : Place("Shopping", Color.Cyan)
-    data object Chance : Place("Chance", Color(0xfff36d4e))
-    data object Expenses : Place("Expenses", Color.Red)
-    data object Store : Place("Store", Color(0xff0788e8))
-    data object Bankruptcy : Place("Bankruptcy", Color(0xff94a5dd), isBig = true)
-    data object Child : Place("Child", Color.Black, isBig = true)
-    data object Love : Place("Love", Color.Magenta)
-    data object Rest : Place("Rest", Color.White)
-    data object Divorce : Place("Divorce", Color.Red)
-    data object Desire : Place("Desire", Color(0xffde9bc2))
-    data object Deputy : Place("Deputy", Color(0xff8a8fdc))
-    data object TaxInspection : Place("TaxInspection", Color(0xffc5dcc7), isBig = true)
-    data object Exaltation : Place("Exaltation", Color.Black)
+data class Place(
+    val type: PlaceType,
+    val location: Location,
+    val offset: DpOffset,
+    val size: DpSize,
+)
+
+sealed class PlaceType(val name: String, val color: Color, val isBig: Boolean = false) {
+    data object Start : PlaceType("Start", Color.Yellow)
+    data object Salary : PlaceType("Salary", Color(0xffa1e64c), isBig = true)
+    data object Business : PlaceType("Business", Color(0xff00ba87))
+    data object Shopping : PlaceType("Shopping", Color.Cyan)
+    data object Chance : PlaceType("Chance", Color(0xfff36d4e))
+    data object Expenses : PlaceType("Expenses", Color.Red)
+    data object Store : PlaceType("Store", Color(0xff0788e8))
+    data object Bankruptcy : PlaceType("Bankruptcy", Color(0xff94a5dd), isBig = true)
+    data object Child : PlaceType("Child", Color.Black, isBig = true)
+    data object Love : PlaceType("Love", Color.Magenta)
+    data object Rest : PlaceType("Rest", Color.White)
+    data object Divorce : PlaceType("Divorce", Color.Red)
+    data object Desire : PlaceType("Desire", Color(0xffde9bc2))
+    data object Deputy : PlaceType("Deputy", Color(0xff8a8fdc))
+    data object TaxInspection : PlaceType("TaxInspection", Color(0xffc5dcc7), isBig = true)
+    data object Exaltation : PlaceType("Exaltation", Color.Black)
 }
 
 class Board2Screen : Screen {
@@ -89,8 +110,18 @@ class Board2Screen : Screen {
     @Composable
     override fun Content() {
         BoxWithConstraints(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-            val zoomState =
-                rememberZoomState(contentSize = Size.Zero, initialScale = 1f, maxScale = 20f)
+            val state by raceRate2BoardStore.observeState().collectAsState()
+            val zoomState = rememberZoomState(
+                contentSize = Size.Zero,
+                initialScale = 1f,
+                maxScale = 5f
+            )
+            LaunchedEffect(state.layer) {
+                when (state.layer) {
+                    BoardLayer.INNER -> zoomState.resetTo(1.3f)
+                    BoardLayer.OUTER -> zoomState.resetTo(1.0f)
+                }
+            }
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
@@ -107,7 +138,8 @@ class Board2Screen : Screen {
                     DpOffset(x, y)
                 }
                 Places(
-                    places = outPlaces,
+                    layer = BoardLayer.OUTER,
+                    placeTypes = outPlaces,
                     spotWidth = outSpotWidth,
                     spotHeight = outSpotHeight,
                     cellX = cellOutX,
@@ -121,26 +153,32 @@ class Board2Screen : Screen {
                     (((outSpotWidth * cellInY) - outSpotWidth * 4 - inPadding * 2) / cellInY)//.value.toInt().dp
                 val inLineOffset = (outSpotWidth * 2) + inPadding
                 Places(
-                    places = inPlaces,
+                    layer = BoardLayer.INNER,
+                    placeTypes = inPlaces,
                     spotWidth = inSpotWidth,
                     spotHeight = inSpotHeight,
                     cellX = cellInX,
                     cellY = cellInY,
                     offset = boardOffset + DpOffset(inLineOffset, inLineOffset),
                 )
-//                (0 until cellOutX).forEach { x ->
-//                    (0 until cellOutY).forEach { y ->
-//                        Box(
-//                            modifier = Modifier.offset(boardOffset.x, boardOffset.y)
-//                                .offset(outSpotWidth * x, outSpotHeight * y)
-//                                .size(width = outSpotWidth, height = outSpotHeight)
-//                                .alpha(0.4f)
-//                                .background(if ((x + y) % 2 == 0) Color.Magenta else Color.Cyan)
-//                        )
-//                    }
-//                }
             }
 
+            ElevatedButton(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    .align(Alignment.TopStart),
+                onClick = {
+                    raceRate2BoardStore.dispatch(RatRace2BoardAction.SwitchLayer)
+                },
+                content = {
+                    Icon(
+                        Images.UpDoubleArrow,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .optionalModifier(state.layer == BoardLayer.OUTER) {
+                                rotate(180f)
+                            })
+                },
+            )
 
             val cube1 by rememberLottieComposition {
                 LottieCompositionSpec.JsonString(
@@ -177,21 +215,12 @@ class Board2Screen : Screen {
             var composition by remember { mutableStateOf<LottieComposition?>(null) }
             ElevatedButton(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    .align(Alignment.BottomEnd),
+                    .align(Alignment.BottomStart),
                 onClick = {
-                    composition = when ((1..6).random()) {
-                        1 -> cube1
-                        2 -> cube2
-                        3 -> cube3
-                        4 -> cube4
-                        5 -> cube5
-                        else -> cube6
-                    }
-                    coroutineScope.launch {
-                        animatable.animate(composition, iterations = 1, initialProgress = 0f)
-                    }
+                    raceRate2BoardStore.dispatch(RatRace2BoardAction.BackLastMove)
                 },
-                content = { Icon(Images.Dice, contentDescription = null) }
+                content = { Icon(Images.Back, contentDescription = null) },
+                enabled = state.positionsHistory.size > 1
             )
             Image(
                 painter = rememberLottiePainter(
@@ -201,47 +230,100 @@ class Board2Screen : Screen {
                 contentDescription = "Lottie animation",
                 modifier = Modifier.align(Alignment.BottomCenter).size(100.dp)
             )
+            ElevatedButton(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    .align(Alignment.BottomEnd),
+                onClick = {
+                    val dice = (1..6).random()
+                    composition = when (dice) {
+                        1 -> cube1
+                        2 -> cube2
+                        3 -> cube3
+                        4 -> cube4
+                        5 -> cube5
+                        else -> cube6
+                    }
+                    raceRate2BoardStore.dispatch(RatRace2BoardAction.Move(dice))
+                    coroutineScope.launch {
+                        animatable.animate(composition, iterations = 1, initialProgress = 0f)
+                    }
+                },
+                content = { Icon(Images.Dice, contentDescription = null) }
+            )
         }
     }
 
     @Composable
     private fun Places(
-        places: List<Place>,
+        layer: BoardLayer,
+        placeTypes: List<PlaceType>,
         spotWidth: Dp,
         spotHeight: Dp,
         cellX: Int,
         cellY: Int,
         offset: DpOffset = DpOffset(0.dp, 0.dp),
     ) {
-        var placeOffset = 0
-        places.forEach { place ->
-            val location = getLocationOnBoard(placeOffset, cellX, cellY)
-            val cellSize = place.getDpSize(location, spotWidth, spotHeight)
-            val cellOffset = place.dpOffset(location, spotWidth, spotHeight, cellX, cellY, offset)
-            PlaceItemContainer(
-                place = place,
-                size = cellSize,
-                offset = cellOffset,
-                isVertical = (location.side == Side.TOP || location.side == Side.BOTTOM) && !place.isBig,
+        val state by raceRate2BoardStore.observeState().collectAsState()
+        val places = remember(placeTypes, offset) {
+            var placeOffset = 0
+            placeTypes.map { type ->
+                val location = getLocationOnBoard(placeOffset, cellX, cellY)
+                val cellSize = type.getDpSize(location, spotWidth, spotHeight)
+                val cellOffset =
+                    type.dpOffset(location, spotWidth, spotHeight, cellX, cellY, offset)
+                placeOffset += if (type.isBig) 2 else 1
+                Place(type, location, cellOffset, cellSize)
+            }
+        }
+        val alpha by animateFloatAsState(if (state.layer == layer) 1f else 0.5f)
+        Box(
+            modifier = Modifier.fillMaxSize().alpha(alpha)
+        ) {
+            places.forEach { place ->
+                Box(
+                    modifier = Modifier
+                        .size(width = place.size.width, height = place.size.height)
+                        .offset(x = place.offset.x, y = place.offset.y)
+                        .background(place.type.color)
+                ) {
+                    val isVertical =
+                        (place.location.side == Side.TOP || place.location.side == Side.BOTTOM) && !place.type.isBig
+                    PlaceItem(place.type, place.size, isVertical)
+                }
+            }
+        }
+        if (state.layer == layer) {
+            val place = remember(state.position) {
+                places[state.position]
+            }
+            Image(
+                imageVector = Images.RatPlayer1,
+                contentDescription = null,
+                modifier = Modifier
+                    .offset(place.offset.x, place.offset.y)
+                    .offset(
+                        place.size.width / 2 - spotWidth / 2,
+                        place.size.height / 2 - spotHeight / 2
+                    )
+                    .size(spotWidth, spotHeight),
             )
-            placeOffset += if (place.isBig) 2 else 1
         }
     }
 
     @Composable
     private fun BoxScope.PlaceItem(
-        place: Place,
+        placeType: PlaceType,
         cellSize: DpSize,
         isVertical: Boolean,
     ) {
-        when (place) {
-            Place.Salary -> {
+        when (placeType) {
+            PlaceType.Salary -> {
                 Image(Images.Money, contentDescription = null)
             }
 
             else -> {
                 OutlinedText(
-                    text = place.text,
+                    text = placeType.text,
                     autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
                     fontFamily = FontFamily(
                         Font(
@@ -263,24 +345,7 @@ class Board2Screen : Screen {
         }
     }
 
-    @Composable
-    private fun PlaceItemContainer(
-        place: Place,
-        size: DpSize,
-        offset: DpOffset,
-        isVertical: Boolean,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(width = size.width, height = size.height)
-                .offset(x = offset.x, y = offset.y)
-                .background(place.color)
-        ) {
-            PlaceItem(place, size, isVertical)
-        }
-    }
-
-    private fun Place.getDpSize(
+    private fun PlaceType.getDpSize(
         location: Location,
         spotWidth: Dp,
         spotHeight: Dp,
@@ -296,7 +361,7 @@ class Board2Screen : Screen {
         }
     }
 
-    private fun Place.dpOffset(
+    private fun PlaceType.dpOffset(
         location: Location,
         spotWidth: Dp,
         spotHeight: Dp,
@@ -346,178 +411,184 @@ class Board2Screen : Screen {
     }
 }
 
-private val Place.text: String
+private val PlaceType.text: String
     get() {
         return when (this) {
-            Place.Salary -> "Прибуток"
-            Place.Chance -> "Шанс!"
-            Place.Store -> "Ринок"
-            Place.Business -> "Бізнес"
-            Place.Deputy -> "Депутат"
+            PlaceType.Salary -> "Прибуток"
+            PlaceType.Chance -> "Шанс!"
+            PlaceType.Store -> "Ринок"
+            PlaceType.Business -> "Бізнес"
+            PlaceType.Deputy -> "Депутат"
+            PlaceType.Expenses -> "Витрати"
+            PlaceType.Shopping -> "Покупки"
+            PlaceType.Rest -> "Відпустка"
+            PlaceType.Desire -> "Мрія"
+            PlaceType.Start -> "Старт"
+            PlaceType.Exaltation -> "Звільнення"
             else -> name
         }
     }
 
 private val inPlaces = listOf(
-    Place.Salary,
-    Place.Start,
-    Place.Business,
-    Place.Shopping,
-    Place.Chance,
-    Place.Expenses,
-    Place.Store,
-    Place.Chance,
-    Place.Shopping,
-    Place.Expenses,
-    Place.Store,
-    Place.Business,
-    Place.Bankruptcy,
-    Place.Store,
-    Place.Expenses,
-    Place.Business,
-    Place.Chance,
-    Place.Shopping,
-    Place.Expenses,
-    Place.Store,
-    Place.Chance,
-    Place.Business,
-    Place.Expenses,
-    Place.Store,
+    PlaceType.Salary,
+    PlaceType.Start,
+    PlaceType.Business,
+    PlaceType.Shopping,
+    PlaceType.Chance,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Chance,
+    PlaceType.Shopping,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Business,
+    PlaceType.Bankruptcy,
+    PlaceType.Store,
+    PlaceType.Expenses,
+    PlaceType.Business,
+    PlaceType.Chance,
+    PlaceType.Shopping,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Chance,
+    PlaceType.Business,
+    PlaceType.Expenses,
+    PlaceType.Store,
 
-    Place.Salary,
-    Place.Chance,
-    Place.Business,
-    Place.Expenses,
-    Place.Store,
-    Place.Love,
-    Place.Shopping,
-    Place.Chance,
-    Place.Expenses,
-    Place.Store,
-    Place.Rest,
-    Place.Chance,
-    Place.Business,
-    Place.Expenses,
-    Place.Store,
+    PlaceType.Salary,
+    PlaceType.Chance,
+    PlaceType.Business,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Love,
+    PlaceType.Shopping,
+    PlaceType.Chance,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Rest,
+    PlaceType.Chance,
+    PlaceType.Business,
+    PlaceType.Expenses,
+    PlaceType.Store,
 
-    Place.Salary,
-    Place.Shopping,
-    Place.Chance,
-    Place.Expenses,
-    Place.Store,
-    Place.Chance,
-    Place.Business,
-    Place.Expenses,
-    Place.Store,
-    Place.Chance,
-    Place.Shopping,
-    Place.Business,
-    Place.Child,
-    Place.Expenses,
-    Place.Chance,
-    Place.Business,
-    Place.Expenses,
-    Place.Store,
-    Place.Chance,
-    Place.Divorce,
-    Place.Shopping,
-    Place.Expenses,
-    Place.Store,
-    Place.Expenses,
+    PlaceType.Salary,
+    PlaceType.Shopping,
+    PlaceType.Chance,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Chance,
+    PlaceType.Business,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Chance,
+    PlaceType.Shopping,
+    PlaceType.Business,
+    PlaceType.Child,
+    PlaceType.Expenses,
+    PlaceType.Chance,
+    PlaceType.Business,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Chance,
+    PlaceType.Divorce,
+    PlaceType.Shopping,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Expenses,
 
-    Place.Salary,
-    Place.Expenses,
-    Place.Store,
-    Place.Chance,
-    Place.Business,
-    Place.Exaltation,
-    Place.Expenses,
-    Place.Chance,
-    Place.Shopping,
-    Place.Business,
-    Place.Love,
-    Place.Expenses,
-    Place.Store,
-    Place.Chance,
-    Place.Expenses,
+    PlaceType.Salary,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Chance,
+    PlaceType.Business,
+    PlaceType.Exaltation,
+    PlaceType.Expenses,
+    PlaceType.Chance,
+    PlaceType.Shopping,
+    PlaceType.Business,
+    PlaceType.Love,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Chance,
+    PlaceType.Expenses,
 )
 
 private val outPlaces = listOf(
-    Place.Salary,
-    Place.Start,
-    Place.Desire,
-    Place.Shopping,
-    Place.Business,
-    Place.Desire,
-    Place.Store,
-    Place.Chance,
-    Place.Desire,
-    Place.Business,
-    Place.Store,
-    Place.Bankruptcy,
-    Place.Chance,
-    Place.Desire,
-    Place.Shopping,
-    Place.Desire,
-    Place.Business,
-    Place.Chance,
-    Place.Store,
-    Place.Desire,
-    Place.Shopping,
-    Place.Desire,
-    Place.Salary,
+    PlaceType.Salary,
+    PlaceType.Start,
+    PlaceType.Desire,
+    PlaceType.Shopping,
+    PlaceType.Business,
+    PlaceType.Desire,
+    PlaceType.Store,
+    PlaceType.Chance,
+    PlaceType.Desire,
+    PlaceType.Business,
+    PlaceType.Store,
+    PlaceType.Bankruptcy,
+    PlaceType.Chance,
+    PlaceType.Desire,
+    PlaceType.Shopping,
+    PlaceType.Desire,
+    PlaceType.Business,
+    PlaceType.Chance,
+    PlaceType.Store,
+    PlaceType.Desire,
+    PlaceType.Shopping,
+    PlaceType.Desire,
+    PlaceType.Salary,
 
-    Place.Desire,
-    Place.Shopping,
-    Place.Business,
-    Place.Deputy,
-    Place.Desire,
-    Place.Chance,
-    Place.Store,
-    Place.Desire,
-    Place.Shopping,
-    Place.Business,
-    Place.Deputy,
-    Place.Desire,
-    Place.Chance,
-    Place.Store,
-    Place.Salary,
+    PlaceType.Desire,
+    PlaceType.Shopping,
+    PlaceType.Business,
+    PlaceType.Deputy,
+    PlaceType.Desire,
+    PlaceType.Chance,
+    PlaceType.Store,
+    PlaceType.Desire,
+    PlaceType.Shopping,
+    PlaceType.Business,
+    PlaceType.Deputy,
+    PlaceType.Desire,
+    PlaceType.Chance,
+    PlaceType.Store,
+    PlaceType.Salary,
 
-    Place.Chance,
-    Place.Desire,
-    Place.Business,
-    Place.Shopping,
-    Place.Desire,
-    Place.Store,
-    Place.Chance,
-    Place.Desire,
-    Place.Business,
-    Place.Chance,
-    Place.TaxInspection,
-    Place.Desire,
-    Place.Shopping,
-    Place.Desire,
-    Place.Store,
-    Place.Business,
-    Place.Desire,
-    Place.Chance,
-    Place.Shopping,
-    Place.Desire,
-    Place.Store,
-    Place.Salary,
+    PlaceType.Chance,
+    PlaceType.Desire,
+    PlaceType.Business,
+    PlaceType.Shopping,
+    PlaceType.Desire,
+    PlaceType.Store,
+    PlaceType.Chance,
+    PlaceType.Desire,
+    PlaceType.Business,
+    PlaceType.Chance,
+    PlaceType.TaxInspection,
+    PlaceType.Desire,
+    PlaceType.Shopping,
+    PlaceType.Desire,
+    PlaceType.Store,
+    PlaceType.Business,
+    PlaceType.Desire,
+    PlaceType.Chance,
+    PlaceType.Shopping,
+    PlaceType.Desire,
+    PlaceType.Store,
+    PlaceType.Salary,
 
-    Place.Desire,
-    Place.Shopping,
-    Place.Business,
-    Place.Deputy,
-    Place.Desire,
-    Place.Chance,
-    Place.Store,
-    Place.Desire,
-    Place.Shopping,
-    Place.Chance,
-    Place.Deputy,
-    Place.Desire,
-    Place.Chance,
-    Place.Store,
+    PlaceType.Desire,
+    PlaceType.Shopping,
+    PlaceType.Business,
+    PlaceType.Deputy,
+    PlaceType.Desire,
+    PlaceType.Chance,
+    PlaceType.Store,
+    PlaceType.Desire,
+    PlaceType.Shopping,
+    PlaceType.Chance,
+    PlaceType.Deputy,
+    PlaceType.Desire,
+    PlaceType.Chance,
+    PlaceType.Store,
 )

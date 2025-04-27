@@ -407,19 +407,3 @@ private class ZoomableNode(
         }
     }
 }
-
-/**
- * Toggle the scale between [targetScale] and 1.0f.
- *
- * @param targetScale Scale to be set if this function is called when the scale is 1.0f.
- * @param position Zoom around this point.
- * @param animationSpec The animation configuration.
- */
-public suspend fun ZoomState.toggleScale(
-    targetScale: Float,
-    position: Offset,
-    animationSpec: AnimationSpec<Float> = spring(),
-) {
-    val newScale = if (scale == 1f) targetScale else 1f
-    changeScale(newScale, position, animationSpec)
-}

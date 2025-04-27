@@ -18,6 +18,8 @@ import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 import rat_race_card.composeapp.generated.resources.Res
+import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardState
+import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardStore
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
@@ -25,6 +27,7 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace4CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardStore
 import ua.vald_zx.game.rat.race.card.logic.Statistics
+import ua.vald_zx.game.rat.race.card.screen.second.Board2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.RaceRate2Screen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -32,11 +35,14 @@ import ua.vald_zx.game.rat.race.card.theme.AppTheme
 internal expect inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T>
 val raceRate2KStore: KStore<RatRace2CardState>
     get() = getStore("raceRate2.json")
+val raceRate2BoardKStore: KStore<RatRace2BoardState>
+    get() = getStore("raceRate2Board.json")
 val statistics2KStore: KStore<Statistics>
     get() = getStore("statistics2.json")
 val raceRate4KStore: KStore<RatRace4CardState>
     get() = getStore("raceRate4.json")
 val raceRate2store by lazy { RatRace2CardStore() }
+val raceRate2BoardStore by lazy { RatRace2BoardStore() }
 val raceRate4store by lazy { RatRace4CardStore() }
 val settings: Settings = Settings()
 
@@ -44,15 +50,16 @@ val settings: Settings = Settings()
 internal fun App() = AppTheme {
     var kStoreLoaded by remember { mutableStateOf(false) }
     if (kStoreLoaded) {
-        val raceRate2State by raceRate2store.observeState().collectAsState()
-        val startScreen =
-            if (raceRate2State.professionCard.profession.isNotEmpty()) {
-                RaceRate2Screen()
-            } else {
-                PersonCard2Screen()
-            }
-        Navigator(startScreen)
+//        val raceRate2State by raceRate2store.observeState().collectAsState()
+//        val startScreen =
+//            if (raceRate2State.professionCard.profession.isNotEmpty()) {
+//                RaceRate2Screen()
+//            } else {
+//                PersonCard2Screen()
+//            }
+//        Navigator(startScreen)
 //        Navigator(SelectBoardScreen())
+        Navigator(Board2Screen())
     } else {
         LaunchedEffect(Unit) {
             val state2 = raceRate2KStore.get()
