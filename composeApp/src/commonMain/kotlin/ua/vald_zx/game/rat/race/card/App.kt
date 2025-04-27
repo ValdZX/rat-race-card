@@ -50,16 +50,15 @@ val settings: Settings = Settings()
 internal fun App() = AppTheme {
     var kStoreLoaded by remember { mutableStateOf(false) }
     if (kStoreLoaded) {
-//        val raceRate2State by raceRate2store.observeState().collectAsState()
-//        val startScreen =
-//            if (raceRate2State.professionCard.profession.isNotEmpty()) {
-//                RaceRate2Screen()
-//            } else {
-//                PersonCard2Screen()
-//            }
-//        Navigator(startScreen)
+        val raceRate2State by raceRate2store.observeState().collectAsState()
+        val startScreen =
+            if (raceRate2State.professionCard.profession.isNotEmpty()) {
+                RaceRate2Screen()
+            } else {
+                PersonCard2Screen()
+            }
+        Navigator(startScreen)
 //        Navigator(SelectBoardScreen())
-        Navigator(Board2Screen())
     } else {
         LaunchedEffect(Unit) {
             val state2 = raceRate2KStore.get()
