@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
-import platform.Foundation.NSCachesDirectory
+import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSURL
 import platform.Foundation.NSUserDomainMask
@@ -28,8 +28,8 @@ internal actual fun openUrl(url: String?) {
 val fileManager: NSFileManager = NSFileManager.defaultManager
 
 @OptIn(ExperimentalForeignApi::class)
-val cachesUrl: NSURL = fileManager.URLForDirectory(
-    directory = NSCachesDirectory,
+val documentsUrl: NSURL = fileManager.URLForDirectory(
+    directory = NSDocumentDirectory,
     appropriateForURL = null,
     create = false,
     inDomain = NSUserDomainMask,
@@ -37,7 +37,8 @@ val cachesUrl: NSURL = fileManager.URLForDirectory(
 )!!
 
 internal actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
-    return storeOf(file = Path("$cachesUrl/$name"), json = Json { ignoreUnknownKeys = true })
+    val files = Path(documentsUrl.path.orEmpty())
+    return storeOf(file = Path(files, name), json = Json { ignoreUnknownKeys = true })
 }
 
 internal actual fun share(data: String?) {
