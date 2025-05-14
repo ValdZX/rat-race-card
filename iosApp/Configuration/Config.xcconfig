@@ -1,0 +1,7 @@
+TEAM_ID=
+
+PRODUCT_NAME=Rat race card
+PRODUCT_BUNDLE_IDENTIFIER=ua.vald_zx.game.rat.race.card.Ratracecard$(TEAM_ID)
+
+CURRENT_PROJECT_VERSION=1
+MARKETING_VERSION=1.0
