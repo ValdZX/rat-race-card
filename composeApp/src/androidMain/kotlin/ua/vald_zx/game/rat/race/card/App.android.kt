@@ -134,7 +134,7 @@ internal actual fun share(data: String?) {
         type = "text/plain"
     }
     AndroidApp.ACTIVITY.startActivity(
-        Intent.createChooser(shareIntent, "Rat race card")
+        Intent.createChooser(shareIntent, AndroidApp.ACTIVITY.getString(R.string.app_name))
     )
 }
 

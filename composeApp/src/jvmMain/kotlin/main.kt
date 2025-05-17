@@ -14,7 +14,7 @@ fun main() {
     Napier.base(DebugAntilog())
     application {
         Window(
-            title = "Rat race card",
+            title = "Cashflow: Rat Race Edition",
             state = rememberWindowState(width = 500.dp, height = 800.dp),
             onCloseRequest = ::exitApplication,
         ) {

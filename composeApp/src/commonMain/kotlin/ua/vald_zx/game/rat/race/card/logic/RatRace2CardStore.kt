@@ -293,6 +293,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
                 }
             }
         }.withService()
+        Napier.d { "service launched" }
         val state = state.value
         val uuid = service?.init(
             Player(
@@ -329,6 +330,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
         val oldState = state.value
         val newState = when (action) {
             is LoadState -> {
+                recallService()
                 action.state
             }
 
@@ -584,7 +586,9 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             RatRace2CardAction.OnResume -> {
-                recallService()
+                if(oldState.professionCard.profession.isNotEmpty()) {
+                    recallService()
+                }
                 oldState
             }
         }
