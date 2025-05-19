@@ -229,7 +229,7 @@ val Images.Baby: ImageVector
                 curveTo(9.52f, 16.895f, 9.265f, 17f, 9f, 17f)
                 close()
             }
-            path(fill = SolidColor(Color(0xFF000000))) {
+            path(fill = SolidColor(Color(0xFFa19935))) {
                 moveTo(55.412f, 30f)
                 lineTo(57.712f, 27.705f)
                 curveTo(57.9f, 27.517f, 58.005f, 27.263f, 58.005f, 26.998f)
