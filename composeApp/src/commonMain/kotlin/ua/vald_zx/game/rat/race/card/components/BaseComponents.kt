@@ -2,15 +2,29 @@ package ua.vald_zx.game.rat.race.card.components
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
@@ -18,6 +32,8 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material.ripple
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.HorizontalDivider
@@ -26,10 +42,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,8 +60,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.LayoutModifier
@@ -50,8 +72,6 @@ import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.semantics.invisibleToUser
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -64,10 +84,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.lexilabs.basic.haptic.DependsOnAndroidVibratePermission
+import app.lexilabs.basic.haptic.Haptic
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import ua.vald_zx.game.rat.race.card.getDigits
+import ua.vald_zx.game.rat.race.card.haptic
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Add
 import ua.vald_zx.game.rat.race.card.resource.images.Deposit
@@ -467,7 +495,10 @@ private fun Constraints.transpose(): Constraints {
 }
 
 private object HorizontalLayoutModifier : LayoutModifier {
-    override fun MeasureScope.measure(measurable: Measurable, constraints: Constraints): MeasureResult {
+    override fun MeasureScope.measure(
+        measurable: Measurable,
+        constraints: Constraints
+    ): MeasureResult {
         val placeable = measurable.measure(constraints.transpose())
         return layout(placeable.height, placeable.width) {
             placeable.place(
@@ -477,19 +508,31 @@ private object HorizontalLayoutModifier : LayoutModifier {
         }
     }
 
-    override fun IntrinsicMeasureScope.minIntrinsicHeight(measurable: IntrinsicMeasurable, width: Int): Int {
+    override fun IntrinsicMeasureScope.minIntrinsicHeight(
+        measurable: IntrinsicMeasurable,
+        width: Int
+    ): Int {
         return measurable.maxIntrinsicWidth(width)
     }
 
-    override fun IntrinsicMeasureScope.maxIntrinsicHeight(measurable: IntrinsicMeasurable, width: Int): Int {
+    override fun IntrinsicMeasureScope.maxIntrinsicHeight(
+        measurable: IntrinsicMeasurable,
+        width: Int
+    ): Int {
         return measurable.maxIntrinsicWidth(width)
     }
 
-    override fun IntrinsicMeasureScope.minIntrinsicWidth(measurable: IntrinsicMeasurable, height: Int): Int {
+    override fun IntrinsicMeasureScope.minIntrinsicWidth(
+        measurable: IntrinsicMeasurable,
+        height: Int
+    ): Int {
         return measurable.minIntrinsicHeight(height)
     }
 
-    override fun IntrinsicMeasureScope.maxIntrinsicWidth(measurable: IntrinsicMeasurable, height: Int): Int {
+    override fun IntrinsicMeasureScope.maxIntrinsicWidth(
+        measurable: IntrinsicMeasurable,
+        height: Int
+    ): Int {
         return measurable.maxIntrinsicHeight(height)
     }
 }
@@ -503,5 +546,89 @@ fun Modifier.optionalModifier(
         todo()
     } else {
         this
+    }
+}
+
+@Composable
+fun ExtendedButton(
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+    shape: Shape = ButtonDefaults.elevatedShape,
+    colors: ButtonColors = ButtonDefaults.elevatedButtonColors(),
+    shadowElevation: Dp = 1.dp,
+    border: BorderStroke? = null,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    content: @Composable RowScope.() -> Unit
+) {
+    var target by remember { mutableStateOf(0f) }
+    val width by animateFloatAsState(
+        target,
+        animationSpec = tween(
+            durationMillis = 600,
+            easing = LinearEasing
+        ),
+        finishedListener = { value ->
+            if(value == 1f) {
+                onLongClick()
+                @OptIn(DependsOnAndroidVibratePermission::class)
+                haptic.vibrate(Haptic.DEFAULTS.CLICK)
+            }
+        }
+    )
+    val interactionSource = remember { MutableInteractionSource() }
+    Surface(
+        modifier = modifier
+            .height(intrinsicSize = IntrinsicSize.Min)
+            .pointerInput(Unit) {
+                coroutineScope {
+                    var startJob: Job? = null
+                    awaitEachGesture {
+                        var onClickFlag = true
+                        val down = awaitFirstDown()
+                        down.consume()
+                        val press = PressInteraction.Press(down.position)
+                        startJob = launch {
+                            interactionSource.emit(press)
+                            delay(300)
+                            target = 1f
+                            onClickFlag = false
+                        }
+                        waitForUpOrCancellation()?.consume()
+                        launch {
+                            interactionSource.emit(PressInteraction.Release(press))
+                        }
+                        startJob.cancel()
+                        target = 0f
+                        if (onClickFlag) {
+                            onClick()
+                        }
+                    }
+                }
+            },
+        shape = shape,
+        border = border,
+        shadowElevation = shadowElevation,
+        color = colors.containerColor,
+        contentColor = colors.contentColor,
+    ) {
+        Box(
+            Modifier.indication(
+                interactionSource,
+                ripple(color = MaterialTheme.colorScheme.primary)
+            )
+        ) {
+            Box(
+                Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(width)
+                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f))
+            )
+            Row(
+                modifier = Modifier.padding(contentPadding).align(Alignment.Center),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) { content() }
+        }
     }
 }

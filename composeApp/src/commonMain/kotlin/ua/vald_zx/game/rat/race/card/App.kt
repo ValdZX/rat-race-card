@@ -7,12 +7,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import app.lexilabs.basic.haptic.DependsOnAndroidVibratePermission
+import app.lexilabs.basic.haptic.Haptic
 import app.lexilabs.basic.sound.AudioByte
 import app.lexilabs.basic.sound.ExperimentalBasicSound
 import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
-import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
 import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
@@ -27,7 +27,6 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace4CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardStore
 import ua.vald_zx.game.rat.race.card.logic.Statistics
-import ua.vald_zx.game.rat.race.card.screen.second.Board2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.RaceRate2Screen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -72,6 +71,11 @@ internal fun App() = AppTheme {
             kStoreLoaded = true
         }
     }
+}
+
+@OptIn(DependsOnAndroidVibratePermission::class)
+val haptic by lazy {
+    Haptic(platformContext)
 }
 
 private val audioByte by lazy {

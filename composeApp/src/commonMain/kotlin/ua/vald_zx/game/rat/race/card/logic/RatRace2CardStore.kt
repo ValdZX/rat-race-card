@@ -330,11 +330,18 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
         val oldState = state.value
         val newState = when (action) {
             is LoadState -> {
-                recallService()
+                launch {
+                    delay(500)
+                    recallService()
+                }
                 action.state
             }
 
             is FillProfessionCardRat -> {
+                launch {
+                    delay(500)
+                    recallService()
+                }
                 RatRace2CardState(
                     professionCard = action.professionCard,
                     business = listOf(
@@ -586,7 +593,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             RatRace2CardAction.OnResume -> {
-                if(oldState.professionCard.profession.isNotEmpty()) {
+                if (oldState.professionCard.profession.isNotEmpty()) {
                     recallService()
                 }
                 oldState

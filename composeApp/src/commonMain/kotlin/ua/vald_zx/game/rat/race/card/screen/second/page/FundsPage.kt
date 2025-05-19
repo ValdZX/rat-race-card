@@ -21,15 +21,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import ua.vald_zx.game.rat.race.card.components.ExtendedButton
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
+import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Plus
-import ua.vald_zx.game.rat.race.card.resource.images.Stars
 import ua.vald_zx.game.rat.race.card.screen.second.BuyFundScreen
 import ua.vald_zx.game.rat.race.card.screen.second.SellFundScreen
-import ua.vald_zx.game.rat.race.card.raceRate2store
 
 @Composable
 fun FundsPage(state: RatRace2CardState) {
@@ -68,15 +68,11 @@ fun FundsPage(state: RatRace2CardState) {
                 onClick = { bottomSheetNavigator.show(BuyFundScreen()) },
                 content = { Icon(Images.Plus, contentDescription = null) }
             )
-            ElevatedButton(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).weight(1f),
+            ExtendedButton(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp).weight(1f),
                 onClick = { capitalizationConfirm = true },
-                content = { Text("Капіталізувати") }
-            )
-            ElevatedButton(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                onClick = { capitalizationStarConfirm = true },
-                content = { Icon(Images.Stars, contentDescription = null) }
+                onLongClick = { capitalizationStarConfirm = true },
+                content = { Text("Капіталізувати") },
             )
         }
         if (capitalizationConfirm) {

@@ -85,9 +85,11 @@ tts-compose = { module = "nl.marc-apps:tts-compose", version.ref = "tts" }
 charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "charts" }
 fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
 lexilabs-basic-sound = { group = "app.lexilabs.basic", name = "basic-sound", version.ref = "lexilabs-basic" }
+lexilabs-basic-haptic = { module = "app.lexilabs.basic:basic-haptic", version.ref = "lexilabs-basic"}
 compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "compottie" }
 compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources", version.ref = "compottie" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
+
 
 [plugins]
 

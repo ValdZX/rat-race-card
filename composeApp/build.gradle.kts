@@ -74,6 +74,7 @@ kotlin {
             implementation(libs.kotlinx.rpc.krpc.ktor.client)
             implementation(libs.multiplatform.settings.no.arg)
             implementation(libs.lexilabs.basic.sound)
+            implementation(libs.lexilabs.basic.haptic)
             implementation(libs.charts)
             implementation(libs.tts)
             implementation(libs.tts.compose)
