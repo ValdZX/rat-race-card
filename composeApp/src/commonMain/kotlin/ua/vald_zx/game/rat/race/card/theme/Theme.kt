@@ -90,6 +90,7 @@ internal fun AppTheme(
     val colors = if (isDark) DarkIfobsColors else LightIfobsColors
     val colorPalette = remember {
         AppColors(
+            cash = colors.cash,
             positive = colors.positive,
             negative = colors.negative,
             action = colors.action,

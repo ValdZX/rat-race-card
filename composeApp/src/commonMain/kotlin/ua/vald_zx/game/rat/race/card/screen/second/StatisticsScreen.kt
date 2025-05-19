@@ -40,12 +40,12 @@ import ir.ehsannarmani.compose_charts.models.Line
 import ir.ehsannarmani.compose_charts.models.PopupProperties
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
-import ua.vald_zx.game.rat.race.card.components.RainbowBlue
 import ua.vald_zx.game.rat.race.card.components.RainbowOrange
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
 import ua.vald_zx.game.rat.race.card.logic.total
 import ua.vald_zx.game.rat.race.card.raceRate2store
+import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 class StatisticsScreen : Screen {
     @OptIn(ExperimentalKStoreApi::class)
@@ -61,8 +61,8 @@ class StatisticsScreen : Screen {
                 var needDeposit by remember { mutableStateOf(true) }
                 var needLoan by remember { mutableStateOf(true) }
                 val primary = MaterialTheme.colorScheme.primary
-                val onSurface = MaterialTheme.colorScheme.onSurface
                 val tertiary = MaterialTheme.colorScheme.tertiary
+                val cashColor = AppTheme.colors.cash
                 Card(
                     modifier = Modifier.height(270.dp).fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent)
@@ -129,8 +129,8 @@ class StatisticsScreen : Screen {
                                         Line(
                                             label = "Готівка",
                                             values = statistics.log.map { it.cash.toDouble() },
-                                            color = SolidColor(onSurface),
-                                            firstGradientFillColor = onSurface.copy(alpha = .5f),
+                                            color = SolidColor(cashColor),
+                                            firstGradientFillColor = cashColor.copy(alpha = .5f),
                                             curvedEdges = true,
                                             secondGradientFillColor = Color.Transparent,
                                             strokeAnimationSpec = spring(
@@ -234,7 +234,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Готівка", color = onSurface)
+                    Text("Готівка", color = AppTheme.colors.cash)
                     Switch(needCash, onCheckedChange = { needCash = it })
                 }
                 Row(

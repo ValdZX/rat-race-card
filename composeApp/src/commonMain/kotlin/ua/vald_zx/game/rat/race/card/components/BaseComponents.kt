@@ -355,7 +355,7 @@ fun BalanceField(
             .clickable(onClick = onClick)
             .padding(start = 8.dp)
     ) {
-        Text(name)
+        Text(name, color = AppTheme.colors.cash)
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (sub != null) {
                 IconButton(
@@ -569,7 +569,7 @@ fun ExtendedButton(
             easing = LinearEasing
         ),
         finishedListener = { value ->
-            if(value == 1f) {
+            if (value == 1f) {
                 onLongClick()
                 @OptIn(DependsOnAndroidVibratePermission::class)
                 haptic.vibrate(Haptic.DEFAULTS.CLICK)

@@ -82,6 +82,7 @@ internal val LocalAppColors = staticCompositionLocalOf<AppColors> {
 
 @Stable
 class AppColors(
+    cash: Color,
     positive: Color,
     negative: Color,
     action: Color,
@@ -90,6 +91,8 @@ class AppColors(
     funds: Color,
     isDark: Boolean,
 ) {
+    var cash by mutableStateOf(cash)
+        private set
     var positive by mutableStateOf(positive)
         private set
     var negative by mutableStateOf(negative)
@@ -107,6 +110,7 @@ class AppColors(
 
     fun update(other: AppColors) {
         Napier.d("Update isDark: ${other.isDark}")
+        cash = other.cash
         positive = other.positive
         negative = other.negative
         action = other.action
@@ -118,6 +122,7 @@ class AppColors(
 }
 
 internal val LightIfobsColors = AppColors(
+    cash = Color(0xFF64b06c),
     positive = Color(0xFFbaffc9),
     negative = Color(0xFFffb3ba),
     action = Color(0xFFffffba),
@@ -128,6 +133,7 @@ internal val LightIfobsColors = AppColors(
 )
 
 internal val DarkIfobsColors = AppColors(
+    cash = Color(0xFF8eca92),
     positive = Color(0xFF38761d),
     negative = Color(0xFF990100),
     action = Color(0xFFc09001),
