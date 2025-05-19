@@ -1,20 +1,60 @@
 package ua.vald_zx.game.rat.race.card.screen.second.page
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.DetailsField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Baby
+import ua.vald_zx.game.rat.race.card.resource.images.Car
+import ua.vald_zx.game.rat.race.card.resource.images.Estate
+import ua.vald_zx.game.rat.race.card.resource.images.Flat
+import ua.vald_zx.game.rat.race.card.resource.images.Fly
+import ua.vald_zx.game.rat.race.card.resource.images.Mariage
+import ua.vald_zx.game.rat.race.card.resource.images.Work
+import ua.vald_zx.game.rat.race.card.resource.images.Yacht
+
+val greyScaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
 
 @Composable
 fun StatePage(state: RatRace2CardState) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(state = rememberScrollState())) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            Image(imageVector = Images.Work, contentDescription = null, colorFilter = greyScaleFilter)
+            Image(imageVector = Images.Mariage, contentDescription = null, colorFilter = greyScaleFilter)
+            Image(imageVector = Images.Baby, contentDescription = null, colorFilter = greyScaleFilter)
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            Image(imageVector = Images.Car, contentDescription = null, colorFilter = greyScaleFilter)
+            Image(imageVector = Images.Flat, contentDescription = null, colorFilter = greyScaleFilter)
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            Image(imageVector = Images.Estate, contentDescription = null, colorFilter = greyScaleFilter)
+            Image(imageVector = Images.Fly, contentDescription = null, colorFilter = greyScaleFilter)
+            Image(imageVector = Images.Yacht, contentDescription = null, colorFilter = greyScaleFilter)
+        }
         DetailsField(
             "Активний прибуток",
             state.activeProfit().toString(),
