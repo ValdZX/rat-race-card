@@ -48,6 +48,10 @@ class RaceRatServiceImpl(
         cashSendBus.emit(id to cash)
     }
 
+    override suspend fun closeSession() {
+        players.value = players.value.filter { it.uuid != uuid }
+    }
+
     override suspend fun inputCashObserve(): Flow<Long> = inputCashFlow
 }
 

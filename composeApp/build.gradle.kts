@@ -20,7 +20,6 @@ plugins {
 kotlin {
     androidTarget()
 
-    jvm()
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         outputModuleName = "composeApp"

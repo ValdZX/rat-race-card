@@ -35,5 +35,6 @@ interface RaceRatService : RemoteService {
     suspend fun update(state: Card2State)
     suspend fun playersObserve(): Flow<List<Player>>
     suspend fun sendMoney(id: String, cash: Long)
+    suspend fun closeSession()
     suspend fun inputCashObserve(): Flow<Long>
 }

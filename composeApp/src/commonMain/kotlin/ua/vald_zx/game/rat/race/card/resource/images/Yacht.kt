@@ -14,8 +14,8 @@ val Images.Yacht: ImageVector
         }
         _Yacht = ImageVector.Builder(
             name = "Yacht",
-            defaultWidth = 48.dp,
-            defaultHeight = 48.dp,
+            defaultWidth = 32.dp,
+            defaultHeight = 32.dp,
             viewportWidth = 64f,
             viewportHeight = 64f
         ).apply {

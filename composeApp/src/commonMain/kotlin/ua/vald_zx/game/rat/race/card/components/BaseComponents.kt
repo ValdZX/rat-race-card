@@ -17,6 +17,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -104,6 +105,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.Salary
 import ua.vald_zx.game.rat.race.card.resource.images.Substract
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
+import kotlin.math.hypot
 
 @Composable
 fun Button(
@@ -630,5 +632,104 @@ fun ExtendedButton(
                 verticalAlignment = Alignment.CenterVertically,
             ) { content() }
         }
+    }
+}
+
+@Composable
+fun GoldBackground(modifier: Modifier) {
+    BoxWithConstraints(
+        modifier = modifier
+    ) {
+        val width = constraints.maxWidth.toFloat()
+        val height = constraints.maxHeight.toFloat()
+        val centerLeftTop = Offset(0f, 0f)
+        val centerRightBottom = Offset(width, height)
+        val farthestRadius = hypot(width, height)
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFFFFFFFF),
+                            Color(0xFFFFFFAC),
+                            Color(0xFFD1B464),
+                            Color(0xFF5D4A1F),
+                            Color(0xFF5D4A1F)
+                        ),
+                        center = centerLeftTop,
+                        radius = farthestRadius
+                    )
+                )
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFFFEDB37),
+                            Color(0xFFFDB931),
+                            Color(0xFF9F7928),
+                            Color(0xFF8A6E2F),
+                            Color.Transparent
+                        ),
+                        center = centerRightBottom,
+                        radius = farthestRadius
+                    )
+                )
+        )
+    }
+}
+
+@Composable
+fun SilverBackground(modifier: Modifier) {
+    BoxWithConstraints(
+        modifier = modifier
+    ) {
+        val width = constraints.maxWidth.toFloat()
+        val height = constraints.maxHeight.toFloat()
+
+        val centerLeftTop = Offset(0f, 0f)
+        val centerRightBottom = Offset(width, height)
+        val farthestRadius = hypot(width, height)
+
+        // Нижній градієнт (відтінки сірого, зліва зверху)
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFFFFFFFF),
+                            Color(0xFFDDDDDD),
+                            Color(0xFFB0B0B0),
+                            Color(0xFF6E6E6E),
+                            Color(0xFF6E6E6E)
+                        ),
+                        center = centerLeftTop,
+                        radius = farthestRadius
+                    )
+                )
+        )
+
+        // Верхній градієнт (світло-сірий до прозорого, справа знизу)
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFFEDEDED),
+                            Color(0xFFCFCFCF),
+                            Color(0xFFA0A0A0),
+                            Color(0xFF808080),
+                            Color.Transparent
+                        ),
+                        center = centerRightBottom,
+                        radius = farthestRadius
+                    )
+                )
+        )
     }
 }

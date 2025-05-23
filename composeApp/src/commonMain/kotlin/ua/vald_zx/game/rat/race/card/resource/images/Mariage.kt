@@ -15,8 +15,8 @@ val Images.Mariage: ImageVector
         }
         _Mariage = ImageVector.Builder(
             name = "Mariage",
-            defaultWidth = 48.dp,
-            defaultHeight = 48.dp,
+            defaultWidth = 32.dp,
+            defaultHeight = 32.dp,
             viewportWidth = 72f,
             viewportHeight = 72f
         ).apply {

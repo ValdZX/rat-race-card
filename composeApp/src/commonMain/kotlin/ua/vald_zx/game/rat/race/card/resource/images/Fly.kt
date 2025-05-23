@@ -14,8 +14,8 @@ val Images.Fly: ImageVector
         }
         _Fly = ImageVector.Builder(
             name = "Fly",
-            defaultWidth = 48.dp,
-            defaultHeight = 48.dp,
+            defaultWidth = 32.dp,
+            defaultHeight = 32.dp,
             viewportWidth = 100f,
             viewportHeight = 100f
         ).apply {

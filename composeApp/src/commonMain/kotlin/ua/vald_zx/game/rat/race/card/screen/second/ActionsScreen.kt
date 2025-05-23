@@ -77,7 +77,7 @@ class AllActionsScreen() : Screen {
             bottomSheetNavigator.replace(BuyScreen())
         }
         Button("Сімейний стан", AppTheme.colors.family) {
-            bottomSheetNavigator.replace(ChangeFamilyScreen())
+            bottomSheetNavigator.replace(MarriageScreen())
         }
     }
 }

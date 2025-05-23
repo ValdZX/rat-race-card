@@ -14,8 +14,8 @@ val Images.Estate: ImageVector
         }
         _Estate = ImageVector.Builder(
             name = "Estate",
-            defaultWidth = 48.dp,
-            defaultHeight = 48.dp,
+            defaultWidth = 32.dp,
+            defaultHeight = 32.dp,
             viewportWidth = 512f,
             viewportHeight = 512f
         ).apply {

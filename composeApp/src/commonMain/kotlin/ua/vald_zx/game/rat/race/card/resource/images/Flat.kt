@@ -14,8 +14,8 @@ val Images.Flat: ImageVector
         }
         _Flat = ImageVector.Builder(
             name = "Flat",
-            defaultWidth = 48.dp,
-            defaultHeight = 48.dp,
+            defaultWidth = 32.dp,
+            defaultHeight = 32.dp,
             viewportWidth = 100f,
             viewportHeight = 100f
         ).apply {

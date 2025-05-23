@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.request.url
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +32,7 @@ import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.beans.Fund
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.AddBaby
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.AddFund
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.BackToState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.BuyApartment
@@ -230,7 +232,14 @@ sealed class RatRace2CardAction : Action {
     data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) :
         RatRace2CardAction()
 
-    data class UpdateFamily(val isMarried: Boolean, val babies: Long) : RatRace2CardAction()
+    data class UpdateFamily(
+        val isMarried: Boolean,
+        val halfCash: Boolean = false,
+        val marriageCost: Long = 0,
+        val babies: Long? = null
+    ) : RatRace2CardAction()
+
+    data object AddBaby : RatRace2CardAction()
 }
 
 sealed class RatRace2CardSideEffect : Effect {
@@ -267,6 +276,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
     private fun recallService() {
         serviceJob?.cancel()
         serviceJob = launch(exceptionHandler) {
+            Napier.d("Service starting")
             var delayToRecall = 0L
             while (true) {
                 try {
@@ -275,6 +285,9 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
                         delayToRecall = 5000
                         subscribeOnListUpdate()
                     }
+                    return@launch
+                } catch (_: CancellationException) {
+                    Napier.d("Service Canceled")
                     return@launch
                 } catch (e: Exception) {
                     Napier.e("subscribeOnListUpdate", e)
@@ -486,7 +499,24 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             is UpdateFamily -> {
-                oldState.copy(isMarried = action.isMarried, babies = action.babies)
+                oldState.copy(
+                    isMarried = action.isMarried,
+                    babies = action.babies ?: oldState.babies
+                ).minusCash(
+                    if (action.isMarried) {
+                        action.marriageCost
+                    } else {
+                        if (action.halfCash) {
+                            (oldState.cash + oldState.deposit) / 2
+                        } else {
+                            0
+                        }
+                    }
+                )
+            }
+
+            AddBaby -> {
+                oldState.copy(babies = oldState.babies + 1)
             }
 
             is BuyApartment -> {
@@ -586,9 +616,10 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             RatRace2CardAction.OnPause -> {
-                client.close()
-                client.engine.close()
-                serviceJob?.cancel()
+                launch {
+                    service?.closeSession()
+                    serviceJob?.cancel()
+                }
                 oldState
             }
 
@@ -603,10 +634,14 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             state.value = newState
             launch {
                 raceRate2KStore.set(newState)
-                val storedStatistics = statistics ?: statistics2KStore.get() ?: Statistics()
-                storedStatistics.log += newState
-                statistics2KStore.set(storedStatistics)
-                statistics = storedStatistics
+                try {
+                    val storedStatistics = statistics ?: statistics2KStore.get() ?: Statistics()
+                    storedStatistics.log += newState
+                    statistics2KStore.set(storedStatistics)
+                    statistics = storedStatistics
+                } catch (e: Exception) {
+                    Napier.e("Statistics failed", e)
+                }
                 service?.update(
                     Card2State(
                         totalExpenses = newState.total(),
@@ -626,6 +661,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
         value: Long,
         isFundBuy: Boolean = false
     ): RatRace2CardState {
+        if (value == 0L) return this
         launch { sideEffect.emit(SubCash(value)) }
         return if (cash > value) {
             copy(cash = cash - value)

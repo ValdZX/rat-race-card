@@ -148,24 +148,25 @@ class RaceRate2Screen : Screen {
                     )
                     CashFlowField(
                         name = "Cash Flow",
-                        value = state.cashFlow().toString(),
+                        value = "${state.cashFlow()}",
                         onClick = { raceRate2store.dispatch(RatRace2CardAction.GetSalary) },
                         salary = { raceRate2store.dispatch(RatRace2CardAction.GetSalary) })
                     BalanceField(
                         name = "Готівка",
-                        value = state.cash.toString(),
+                        value = "${state.cash} $",
                         add = { bottomSheetNavigator.show(SideProfitScreen()) },
                         sub = { bottomSheetNavigator.show(SideExpensesScreen()) },
                         onClick = { bottomSheetNavigator.show(CashActionsScreen()) },
                     )
                     PositiveField(
                         name = "Депозит",
-                        value = state.deposit.toString(),
+                        value = "${state.deposit} $",
                         onClick = { bottomSheetNavigator.show(DepositActionsScreen()) },
                         deposit = { bottomSheetNavigator.show(ToDepositScreen()) },
                     )
                     NegativeField(
-                        name = "Кредит", value = state.loan.toString(),
+                        name = "Кредит",
+                        value = "${state.loan} $",
                         onClick = { bottomSheetNavigator.show(LoanActionsScreen()) },
                         repay = {
                             if (state.loan > 0) {
@@ -174,7 +175,10 @@ class RaceRate2Screen : Screen {
                         },
                     )
                     if (state.config.hasFunds) {
-                        FundsField("Фонди", state.fundAmount().toString()) {
+                        FundsField(
+                            name = "Фонди",
+                            value = "${state.fundAmount()} $"
+                        ) {
                             bottomSheetNavigator.show(BuyFundScreen())
                         }
                     }
