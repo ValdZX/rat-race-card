@@ -13,6 +13,7 @@ import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 internal actual val platformContext: Any
     get() = Unit
 
+@Suppress("unused")
 internal actual fun openUrl(url: String?) {
     url?.let { window.open(it) }
 }

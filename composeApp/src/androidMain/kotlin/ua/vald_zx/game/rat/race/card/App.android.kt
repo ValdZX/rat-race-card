@@ -5,16 +5,17 @@ package ua.vald_zx.game.rat.race.card
 import android.app.Application
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-import android.net.Uri
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
@@ -32,7 +33,6 @@ import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
-import java.util.Locale
 
 class AndroidApp : Application() {
     companion object {
@@ -46,8 +46,6 @@ class AndroidApp : Application() {
         Napier.base(DebugAntilog())
     }
 }
-
-val uk = Locale("uk", "UA")
 
 class AppActivity : ComponentActivity() {
     private val activityResultLauncher =
@@ -70,7 +68,10 @@ class AppActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        )
         setContent {
             App()
             val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -110,8 +111,9 @@ class AppActivity : ComponentActivity() {
 internal actual val platformContext: Any
     get() = AndroidApp.ACTIVITY
 
+@Suppress("unused")
 internal actual fun openUrl(url: String?) {
-    val uri = url?.let { Uri.parse(it) } ?: return
+    val uri = url?.toUri() ?: return
     val intent = Intent().apply {
         action = Intent.ACTION_VIEW
         data = uri
