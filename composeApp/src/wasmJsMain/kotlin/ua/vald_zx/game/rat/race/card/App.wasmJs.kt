@@ -33,7 +33,7 @@ actual suspend fun getTts(): TextToSpeechInstance? {
     if (tts != null) return tts
     TextToSpeechFactory().create()
         .onSuccess { newTts ->
-            newTts.voices.find { it.language == "Ukrainian" }?.let { newTts.currentVoice = it }
+            newTts.voices.find { it.languageTag == "uk-UA" }?.let { newTts.currentVoice = it }
             tts = newTts
         }.onFailure {
             Napier.e("tts failed", it)

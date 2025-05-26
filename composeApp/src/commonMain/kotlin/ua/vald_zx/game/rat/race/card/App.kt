@@ -15,6 +15,8 @@ import app.lexilabs.basic.sound.SoundByte
 import app.lexilabs.basic.sound.play
 import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
+import io.github.aakira.napier.DebugAntilog
+import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
 import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
@@ -49,6 +51,7 @@ val settings: Settings = Settings()
 
 @Composable
 internal fun App() = AppTheme {
+    LaunchedEffect(Unit) { Napier.base(DebugAntilog()) }
     var kStoreLoaded by remember { mutableStateOf(false) }
     if (kStoreLoaded) {
         val raceRate2State by raceRate2store.observeState().collectAsState()

@@ -61,8 +61,6 @@ actual suspend fun getTts(): TextToSpeechInstance? {
     if (tts != null) return tts
     TextToSpeechFactory().create()
         .onSuccess { newTts ->
-            Napier.d("SUCCESS ${newTts.voices.count()}")
-            newTts.voices.forEach { Napier.d("${it.name}, ${it.language}, ${it.region}, ${it.languageTag}") }
             newTts.voices.find { it.languageTag == "uk-UA" }?.let { newTts.currentVoice = it }
             tts = newTts
         }.onFailure {

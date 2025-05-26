@@ -21,7 +21,6 @@ import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
-import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.file.storeOf
@@ -43,7 +42,6 @@ class AndroidApp : Application() {
     override fun onCreate() {
         super.onCreate()
         INSTANCE = this
-        Napier.base(DebugAntilog())
     }
 }
 
@@ -146,7 +144,7 @@ actual suspend fun getTts(): TextToSpeechInstance? {
     if (tts != null) return tts
     TextToSpeechFactory(AndroidApp.ACTIVITY, TextToSpeechEngine.Google).create()
         .onSuccess { newTts ->
-            newTts.voices.find { it.language == "Ukrainian" }?.let { newTts.currentVoice = it }
+            newTts.voices.find { it.languageTag == "uk-UA" }?.let { newTts.currentVoice = it }
             tts = newTts
         }.onFailure {
             Napier.e("tts failed", it)
