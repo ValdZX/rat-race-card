@@ -68,12 +68,14 @@ fun FundsPage(state: RatRace2CardState) {
                 onClick = { bottomSheetNavigator.show(BuyFundScreen()) },
                 content = { Icon(Images.Plus, contentDescription = null) }
             )
-            ExtendedButton(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp).weight(1f),
-                onClick = { capitalizationConfirm = true },
-                onLongClick = { capitalizationStarConfirm = true },
-                content = { Text("Капіталізувати") },
-            )
+            if (state.funds.isNotEmpty()) {
+                ExtendedButton(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp).weight(1f),
+                    onClick = { capitalizationConfirm = true },
+                    onLongClick = { capitalizationStarConfirm = true },
+                    content = { Text("Капіталізувати") },
+                )
+            }
         }
         if (capitalizationConfirm) {
             AlertDialog(
