@@ -20,6 +20,7 @@ import platform.UIKit.UIApplication
 internal actual val platformContext: Any
     get() = Unit
 
+@Suppress("unused")
 internal actual fun openUrl(url: String?) {
     val nsUrl = url?.let { NSURL.URLWithString(it) } ?: return
     UIApplication.sharedApplication.openURL(nsUrl)
@@ -60,7 +61,9 @@ actual suspend fun getTts(): TextToSpeechInstance? {
     if (tts != null) return tts
     TextToSpeechFactory().create()
         .onSuccess { newTts ->
-            newTts.voices.find { it.language == "Ukrainian" }?.let { newTts.currentVoice = it }
+            Napier.d("SUCCESS ${newTts.voices.count()}")
+            newTts.voices.forEach { Napier.d("${it.name}, ${it.language}, ${it.region}, ${it.languageTag}") }
+            newTts.voices.find { it.languageTag == "uk-UA" }?.let { newTts.currentVoice = it }
             tts = newTts
         }.onFailure {
             Napier.e("tts failed", it)

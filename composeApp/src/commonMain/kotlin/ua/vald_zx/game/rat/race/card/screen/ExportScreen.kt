@@ -35,8 +35,6 @@ import kotlinx.serialization.json.Json
 import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
-import ua.vald_zx.game.rat.race.card.resource.images.Copy
-import ua.vald_zx.game.rat.race.card.resource.images.Share
 import ua.vald_zx.game.rat.race.card.share
 
 class ExportScreen : Screen {
@@ -80,8 +78,7 @@ class ExportScreen : Screen {
                     enabled = base64Card.isNotEmpty(),
                     content = {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Icon(Images.Share, contentDescription = null)
-                            Text("Віправити")
+                            Text("Відправити")
                         }
                     },
                 )
@@ -95,7 +92,6 @@ class ExportScreen : Screen {
                     enabled = base64Card.isNotEmpty(),
                     content = {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Icon(Images.Copy, contentDescription = null)
                             Text("Копіювати")
                         }
                     },

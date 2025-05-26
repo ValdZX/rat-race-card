@@ -9,8 +9,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import app.lexilabs.basic.haptic.DependsOnAndroidVibratePermission
 import app.lexilabs.basic.haptic.Haptic
-import app.lexilabs.basic.sound.AudioByte
 import app.lexilabs.basic.sound.ExperimentalBasicSound
+import app.lexilabs.basic.sound.SoundBoard
+import app.lexilabs.basic.sound.SoundByte
+import app.lexilabs.basic.sound.play
 import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
 import io.github.xxfast.kstore.KStore
@@ -60,7 +62,7 @@ internal fun App() = AppTheme {
 //        Navigator(SelectBoardScreen())
     } else {
         LaunchedEffect(Unit) {
-            val state2 = raceRate2KStore.get()
+            val state2 = runCatching { raceRate2KStore.get() }.getOrNull()
             if (state2 != null) {
                 raceRate2store.dispatch(RatRace2CardAction.LoadState(state2))
             }
@@ -78,17 +80,19 @@ val haptic by lazy {
     Haptic(platformContext)
 }
 
-private val audioByte by lazy {
-    AudioByte()
-}
-
-private val coin: Any by lazy {
-    audioByte.load(platformContext, Res.getUri("files/coin.mp3"))
+@OptIn(ExperimentalBasicSound::class)
+private val soundBoard = SoundBoard(platformContext).apply {
+    val coin = SoundByte(
+        name = "coin",
+        localPath = Res.getUri("files/coin.mp3")
+    )
+    load(coin)
+    powerUp()
 }
 
 @OptIn(ExperimentalBasicSound::class)
 internal fun playCoin() {
-    audioByte.play(coin)
+    soundBoard.mixer.play("coin")
 }
 
 internal expect val noIme: Boolean

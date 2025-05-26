@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
-import io.github.aakira.napier.Napier
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.RainbowButton
@@ -128,7 +127,6 @@ class LoanActionsScreen() : Screen {
 fun ActionsScreen(
     content: @Composable ColumnScope.() -> Unit
 ) = AppTheme {
-    Napier.d("ActionsScreen isDark: ${AppTheme.colors.isDark}")
     Column(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.background)

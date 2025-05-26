@@ -632,23 +632,23 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
         }
         if (newState != oldState) {
             state.value = newState
-            launch {
-                raceRate2KStore.set(newState)
-                try {
-                    val storedStatistics = statistics ?: statistics2KStore.get() ?: Statistics()
-                    storedStatistics.log += newState
-                    statistics2KStore.set(storedStatistics)
-                    statistics = storedStatistics
-                } catch (e: Exception) {
-                    Napier.e("Statistics failed", e)
-                }
-                service?.update(
-                    Card2State(
-                        totalExpenses = newState.total(),
-                        cashFlow = newState.cashFlow()
-                    )
+            saveState(newState)
+        }
+    }
+
+    private fun saveState(newState: RatRace2CardState) {
+        launch {
+            raceRate2KStore.set(newState)
+            val storedStatistics = statistics ?: runCatching{ statistics2KStore.get() }.getOrNull() ?: Statistics()
+            storedStatistics.log += newState
+            statistics2KStore.set(storedStatistics)
+            statistics = storedStatistics
+            service?.update(
+                Card2State(
+                    totalExpenses = newState.total(),
+                    cashFlow = newState.cashFlow()
                 )
-            }
+            )
         }
     }
 
