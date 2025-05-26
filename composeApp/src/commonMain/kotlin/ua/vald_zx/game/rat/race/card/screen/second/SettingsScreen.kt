@@ -146,7 +146,7 @@ class SettingsScreen : Screen {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Механіка фондів")
+                        Text("Фонди")
                         Switch(state.config.hasFunds, onCheckedChange = {
                             raceRate2store.dispatch(
                                 RatRace2CardAction.UpdateConfig(

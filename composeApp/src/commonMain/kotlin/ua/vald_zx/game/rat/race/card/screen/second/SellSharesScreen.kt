@@ -36,7 +36,13 @@ class SellSharesScreen : Screen {
         BottomSheetContainer {
             val existsShares = state.existsShares()
             var type by remember { mutableStateOf(existsShares.first()) }
-            val inputCount = remember { mutableStateOf(TextFieldValue("")) }
+            val inputCount = remember {
+                mutableStateOf(
+                    TextFieldValue(
+                        state.sharesCount(existsShares.first()).toString()
+                    )
+                )
+            }
             val inputPrice = remember { mutableStateOf(TextFieldValue("")) }
             existsShares.forEach { entry ->
                 Row(
@@ -44,7 +50,11 @@ class SellSharesScreen : Screen {
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    RadioButton(type == entry, onClick = { type = entry })
+                    RadioButton(type == entry, onClick = {
+                        inputCount.value =
+                            inputCount.value.copy(text = state.sharesCount(entry).toString())
+                        type = entry
+                    })
                     Text("${entry.label()}: ${state.sharesCount(entry)}")
                 }
             }

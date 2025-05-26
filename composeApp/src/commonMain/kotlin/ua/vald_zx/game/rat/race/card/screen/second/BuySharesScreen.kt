@@ -57,12 +57,12 @@ class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0))
                 style = MaterialTheme.typography.titleSmall
             )
             NumberTextField(
-                input = inputCount,
-                inputLabel = "Кількість",
-            )
-            NumberTextField(
                 input = inputPrice,
                 inputLabel = "Ціна покупки",
+            )
+            NumberTextField(
+                input = inputCount,
+                inputLabel = "Кількість",
             )
             ElevatedButton(
                 modifier = Modifier
