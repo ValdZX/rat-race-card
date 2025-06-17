@@ -1,10 +1,15 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateOffsetAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -13,6 +18,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
@@ -26,12 +32,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -41,19 +53,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import io.github.alexzhirkevich.compottie.LottieComposition
 import io.github.alexzhirkevich.compottie.LottieCompositionSpec
 import io.github.alexzhirkevich.compottie.rememberLottieAnimatable
 import io.github.alexzhirkevich.compottie.rememberLottieComposition
 import io.github.alexzhirkevich.compottie.rememberLottiePainter
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 import org.jetbrains.compose.resources.Font
+import org.jetbrains.compose.resources.painterResource
 import rat_race_card.composeapp.generated.resources.Bubbleboddy
 import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.logo
 import ua.vald_zx.game.rat.race.card.components.OutlinedText
 import ua.vald_zx.game.rat.race.card.components.Rotation
+import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.components.rotateLayout
 import ua.vald_zx.game.rat.race.card.logic.BoardLayer
@@ -65,6 +84,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.Dice
 import ua.vald_zx.game.rat.race.card.resource.images.Money
 import ua.vald_zx.game.rat.race.card.resource.images.RatPlayer1
 import ua.vald_zx.game.rat.race.card.resource.images.UpDoubleArrow
+import kotlin.math.absoluteValue
 
 enum class Side(val isHorizontal: Boolean) {
     TOP(true), LEFT(false), BOTTOM(true), RIGHT(false)
@@ -101,20 +121,30 @@ sealed class PlaceType(val name: String, val color: Color, val isBig: Boolean = 
     data object Exaltation : PlaceType("Exaltation", Color.Black)
 }
 
+private val positionX = -40f
+
+data class BoardRoute(
+    val horizontalCells: Int,
+    val verticalCells: Int,
+    val places: List<PlaceType>,
+)
+
 class Board2Screen : Screen {
-    private val cellOutX = 26
-    private val cellInX = 28
-    private val cellOutY = 18
-    private val cellInY = 18
+
+    override val key: ScreenKey = "Board2Screen"
 
     @Composable
     override fun Content() {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
+        val rotX = remember { Animatable(positionX) }
+        val rotY = remember { Animatable(0f) }
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize().systemBarsPadding()
+        ) {
             val state by raceRate2BoardStore.observeState().collectAsState()
             val zoomState = rememberZoomState(
                 contentSize = Size.Zero,
                 initialScale = 1f,
-                maxScale = 5f
+                maxScale = 1.5f
             )
             LaunchedEffect(state.layer) {
                 when (state.layer) {
@@ -125,42 +155,80 @@ class Board2Screen : Screen {
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
-                    .align(Alignment.Center)
-                    .padding(24.dp)
-                    .zoomable(zoomState)
+                    .zoomable(zoomState, onDoubleTap = null)
+                    .align(Alignment.Center),
             ) {
                 val minSide = min(maxWidth, maxHeight)
-                val outSpotWidth = (minSide / cellOutX)//.value.toInt().dp
-                val outSpotHeight = (minSide / cellOutX)//.value.toInt().dp
+                val outSpotWidth = (minSide / outRoute.horizontalCells)
+                val outSpotHeight = (minSide / outRoute.horizontalCells)
+                val outBoardWidth = outSpotWidth * outRoute.horizontalCells
+                val outBoardHeight = outSpotHeight * outRoute.verticalCells
                 val boardOffset = remember(minSide) {
-                    val x = ((maxWidth - outSpotWidth * cellOutX) / 2)//.value.toInt().dp
-                    val y = ((maxHeight - outSpotHeight * cellOutY) / 2)//.value.toInt().dp
+                    val x = ((maxWidth - outBoardWidth) / 2)
+                    val y = ((maxHeight - outBoardHeight) / 2)
                     DpOffset(x, y)
                 }
-                Places(
-                    layer = BoardLayer.OUTER,
-                    placeTypes = outPlaces,
-                    spotWidth = outSpotWidth,
-                    spotHeight = outSpotHeight,
-                    cellX = cellOutX,
-                    cellY = cellOutY,
-                    offset = boardOffset,
-                )
                 val inPadding = outSpotWidth / 3
                 val inSpotWidth =
-                    ((minSide - outSpotWidth * 4 - inPadding * 2) / cellInX)//.value.toInt().dp
+                    ((minSide - outSpotWidth * 4 - inPadding * 2) / inRoute.horizontalCells)
                 val inSpotHeight =
-                    (((outSpotWidth * cellInY) - outSpotWidth * 4 - inPadding * 2) / cellInY)//.value.toInt().dp
+                    (((outSpotWidth * inRoute.verticalCells) - outSpotWidth * 4 - inPadding * 2) / inRoute.verticalCells)
                 val inLineOffset = (outSpotWidth * 2) + inPadding
-                Places(
-                    layer = BoardLayer.INNER,
-                    placeTypes = inPlaces,
-                    spotWidth = inSpotWidth,
-                    spotHeight = inSpotHeight,
-                    cellX = cellInX,
-                    cellY = cellInY,
-                    offset = boardOffset + DpOffset(inLineOffset, inLineOffset),
-                )
+                val inBoardWidth = inSpotWidth * inRoute.horizontalCells
+                val inBoardHeight = inSpotHeight * inRoute.verticalCells
+
+                Box(
+                    modifier = Modifier.offset(boardOffset.x, boardOffset.y)
+                        .size(width = outBoardWidth, height = outBoardHeight)
+                        .rotateOnDrag(rotX, rotY)
+                        .graphicsLayer {
+                            rotationX = (-rotX.value).coerceIn(-180f, 180f)
+                            rotationY = rotY.value.coerceIn(-180f, 180f)
+                            cameraDistance = 15f
+                            shape = RoundedCornerShape(6.dp)
+                        }
+                ) {
+                    if (isFlipped(rotY, rotX)) {
+                        Box(
+                            modifier = Modifier.fillMaxSize()
+                                .shadow(30.dp, shape = RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color(0xFF45465C))
+                                .border(
+                                    width = 6.dp,
+                                    shape = RoundedCornerShape(16.dp),
+                                    brush = Brush.horizontalGradient(SkittlesRainbow)
+                                )
+                        ) {
+                            Image(
+                                painter = painterResource(Res.drawable.logo),
+                                contentDescription = null,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize()
+                                .shadow(30.dp, shape = RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                        ) {
+                            Places(
+                                layer = BoardLayer.OUTER,
+                                width = outBoardWidth,
+                                height = outBoardHeight,
+                                route = outRoute,
+                            )
+                            Places(
+                                layer = BoardLayer.INNER,
+                                width = inBoardWidth,
+                                height = inBoardHeight,
+                                route = inRoute,
+                                offset = DpOffset(inLineOffset, inLineOffset),
+                            )
+                        }
+                    }
+                }
             }
 
             ElevatedButton(
@@ -256,21 +324,29 @@ class Board2Screen : Screen {
     @Composable
     private fun Places(
         layer: BoardLayer,
-        placeTypes: List<PlaceType>,
-        spotWidth: Dp,
-        spotHeight: Dp,
-        cellX: Int,
-        cellY: Int,
+        width: Dp,
+        height: Dp,
+        route: BoardRoute,
         offset: DpOffset = DpOffset(0.dp, 0.dp),
     ) {
+        val spotWidth = width / route.horizontalCells
+        val spotHeight = height / route.verticalCells
         val state by raceRate2BoardStore.observeState().collectAsState()
-        val places = remember(placeTypes, offset) {
+        val places = remember(route.places, offset) {
             var placeOffset = 0
-            placeTypes.map { type ->
-                val location = getLocationOnBoard(placeOffset, cellX, cellY)
+            route.places.map { type ->
+                val location =
+                    getLocationOnBoard(placeOffset, route.horizontalCells, route.verticalCells)
                 val cellSize = type.getDpSize(location, spotWidth, spotHeight)
                 val cellOffset =
-                    type.dpOffset(location, spotWidth, spotHeight, cellX, cellY, offset)
+                    type.dpOffset(
+                        location,
+                        spotWidth,
+                        spotHeight,
+                        route.horizontalCells,
+                        route.verticalCells,
+                        offset
+                    )
                 placeOffset += if (type.isBig) 2 else 1
                 Place(type, location, cellOffset, cellSize)
             }
@@ -592,3 +668,65 @@ private val outPlaces = listOf(
     PlaceType.Chance,
     PlaceType.Store,
 )
+
+
+val outRoute = BoardRoute(26, 18, outPlaces)
+val inRoute = BoardRoute(28, 18, inPlaces)
+
+private fun Modifier.rotateOnDrag(
+    rotX: Animatable<Float, AnimationVector1D>,
+    rotY: Animatable<Float, AnimationVector1D>
+): Modifier = composed {
+    var dRotX by remember { mutableStateOf(0f) }
+    var dRotY by remember { mutableStateOf(0f) }
+    pointerInput(Unit) {
+        coroutineScope {
+            while (true) {
+                awaitPointerEventScope {
+                    val pointerId = awaitFirstDown().run {
+                        launch {
+                            dRotX = 0f
+                            dRotY = 0f
+                        }
+                        id
+                    }
+                    drag(pointerId) {
+                        launch {
+                            dRotX = rotX.value + it.positionChange().y * 0.09f
+                            dRotY = rotY.value + it.positionChange().x * 0.09f
+                            // TODO Constrain 180 deg flip only on one axis at a time
+                            rotX.snapTo(dRotX)
+                            rotY.snapTo(dRotY)
+                        }
+                    }
+                    //region Restore animation
+                    launch {
+                        awaitAll(
+                            async {
+                                rotY.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = spring(stiffness = Spring.StiffnessLow)
+                                )
+                            },
+                            async {
+                                rotX.animateTo(
+                                    targetValue = positionX,
+                                    animationSpec = spring(stiffness = Spring.StiffnessLow)
+                                )
+                            }
+                        )
+                    }
+                    //endregion
+                }
+            }
+        }
+    }
+}
+
+const val FlipThreshDeg = 90f
+
+@Composable
+fun isFlipped(
+    rotY: Animatable<Float, AnimationVector1D>,
+    rotX: Animatable<Float, AnimationVector1D>
+) = rotY.value.absoluteValue > FlipThreshDeg || rotX.value.absoluteValue > FlipThreshDeg
