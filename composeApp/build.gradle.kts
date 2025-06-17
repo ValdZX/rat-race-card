@@ -20,6 +20,7 @@ plugins {
 kotlin {
     androidTarget()
 
+    jvm()
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         outputModuleName = "composeApp"
@@ -73,7 +74,6 @@ kotlin {
             implementation(libs.kotlinx.rpc.krpc.ktor.client)
             implementation(libs.multiplatform.settings.no.arg)
             implementation(libs.lexilabs.basic.sound)
-            implementation(libs.lexilabs.basic.haptic)
             implementation(libs.charts)
             implementation(libs.tts)
             implementation(libs.tts.compose)
@@ -97,6 +97,7 @@ kotlin {
             implementation(libs.kstore.file)
             implementation(libs.app.update.ktx)
             implementation(libs.fragment)
+            implementation(libs.lexilabs.basic.haptic)
         }
 
         jvmMain.dependencies {
@@ -110,6 +111,7 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation(libs.kstore.file)
+            implementation(libs.lexilabs.basic.haptic)
         }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)

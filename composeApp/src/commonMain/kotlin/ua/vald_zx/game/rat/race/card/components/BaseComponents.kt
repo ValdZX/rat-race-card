@@ -34,6 +34,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.ripple
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
@@ -89,14 +90,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.lexilabs.basic.haptic.DependsOnAndroidVibratePermission
-import app.lexilabs.basic.haptic.Haptic
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ua.vald_zx.game.rat.race.card.getDigits
-import ua.vald_zx.game.rat.race.card.haptic
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Add
 import ua.vald_zx.game.rat.race.card.resource.images.Deposit
@@ -105,6 +103,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.Salary
 import ua.vald_zx.game.rat.race.card.resource.images.Substract
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
+import ua.vald_zx.game.rat.race.card.vibrateClick
 import kotlin.math.hypot
 
 @Composable
@@ -138,7 +137,7 @@ fun RainbowButton(
         targetValue = currentFontSizeDoublePx,
         animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing))
     )
-    androidx.compose.material3.Button(
+    Button(
         modifier = Modifier,
         onClick = onClick,
         content = {
@@ -573,8 +572,7 @@ fun ExtendedButton(
         finishedListener = { value ->
             if (value == 1f) {
                 onLongClick()
-                @OptIn(DependsOnAndroidVibratePermission::class)
-                haptic.vibrate(Haptic.DEFAULTS.CLICK)
+                vibrateClick()
             }
         }
     )
@@ -584,7 +582,7 @@ fun ExtendedButton(
             .height(intrinsicSize = IntrinsicSize.Min)
             .pointerInput(Unit) {
                 coroutineScope {
-                    var startJob: Job? = null
+                    var startJob: Job
                     awaitEachGesture {
                         var onClickFlag = true
                         val down = awaitFirstDown()

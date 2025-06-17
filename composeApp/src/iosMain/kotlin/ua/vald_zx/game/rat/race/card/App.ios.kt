@@ -1,5 +1,7 @@
 package ua.vald_zx.game.rat.race.card
 
+import app.lexilabs.basic.haptic.DependsOnAndroidVibratePermission
+import app.lexilabs.basic.haptic.Haptic
 import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.file.storeOf
@@ -70,3 +72,13 @@ actual suspend fun getTts(): TextToSpeechInstance? {
 }
 
 actual val noIme: Boolean = false
+
+@OptIn(DependsOnAndroidVibratePermission::class)
+val haptic by lazy {
+    Haptic(platformContext)
+}
+
+actual fun vibrateClick() {
+    @OptIn(DependsOnAndroidVibratePermission::class)
+    haptic.vibrate(Haptic.DEFAULTS.CLICK)
+}

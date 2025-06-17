@@ -199,8 +199,8 @@ class StatisticsScreen : Screen {
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 ),
-                                contentBuilder = {
-                                    it.format(0) + " $"
+                                contentBuilder = { dataIndex, valueIndex, value ->
+                                    value.format(0) + " $"
                                 },
                                 containerColor = Color(0xff414141)
                             ),

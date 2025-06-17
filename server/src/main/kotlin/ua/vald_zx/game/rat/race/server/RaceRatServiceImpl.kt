@@ -42,7 +42,7 @@ class RaceRatServiceImpl(
         players.value = players.value.replaceItem(player, player.copy(state = state))
     }
 
-    override suspend fun playersObserve(): Flow<List<Player>> = players
+    override fun playersObserve(): Flow<List<Player>> = players
 
     override suspend fun sendMoney(id: String, cash: Long) {
         cashSendBus.emit(id to cash)
@@ -52,7 +52,7 @@ class RaceRatServiceImpl(
         players.value = players.value.filter { it.uuid != uuid }
     }
 
-    override suspend fun inputCashObserve(): Flow<Long> = inputCashFlow
+    override fun inputCashObserve(): Flow<Long> = inputCashFlow
 }
 
 fun <T> List<T>.replaceItem(item: T, newItem: T): List<T> {

@@ -42,3 +42,5 @@ actual suspend fun getTts(): TextToSpeechInstance? {
 }
 
 actual val noIme: Boolean = true
+actual fun vibrateClick() {
+}

@@ -2,13 +2,10 @@ package ua.vald_zx.game.rat.race.card
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import app.lexilabs.basic.haptic.DependsOnAndroidVibratePermission
-import app.lexilabs.basic.haptic.Haptic
 import app.lexilabs.basic.sound.ExperimentalBasicSound
 import app.lexilabs.basic.sound.SoundBoard
 import app.lexilabs.basic.sound.SoundByte
@@ -31,8 +28,7 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace4CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace4CardStore
 import ua.vald_zx.game.rat.race.card.logic.Statistics
-import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
-import ua.vald_zx.game.rat.race.card.screen.second.RaceRate2Screen
+import ua.vald_zx.game.rat.race.card.screen.second.Board2Screen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 internal expect inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T>
@@ -78,11 +74,6 @@ internal fun App() = AppTheme {
     }
 }
 
-@OptIn(DependsOnAndroidVibratePermission::class)
-val haptic by lazy {
-    Haptic(platformContext)
-}
-
 @OptIn(ExperimentalBasicSound::class)
 private val soundBoard = SoundBoard(platformContext).apply {
     val coin = SoundByte(
@@ -90,7 +81,11 @@ private val soundBoard = SoundBoard(platformContext).apply {
         localPath = Res.getUri("files/coin.mp3")
     )
     load(coin)
-    powerUp()
+    try {
+        powerUp()
+    } catch (e: Exception) {
+        Napier.e("sound error", e)
+    }
 }
 
 @OptIn(ExperimentalBasicSound::class)
@@ -115,3 +110,5 @@ internal suspend fun tts(string: String) {
         getTts()?.say(string)
     }
 }
+
+expect fun vibrateClick()

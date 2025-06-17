@@ -33,8 +33,8 @@ data class Card2State(
 interface RaceRatService : RemoteService {
     suspend fun init(player: Player, uuid: String = ""): String
     suspend fun update(state: Card2State)
-    suspend fun playersObserve(): Flow<List<Player>>
+    fun playersObserve(): Flow<List<Player>>
     suspend fun sendMoney(id: String, cash: Long)
     suspend fun closeSession()
-    suspend fun inputCashObserve(): Flow<Long>
+    fun inputCashObserve(): Flow<Long>
 }
