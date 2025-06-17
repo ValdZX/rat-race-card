@@ -1,9 +1,13 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateValueAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +28,7 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +42,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -63,8 +67,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import net.engawapg.lib.zoomable.rememberZoomState
-import net.engawapg.lib.zoomable.zoomable
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import rat_race_card.composeapp.generated.resources.Bubbleboddy
@@ -138,24 +140,12 @@ class Board2Screen : Screen {
         val rotX = remember { Animatable(positionX) }
         val rotY = remember { Animatable(0f) }
         BoxWithConstraints(
-            modifier = Modifier.fillMaxSize().systemBarsPadding()
+            modifier = Modifier.fillMaxSize().systemBarsPadding().padding(32.dp)
         ) {
             val state by raceRate2BoardStore.observeState().collectAsState()
-            val zoomState = rememberZoomState(
-                contentSize = Size.Zero,
-                initialScale = 1f,
-                maxScale = 1.5f
-            )
-            LaunchedEffect(state.layer) {
-                when (state.layer) {
-                    BoardLayer.INNER -> zoomState.resetTo(1.3f)
-                    BoardLayer.OUTER -> zoomState.resetTo(1.0f)
-                }
-            }
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
-                    .zoomable(zoomState, onDoubleTap = null)
                     .align(Alignment.Center),
             ) {
                 val minSide = min(maxWidth, maxHeight)
@@ -173,7 +163,7 @@ class Board2Screen : Screen {
                     ((minSide - outSpotWidth * 4 - inPadding * 2) / inRoute.horizontalCells)
                 val inSpotHeight =
                     (((outSpotWidth * inRoute.verticalCells) - outSpotWidth * 4 - inPadding * 2) / inRoute.verticalCells)
-                val inLineOffset = (outSpotWidth * 2) + inPadding
+
                 val inBoardWidth = inSpotWidth * inRoute.horizontalCells
                 val inBoardHeight = inSpotHeight * inRoute.verticalCells
 
@@ -207,6 +197,25 @@ class Board2Screen : Screen {
                             )
                         }
                     } else {
+                        val outSize = DpSize(outBoardWidth, outBoardHeight)
+                        val inSize = DpSize(inBoardWidth, inBoardHeight)
+                        var outMutSize by remember { mutableStateOf(outSize) }
+                        var inMutSize by remember { mutableStateOf(inSize) }
+                        val outAnimSize by animateDpSizeAsState(outMutSize)
+                        val inAnimSize by animateDpSizeAsState(inMutSize)
+                        LaunchedEffect(state.layer) {
+                            when (state.layer) {
+                                BoardLayer.INNER -> {
+                                    outMutSize = inSize
+                                    inMutSize = outSize
+                                }
+
+                                BoardLayer.OUTER -> {
+                                    outMutSize = outSize
+                                    inMutSize = inSize
+                                }
+                            }
+                        }
                         Box(
                             modifier = Modifier.fillMaxSize()
                                 .shadow(30.dp, shape = RoundedCornerShape(16.dp))
@@ -215,16 +224,13 @@ class Board2Screen : Screen {
                         ) {
                             Places(
                                 layer = BoardLayer.OUTER,
-                                width = outBoardWidth,
-                                height = outBoardHeight,
+                                size = outAnimSize,
                                 route = outRoute,
                             )
                             Places(
                                 layer = BoardLayer.INNER,
-                                width = inBoardWidth,
-                                height = inBoardHeight,
+                                size = inAnimSize,
                                 route = inRoute,
-                                offset = DpOffset(inLineOffset, inLineOffset),
                             )
                         }
                     }
@@ -322,38 +328,34 @@ class Board2Screen : Screen {
     }
 
     @Composable
-    private fun Places(
+    private fun BoxScope.Places(
         layer: BoardLayer,
-        width: Dp,
-        height: Dp,
+        size: DpSize,
         route: BoardRoute,
-        offset: DpOffset = DpOffset(0.dp, 0.dp),
     ) {
-        val spotWidth = width / route.horizontalCells
-        val spotHeight = height / route.verticalCells
+        val spotWidth = size.width / route.horizontalCells
+        val spotHeight = size.height / route.verticalCells
         val state by raceRate2BoardStore.observeState().collectAsState()
-        val places = remember(route.places, offset) {
+        val places = remember(route.places, size) {
             var placeOffset = 0
             route.places.map { type ->
                 val location =
                     getLocationOnBoard(placeOffset, route.horizontalCells, route.verticalCells)
                 val cellSize = type.getDpSize(location, spotWidth, spotHeight)
-                val cellOffset =
-                    type.dpOffset(
-                        location,
-                        spotWidth,
-                        spotHeight,
-                        route.horizontalCells,
-                        route.verticalCells,
-                        offset
-                    )
+                val cellOffset = type.dpOffset(
+                    location,
+                    spotWidth,
+                    spotHeight,
+                    route.horizontalCells,
+                    route.verticalCells
+                )
                 placeOffset += if (type.isBig) 2 else 1
                 Place(type, location, cellOffset, cellSize)
             }
         }
         val alpha by animateFloatAsState(if (state.layer == layer) 1f else 0.5f)
         Box(
-            modifier = Modifier.fillMaxSize().alpha(alpha)
+            modifier = Modifier.align(Alignment.Center).size(size).alpha(alpha)
         ) {
             places.forEach { place ->
                 Box(
@@ -443,9 +445,8 @@ class Board2Screen : Screen {
         spotHeight: Dp,
         cellX: Int,
         cellY: Int,
-        offset: DpOffset
     ): DpOffset {
-        return offset + when (location.side) {
+        return when (location.side) {
             Side.TOP -> DpOffset(
                 x = spotWidth * location.position,
                 y = 0.dp
@@ -730,3 +731,22 @@ fun isFlipped(
     rotY: Animatable<Float, AnimationVector1D>,
     rotX: Animatable<Float, AnimationVector1D>
 ) = rotY.value.absoluteValue > FlipThreshDeg || rotX.value.absoluteValue > FlipThreshDeg
+
+@Composable
+fun animateDpSizeAsState(
+    targetValue: DpSize,
+    animationSpec: AnimationSpec<DpSize> = spring(),
+    label: String = "SizeAnimation",
+    finishedListener: ((DpSize) -> Unit)? = null
+): State<DpSize> {
+    return animateValueAsState(
+        targetValue,
+        TwoWayConverter(
+            convertToVector = { AnimationVector2D(it.width.value, it.height.value) },
+            convertFromVector = { DpSize(it.v1.dp, it.v2.dp) }
+        ),
+        animationSpec,
+        label = label,
+        finishedListener = finishedListener
+    )
+}
