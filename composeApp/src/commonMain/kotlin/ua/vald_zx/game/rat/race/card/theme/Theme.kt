@@ -11,8 +11,6 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import com.russhwolf.settings.get
-import ua.vald_zx.game.rat.race.card.settings
 
 private val LightColorScheme = lightColorScheme(
     primary = md_theme_light_primary,
@@ -84,8 +82,8 @@ internal val LocalThemeIsDark = compositionLocalOf { mutableStateOf(true) }
 internal fun AppTheme(
     content: @Composable() () -> Unit
 ) {
-    val systemIsDark = settings["theme", isSystemInDarkTheme()]
-    val isDarkState = remember { mutableStateOf(systemIsDark) }
+    val systemInDarkTheme = isSystemInDarkTheme()
+    val isDarkState = remember { mutableStateOf(systemInDarkTheme) }
     val isDark by isDarkState
     val colors = if (isDark) DarkIfobsColors else LightIfobsColors
     val colorPalette = remember {

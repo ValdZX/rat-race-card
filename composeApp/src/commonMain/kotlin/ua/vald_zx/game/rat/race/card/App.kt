@@ -12,6 +12,7 @@ import app.lexilabs.basic.sound.SoundByte
 import app.lexilabs.basic.sound.play
 import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
+import com.russhwolf.settings.get
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
@@ -30,6 +31,7 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace4CardStore
 import ua.vald_zx.game.rat.race.card.logic.Statistics
 import ua.vald_zx.game.rat.race.card.screen.second.Board2Screen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
+import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 internal expect inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T>
 val raceRate2KStore: KStore<RatRace2CardState>
@@ -47,7 +49,12 @@ val settings: Settings = Settings()
 
 @Composable
 internal fun App() = AppTheme {
-    LaunchedEffect(Unit) { Napier.base(DebugAntilog()) }
+    var isDarkTheme by LocalThemeIsDark.current
+    LaunchedEffect(Unit) {
+        Napier.base(DebugAntilog())
+        val systemIsDark = settings["theme", isDarkTheme]
+        isDarkTheme = systemIsDark
+    }
     var kStoreLoaded by remember { mutableStateOf(false) }
     if (kStoreLoaded) {
         val raceRate2State by raceRate2store.observeState().collectAsState()

@@ -6,10 +6,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction.LoadState
-import ua.vald_zx.game.rat.race.card.raceRate2BoardKStore
 
 enum class BoardLayer(val cellCount: Int) {
     INNER(78),
@@ -81,9 +79,9 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
         }
         if (newState != oldState) {
             state.value = newState
-            launch {
-                raceRate2BoardKStore.set(newState)
-            }
+//            launch {
+//                raceRate2BoardKStore.set(newState)
+//            }
         }
     }
 
