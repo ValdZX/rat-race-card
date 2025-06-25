@@ -57,9 +57,9 @@ import ua.vald_zx.game.rat.race.card.components.PositiveField
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect
-import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.logic.total
 import ua.vald_zx.game.rat.race.card.playCoin
+import ua.vald_zx.game.rat.race.card.players
 import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Menu
@@ -124,7 +124,7 @@ class RaceRate2Screen : Screen {
                             overflow = TextOverflow.Ellipsis,
                         )
                         val players by players
-                        if (players.size > 1) {
+                        if (players.isNotEmpty()) {
                             IconButton(
                                 onClick = { bottomSheetNavigator.show(PlayersScreen()) },
                                 content = {
@@ -311,7 +311,7 @@ class RaceRate2Screen : Screen {
                     title = { Text(text = "Звільнення з роботи") },
                     text = {
                         Text(
-                            text = "При купівлі другого бізнеса, втрачається робота з зарплатою ${state.professionCard.salary}"
+                            text = "При купівлі другого бізнеса, втрачається робота з зарплатою ${state.playerCard.salary}"
                         )
                     },
                     onDismissRequest = { confirmDismissalDialog = null },
@@ -337,7 +337,7 @@ class RaceRate2Screen : Screen {
                     title = { Text(text = "Звільнення з роботи") },
                     text = {
                         Text(
-                            text = "При звільненні, втрачається дохід на сумму ${state.professionCard.salary}"
+                            text = "При звільненні, втрачається дохід на сумму ${state.playerCard.salary}"
                         )
                     },
                     onDismissRequest = { confirmFiredDialog = false },

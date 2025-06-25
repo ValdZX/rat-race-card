@@ -1,15 +1,10 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector1D
-import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateIntOffsetAsState
-import androidx.compose.animation.core.animateValueAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,7 +27,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -182,7 +176,8 @@ fun Board2(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
             val inBoardWidth = inSpotWidth * inRoute.horizontalCells
             val inBoardHeight = inSpotHeight * inRoute.verticalCells
             val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) 1.3f else 1.0f)
-            val rotate by animateFloatAsState(if (maxHeight > maxWidth) -90f else 0f)
+            val isVertical = maxHeight > maxWidth
+            val rotate by animateFloatAsState(if (isVertical) -90f else 0f)
 
             Box(
                 modifier = Modifier.offset(boardOffset.x, boardOffset.y)
@@ -210,12 +205,14 @@ fun Board2(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
                         layer = BoardLayer.OUTER,
                         size = outSize,
                         route = outRoute,
+                        isVertical = isVertical,
                     )
                     Places(
                         state = state,
                         layer = BoardLayer.INNER,
                         size = inSize,
                         route = inRoute,
+                        isVertical = isVertical,
                     )
                 }
                 if (isFlipped(rotY, rotX)) {
@@ -341,6 +338,7 @@ private fun BoxScope.Places(
     layer: BoardLayer,
     size: DpSize,
     route: BoardRoute,
+    isVertical: Boolean,
 ) {
     val spotWidth = size.width / route.horizontalCells
     val spotHeight = size.height / route.verticalCells
@@ -386,7 +384,7 @@ private fun BoxScope.Places(
                 val place = places[state.position]
                 mutableStateOf(place.offset.y + place.size.height / 2 - spotHeight / 2)
             }
-            LaunchedEffect(state.position) {
+            LaunchedEffect(state.position, spotWidth, spotHeight) {
                 val place = places[state.position]
                 offsetX = place.offset.x + place.size.width / 2 - spotWidth / 2
                 offsetY = place.offset.y + place.size.height / 2 - spotHeight / 2
@@ -401,7 +399,7 @@ private fun BoxScope.Places(
                     .clip(CircleShape)
                     .background(Color.White)
                     .border(
-                        width = 4.dp,
+                        width = spotWidth * 0.1f,
                         shape = CircleShape,
                         color = Color.Blue
                     )
@@ -409,8 +407,8 @@ private fun BoxScope.Places(
                 Image(
                     imageVector = Images.RatPlayer1,
                     contentDescription = null,
-
-                    )
+                    modifier = Modifier.rotate(if (isVertical) 90f else 0f)
+                )
             }
         }
     }
@@ -758,25 +756,6 @@ fun isFlipped(
     rotY: Animatable<Float, AnimationVector1D>,
     rotX: Animatable<Float, AnimationVector1D>
 ) = rotY.value.absoluteValue > FlipThreshDeg || rotX.value.absoluteValue > FlipThreshDeg
-
-@Composable
-fun animateDpSizeAsState(
-    targetValue: DpSize,
-    animationSpec: AnimationSpec<DpSize> = spring(),
-    label: String = "SizeAnimation",
-    finishedListener: ((DpSize) -> Unit)? = null
-): State<DpSize> {
-    return animateValueAsState(
-        targetValue,
-        TwoWayConverter(
-            convertToVector = { AnimationVector2D(it.width.value, it.height.value) },
-            convertFromVector = { DpSize(it.v1.dp, it.v2.dp) }
-        ),
-        animationSpec,
-        label = label,
-        finishedListener = finishedListener
-    )
-}
 
 @Preview
 @Composable

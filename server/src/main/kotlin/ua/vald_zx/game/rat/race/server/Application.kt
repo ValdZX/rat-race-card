@@ -1,6 +1,5 @@
 package ua.vald_zx.game.rat.race.server
 
-import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.server.application.Application
@@ -30,8 +29,9 @@ fun main() {
     ).start(wait = true)
 }
 
+data class Instance(val player: Player? = null)
 
-val players = MutableStateFlow(listOf<Player>())
+val instances = MutableStateFlow(emptyMap<String, Instance>())
 
 @OptIn(ExperimentalUuidApi::class)
 fun Application.module() {
@@ -41,14 +41,9 @@ fun Application.module() {
         staticResources("/content", "mycontent")
 
         get("/") {
-            call.respondText("Hello World!")
+            call.respondText("Race rat RPC services")
         }
 
-        get("/test1") {
-            val text = "<h1>Hello From Ktor</h1>"
-            val type = ContentType.parse("text/html")
-            call.respondText(text, type)
-        }
         get("/error-test") {
             throw IllegalStateException("Too Busy")
         }
@@ -65,7 +60,9 @@ fun Application.module() {
                 RaceRatServiceImpl(uuid, ctx)
             }
             closeReason.invokeOnCompletion {
-                players.value = players.value.filter { it.uuid != uuid }
+                instances.value = instances.value.toMutableMap().apply {
+                    remove(uuid)
+                }
             }
         }
     }

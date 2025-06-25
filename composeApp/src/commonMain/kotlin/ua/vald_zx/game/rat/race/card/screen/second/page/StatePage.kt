@@ -70,7 +70,7 @@ fun StatePage(state: RatRace2CardState) {
                 name = "Робота",
                 imageVector = Images.Work,
                 isPositivePrice = true,
-                price = state.professionCard.salary,
+                price = state.playerCard.salary,
                 enabled = hasWork
             ) {
                 if (hasWork) {

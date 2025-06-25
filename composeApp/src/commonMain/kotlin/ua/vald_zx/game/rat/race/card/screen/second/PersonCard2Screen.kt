@@ -35,9 +35,9 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
-import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 
 class PersonCard2Screen : Screen {
@@ -82,7 +82,7 @@ class EditPersonCardScreen : Screen {
                     Icon(Images.Back, contentDescription = null)
                 }
             )
-            ProfessionCardForm(state.professionCard) {
+            ProfessionCardForm(state.playerCard) {
                 raceRate2store.dispatch(RatRace2CardAction.EditFillProfessionCardRat(it))
                 navigator?.popUntilRoot()
             }

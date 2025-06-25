@@ -19,7 +19,7 @@ class SendScreen(private val player: Player) : Screen {
             onClick = { price ->
                 raceRate2store.dispatch(
                     action = RatRace2CardAction.SendCash(
-                        player.uuid,
+                        player.id,
                         price.toLong()
                     )
                 )

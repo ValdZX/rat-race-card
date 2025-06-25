@@ -8,9 +8,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -20,8 +18,7 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
-import ua.vald_zx.game.rat.race.card.logic.players
-import ua.vald_zx.game.rat.race.card.raceRate2store
+import ua.vald_zx.game.rat.race.card.players
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Rat
 import ua.vald_zx.game.rat.race.card.resource.images.Send
@@ -31,13 +28,9 @@ class PlayersScreen : Screen {
     @Composable
     override fun Content() {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        val state by raceRate2store.observeState().collectAsState()
         val players by players
-        val items = remember(players) {
-            players.toList().filter { player -> player.uuid != state.uuid }
-        }
         BottomSheetContainer {
-            items.forEach { player ->
+            players.forEach { player ->
                 Card {
                     Row(
                         modifier = Modifier.padding(16.dp),

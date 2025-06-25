@@ -4,63 +4,82 @@ import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import ua.vald_zx.game.rat.race.card.shared.Card2State
+import ua.vald_zx.game.rat.race.card.shared.Event
+import ua.vald_zx.game.rat.race.card.shared.InternalEvent
 import ua.vald_zx.game.rat.race.card.shared.Player
+import ua.vald_zx.game.rat.race.card.shared.PlayerState
+import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import kotlin.coroutines.CoroutineContext
 
-internal val LOGGER = KtorSimpleLogger("RaceRatServiceImpl")
+internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
-private val cashSendBus = MutableSharedFlow<Pair<String, Long>>()
+private val internalEventBus = MutableSharedFlow<InternalEvent>()
 
 class RaceRatServiceImpl(
     private val uuid: String,
     override val coroutineContext: CoroutineContext
 ) : RaceRatService {
-    private val inputCashFlow = MutableSharedFlow<Long>()
+    private val eventBus = MutableSharedFlow<Event>()
 
     init {
-        cashSendBus.onEach { (id, cash) ->
-            if (id == uuid) {
-                inputCashFlow.emit(cash)
+        internalEventBus.onEach { event ->
+            when (event) {
+                is InternalEvent.MoneyIncome -> {
+                    if (event.receiverId == uuid) {
+                        eventBus.emit(Event.MoneyIncome(event.playerId, event.amount))
+                    }
+                }
             }
         }.launchIn(this)
     }
 
-    override suspend fun init(player: Player, uuid: String): String {
-        if(this.uuid != uuid) {
-            players.value = players.value.filter { it.uuid != uuid }
-        }
-        players.value += player.copy(uuid = this.uuid)
-        LOGGER.debug("Added user ${player.professionCard.profession}")
+    override suspend fun hello(id: String): String {
+        val initialInstance = if (uuid != id && instances.value.contains(id)) {
+            val instance = instances.value[id]
+            instances.value = instances.value.toMutableMap().apply { remove(id) }
+            instance ?: Instance()
+        } else Instance()
+        instances.value = instances.value.toMutableMap().apply { this[uuid] = initialInstance }
+        LOGGER.debug("User $uuid")
         return this.uuid
     }
 
-    override suspend fun update(state: Card2State) {
-        val player = players.value.find { it.uuid == uuid } ?: return
-        players.value = players.value.replaceItem(player, player.copy(state = state))
+    override suspend fun updatePlayerCard(professionCard: ProfessionCard) = changeCurrentPlayer {
+        copy(professionCard = professionCard)
     }
 
-    override fun playersObserve(): Flow<List<Player>> = players
+    override suspend fun updateState(state: PlayerState) = changeCurrentPlayer {
+        copy(state = state)
+    }
 
-    override suspend fun sendMoney(id: String, cash: Long) {
-        cashSendBus.emit(id to cash)
+    override fun eventsObserve(): Flow<Event> = eventBus
+
+    override fun playersList(): Flow<Set<String>> = instances.map { it.keys }
+
+    override suspend fun getPlayer(id: String): Player? {
+        return instances.value[id]?.player
+    }
+
+    override suspend fun sendMoney(receiverId: String, amount: Long) {
+        internalEventBus.emit(InternalEvent.MoneyIncome(uuid, receiverId, amount))
+    }
+
+    override suspend fun changePosition(position: Int) = changeCurrentPlayer {
+        copy(state = state.copy(position = position))
     }
 
     override suspend fun closeSession() {
-        players.value = players.value.filter { it.uuid != uuid }
+        instances.value = instances.value.toMutableMap().apply { remove(uuid) }
     }
 
-    override fun inputCashObserve(): Flow<Long> = inputCashFlow
-}
-
-fun <T> List<T>.replaceItem(item: T, newItem: T): List<T> {
-    val list = toMutableList()
-    val index = list.indexOf(item)
-    if (index >= 0) {
-        list.remove(item)
-        list.add(index, newItem)
+    private fun changeCurrentPlayer(todo: Player.() -> Player) {
+        val instance = instances.value[uuid] ?: return
+        val player = instance.player ?: Player()
+        instances.value = instances.value.toMutableMap().apply {
+            this[uuid] = instance.copy(player = player.todo())
+        }
     }
-    return list
 }

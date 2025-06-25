@@ -16,7 +16,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.net.toUri
-import androidx.lifecycle.Lifecycle
 import app.lexilabs.basic.haptic.DependsOnAndroidVibratePermission
 import app.lexilabs.basic.haptic.Haptic
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
@@ -33,7 +32,6 @@ import nl.marc_apps.tts.TextToSpeechEngine
 import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 
 class AndroidApp : Application() {
     companion object {
@@ -79,12 +77,6 @@ class AppActivity : ComponentActivity() {
 
             LaunchedEffect(lifecycleState) {
                 Napier.d(lifecycleState.toString())
-                if (lifecycleState == Lifecycle.State.RESUMED) {
-                    raceRate2store.dispatch(RatRace2CardAction.OnResume)
-                }
-                if (lifecycleState == Lifecycle.State.CREATED) {
-                    raceRate2store.dispatch(RatRace2CardAction.OnPause)
-                }
             }
         }
         AndroidApp.ACTIVITY = this

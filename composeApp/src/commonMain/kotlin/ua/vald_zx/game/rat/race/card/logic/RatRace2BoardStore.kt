@@ -6,8 +6,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction.LoadState
+import ua.vald_zx.game.rat.race.card.service
 
 enum class BoardLayer(val cellCount: Int) {
     INNER(78),
@@ -18,7 +20,7 @@ enum class BoardLayer(val cellCount: Int) {
 data class RatRace2BoardState(
     val position: Int = 1,
     val layer: BoardLayer = BoardLayer.INNER,
-    val positionsHistory: List<Int> = listOf(1)
+    val positionsHistory: List<Int> = listOf(1),
 ) : State
 
 sealed class RatRace2BoardAction : Action {
@@ -52,14 +54,17 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
             RatRace2BoardAction.BackLastMove -> {
                 val moves = oldState.positionsHistory
                 val newMoves = moves.subList(0, moves.lastIndex)
+                val position = newMoves.last()
+                launch { service?.changePosition(position) }
                 oldState.copy(
                     positionsHistory = newMoves,
-                    position = newMoves.last()
+                    position = position
                 )
             }
 
             is RatRace2BoardAction.Move -> {
                 val position = oldState.moveTo(action.dice)
+                launch { service?.changePosition(position) }
                 oldState.copy(
                     positionsHistory = oldState.positionsHistory + position,
                     position = position

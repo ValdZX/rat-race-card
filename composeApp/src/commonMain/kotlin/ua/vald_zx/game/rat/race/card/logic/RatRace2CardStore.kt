@@ -2,29 +2,13 @@
 
 package ua.vald_zx.game.rat.race.card.logic
 
-import androidx.compose.runtime.mutableStateOf
-import io.github.aakira.napier.Napier
-import io.ktor.client.HttpClient
-import io.ktor.client.request.url
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
-import kotlinx.rpc.krpc.ktor.client.installKrpc
-import kotlinx.rpc.krpc.ktor.client.rpc
-import kotlinx.rpc.krpc.ktor.client.rpcConfig
-import kotlinx.rpc.krpc.serialization.json.json
-import kotlinx.rpc.krpc.streamScoped
-import kotlinx.rpc.withService
 import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
@@ -68,32 +52,22 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.SideProfit
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.ToDeposit
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.UpdateConfig
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.UpdateFamily
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.UpdateServiceUuid
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.AddCash
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.ConfirmDismissal
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.ConfirmFired
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.ConfirmSellingAllBusiness
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.DepositWithdraw
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.LoanAdded
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.ReceivedCash
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.ShowSalaryApprove
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.SubCash
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
 import ua.vald_zx.game.rat.race.card.remove
 import ua.vald_zx.game.rat.race.card.replace
-import ua.vald_zx.game.rat.race.card.shared.Card2State
-import ua.vald_zx.game.rat.race.card.shared.Player
+import ua.vald_zx.game.rat.race.card.service
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
-import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.card.statistics2KStore
+import ua.vald_zx.game.rat.race.card.toState
 import kotlin.math.absoluteValue
-
-val players = mutableStateOf(listOf<Player>())
-val client by lazy {
-    HttpClient {
-        installKrpc()
-    }
-}
 
 @Serializable
 data class Statistics(
@@ -103,7 +77,7 @@ data class Statistics(
 
 @Serializable
 data class RatRace2CardState(
-    val professionCard: ProfessionCard = ProfessionCard(),
+    val playerCard: ProfessionCard = ProfessionCard(),
     val cash: Long = 0,
     val deposit: Long = 0,
     val loan: Long = 0,
@@ -118,7 +92,6 @@ data class RatRace2CardState(
     val sharesList: List<Shares> = emptyList(),
     val funds: List<Fund> = emptyList(),
     val config: Config = Config(),
-    val uuid: String = ""
 ) : State {
 
     fun balance(): Long {
@@ -143,11 +116,11 @@ data class RatRace2CardState(
 
     fun totalExpenses(): Long {
         var totalExpenses = 0L
-        totalExpenses += professionCard.food
-        totalExpenses += professionCard.rent
-        totalExpenses += professionCard.cloth
-        totalExpenses += professionCard.phone
-        totalExpenses += professionCard.transport
+        totalExpenses += playerCard.food
+        totalExpenses += playerCard.rent
+        totalExpenses += playerCard.cloth
+        totalExpenses += playerCard.phone
+        totalExpenses += playerCard.transport
         totalExpenses += babies * config.babyCost
         totalExpenses += cars * config.carCost
         totalExpenses += apartment * config.apartmentCost
@@ -164,10 +137,10 @@ data class RatRace2CardState(
 
     fun status(): String {
         return when {
-            business.any { it.type == BusinessType.SMALL } -> "${professionCard.profession} - Підприємець"
-            business.any { it.type == BusinessType.MEDIUM } -> "${professionCard.profession} - Бізнесмен"
-            totalExpenses() > 1_000_000 -> "${professionCard.profession} - Мільйонер"
-            else -> professionCard.profession
+            business.any { it.type == BusinessType.SMALL } -> "${playerCard.profession} - Підприємець"
+            business.any { it.type == BusinessType.MEDIUM } -> "${playerCard.profession} - Бізнесмен"
+            totalExpenses() > 1_000_000 -> "${playerCard.profession} - Мільйонер"
+            else -> playerCard.profession
         }
     }
 
@@ -194,8 +167,8 @@ data class RatRace2CardState(
 
 sealed class RatRace2CardAction : Action {
     data class LoadState(val state: RatRace2CardState) : RatRace2CardAction()
-    data class FillProfessionCardRat(val professionCard: ProfessionCard) : RatRace2CardAction()
-    data class EditFillProfessionCardRat(val professionCard: ProfessionCard) : RatRace2CardAction()
+    data class FillProfessionCardRat(val playerCard: ProfessionCard) : RatRace2CardAction()
+    data class EditFillProfessionCardRat(val playerCard: ProfessionCard) : RatRace2CardAction()
     data object Fired : RatRace2CardAction()
     data object FiredConfirmed : RatRace2CardAction()
     data object GetSalary : RatRace2CardAction()
@@ -206,14 +179,13 @@ sealed class RatRace2CardAction : Action {
     data object CapitalizeStarsFunds : RatRace2CardAction()
     data object RandomBusiness : RatRace2CardAction()
     data object HideAlarm : RatRace2CardAction()
-    data object OnPause : RatRace2CardAction()
-    data object OnResume : RatRace2CardAction()
     data class BuyBusiness(val business: Business) : RatRace2CardAction()
     data class SellBusiness(val business: Business, val amount: Long) : RatRace2CardAction()
     data class DismissalConfirmed(val business: Business) : RatRace2CardAction()
     data class SellingAllBusinessConfirmed(val business: Business) : RatRace2CardAction()
     data class ExtendBusiness(val amount: Long, val business: Business) : RatRace2CardAction()
     data class SideProfit(val amount: Long) : RatRace2CardAction()
+    data class ReceivedCash(val payerId: String, val amount: Long) : RatRace2CardAction()
     data class SideExpenses(val amount: Long) : RatRace2CardAction()
     data class GetLoan(val amount: Long) : RatRace2CardAction()
     data class RepayLoan(val amount: Long) : RatRace2CardAction()
@@ -226,7 +198,6 @@ sealed class RatRace2CardAction : Action {
     data class BuyFlight(val price: Long) : RatRace2CardAction()
     data class BuyShares(val shares: Shares) : RatRace2CardAction()
     data class UpdateConfig(val config: Config) : RatRace2CardAction()
-    data class UpdateServiceUuid(val uuid: String) : RatRace2CardAction()
     data class BackToState(val state: RatRace2CardState, val backCount: Int) : RatRace2CardAction()
     data class SendCash(val id: String, val cash: Long) : RatRace2CardAction()
     data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) :
@@ -250,7 +221,7 @@ sealed class RatRace2CardSideEffect : Effect {
     data object ConfirmFired : RatRace2CardSideEffect()
     data class AddCash(val amount: Long) : RatRace2CardSideEffect()
     data class SubCash(val amount: Long) : RatRace2CardSideEffect()
-    data class ReceivedCash(val amount: Long) : RatRace2CardSideEffect()
+    data class ReceivedCash(val payerId: String, val amount: Long) : RatRace2CardSideEffect()
     data object ShowSalaryApprove : RatRace2CardSideEffect()
 }
 
@@ -262,114 +233,52 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
     var statistics: Statistics? = null
         private set
 
-    private var service: RaceRatService? = null
-    private var serviceJob: Job? = null
 
     override fun observeState(): StateFlow<RatRace2CardState> = state
 
     override fun observeSideEffect(): Flow<RatRace2CardSideEffect> = sideEffect
 
-    val exceptionHandler = CoroutineExceptionHandler { _, exception ->
-        Napier.e("CoroutineExceptionHandler", exception)
-    }
-
-    private fun recallService() {
-        serviceJob?.cancel()
-        serviceJob = launch(exceptionHandler) {
-            Napier.d("Service starting")
-            var delayToRecall = 0L
-            while (true) {
-                try {
-                    supervisorScope {
-                        delay(delayToRecall)
-                        delayToRecall = 5000
-                        subscribeOnListUpdate()
-                    }
-                    return@launch
-                } catch (_: CancellationException) {
-                    Napier.d("Service Canceled")
-                    return@launch
-                } catch (e: Exception) {
-                    Napier.e("subscribeOnListUpdate", e)
-                }
-            }
-        }
-    }
-
-    suspend fun subscribeOnListUpdate() {
-        service = client.rpc {
-            url("wss://race-rat-1033277102369.us-central1.run.app/api")
-
-            rpcConfig {
-                serialization {
-                    json()
-                }
-            }
-        }.withService()
-        Napier.d { "service launched" }
-        val state = state.value
-        val uuid = service?.init(
-            Player(
-                professionCard = state.professionCard,
-                state = Card2State(
-                    totalExpenses = state.totalProfit(),
-                    cashFlow = state.cashFlow()
-                )
-            ),
-            uuid = state.uuid
-        ).orEmpty()
-        if (uuid.isNotEmpty()) {
-            dispatch(UpdateServiceUuid(uuid))
-            Napier.d(uuid)
-        }
-        async {
-            streamScoped {
-                service?.playersObserve()?.collect { list ->
-                    players.value = list
-                }
-            }
-        }
-        async {
-            streamScoped {
-                service?.inputCashObserve()?.collect { cash ->
-                    sideEffect.emit(ReceivedCash(cash))
-                    dispatch(SideProfit(cash))
-                }
-            }
-        }
-    }
-
     override fun dispatch(action: RatRace2CardAction) {
         val oldState = state.value
         val newState = when (action) {
             is LoadState -> {
-                launch {
-                    delay(500)
-                    recallService()
-                }
                 action.state
             }
 
             is FillProfessionCardRat -> {
                 launch {
-                    delay(500)
-                    recallService()
+                    service?.updatePlayerCard(action.playerCard)
                 }
                 RatRace2CardState(
-                    professionCard = action.professionCard,
+                    playerCard = action.playerCard,
                     business = listOf(
                         Business(
                             type = BusinessType.WORK,
-                            name = action.professionCard.profession,
+                            name = action.playerCard.profession,
                             price = 0,
-                            profit = action.professionCard.salary
+                            profit = action.playerCard.salary
                         )
                     )
                 )
             }
 
             is EditFillProfessionCardRat -> {
-                oldState.copy(professionCard = action.professionCard)
+                launch {
+                    service?.updatePlayerCard(action.playerCard)
+                }
+                oldState.copy(playerCard = action.playerCard)
+            }
+
+            is RatRace2CardAction.ReceivedCash -> {
+                launch {
+                    sideEffect.emit(
+                        RatRace2CardSideEffect.ReceivedCash(
+                            action.payerId,
+                            action.amount
+                        )
+                    )
+                }
+                oldState.plusCash(action.amount)
             }
 
             is SideProfit -> {
@@ -610,25 +519,6 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
                 }
                 oldState
             }
-
-            is UpdateServiceUuid -> {
-                oldState.copy(uuid = action.uuid)
-            }
-
-            RatRace2CardAction.OnPause -> {
-                launch {
-                    service?.closeSession()
-                    serviceJob?.cancel()
-                }
-                oldState
-            }
-
-            RatRace2CardAction.OnResume -> {
-                if (oldState.professionCard.profession.isNotEmpty()) {
-                    recallService()
-                }
-                oldState
-            }
         }
         if (newState != oldState) {
             state.value = newState
@@ -639,16 +529,12 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
     private fun saveState(newState: RatRace2CardState) {
         launch {
             raceRate2KStore.set(newState)
-            val storedStatistics = statistics ?: runCatching{ statistics2KStore.get() }.getOrNull() ?: Statistics()
+            val storedStatistics =
+                statistics ?: runCatching { statistics2KStore.get() }.getOrNull() ?: Statistics()
             storedStatistics.log += newState
             statistics2KStore.set(storedStatistics)
             statistics = storedStatistics
-            service?.update(
-                Card2State(
-                    totalExpenses = newState.total(),
-                    cashFlow = newState.cashFlow()
-                )
-            )
+            service?.updateState(newState.toState())
         }
     }
 
