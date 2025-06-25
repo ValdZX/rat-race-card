@@ -6,7 +6,9 @@ import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.TwoWayConverter
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.animation.core.animateValueAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
@@ -22,12 +24,14 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -177,8 +181,8 @@ fun Board2(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
 
             val inBoardWidth = inSpotWidth * inRoute.horizontalCells
             val inBoardHeight = inSpotHeight * inRoute.verticalCells
-            val scale by animateFloatAsState(if(state.layer == BoardLayer.INNER) 1.3f else 1.0f)
-            val rotate by animateFloatAsState(if(maxHeight > maxWidth) -90f else 0f)
+            val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) 1.3f else 1.0f)
+            val rotate by animateFloatAsState(if (maxHeight > maxWidth) -90f else 0f)
 
             Box(
                 modifier = Modifier.offset(boardOffset.x, boardOffset.y)
@@ -286,6 +290,12 @@ fun Board2(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
         val animatable = rememberLottieAnimatable()
         val coroutineScope = rememberCoroutineScope()
         var composition by remember { mutableStateOf<LottieComposition?>(null) }
+        var dice by remember { mutableStateOf(0) }
+        LaunchedEffect(animatable.isAtEnd) {
+            if (animatable.isAtEnd) {
+                dispatch(RatRace2BoardAction.Move(dice))
+            }
+        }
         ElevatedButton(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 .align(Alignment.BottomStart),
@@ -307,7 +317,7 @@ fun Board2(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 .align(Alignment.BottomEnd),
             onClick = {
-                val dice = (1..6).random()
+                dice = (1..6).random()
                 composition = when (dice) {
                     1 -> cube1
                     2 -> cube2
@@ -316,7 +326,6 @@ fun Board2(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
                     5 -> cube5
                     else -> cube6
                 }
-                dispatch(RatRace2BoardAction.Move(dice))
                 coroutineScope.launch {
                     animatable.animate(composition, iterations = 1, initialProgress = 0f)
                 }
@@ -369,20 +378,40 @@ private fun BoxScope.Places(
             }
         }
         if (state.layer == layer) {
-            val place = remember(state.position) {
-                places[state.position]
+            var offsetX by remember {
+                val place = places[state.position]
+                mutableStateOf(place.offset.x + place.size.width / 2 - spotWidth / 2)
             }
-            Image(
-                imageVector = Images.RatPlayer1,
-                contentDescription = null,
+            var offsetY by remember {
+                val place = places[state.position]
+                mutableStateOf(place.offset.y + place.size.height / 2 - spotHeight / 2)
+            }
+            LaunchedEffect(state.position) {
+                val place = places[state.position]
+                offsetX = place.offset.x + place.size.width / 2 - spotWidth / 2
+                offsetY = place.offset.y + place.size.height / 2 - spotHeight / 2
+            }
+            val animatedX by animateDpAsState(offsetX)
+            val animatedY by animateDpAsState(offsetY)
+            Box(
                 modifier = Modifier
-                    .offset(place.offset.x, place.offset.y)
-                    .offset(
-                        place.size.width / 2 - spotWidth / 2,
-                        place.size.height / 2 - spotHeight / 2
-                    )
+                    .offset(animatedX, animatedY)
                     .size(spotWidth, spotHeight)
-            )
+                    .shadow(8.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .border(
+                        width = 4.dp,
+                        shape = CircleShape,
+                        color = Color.Blue
+                    )
+            ) {
+                Image(
+                    imageVector = Images.RatPlayer1,
+                    contentDescription = null,
+
+                    )
+            }
         }
     }
 }

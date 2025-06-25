@@ -90,6 +90,7 @@ lexilabs-basic-haptic = { module = "app.lexilabs.basic:basic-haptic", version.re
 compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "compottie" }
 compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources", version.ref = "compottie" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
+sceneview = { module = "io.github.sceneview:sceneview", version = "2.3.0" }
 
 
 [plugins]
