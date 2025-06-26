@@ -11,6 +11,7 @@ import ua.vald_zx.game.rat.race.card.shared.Event.MoneyIncome
 import ua.vald_zx.game.rat.race.card.shared.Event.PlayerChanged
 import ua.vald_zx.game.rat.race.card.shared.InternalEvent
 import ua.vald_zx.game.rat.race.card.shared.Player
+import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
 import ua.vald_zx.game.rat.race.card.shared.PlayerState
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
@@ -61,6 +62,10 @@ class RaceRatServiceImpl(
 
     override suspend fun updateState(state: PlayerState) = changeCurrentPlayer {
         copy(state = state)
+    }
+
+    override suspend fun updateAttributes(attrs: PlayerAttributes) = changeCurrentPlayer{
+        copy(attrs = attrs)
     }
 
     override fun eventsObserve(): Flow<Event> = eventBus

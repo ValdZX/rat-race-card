@@ -10,6 +10,11 @@ data class Player(
     val id: String,
     val professionCard: ProfessionCard = ProfessionCard(),
     val state: PlayerState = PlayerState(),
+    val attrs: PlayerAttributes = PlayerAttributes()
+)
+
+@Serializable
+data class PlayerAttributes(
     val color: Int = 0,
     val avatar: Int = 0,
 )
@@ -36,7 +41,9 @@ data class PlayerState(
 sealed class InternalEvent {
 
     @Serializable
-    data class MoneyIncome(val playerId: String, val receiverId: String, val amount: Long) : InternalEvent()
+    data class MoneyIncome(val playerId: String, val receiverId: String, val amount: Long) :
+        InternalEvent()
+
     @Serializable
     data class PlayerChanged(val player: Player) : InternalEvent()
 }
@@ -45,6 +52,7 @@ sealed class InternalEvent {
 sealed class Event {
     @Serializable
     data class MoneyIncome(val playerId: String, val amount: Long) : Event()
+
     @Serializable
     data class PlayerChanged(val player: Player) : Event()
 }
@@ -54,6 +62,7 @@ interface RaceRatService : RemoteService {
     suspend fun hello(id: String = ""): String
     suspend fun updatePlayerCard(professionCard: ProfessionCard)
     suspend fun updateState(state: PlayerState)
+    suspend fun updateAttributes(attrs: PlayerAttributes)
     fun eventsObserve(): Flow<Event>
     fun playersList(): Flow<Set<String>>
     suspend fun getPlayer(id: String): Player?
