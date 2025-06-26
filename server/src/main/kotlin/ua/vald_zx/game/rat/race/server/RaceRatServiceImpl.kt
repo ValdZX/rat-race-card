@@ -77,7 +77,7 @@ class RaceRatServiceImpl(
 
     private fun changeCurrentPlayer(todo: Player.() -> Player) {
         val instance = instances.value[uuid] ?: return
-        val player = instance.player ?: Player()
+        val player = instance.player ?: Player(uuid)
         instances.value = instances.value.toMutableMap().apply {
             this[uuid] = instance.copy(player = player.todo())
         }

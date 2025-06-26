@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Player(
-    val id: String = "",
+    val id: String,
     val professionCard: ProfessionCard = ProfessionCard(),
     val state: PlayerState = PlayerState(),
     val color: Int = 0,
