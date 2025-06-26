@@ -11,9 +11,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -25,6 +28,8 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -80,6 +85,7 @@ import ua.vald_zx.game.rat.race.card.logic.BoardLayer
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardStore
+import ua.vald_zx.game.rat.race.card.players
 import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
@@ -88,7 +94,10 @@ import ua.vald_zx.game.rat.race.card.resource.images.Money
 import ua.vald_zx.game.rat.race.card.resource.images.RatPlayer1
 import ua.vald_zx.game.rat.race.card.resource.images.UpDoubleArrow
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
+import kotlin.math.PI
 import kotlin.math.absoluteValue
+import kotlin.math.cos
+import kotlin.math.sin
 
 enum class Side(val isHorizontal: Boolean) {
     TOP(true), LEFT(false), BOTTOM(true), RIGHT(false)
@@ -157,7 +166,7 @@ fun Board2(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
                 .rotateOnDrag(rotX, rotY)
                 .align(Alignment.Center),
         ) {
-            val minSide = min(maxWidth, maxHeight) * 0.85f
+            val minSide = min(maxWidth, maxHeight)
             val outSpotWidth = (minSide / outRoute.horizontalCells)
             val outSpotHeight = (minSide / outRoute.horizontalCells)
             val outBoardWidth = outSpotWidth * outRoute.horizontalCells
@@ -178,7 +187,7 @@ fun Board2(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
             val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) 1.3f else 1.0f)
             val isVertical = maxHeight > maxWidth
             val rotate by animateFloatAsState(if (isVertical) -90f else 0f)
-
+            ColorsSelector(state, dispatch)
             Box(
                 modifier = Modifier.offset(boardOffset.x, boardOffset.y)
                     .size(width = outBoardWidth, height = outBoardHeight)
@@ -375,44 +384,124 @@ private fun BoxScope.Places(
                 PlaceItem(place.type, place.size, isVertical)
             }
         }
-        if (state.layer == layer) {
-            var offsetX by remember {
-                val place = places[state.position]
-                mutableStateOf(place.offset.x + place.size.width / 2 - spotWidth / 2)
-            }
-            var offsetY by remember {
-                val place = places[state.position]
-                mutableStateOf(place.offset.y + place.size.height / 2 - spotHeight / 2)
-            }
-            LaunchedEffect(state.position, spotWidth, spotHeight) {
-                val place = places[state.position]
-                offsetX = place.offset.x + place.size.width / 2 - spotWidth / 2
-                offsetY = place.offset.y + place.size.height / 2 - spotHeight / 2
-            }
-            val animatedX by animateDpAsState(offsetX)
-            val animatedY by animateDpAsState(offsetY)
-            Box(
-                modifier = Modifier
-                    .offset(animatedX, animatedY)
-                    .size(spotWidth, spotHeight)
-                    .shadow(8.dp, CircleShape)
-                    .clip(CircleShape)
-                    .background(Color.White)
-                    .border(
-                        width = spotWidth * 0.1f,
-                        shape = CircleShape,
-                        color = Color.Blue
-                    )
-            ) {
-                Image(
-                    imageVector = Images.RatPlayer1,
-                    contentDescription = null,
-                    modifier = Modifier.rotate(if (isVertical) 90f else 0f)
+        val players by players
+        val points = remember(players, state) {
+            val pointStates = players.map {
+                PlayerPointState(
+                    position = it.state.position,
+                    color = it.attrs.color,
+                    level = it.state.level
                 )
+            }
+            val currentPlayerPoint = PlayerPointState(
+                position = state.position,
+                color = state.color,
+                level = state.layer.level
+            )
+            pointStates + currentPlayerPoint
+        }
+        points.groupBy { it.position }.forEach { (_, gPoints) ->
+            gPoints.forEachIndexed { index, state ->
+                if (layer.level == state.level) {
+                    PlayerPoint(
+                        places = places,
+                        state = state,
+                        spotWidth = spotWidth,
+                        spotHeight = spotHeight,
+                        isVertical = isVertical,
+                        index = index,
+                        count = gPoints.size
+                    )
+                }
             }
         }
     }
 }
+
+data class PlayerPointState(
+    val position: Int,
+    val color: ULong,
+    val level: Int,
+)
+
+@Composable
+private fun PlayerPoint(
+    places: List<Place>,
+    state: PlayerPointState,
+    spotWidth: Dp,
+    spotHeight: Dp,
+    isVertical: Boolean,
+    index: Int,
+    count: Int,
+) {
+    var offset by remember {
+        val place = places[state.position]
+        mutableStateOf(calculatePointerOffset(spotWidth, spotHeight, place, index, count))
+    }
+    LaunchedEffect(state.position, spotWidth, spotHeight) {
+        val place = places[state.position]
+        offset = calculatePointerOffset(spotWidth, spotHeight, place, index, count)
+    }
+    val animatedX by animateDpAsState(offset.first)
+    val animatedY by animateDpAsState(offset.second)
+    Box(
+        modifier = Modifier
+            .offset(animatedX, animatedY)
+            .size(spotWidth, spotHeight)
+            .shadow(8.dp, CircleShape)
+            .clip(CircleShape)
+            .background(Color.White)
+            .border(
+                width = spotWidth * 0.1f,
+                shape = CircleShape,
+                color = Color(state.color)
+            )
+    ) {
+        Image(
+            imageVector = Images.RatPlayer1,
+            contentDescription = null,
+            modifier = Modifier.rotate(if (isVertical) 90f else 0f)
+        )
+    }
+}
+
+fun calculatePointerOffset(
+    pointerWidth: Dp,
+    pointerHeight: Dp,
+    place: Place,
+    index: Int,
+    count: Int,
+): Pair<Dp, Dp> {
+    val maxAngleDeg = 90f // максимальний кут дуги
+    val radiusScale = 0.4f // масштаб радіуса відносно висоти
+    val width = place.size.width
+    val height = place.size.height
+    val centerX = place.offset.x + width / 2 - pointerWidth / 2
+    val centerY = place.offset.y + height / 2 - pointerHeight / 2
+    if (count > 1) {
+
+        // Радіус для розміщення
+        val radius = min(width, height) * radiusScale
+
+        // Кут між елементами (в градусах)
+        val angleStep = if (count == 1) 0f else maxAngleDeg / (count - 1)
+        val startAngle = -maxAngleDeg / 2f
+
+        // Кут для поточного елемента
+        val angleDeg = startAngle + index * angleStep
+        val angleRad = toRadians(angleDeg)
+
+        // Позиція по дузі
+        val x = (radius * cos(angleRad))
+        val y = (radius * sin(angleRad))
+
+        return Pair(centerX + x, centerY + y)
+    } else {
+        return centerX to centerY
+    }
+}
+
+fun toRadians(deg: Float): Float = deg / 180.0f * PI.toFloat()
 
 @Composable
 private fun BoxScope.PlaceItem(
@@ -444,6 +533,35 @@ private fun BoxScope.PlaceItem(
                 outlineColor = Color(0xFF8A8A8A),
                 outlineDrawStyle = Stroke(2f),
                 maxLines = 1
+            )
+        }
+    }
+}
+
+val colors = listOf(
+    Color.Blue,
+    Color.Red,
+    Color.Green,
+    Color.Cyan,
+    Color.Yellow,
+    Color.Magenta
+)
+
+@Composable
+fun BoxWithConstraintsScope.ColorsSelector(
+    state: RatRace2BoardState,
+    dispatch: (RatRace2BoardAction) -> Unit
+) {
+    Row(
+        modifier = Modifier.align(Alignment.TopCenter),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        colors.forEach { color ->
+            RadioButton(
+                selected = color.value == state.color,
+                onClick = { dispatch(RatRace2BoardAction.ChangeColor(color.value)) },
+                colors = RadioButtonDefaults.colors()
+                    .copy(selectedColor = color, unselectedColor = color),
             )
         }
     }

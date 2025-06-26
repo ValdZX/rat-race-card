@@ -15,7 +15,7 @@ data class Player(
 
 @Serializable
 data class PlayerAttributes(
-    val color: Int = 0,
+    val color: ULong = ULong.MIN_VALUE,
     val avatar: Int = 0,
 )
 
@@ -33,6 +33,7 @@ data class ProfessionCard(
 @Serializable
 data class PlayerState(
     val position: Int = 0,
+    val level: Int = 0,
     val totalExpenses: Long = 0,
     val cashFlow: Long = 0,
 )
