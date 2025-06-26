@@ -5,6 +5,7 @@ import com.russhwolf.settings.get
 import com.russhwolf.settings.set
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.request.url
 import kotlinx.rpc.krpc.ktor.client.installKrpc
 import kotlinx.rpc.krpc.ktor.client.rpc
@@ -23,10 +24,16 @@ val currentPlayerId: String
 val client by lazy {
     HttpClient {
         installKrpc()
+        install(HttpRequestRetry) {
+            retryOnExceptionIf(maxRetries = Int.MAX_VALUE) { request, cause ->
+                players.value = emptyList()
+                true
+            }
+        }
     }
 }
 
-val players = mutableStateOf(listOf<Player>())
+val players = mutableStateOf(emptyList<Player>())
 
 var service: RaceRatService? = null
 suspend fun startService() {
@@ -55,21 +62,14 @@ fun RatRace2CardState.toState(): PlayerState {
     )
 }
 
-suspend fun RaceRatService.updatePlayers(ids: Set<String>) {
-    val currentPlayerIds = players.value.map { it.id }
-    ids.forEach { id ->
-        if (!currentPlayerIds.contains(id) && id != currentPlayerId) {
-            val player = getPlayer(id)
-            player?.let {
+suspend fun RaceRatService.updatePlayers(actualIds: Set<String>) {
+    val oldIds = players.value.map { it.id }
+    actualIds.forEach { id ->
+        if (!oldIds.contains(id) && id != currentPlayerId) {
+            getPlayer(id)?.let {
                 players.value = players.value + it
             }
         }
     }
-    currentPlayerIds.forEach { id ->
-        if (!ids.contains(id)) {
-            players.value = players.value.apply {
-                remove(find { it.id == id })
-            }
-        }
-    }
+    players.value = players.value.filter { actualIds.contains(it.id) }
 }

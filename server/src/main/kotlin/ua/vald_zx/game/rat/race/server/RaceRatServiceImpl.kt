@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import ua.vald_zx.game.rat.race.card.shared.Event
+import ua.vald_zx.game.rat.race.card.shared.Event.MoneyIncome
+import ua.vald_zx.game.rat.race.card.shared.Event.PlayerChanged
 import ua.vald_zx.game.rat.race.card.shared.InternalEvent
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.PlayerState
@@ -29,7 +31,13 @@ class RaceRatServiceImpl(
             when (event) {
                 is InternalEvent.MoneyIncome -> {
                     if (event.receiverId == uuid) {
-                        eventBus.emit(Event.MoneyIncome(event.playerId, event.amount))
+                        eventBus.emit(MoneyIncome(event.playerId, event.amount))
+                    }
+                }
+
+                is InternalEvent.PlayerChanged -> {
+                    if (event.player.id != uuid) {
+                        eventBus.emit(PlayerChanged(event.player))
                     }
                 }
             }
@@ -75,11 +83,13 @@ class RaceRatServiceImpl(
         instances.value = instances.value.toMutableMap().apply { remove(uuid) }
     }
 
-    private fun changeCurrentPlayer(todo: Player.() -> Player) {
+    private suspend fun changeCurrentPlayer(todo: Player.() -> Player) {
         val instance = instances.value[uuid] ?: return
         val player = instance.player ?: Player(uuid)
         instances.value = instances.value.toMutableMap().apply {
-            this[uuid] = instance.copy(player = player.todo())
+            val updatedPlayer = player.todo()
+            internalEventBus.emit(InternalEvent.PlayerChanged(updatedPlayer))
+            this[uuid] = instance.copy(player = updatedPlayer)
         }
     }
 }

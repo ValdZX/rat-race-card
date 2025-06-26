@@ -37,6 +37,8 @@ sealed class InternalEvent {
 
     @Serializable
     data class MoneyIncome(val playerId: String, val receiverId: String, val amount: Long) : InternalEvent()
+    @Serializable
+    data class PlayerChanged(val player: Player) : InternalEvent()
 }
 
 @Serializable

@@ -1,11 +1,13 @@
 package ua.vald_zx.game.rat.race.card
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.lexilabs.basic.sound.ExperimentalBasicSound
 import app.lexilabs.basic.sound.SoundBoard
@@ -17,15 +19,16 @@ import com.russhwolf.settings.get
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 import rat_race_card.composeapp.generated.resources.Res
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardStore
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.SideProfit
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.logic.Statistics
@@ -52,24 +55,6 @@ internal fun App() {
         Napier.base(DebugAntilog())
         val systemIsDark = settings["theme", isDarkTheme]
         isDarkTheme = systemIsDark
-        startService()
-        service?.playersList()?.onEach { ids ->
-            service?.updatePlayers(ids)
-        }?.launchIn(this)
-        service?.eventsObserve()?.onEach { event ->
-            when (event) {
-                is Event.MoneyIncome -> {
-                    raceRate2store.dispatch(SideProfit(event.amount))
-                }
-
-                is Event.PlayerChanged -> {
-                    val playersList = players.value
-                    playersList.find { it.id == event.player.id }?.let { oldPlayer ->
-                        players.value = playersList.replaceItem(oldPlayer, event.player)
-                    }
-                }
-            }
-        }?.launchIn(this)
     }
     AppTheme {
         var kStoreLoaded by remember { mutableStateOf(false) }
@@ -85,6 +70,41 @@ internal fun App() {
                     raceRate2store.dispatch(RatRace2CardAction.LoadState(state2))
                 }
                 kStoreLoaded = true
+            }
+        }
+    }
+    val coroutineScope = rememberCoroutineScope()
+    DisposableEffect(Unit) {
+        coroutineScope.launch {
+            startService()
+            service?.playersList()?.onEach { ids ->
+                service?.updatePlayers(ids)
+            }?.launchIn(this)
+            service?.eventsObserve()?.onEach { event ->
+                when (event) {
+                    is Event.MoneyIncome -> {
+                        raceRate2store.dispatch(
+                            RatRace2CardAction.ReceivedCash(
+                                payerId = event.playerId,
+                                amount = event.amount
+                            )
+                        )
+                    }
+
+                    is Event.PlayerChanged -> {
+                        val playersList = players.value
+                        playersList.find { it.id == event.player.id }?.let { oldPlayer ->
+                            players.value = playersList.replaceItem(oldPlayer, event.player)
+                        }
+                    }
+                }
+            }?.launchIn(this)
+        }
+        onDispose {
+            coroutineScope.launch {
+                service?.closeSession()
+                service?.cancel()
+                client.close()
             }
         }
     }
