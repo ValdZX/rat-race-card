@@ -80,6 +80,7 @@ import ua.vald_zx.game.rat.race.card.components.Rotation
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.components.rotateLayout
+import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.logic.BoardLayer
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardState
@@ -477,7 +478,7 @@ fun BoxWithConstraintsScope.ColorsSelector(
 ) {
     val players by players
     FlowRow(modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 64.dp)) {
-        (pointerColors - players.map { it.attrs.color }).forEach { color ->
+        (pointerColors - players.filter { it.id != currentPlayerId }.map { it.attrs.color }).forEach { color ->
             RadioButton(
                 selected = color == state.color,
                 onClick = { dispatch(RatRace2BoardAction.ChangeColor(color)) },
