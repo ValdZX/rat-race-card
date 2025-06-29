@@ -11,12 +11,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -93,6 +92,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.Dice
 import ua.vald_zx.game.rat.race.card.resource.images.Money
 import ua.vald_zx.game.rat.race.card.resource.images.RatPlayer1
 import ua.vald_zx.game.rat.race.card.resource.images.UpDoubleArrow
+import ua.vald_zx.game.rat.race.card.shared.pointerColors
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import kotlin.math.absoluteValue
 
@@ -390,7 +390,7 @@ private fun BoxScope.Places(
 
 data class PlayerPointState(
     val position: Int,
-    val color: ULong,
+    val color: Long,
     val level: Int,
 )
 
@@ -470,30 +470,19 @@ private fun BoxScope.PlaceItem(
     }
 }
 
-val colors = listOf(
-    Color.Blue,
-    Color.Red,
-    Color.Green,
-    Color.Cyan,
-    Color.Yellow,
-    Color.Magenta
-)
-
 @Composable
 fun BoxWithConstraintsScope.ColorsSelector(
     state: RatRace2BoardState,
     dispatch: (RatRace2BoardAction) -> Unit
 ) {
-    Row(
-        modifier = Modifier.align(Alignment.TopCenter),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        colors.forEach { color ->
+    val players by players
+    FlowRow(modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 64.dp)) {
+        (pointerColors - players.map { it.attrs.color }).forEach { color ->
             RadioButton(
-                selected = color.value == state.color,
-                onClick = { dispatch(RatRace2BoardAction.ChangeColor(color.value)) },
+                selected = color == state.color,
+                onClick = { dispatch(RatRace2BoardAction.ChangeColor(color)) },
                 colors = RadioButtonDefaults.colors()
-                    .copy(selectedColor = color, unselectedColor = color),
+                    .copy(selectedColor = Color(color), unselectedColor = Color(color)),
             )
         }
     }

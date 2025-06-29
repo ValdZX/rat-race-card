@@ -8,14 +8,14 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Player(
     val id: String,
+    val attrs: PlayerAttributes,
     val professionCard: ProfessionCard = ProfessionCard(),
-    val state: PlayerState = PlayerState(),
-    val attrs: PlayerAttributes = PlayerAttributes()
+    val state: PlayerState = PlayerState()
 )
 
 @Serializable
 data class PlayerAttributes(
-    val color: ULong = ULong.MIN_VALUE,
+    val color: Long,
     val avatar: Int = 0,
 )
 

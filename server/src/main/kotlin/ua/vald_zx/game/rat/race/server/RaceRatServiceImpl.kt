@@ -15,6 +15,7 @@ import ua.vald_zx.game.rat.race.card.shared.PlayerState
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.card.shared.mapState
+import ua.vald_zx.game.rat.race.card.shared.pointerColors
 import kotlin.coroutines.CoroutineContext
 
 internal val LOGGER = KtorSimpleLogger("RaceRatService")
@@ -62,7 +63,7 @@ class RaceRatServiceImpl(
         copy(state = state)
     }
 
-    override suspend fun updateAttributes(attrs: PlayerAttributes) = changeCurrentPlayer{
+    override suspend fun updateAttributes(attrs: PlayerAttributes) = changeCurrentPlayer {
         copy(attrs = attrs)
     }
 
@@ -90,7 +91,10 @@ class RaceRatServiceImpl(
 
     private suspend fun changeCurrentPlayer(todo: Player.() -> Player) {
         val instance = instances.value[uuid] ?: return
-        val player = instance.player ?: Player(uuid)
+        val color = (pointerColors - instances.value.values.mapNotNull {
+            it.player?.attrs?.color
+        }.toSet()).random()
+        val player = instance.player ?: Player(uuid, PlayerAttributes(color = color))
         instances.value = instances.value.toMutableMap().apply {
             val updatedPlayer = player.todo()
             internalEventBus.emit(InternalEvent.PlayerChanged(updatedPlayer))

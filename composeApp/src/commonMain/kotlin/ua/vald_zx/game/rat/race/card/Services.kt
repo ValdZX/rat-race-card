@@ -65,13 +65,6 @@ suspend fun RaceRatService.updatePlayers(actualIds: Set<String>) {
     actualIds.forEach {
         Napier.d(it)
     }
-    val oldIds = players.value.map { it.id }
-    actualIds.forEach { id ->
-        if (!oldIds.contains(id)) {
-            getPlayer(id)?.let {
-                players.value = players.value + it
-            }
-        }
-    }
-    players.value = players.value.filter { actualIds.contains(it.id) }
+    val oldList = players.value
+    players.value = actualIds.mapNotNull { id -> oldList.find { id == it.id } ?: getPlayer(id) }
 }

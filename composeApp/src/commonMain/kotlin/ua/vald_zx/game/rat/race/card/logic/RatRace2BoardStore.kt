@@ -28,18 +28,18 @@ fun Int.toLayer(): BoardLayer {
 @Serializable
 data class RatRace2BoardState(
     val positionsHistory: List<Int> = listOf(1),
-    val currentPlayer: Player = Player(""),
+    val currentPlayer: Player? = null,
 ) : State {
     val layer: BoardLayer
-        get() = currentPlayer.state.level.toLayer()
-    val color: ULong
-        get() = currentPlayer.attrs.color
+        get() = currentPlayer?.state?.level?.toLayer() ?: BoardLayer.INNER
+    val color: Long
+        get() = currentPlayer?.attrs?.color ?: 0
 }
 
 sealed class RatRace2BoardAction : Action {
     data class LoadState(val state: RatRace2BoardState) : RatRace2BoardAction()
     data class Move(val dice: Int) : RatRace2BoardAction()
-    data class ChangeColor(val color: ULong) : RatRace2BoardAction()
+    data class ChangeColor(val color: Long) : RatRace2BoardAction()
     data object BackLastMove : RatRace2BoardAction()
     data object SwitchLayer : RatRace2BoardAction()
     data class UpdateCurrentPlayer(val player: Player) : RatRace2BoardAction()
@@ -72,7 +72,7 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
                 val moves = oldState.positionsHistory
                 val newMoves = moves.subList(0, moves.lastIndex)
                 val position = newMoves.last()
-                launch { service?.changePosition(position, oldState.currentPlayer.state.level) }
+                launch { service?.changePosition(position, oldState.layer.level) }
                 oldState.copy(
                     positionsHistory = newMoves,
                 )
@@ -80,14 +80,14 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
 
             is RatRace2BoardAction.Move -> {
                 val position = oldState.moveTo(action.dice)
-                launch { service?.changePosition(position, oldState.currentPlayer.state.level) }
+                launch { service?.changePosition(position, oldState.layer.level) }
                 oldState.copy(
                     positionsHistory = oldState.positionsHistory + position,
                 )
             }
 
             RatRace2BoardAction.SwitchLayer -> {
-                val currentLayer = oldState.currentPlayer.state.level.toLayer()
+                val currentLayer = oldState.layer
                 val layer = if (currentLayer == BoardLayer.INNER) {
                     BoardLayer.OUTER
                 } else {
@@ -108,8 +108,7 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
     }
 
     private fun RatRace2BoardState.moveTo(dice: Int): Int {
-        val layer = currentPlayer.state.level.toLayer()
-        val nextPosition = currentPlayer.state.position + dice
+        val nextPosition = (currentPlayer?.state?.position ?: 1) + dice
         return if (nextPosition < 0) {
             layer.cellCount + nextPosition
         } else if (layer.cellCount <= nextPosition) {
