@@ -3,7 +3,6 @@ package ua.vald_zx.game.rat.race.card.screen.board
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
@@ -16,12 +15,14 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.ElevatedButton
@@ -85,13 +86,13 @@ import ua.vald_zx.game.rat.race.card.logic.BoardLayer
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardStore
+import ua.vald_zx.game.rat.race.card.logic.moveTo
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.Dice
 import ua.vald_zx.game.rat.race.card.resource.images.Money
-import ua.vald_zx.game.rat.race.card.resource.images.RatPlayer1
 import ua.vald_zx.game.rat.race.card.resource.images.UpDoubleArrow
 import ua.vald_zx.game.rat.race.card.shared.pointerColors
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -111,15 +112,30 @@ data class Place(
     val location: Location,
     val offset: DpOffset,
     val size: DpSize,
-)
+) {
+    val isVertical: Boolean
+        get() = (location.side == Side.TOP || location.side == Side.BOTTOM) && !type.isBig
+}
 
-private val positionX = -30f
 
 data class BoardRoute(
     val horizontalCells: Int,
     val verticalCells: Int,
     val places: List<PlaceType>,
-)
+    val offset: Int = 0,
+) {
+    fun rotate(): BoardRoute {
+        val offset = horizontalCells - 4
+        val firstPart = places.take(offset)
+        val secondPart = places.drop(offset)
+        return BoardRoute(
+            horizontalCells = verticalCells,
+            verticalCells = horizontalCells,
+            places = secondPart + firstPart,
+            offset = places.size - offset
+        )
+    }
+}
 
 class Board2Screen : Screen {
 
@@ -128,48 +144,47 @@ class Board2Screen : Screen {
     @Composable
     override fun Content() {
         val state by raceRate2BoardStore.observeState().collectAsState()
-        Board2(state, raceRate2BoardStore::dispatch)
+        BoardScreenContent(state, raceRate2BoardStore::dispatch)
     }
 }
 
 @Composable
-fun Board2(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
-    val rotX = remember { Animatable(positionX) }
+fun BoardScreenContent(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
+    val rotX = remember { Animatable(0f) }
     val rotY = remember { Animatable(0f) }
     BoxWithConstraints(
-        modifier = Modifier.systemBarsPadding()
+        modifier = Modifier.systemBarsPadding().fillMaxSize()
     ) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .rotateOnDrag(rotX, rotY)
-                .align(Alignment.Center),
         ) {
-            val minSide = min(maxWidth, maxHeight)
-            val outSpotWidth = (minSide / outRoute.horizontalCells)
-            val outSpotHeight = (minSide / outRoute.horizontalCells)
-            val outBoardWidth = outSpotWidth * outRoute.horizontalCells
-            val outBoardHeight = outSpotHeight * outRoute.verticalCells
-            val boardOffset = remember(minSide) {
-                val x = ((maxWidth - outBoardWidth) / 2)
-                val y = ((maxHeight - outBoardHeight) / 3)
-                DpOffset(x, y)
-            }
-            val inPadding = outSpotWidth / 3
-            val inSpotWidth =
-                ((minSide - outSpotWidth * 4 - inPadding * 2) / inRoute.horizontalCells)
-            val inSpotHeight =
-                (((outSpotWidth * inRoute.verticalCells) - outSpotWidth * 4 - inPadding * 2) / inRoute.verticalCells)
-
-            val inBoardWidth = inSpotWidth * inRoute.horizontalCells
-            val inBoardHeight = inSpotHeight * inRoute.verticalCells
-            val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) 1.3f else 1.0f)
+            val horizontalRatio =
+                outRoute.horizontalCells.toFloat() / outRoute.verticalCells.toFloat()
+            val verticalRatio =
+                outRoute.verticalCells.toFloat() / outRoute.horizontalCells.toFloat()
             val isVertical = maxHeight > maxWidth
-            val rotate by animateFloatAsState(if (isVertical) -90f else 0f)
-            ColorsSelector(state, dispatch)
-            Box(
-                modifier = Modifier.offset(boardOffset.x, boardOffset.y)
-                    .size(width = outBoardWidth, height = outBoardHeight)
+            val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) 1.3f else 1.0f)
+            BoxWithConstraints(
+                modifier = Modifier
+                    .padding(32.dp)
+                    .align(Alignment.Center)
+                    .let { modifier ->
+                        if (isVertical) {
+                            if (maxWidth / maxHeight > horizontalRatio) {
+                                modifier.fillMaxWidth().aspectRatio(verticalRatio)
+                            } else {
+                                modifier.fillMaxHeight().aspectRatio(verticalRatio)
+                            }
+                        } else {
+                            if (maxWidth / maxHeight > horizontalRatio) {
+                                modifier.fillMaxHeight().aspectRatio(horizontalRatio)
+                            } else {
+                                modifier.fillMaxWidth().aspectRatio(horizontalRatio)
+                            }
+                        }
+                    }
                     .graphicsLayer {
                         rotationX = (-rotX.value).coerceIn(-180f, 180f)
                         rotationY = rotY.value.coerceIn(-180f, 180f)
@@ -178,53 +193,14 @@ fun Board2(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
                         scaleX = scale
                         scaleY = scale
                     }
-                    .rotate(rotate)
             ) {
-                val outSize = DpSize(outBoardWidth, outBoardHeight)
-                val inSize = DpSize(inBoardWidth, inBoardHeight)
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                        .shadow(30.dp, shape = RoundedCornerShape(8.dp))
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.background)
-                ) {
-                    Places(
-                        state = state,
-                        layer = BoardLayer.OUTER,
-                        size = outSize,
-                        route = outRoute,
-                        isVertical = isVertical,
-                    )
-                    Places(
-                        state = state,
-                        layer = BoardLayer.INNER,
-                        size = inSize,
-                        route = inRoute,
-                        isVertical = isVertical,
-                    )
-                }
+                Board(state, isVertical)
                 if (isFlipped(rotY, rotX)) {
-                    Box(
-                        modifier = Modifier.fillMaxSize()
-                            .shadow(30.dp, shape = RoundedCornerShape(16.dp))
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFF45465C))
-                            .border(
-                                width = 6.dp,
-                                shape = RoundedCornerShape(16.dp),
-                                brush = Brush.horizontalGradient(SkittlesRainbow)
-                            )
-                    ) {
-                        Image(
-                            painter = painterResource(Res.drawable.logo),
-                            contentDescription = null,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
+                    BackSide()
                 }
             }
         }
-
+        ColorsSelector(state, dispatch)
         ElevatedButton(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 .align(Alignment.TopStart),
@@ -321,12 +297,72 @@ fun Board2(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
 }
 
 @Composable
+fun BackSide() {
+    Box(
+        modifier = Modifier.fillMaxSize()
+            .shadow(30.dp, shape = RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF45465C))
+            .border(
+                width = 6.dp,
+                shape = RoundedCornerShape(16.dp),
+                brush = Brush.horizontalGradient(SkittlesRainbow)
+            )
+    ) {
+        Image(
+            painter = painterResource(Res.drawable.logo),
+            contentDescription = null,
+            modifier = Modifier.align(Alignment.Center)
+        )
+
+    }
+}
+
+@Composable
+fun BoxWithConstraintsScope.Board(state: RatRace2BoardState, isVertical: Boolean) {
+    val maxWidth = maxWidth
+    val maxHeight = maxHeight
+    Box(
+        modifier = Modifier.fillMaxSize()
+            .shadow(30.dp, shape = RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+
+        val actualOutRoute = remember(isVertical) {
+            if (isVertical) outRoute.rotate() else outRoute
+        }
+        Places(
+            state = state,
+            layer = BoardLayer.OUTER,
+            size = DpSize(maxWidth, maxHeight),
+            route = actualOutRoute,
+        )
+        val outSpotSize =
+            maxWidth / actualOutRoute.horizontalCells
+        val inPadding = outSpotSize / 3
+        val actualInRoute = remember(isVertical) {
+            if (isVertical) inRoute.rotate() else inRoute
+        }
+        val inBoardWidth =
+            (maxWidth - outSpotSize * 4 - inPadding * 2)
+        val inBoardHeight =
+            (maxHeight - outSpotSize * 4 - inPadding * 2)
+        Places(
+            state = state,
+            layer = BoardLayer.INNER,
+            size = DpSize(inBoardWidth, inBoardHeight),
+            route = actualInRoute,
+        )
+    }
+}
+
+@Composable
 private fun BoxScope.Places(
     state: RatRace2BoardState,
     layer: BoardLayer,
     size: DpSize,
     route: BoardRoute,
-    isVertical: Boolean,
 ) {
     val spotWidth = size.width / route.horizontalCells
     val spotHeight = size.height / route.verticalCells
@@ -358,18 +394,18 @@ private fun BoxScope.Places(
                     .offset(x = place.offset.x, y = place.offset.y)
                     .background(place.type.color)
             ) {
-                val isVertical =
-                    (place.location.side == Side.TOP || place.location.side == Side.BOTTOM) && !place.type.isBig
-                PlaceItem(place.type, place.size, isVertical)
+
+                PlaceContent(place.type, place.size, place.isVertical)
             }
         }
         val players by players
-        val points = remember(players) {
+        val points = remember(players, route) {
             players.filter { layer.level == it.state.level }.map {
                 PlayerPointState(
-                    position = it.state.position,
+                    position = moveTo(it.state.position, layer.cellCount, route.offset),
                     color = it.attrs.color,
-                    level = it.state.level
+                    level = it.state.level,
+                    name = it.professionCard.profession
                 )
             }
         }
@@ -380,7 +416,6 @@ private fun BoxScope.Places(
                     state = state,
                     spotWidth = spotWidth,
                     spotHeight = spotHeight,
-                    isVertical = isVertical,
                     index = index,
                     count = gPoints.size
                 )
@@ -389,55 +424,9 @@ private fun BoxScope.Places(
     }
 }
 
-data class PlayerPointState(
-    val position: Int,
-    val color: Long,
-    val level: Int,
-)
 
 @Composable
-private fun PlayerPoint(
-    places: List<Place>,
-    state: PlayerPointState,
-    spotWidth: Dp,
-    spotHeight: Dp,
-    isVertical: Boolean,
-    index: Int,
-    count: Int,
-) {
-    var offset by remember {
-        val place = places[state.position]
-        mutableStateOf(calculatePointerOffset(spotWidth, spotHeight, place, index, count))
-    }
-    LaunchedEffect(state.position, count, spotWidth, spotHeight) {
-        val place = places[state.position]
-        offset = calculatePointerOffset(spotWidth, spotHeight, place, index, count)
-    }
-    val animatedX by animateDpAsState(offset.first)
-    val animatedY by animateDpAsState(offset.second)
-    Box(
-        modifier = Modifier
-            .offset(animatedX, animatedY)
-            .size(spotWidth, spotHeight)
-            .shadow(8.dp, CircleShape)
-            .clip(CircleShape)
-            .background(Color.White)
-            .border(
-                width = spotWidth * 0.1f,
-                shape = CircleShape,
-                color = Color(state.color)
-            )
-    ) {
-        Image(
-            imageVector = Images.RatPlayer1,
-            contentDescription = null,
-            modifier = Modifier.rotate(if (isVertical) 90f else 0f)
-        )
-    }
-}
-
-@Composable
-private fun BoxScope.PlaceItem(
+private fun BoxScope.PlaceContent(
     placeType: PlaceType,
     cellSize: DpSize,
     isVertical: Boolean,
@@ -478,7 +467,8 @@ fun BoxWithConstraintsScope.ColorsSelector(
 ) {
     val players by players
     FlowRow(modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 64.dp)) {
-        (pointerColors - players.filter { it.id != currentPlayerId }.map { it.attrs.color }).forEach { color ->
+        (pointerColors - players.filter { it.id != currentPlayerId }
+            .map { it.attrs.color }).forEach { color ->
             RadioButton(
                 selected = color == state.color,
                 onClick = { dispatch(RatRace2BoardAction.ChangeColor(color)) },
@@ -612,7 +602,7 @@ private fun Modifier.rotateOnDrag(
                             },
                             async {
                                 rotX.animateTo(
-                                    targetValue = positionX,
+                                    targetValue = 0f,
                                     animationSpec = spring(stiffness = Spring.StiffnessLow)
                                 )
                             }
@@ -639,6 +629,6 @@ fun Board2Preview() {
     val store = remember { RatRace2BoardStore() }
     val state by store.observeState().collectAsState()
     AppTheme {
-        Board2(state, store::dispatch)
+        BoardScreenContent(state, store::dispatch)
     }
 }

@@ -32,8 +32,8 @@ fun calculatePointerOffset(
         1 -> Pair(0.dp, 0.dp)
 
         2 -> when (index) {
-            0 -> Pair(0.dp, -offsetY) // Верхній лівий
-            else -> Pair(0.dp, offsetY) // Нижній правий
+            0 -> Pair(-offsetX, -offsetY) // Верхній лівий
+            else -> Pair(offsetX, offsetY) // Нижній правий
         }
 
         3 -> when (index) {
@@ -104,7 +104,7 @@ fun calculatePointerOffset(
 @Composable
 fun AlgPreview() {
     Box(modifier = Modifier.size(60.dp, 100.dp).background(Color.Black)) {
-        val count = 9
+        val count = 2
         repeat(count) { index ->
             val offset = calculatePointerOffset(
                 pointerWidth = 10.dp,

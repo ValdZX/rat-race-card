@@ -79,7 +79,11 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
             }
 
             is RatRace2BoardAction.Move -> {
-                val position = oldState.moveTo(action.dice)
+                val position = moveTo(
+                    oldState.currentPlayer?.state?.position ?: 1,
+                    oldState.layer.cellCount,
+                    action.dice
+                )
                 launch { service?.changePosition(position, oldState.layer.level) }
                 oldState.copy(
                     positionsHistory = oldState.positionsHistory + position,
@@ -106,15 +110,15 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
             state.value = newState
         }
     }
+}
 
-    private fun RatRace2BoardState.moveTo(dice: Int): Int {
-        val nextPosition = (currentPlayer?.state?.position ?: 1) + dice
-        return if (nextPosition < 0) {
-            layer.cellCount + nextPosition
-        } else if (layer.cellCount <= nextPosition) {
-            nextPosition - layer.cellCount
-        } else {
-            nextPosition
-        }
+fun moveTo(position: Int, cellCount: Int, toMove: Int): Int {
+    val nextPosition = position + toMove
+    return if (nextPosition < 0) {
+        cellCount + nextPosition
+    } else if (cellCount <= nextPosition) {
+        nextPosition - cellCount
+    } else {
+        nextPosition
     }
 }
