@@ -57,14 +57,15 @@ import ua.vald_zx.game.rat.race.card.components.PositiveField
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect
+import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.logic.total
 import ua.vald_zx.game.rat.race.card.playCoin
-import ua.vald_zx.game.rat.race.card.players
 import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Menu
 import ua.vald_zx.game.rat.race.card.resource.images.Rat
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
+import ua.vald_zx.game.rat.race.card.screen.board.Board2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.page.BusinessListPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.FundsPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.SharesPage

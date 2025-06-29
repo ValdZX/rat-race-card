@@ -4,7 +4,6 @@ import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import ua.vald_zx.game.rat.race.card.shared.Event
 import ua.vald_zx.game.rat.race.card.shared.Event.MoneyIncome
@@ -15,6 +14,7 @@ import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
 import ua.vald_zx.game.rat.race.card.shared.PlayerState
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
+import ua.vald_zx.game.rat.race.card.shared.mapState
 import kotlin.coroutines.CoroutineContext
 
 internal val LOGGER = KtorSimpleLogger("RaceRatService")
@@ -37,9 +37,7 @@ class RaceRatServiceImpl(
                 }
 
                 is InternalEvent.PlayerChanged -> {
-                    if (event.player.id != uuid) {
-                        eventBus.emit(PlayerChanged(event.player))
-                    }
+                    eventBus.emit(PlayerChanged(event.player))
                 }
             }
         }.launchIn(this)
@@ -70,7 +68,9 @@ class RaceRatServiceImpl(
 
     override fun eventsObserve(): Flow<Event> = eventBus
 
-    override fun playersList(): Flow<Set<String>> = instances.map { it.keys }
+    override suspend fun playersList(): Set<String> = instances.value.keys
+
+    override fun playersListObserve(): Flow<Set<String>> = instances.mapState { it.keys }
 
     override suspend fun getPlayer(id: String): Player? {
         return instances.value[id]?.player
@@ -80,8 +80,8 @@ class RaceRatServiceImpl(
         internalEventBus.emit(InternalEvent.MoneyIncome(uuid, receiverId, amount))
     }
 
-    override suspend fun changePosition(position: Int) = changeCurrentPlayer {
-        copy(state = state.copy(position = position))
+    override suspend fun changePosition(position: Int, level: Int) = changeCurrentPlayer {
+        copy(state = state.copy(position = position, level = level))
     }
 
     override suspend fun closeSession() {

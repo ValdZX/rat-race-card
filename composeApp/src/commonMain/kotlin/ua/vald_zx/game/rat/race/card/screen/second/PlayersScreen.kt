@@ -18,7 +18,8 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
-import ua.vald_zx.game.rat.race.card.players
+import ua.vald_zx.game.rat.race.card.currentPlayerId
+import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Rat
 import ua.vald_zx.game.rat.race.card.resource.images.Send
@@ -30,7 +31,7 @@ class PlayersScreen : Screen {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         val players by players
         BottomSheetContainer {
-            players.forEach { player ->
+            players.filter { it.id != currentPlayerId }.forEach { player ->
                 Card {
                     Row(
                         modifier = Modifier.padding(16.dp),

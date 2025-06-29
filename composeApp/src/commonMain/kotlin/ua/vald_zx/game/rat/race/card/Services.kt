@@ -1,6 +1,5 @@
 package ua.vald_zx.game.rat.race.card
 
-import androidx.compose.runtime.mutableStateOf
 import com.russhwolf.settings.get
 import com.russhwolf.settings.set
 import io.github.aakira.napier.Napier
@@ -13,8 +12,8 @@ import kotlinx.rpc.krpc.ktor.client.rpcConfig
 import kotlinx.rpc.krpc.serialization.json.json
 import kotlinx.rpc.withService
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
+import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.logic.total
-import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.PlayerState
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 
@@ -33,7 +32,6 @@ val client by lazy {
     }
 }
 
-val players = mutableStateOf(emptyList<Player>())
 
 var service: RaceRatService? = null
 suspend fun startService() {
@@ -63,9 +61,13 @@ fun RatRace2CardState.toState(): PlayerState {
 }
 
 suspend fun RaceRatService.updatePlayers(actualIds: Set<String>) {
+    Napier.d("Users: ")
+    actualIds.forEach {
+        Napier.d(it)
+    }
     val oldIds = players.value.map { it.id }
     actualIds.forEach { id ->
-        if (!oldIds.contains(id) && id != currentPlayerId) {
+        if (!oldIds.contains(id)) {
             getPlayer(id)?.let {
                 players.value = players.value + it
             }

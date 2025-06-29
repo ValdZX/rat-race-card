@@ -19,6 +19,7 @@ import com.russhwolf.settings.get
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -27,6 +28,7 @@ import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 import rat_race_card.composeapp.generated.resources.Res
+import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardStore
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
@@ -47,6 +49,7 @@ val statistics2KStore: KStore<Statistics>
 val raceRate2store by lazy { RatRace2CardStore() }
 val raceRate2BoardStore by lazy { RatRace2BoardStore() }
 val settings: Settings = Settings()
+val invalidServer = mutableStateOf(false)
 
 @Composable
 internal fun App() {
@@ -75,12 +78,19 @@ internal fun App() {
     }
     val coroutineScope = rememberCoroutineScope()
     DisposableEffect(Unit) {
-        coroutineScope.launch {
+        coroutineScope.launch(CoroutineExceptionHandler { _, t ->
+            Napier.e("Invalid server", t)
+            invalidServer.value = true
+        }) {
             startService()
-            service?.playersList()?.onEach { ids ->
+            service?.playersList()?.let { ids ->
+                service?.updatePlayers(ids)
+            }
+            service?.playersListObserve()?.onEach { ids ->
                 service?.updatePlayers(ids)
             }?.launchIn(this)
             service?.eventsObserve()?.onEach { event ->
+                Napier.d("Event: $event")
                 when (event) {
                     is Event.MoneyIncome -> {
                         raceRate2store.dispatch(
@@ -95,6 +105,13 @@ internal fun App() {
                         val playersList = players.value
                         playersList.find { it.id == event.player.id }?.let { oldPlayer ->
                             players.value = playersList.replaceItem(oldPlayer, event.player)
+                        }
+                        if (changedPlayer.id == currentPlayerId) {
+                            raceRate2BoardStore.dispatch(
+                                RatRace2BoardAction.UpdateCurrentPlayer(
+                                    changedPlayer
+                                )
+                            )
                         }
                     }
                 }

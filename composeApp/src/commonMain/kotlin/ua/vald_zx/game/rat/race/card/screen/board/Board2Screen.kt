@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen.second
+package ua.vald_zx.game.rat.race.card.screen.board
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
@@ -85,7 +85,7 @@ import ua.vald_zx.game.rat.race.card.logic.BoardLayer
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardStore
-import ua.vald_zx.game.rat.race.card.players
+import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
@@ -94,10 +94,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.Money
 import ua.vald_zx.game.rat.race.card.resource.images.RatPlayer1
 import ua.vald_zx.game.rat.race.card.resource.images.UpDoubleArrow
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
-import kotlin.math.PI
 import kotlin.math.absoluteValue
-import kotlin.math.cos
-import kotlin.math.sin
 
 enum class Side(val isHorizontal: Boolean) {
     TOP(true), LEFT(false), BOTTOM(true), RIGHT(false)
@@ -115,26 +112,7 @@ data class Place(
     val size: DpSize,
 )
 
-sealed class PlaceType(val name: String, val color: Color, val isBig: Boolean = false) {
-    data object Start : PlaceType("Start", Color.Yellow)
-    data object Salary : PlaceType("Salary", Color(0xffa1e64c), isBig = true)
-    data object Business : PlaceType("Business", Color(0xff00ba87))
-    data object Shopping : PlaceType("Shopping", Color.Cyan)
-    data object Chance : PlaceType("Chance", Color(0xfff36d4e))
-    data object Expenses : PlaceType("Expenses", Color.Red)
-    data object Store : PlaceType("Store", Color(0xff0788e8))
-    data object Bankruptcy : PlaceType("Bankruptcy", Color(0xff94a5dd), isBig = true)
-    data object Child : PlaceType("Child", Color.Black, isBig = true)
-    data object Love : PlaceType("Love", Color.Magenta)
-    data object Rest : PlaceType("Rest", Color.White)
-    data object Divorce : PlaceType("Divorce", Color.Red)
-    data object Desire : PlaceType("Desire", Color(0xffde9bc2))
-    data object Deputy : PlaceType("Deputy", Color(0xff8a8fdc))
-    data object TaxInspection : PlaceType("TaxInspection", Color(0xffc5dcc7), isBig = true)
-    data object Exaltation : PlaceType("Exaltation", Color.Black)
-}
-
-private val positionX = -40f
+private val positionX = -30f
 
 data class BoardRoute(
     val horizontalCells: Int,
@@ -385,34 +363,26 @@ private fun BoxScope.Places(
             }
         }
         val players by players
-        val points = remember(players, state) {
-            val pointStates = players.map {
+        val points = remember(players) {
+            players.filter { layer.level == it.state.level }.map {
                 PlayerPointState(
                     position = it.state.position,
                     color = it.attrs.color,
                     level = it.state.level
                 )
             }
-            val currentPlayerPoint = PlayerPointState(
-                position = state.position,
-                color = state.color,
-                level = state.layer.level
-            )
-            pointStates + currentPlayerPoint
         }
         points.groupBy { it.position }.forEach { (_, gPoints) ->
             gPoints.forEachIndexed { index, state ->
-                if (layer.level == state.level) {
-                    PlayerPoint(
-                        places = places,
-                        state = state,
-                        spotWidth = spotWidth,
-                        spotHeight = spotHeight,
-                        isVertical = isVertical,
-                        index = index,
-                        count = gPoints.size
-                    )
-                }
+                PlayerPoint(
+                    places = places,
+                    state = state,
+                    spotWidth = spotWidth,
+                    spotHeight = spotHeight,
+                    isVertical = isVertical,
+                    index = index,
+                    count = gPoints.size
+                )
             }
         }
     }
@@ -438,7 +408,7 @@ private fun PlayerPoint(
         val place = places[state.position]
         mutableStateOf(calculatePointerOffset(spotWidth, spotHeight, place, index, count))
     }
-    LaunchedEffect(state.position, spotWidth, spotHeight) {
+    LaunchedEffect(state.position, count, spotWidth, spotHeight) {
         val place = places[state.position]
         offset = calculatePointerOffset(spotWidth, spotHeight, place, index, count)
     }
@@ -464,44 +434,6 @@ private fun PlayerPoint(
         )
     }
 }
-
-fun calculatePointerOffset(
-    pointerWidth: Dp,
-    pointerHeight: Dp,
-    place: Place,
-    index: Int,
-    count: Int,
-): Pair<Dp, Dp> {
-    val maxAngleDeg = 90f // максимальний кут дуги
-    val radiusScale = 0.4f // масштаб радіуса відносно висоти
-    val width = place.size.width
-    val height = place.size.height
-    val centerX = place.offset.x + width / 2 - pointerWidth / 2
-    val centerY = place.offset.y + height / 2 - pointerHeight / 2
-    if (count > 1) {
-
-        // Радіус для розміщення
-        val radius = min(width, height) * radiusScale
-
-        // Кут між елементами (в градусах)
-        val angleStep = if (count == 1) 0f else maxAngleDeg / (count - 1)
-        val startAngle = -maxAngleDeg / 2f
-
-        // Кут для поточного елемента
-        val angleDeg = startAngle + index * angleStep
-        val angleRad = toRadians(angleDeg)
-
-        // Позиція по дузі
-        val x = (radius * cos(angleRad))
-        val y = (radius * sin(angleRad))
-
-        return Pair(centerX + x, centerY + y)
-    } else {
-        return centerX to centerY
-    }
-}
-
-fun toRadians(deg: Float): Float = deg / 180.0f * PI.toFloat()
 
 @Composable
 private fun BoxScope.PlaceItem(
@@ -648,170 +580,6 @@ private val PlaceType.text: String
             else -> name
         }
     }
-
-private val inPlaces = listOf(
-    PlaceType.Salary,
-    PlaceType.Start,
-    PlaceType.Business,
-    PlaceType.Shopping,
-    PlaceType.Chance,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Shopping,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Business,
-    PlaceType.Bankruptcy,
-    PlaceType.Store,
-    PlaceType.Expenses,
-    PlaceType.Business,
-    PlaceType.Chance,
-    PlaceType.Shopping,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Expenses,
-    PlaceType.Store,
-
-    PlaceType.Salary,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Love,
-    PlaceType.Shopping,
-    PlaceType.Chance,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Rest,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Expenses,
-    PlaceType.Store,
-
-    PlaceType.Salary,
-    PlaceType.Shopping,
-    PlaceType.Chance,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Shopping,
-    PlaceType.Business,
-    PlaceType.Child,
-    PlaceType.Expenses,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Divorce,
-    PlaceType.Shopping,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Expenses,
-
-    PlaceType.Salary,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Exaltation,
-    PlaceType.Expenses,
-    PlaceType.Chance,
-    PlaceType.Shopping,
-    PlaceType.Business,
-    PlaceType.Love,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Expenses,
-)
-
-private val outPlaces = listOf(
-    PlaceType.Salary,
-    PlaceType.Start,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Business,
-    PlaceType.Desire,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Desire,
-    PlaceType.Business,
-    PlaceType.Store,
-    PlaceType.Bankruptcy,
-    PlaceType.Chance,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Desire,
-    PlaceType.Business,
-    PlaceType.Chance,
-    PlaceType.Store,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Desire,
-    PlaceType.Salary,
-
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Business,
-    PlaceType.Deputy,
-    PlaceType.Desire,
-    PlaceType.Chance,
-    PlaceType.Store,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Business,
-    PlaceType.Deputy,
-    PlaceType.Desire,
-    PlaceType.Chance,
-    PlaceType.Store,
-    PlaceType.Salary,
-
-    PlaceType.Chance,
-    PlaceType.Desire,
-    PlaceType.Business,
-    PlaceType.Shopping,
-    PlaceType.Desire,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Desire,
-    PlaceType.Business,
-    PlaceType.Chance,
-    PlaceType.TaxInspection,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Desire,
-    PlaceType.Store,
-    PlaceType.Business,
-    PlaceType.Desire,
-    PlaceType.Chance,
-    PlaceType.Shopping,
-    PlaceType.Desire,
-    PlaceType.Store,
-    PlaceType.Salary,
-
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Business,
-    PlaceType.Deputy,
-    PlaceType.Desire,
-    PlaceType.Chance,
-    PlaceType.Store,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Chance,
-    PlaceType.Deputy,
-    PlaceType.Desire,
-    PlaceType.Chance,
-    PlaceType.Store,
-)
 
 
 val outRoute = BoardRoute(26, 18, outPlaces)

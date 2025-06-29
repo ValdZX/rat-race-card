@@ -32,7 +32,7 @@ data class ProfessionCard(
 
 @Serializable
 data class PlayerState(
-    val position: Int = 0,
+    val position: Int = 1,
     val level: Int = 0,
     val totalExpenses: Long = 0,
     val cashFlow: Long = 0,
@@ -65,9 +65,10 @@ interface RaceRatService : RemoteService {
     suspend fun updateState(state: PlayerState)
     suspend fun updateAttributes(attrs: PlayerAttributes)
     fun eventsObserve(): Flow<Event>
-    fun playersList(): Flow<Set<String>>
+    suspend fun playersList(): Set<String>
+    fun playersListObserve(): Flow<Set<String>>
     suspend fun getPlayer(id: String): Player?
     suspend fun sendMoney(receiverId: String, amount: Long)
-    suspend fun changePosition(position: Int)
+    suspend fun changePosition(position: Int, level: Int)
     suspend fun closeSession()
 }
