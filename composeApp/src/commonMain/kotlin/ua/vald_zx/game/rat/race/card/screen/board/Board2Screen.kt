@@ -10,11 +10,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,7 +30,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.runtime.Composable
@@ -165,7 +167,7 @@ fun BoardScreenContent(state: RatRace2BoardState, dispatch: (RatRace2BoardAction
             val verticalRatio =
                 outRoute.verticalCells.toFloat() / outRoute.horizontalCells.toFloat()
             val isVertical = maxHeight > maxWidth
-            val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) 1.3f else 1.0f)
+            val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) 1.2f else 1.0f)
             BoxWithConstraints(
                 modifier = Modifier
                     .padding(32.dp)
@@ -326,7 +328,7 @@ fun BoxWithConstraintsScope.Board(state: RatRace2BoardState, isVertical: Boolean
         modifier = Modifier.fillMaxSize()
             .shadow(30.dp, shape = RoundedCornerShape(8.dp))
             .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.background)
+            .background(Color(0xFFFFBF00))
     ) {
 
         val actualOutRoute = remember(isVertical) {
@@ -354,7 +356,81 @@ fun BoxWithConstraintsScope.Board(state: RatRace2BoardState, isVertical: Boolean
             size = DpSize(inBoardWidth, inBoardHeight),
             route = actualInRoute,
         )
+        val inSpotSize =
+            inBoardWidth / actualInRoute.horizontalCells
+        val cardsPadding = inSpotSize
+        val cardsWidth =
+            (inBoardWidth - inSpotSize * 4 - cardsPadding * 2)
+        val cardsHeight =
+            (inBoardHeight - inSpotSize * 4 - cardsPadding * 2)
+        Cards(size = DpSize(cardsWidth, cardsHeight))
     }
+}
+
+@Composable
+fun BoxScope.Cards(size: DpSize) {
+    Box(
+        modifier = Modifier
+            .align(Alignment.Center)
+            .size(size.width, size.height)
+    ) {
+        if (size.width < size.height) {
+            val width = size.width / 5
+            val height = (width * 3) / 2
+            val cardSize = DpSize(width, height)
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()
+                    .align(Alignment.TopStart)
+            ) {
+                CardDeck(Card.Chance, cardSize)
+                CardDeck(Card.BigBusiness, cardSize)
+                CardDeck(Card.MediumBusiness, cardSize)
+                CardDeck(Card.SmallBusiness, cardSize)
+            }
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()
+                    .align(Alignment.BottomStart)
+            ) {
+                CardDeck(Card.Expenses, cardSize)
+                CardDeck(Card.Deputy, cardSize)
+                CardDeck(Card.EventStore, cardSize)
+                CardDeck(Card.Shopping, cardSize)
+            }
+        } else {
+            val height = size.height / 5
+            val width = (height * 3) / 2
+            val cardSize = DpSize(width, height)
+            Column(
+                verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxHeight()
+                    .align(Alignment.TopStart)
+            ) {
+                CardDeck(Card.Chance, cardSize)
+                CardDeck(Card.BigBusiness, cardSize)
+                CardDeck(Card.MediumBusiness, cardSize)
+                CardDeck(Card.SmallBusiness, cardSize)
+            }
+            Column(
+                verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxHeight()
+                    .align(Alignment.TopEnd)
+            ) {
+                CardDeck(Card.Expenses, cardSize)
+                CardDeck(Card.Deputy, cardSize)
+                CardDeck(Card.EventStore, cardSize)
+                CardDeck(Card.Shopping, cardSize)
+            }
+        }
+    }
+}
+
+@Composable
+fun CardDeck(card: Card, size: DpSize) {
+    val rounding = min(size.width, size.height) / 10
+    Box(
+        modifier = Modifier
+            .size(size.width, size.height)
+            .clip(RoundedCornerShape(rounding))
+            .background(card.color)
+    )
 }
 
 @Composable
@@ -383,7 +459,7 @@ private fun BoxScope.Places(
             Place(type, location, cellOffset, cellSize)
         }
     }
-    val alpha by animateFloatAsState(if (state.layer == layer) 1f else 0.3f)
+    val alpha by animateFloatAsState(if (state.layer == layer) 1f else 0.7f)
     Box(
         modifier = Modifier.align(Alignment.Center).size(size).alpha(alpha)
     ) {
@@ -550,6 +626,7 @@ private val PlaceType.text: String
             PlaceType.Chance -> "Шанс!"
             PlaceType.Store -> "Ринок"
             PlaceType.Business -> "Бізнес"
+            PlaceType.BigBusiness -> "Бізнес"
             PlaceType.Deputy -> "Депутат"
             PlaceType.Expenses -> "Витрати"
             PlaceType.Shopping -> "Покупки"

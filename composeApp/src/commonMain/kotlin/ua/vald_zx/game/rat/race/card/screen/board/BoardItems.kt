@@ -3,25 +3,51 @@ package ua.vald_zx.game.rat.race.card.screen.board
 import androidx.compose.ui.graphics.Color
 
 
+val cnanceColor = Color(0xffFFAC1C)
+
+val businessColor = Color(0xff00cc00)
+val bigBusinessColor = Color(0xff2db300)
+val expensesColor = Color.Red
+
+val storeColor = Color(0xff0788e8)
+val shoppingColor = Color.Cyan
+
+val deputyColor = Color(0xff8a8fdc)
+sealed class Card(val color: Color) {
+    data object Chance : Card(cnanceColor)
+    data object SmallBusiness : Card(Color(0xffb3ff99))
+    data object MediumBusiness : Card(businessColor)
+    data object BigBusiness : Card(bigBusinessColor)
+    data object Expenses : Card(expensesColor)
+    data object EventStore : Card(storeColor)
+    data object Shopping : Card(shoppingColor)
+    data object Deputy : Card(deputyColor)
+}
+
+
 sealed class PlaceType(val name: String, val color: Color, val isBig: Boolean = false) {
     data object Start : PlaceType("Start", Color.Yellow)
     data object Salary : PlaceType("Salary", Color(0xffa1e64c), isBig = true)
-    data object Business : PlaceType("Business", Color(0xff00ba87))
-    data object Shopping : PlaceType("Shopping", Color.Cyan)
-    data object Chance : PlaceType("Chance", Color(0xfff36d4e))
-    data object Expenses : PlaceType("Expenses", Color.Red)
-    data object Store : PlaceType("Store", Color(0xff0788e8))
+
+    data object Business : PlaceType("Business", businessColor)
+    data object BigBusiness : PlaceType("BigBusiness", bigBusinessColor)
+    data object Shopping : PlaceType("Shopping", shoppingColor)
+
+    data object Chance : PlaceType("Chance", cnanceColor)
+    data object Expenses : PlaceType("Expenses", expensesColor)
+
+    data object Store : PlaceType("Store", storeColor)
     data object Bankruptcy : PlaceType("Bankruptcy", Color(0xff94a5dd), isBig = true)
     data object Child : PlaceType("Child", Color.Black, isBig = true)
     data object Love : PlaceType("Love", Color.Magenta)
     data object Rest : PlaceType("Rest", Color.White)
     data object Divorce : PlaceType("Divorce", Color.Red)
     data object Desire : PlaceType("Desire", Color(0xffde9bc2))
-    data object Deputy : PlaceType("Deputy", Color(0xff8a8fdc))
+
+    data object Deputy : PlaceType("Deputy", deputyColor)
     data object TaxInspection : PlaceType("TaxInspection", Color(0xffc5dcc7), isBig = true)
     data object Exaltation : PlaceType("Exaltation", Color.Black)
 }
-
 
 
 val inPlaces = listOf(
@@ -113,19 +139,19 @@ val outPlaces = listOf(
     PlaceType.Start,
     PlaceType.Desire,
     PlaceType.Shopping,
-    PlaceType.Business,
+    PlaceType.BigBusiness,
     PlaceType.Desire,
     PlaceType.Store,
     PlaceType.Chance,
     PlaceType.Desire,
-    PlaceType.Business,
+    PlaceType.BigBusiness,
     PlaceType.Store,
     PlaceType.Bankruptcy,
     PlaceType.Chance,
     PlaceType.Desire,
     PlaceType.Shopping,
     PlaceType.Desire,
-    PlaceType.Business,
+    PlaceType.BigBusiness,
     PlaceType.Chance,
     PlaceType.Store,
     PlaceType.Desire,
@@ -135,14 +161,14 @@ val outPlaces = listOf(
 
     PlaceType.Desire,
     PlaceType.Shopping,
-    PlaceType.Business,
+    PlaceType.BigBusiness,
     PlaceType.Deputy,
     PlaceType.Desire,
     PlaceType.Chance,
     PlaceType.Store,
     PlaceType.Desire,
     PlaceType.Shopping,
-    PlaceType.Business,
+    PlaceType.BigBusiness,
     PlaceType.Deputy,
     PlaceType.Desire,
     PlaceType.Chance,
@@ -151,20 +177,20 @@ val outPlaces = listOf(
 
     PlaceType.Chance,
     PlaceType.Desire,
-    PlaceType.Business,
+    PlaceType.BigBusiness,
     PlaceType.Shopping,
     PlaceType.Desire,
     PlaceType.Store,
     PlaceType.Chance,
     PlaceType.Desire,
-    PlaceType.Business,
+    PlaceType.BigBusiness,
     PlaceType.Chance,
     PlaceType.TaxInspection,
     PlaceType.Desire,
     PlaceType.Shopping,
     PlaceType.Desire,
     PlaceType.Store,
-    PlaceType.Business,
+    PlaceType.BigBusiness,
     PlaceType.Desire,
     PlaceType.Chance,
     PlaceType.Shopping,
@@ -174,7 +200,7 @@ val outPlaces = listOf(
 
     PlaceType.Desire,
     PlaceType.Shopping,
-    PlaceType.Business,
+    PlaceType.BigBusiness,
     PlaceType.Deputy,
     PlaceType.Desire,
     PlaceType.Chance,
