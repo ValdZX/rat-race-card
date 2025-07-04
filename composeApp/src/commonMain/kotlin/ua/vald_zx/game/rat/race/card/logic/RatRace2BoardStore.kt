@@ -3,6 +3,7 @@ package ua.vald_zx.game.rat.race.card.logic
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,6 +11,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction.LoadState
+import ua.vald_zx.game.rat.race.card.screen.board.BoardCard
+import ua.vald_zx.game.rat.race.card.screen.board.PlaceType
+import ua.vald_zx.game.rat.race.card.screen.board.board
 import ua.vald_zx.game.rat.race.card.service
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
@@ -29,6 +33,7 @@ fun Int.toLayer(): BoardLayer {
 data class RatRace2BoardState(
     val positionsHistory: List<Int> = listOf(1),
     val currentPlayer: Player? = null,
+    val highlightedCard: BoardCard? = null,
 ) : State {
     val layer: BoardLayer
         get() = currentPlayer?.state?.level?.toLayer() ?: BoardLayer.INNER
@@ -43,9 +48,13 @@ sealed class RatRace2BoardAction : Action {
     data object BackLastMove : RatRace2BoardAction()
     data object SwitchLayer : RatRace2BoardAction()
     data class UpdateCurrentPlayer(val player: Player) : RatRace2BoardAction()
+    data class HighlightCard(val card: BoardCard) : RatRace2BoardAction()
+    data class SelectedCard(val card: BoardCard) : RatRace2BoardAction()
 }
 
-sealed class RatRace2BoardSideEffect : Effect
+sealed class RatRace2BoardSideEffect : Effect {
+    data class ShowCard(val card: BoardCard) : RatRace2BoardSideEffect()
+}
 
 class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRace2BoardSideEffect>,
     CoroutineScope by CoroutineScope(Dispatchers.Main) {
@@ -78,13 +87,28 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
                 )
             }
 
+            is RatRace2BoardAction.HighlightCard -> {
+                oldState.copy(highlightedCard = action.card)
+            }
+
+            is RatRace2BoardAction.SelectedCard -> {
+                launch { sideEffect.emit(RatRace2BoardSideEffect.ShowCard(action.card)) }
+                oldState.copy(highlightedCard = null)
+            }
+
             is RatRace2BoardAction.Move -> {
                 val position = moveTo(
                     oldState.currentPlayer?.state?.position ?: 1,
                     oldState.layer.cellCount,
                     action.dice
                 )
-                launch { service?.changePosition(position, oldState.layer.level) }
+                launch {
+                    service?.changePosition(position, oldState.layer.level)
+                    delay(500)
+                    board.layers[oldState.layer]?.places[position]?.let { place ->
+                        oldState.processPlace(place)
+                    }
+                }
                 oldState.copy(
                     positionsHistory = oldState.positionsHistory + position,
                 )
@@ -108,6 +132,78 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
         }
         if (newState != oldState) {
             state.value = newState
+        }
+    }
+
+    private fun RatRace2BoardState.processPlace(place: PlaceType) {
+        when (place) {
+            PlaceType.Bankruptcy -> {
+                //todo
+            }
+
+            PlaceType.BigBusiness -> {
+                //todo
+            }
+
+            PlaceType.Business -> {
+                dispatch(RatRace2BoardAction.HighlightCard(BoardCard.SmallBusiness))
+            }
+
+            PlaceType.Chance -> {
+                dispatch(RatRace2BoardAction.HighlightCard(BoardCard.Chance))
+            }
+
+            PlaceType.Child -> {
+                //todo
+            }
+
+            PlaceType.Deputy -> {
+                //todo
+            }
+
+            PlaceType.Desire -> {
+                //todo
+            }
+
+            PlaceType.Divorce -> {
+                //todo
+            }
+
+            PlaceType.Exaltation -> {
+                //todo
+            }
+
+            PlaceType.Expenses -> {
+                dispatch(RatRace2BoardAction.HighlightCard(BoardCard.Expenses))
+            }
+
+            PlaceType.Love -> {
+                //todo
+            }
+
+            PlaceType.Rest -> {
+                //todo
+            }
+
+            PlaceType.Salary -> {
+                //todo
+            }
+
+            PlaceType.Shopping -> {
+                dispatch(RatRace2BoardAction.HighlightCard(BoardCard.Shopping))
+            }
+
+            PlaceType.Start -> {
+                //todo
+            }
+
+            PlaceType.Store -> {
+                dispatch(RatRace2BoardAction.HighlightCard(BoardCard.EventStore))
+            }
+
+            PlaceType.TaxInspection -> {
+                //todo
+            }
         }
     }
 }

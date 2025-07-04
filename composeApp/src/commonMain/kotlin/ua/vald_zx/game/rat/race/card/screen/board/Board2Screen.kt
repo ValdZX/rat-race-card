@@ -8,6 +8,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +35,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,10 +51,14 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -63,6 +69,7 @@ import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
+import dev.lennartegb.shadows.boxShadow
 import io.github.alexzhirkevich.compottie.LottieComposition
 import io.github.alexzhirkevich.compottie.LottieCompositionSpec
 import io.github.alexzhirkevich.compottie.rememberLottieAnimatable
@@ -71,6 +78,8 @@ import io.github.alexzhirkevich.compottie.rememberLottiePainter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
@@ -86,6 +95,7 @@ import ua.vald_zx.game.rat.race.card.components.rotateLayout
 import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.logic.BoardLayer
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction
+import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardSideEffect
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardStore
 import ua.vald_zx.game.rat.race.card.logic.moveTo
@@ -96,6 +106,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.Dice
 import ua.vald_zx.game.rat.race.card.resource.images.Money
 import ua.vald_zx.game.rat.race.card.resource.images.UpDoubleArrow
+import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.pointerColors
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import kotlin.math.absoluteValue
@@ -119,6 +130,9 @@ data class Place(
         get() = (location.side == Side.TOP || location.side == Side.BOTTOM) && !type.isBig
 }
 
+data class Board(
+    val layers: Map<BoardLayer, BoardRoute>
+)
 
 data class BoardRoute(
     val horizontalCells: Int,
@@ -139,6 +153,11 @@ data class BoardRoute(
     }
 }
 
+const val INNER_LAYER_SCALE = 1.2f
+
+val cardCoordinatesMap = mutableMapOf<BoardCard, MutableState<Pair<DpOffset, DpSize>>>()
+val selectedCardState = mutableStateOf<BoardCard?>(null)
+
 class Board2Screen : Screen {
 
     override val key: ScreenKey = "Board2Screen"
@@ -147,6 +166,15 @@ class Board2Screen : Screen {
     override fun Content() {
         val state by raceRate2BoardStore.observeState().collectAsState()
         BoardScreenContent(state, raceRate2BoardStore::dispatch)
+        LaunchedEffect(Unit) {
+            raceRate2BoardStore.observeSideEffect().onEach { effect ->
+                when (effect) {
+                    is RatRace2BoardSideEffect.ShowCard -> {
+                        selectedCardState.value = effect.card
+                    }
+                }
+            }.launchIn(this)
+        }
     }
 }
 
@@ -162,12 +190,13 @@ fun BoardScreenContent(state: RatRace2BoardState, dispatch: (RatRace2BoardAction
                 .fillMaxSize()
                 .rotateOnDrag(rotX, rotY)
         ) {
+            val outRoute = board.layers[BoardLayer.OUTER] ?: error("Fix board")
             val horizontalRatio =
                 outRoute.horizontalCells.toFloat() / outRoute.verticalCells.toFloat()
             val verticalRatio =
                 outRoute.verticalCells.toFloat() / outRoute.horizontalCells.toFloat()
             val isVertical = maxHeight > maxWidth
-            val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) 1.2f else 1.0f)
+            val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) INNER_LAYER_SCALE else 1.0f)
             BoxWithConstraints(
                 modifier = Modifier
                     .padding(32.dp)
@@ -196,7 +225,7 @@ fun BoardScreenContent(state: RatRace2BoardState, dispatch: (RatRace2BoardAction
                         scaleY = scale
                     }
             ) {
-                Board(state, isVertical)
+                Board(state, isVertical, dispatch)
                 if (isFlipped(rotY, rotX)) {
                     BackSide()
                 }
@@ -295,6 +324,27 @@ fun BoardScreenContent(state: RatRace2BoardState, dispatch: (RatRace2BoardAction
             },
             content = { Icon(Images.Dice, contentDescription = null) }
         )
+        val selectedCard: BoardCard? by selectedCardState
+        if (selectedCard != null) {
+            val coordinatesState = remember(selectedCard) {
+                cardCoordinatesMap[selectedCard]
+            }
+            if (coordinatesState != null) {
+                val coordinates by coordinatesState
+                val size = remember(coordinates.second, state.layer) {
+                    val scale = if (state.layer == BoardLayer.INNER) INNER_LAYER_SCALE else 1.0f
+                    coordinates.second * scale
+                }
+                val offset = coordinates.first
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .size(size.width, size.height)
+                        .offset(offset.x, offset.y)
+                        .clickable { selectedCardState.value = null }) {
+                    BoardCardBack(selectedCard!!)
+                }
+            }
+        }
     }
 }
 
@@ -321,16 +371,27 @@ fun BackSide() {
 }
 
 @Composable
-fun BoxWithConstraintsScope.Board(state: RatRace2BoardState, isVertical: Boolean) {
+fun BoxWithConstraintsScope.Board(
+    state: RatRace2BoardState,
+    isVertical: Boolean,
+    dispatch: (RatRace2BoardAction) -> Unit
+) {
     val maxWidth = maxWidth
     val maxHeight = maxHeight
     Box(
         modifier = Modifier.fillMaxSize()
             .shadow(30.dp, shape = RoundedCornerShape(8.dp))
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFFFBF00))
+            .background(Brush.radialGradient(
+                0.0f to Color(0xFFFFEC73),
+                0.5f to Color(0xFFFFDC85),
+                1.0f to Color(0xFFFFB370),
+                radius = min(maxWidth, maxHeight).value,
+                tileMode = TileMode.Repeated
+            ))
     ) {
-
+        val outRoute = board.layers[BoardLayer.OUTER] ?: return
+        val inRoute = board.layers[BoardLayer.INNER] ?: return
         val actualOutRoute = remember(isVertical) {
             if (isVertical) outRoute.rotate() else outRoute
         }
@@ -363,12 +424,20 @@ fun BoxWithConstraintsScope.Board(state: RatRace2BoardState, isVertical: Boolean
             (inBoardWidth - inSpotSize * 4 - cardsPadding * 2)
         val cardsHeight =
             (inBoardHeight - inSpotSize * 4 - cardsPadding * 2)
-        Cards(size = DpSize(cardsWidth, cardsHeight))
+        Cards(
+            size = DpSize(cardsWidth, cardsHeight),
+            highlightedCard = state.highlightedCard,
+            dispatch = dispatch
+        )
     }
 }
 
 @Composable
-fun BoxScope.Cards(size: DpSize) {
+fun BoxScope.Cards(
+    size: DpSize,
+    highlightedCard: BoardCard?,
+    dispatch: (RatRace2BoardAction) -> Unit
+) {
     Box(
         modifier = Modifier
             .align(Alignment.Center)
@@ -379,58 +448,138 @@ fun BoxScope.Cards(size: DpSize) {
             val height = (width * 3) / 2
             val cardSize = DpSize(width, height)
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()
-                    .align(Alignment.TopStart)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().align(Alignment.TopStart)
             ) {
-                CardDeck(Card.Chance, cardSize)
-                CardDeck(Card.BigBusiness, cardSize)
-                CardDeck(Card.MediumBusiness, cardSize)
-                CardDeck(Card.SmallBusiness, cardSize)
+                LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch)
             }
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()
-                    .align(Alignment.BottomStart)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart)
             ) {
-                CardDeck(Card.Expenses, cardSize)
-                CardDeck(Card.Deputy, cardSize)
-                CardDeck(Card.EventStore, cardSize)
-                CardDeck(Card.Shopping, cardSize)
+                RightCardDecks(highlightedCard, cardSize, dispatch = dispatch)
             }
         } else {
             val height = size.height / 5
             val width = (height * 3) / 2
             val cardSize = DpSize(width, height)
             Column(
-                verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxHeight()
-                    .align(Alignment.TopStart)
+                verticalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)
             ) {
-                CardDeck(Card.Chance, cardSize)
-                CardDeck(Card.BigBusiness, cardSize)
-                CardDeck(Card.MediumBusiness, cardSize)
-                CardDeck(Card.SmallBusiness, cardSize)
+                LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch)
             }
             Column(
-                verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxHeight()
-                    .align(Alignment.TopEnd)
+                verticalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxHeight().align(Alignment.TopEnd)
             ) {
-                CardDeck(Card.Expenses, cardSize)
-                CardDeck(Card.Deputy, cardSize)
-                CardDeck(Card.EventStore, cardSize)
-                CardDeck(Card.Shopping, cardSize)
+                RightCardDecks(highlightedCard, cardSize, dispatch = dispatch)
             }
         }
     }
 }
 
 @Composable
-fun CardDeck(card: Card, size: DpSize) {
+fun LeftCardDecks(
+    highlightedCard: BoardCard?,
+    size: DpSize,
+    dispatch: (RatRace2BoardAction) -> Unit
+) {
+    CardDeck(BoardCard.Chance, size, highlightedCard, dispatch)
+    CardDeck(BoardCard.BigBusiness, size, highlightedCard, dispatch)
+    CardDeck(BoardCard.MediumBusiness, size, highlightedCard, dispatch)
+    CardDeck(BoardCard.SmallBusiness, size, highlightedCard, dispatch)
+}
+
+@Composable
+fun RightCardDecks(
+    highlightedCard: BoardCard?,
+    size: DpSize,
+    dispatch: (RatRace2BoardAction) -> Unit
+) {
+    CardDeck(BoardCard.Expenses, size, highlightedCard, dispatch)
+    CardDeck(BoardCard.Deputy, size, highlightedCard, dispatch)
+    CardDeck(BoardCard.EventStore, size, highlightedCard, dispatch)
+    CardDeck(BoardCard.Shopping, size, highlightedCard, dispatch)
+}
+
+@Composable
+fun CardDeck(
+    card: BoardCard,
+    size: DpSize,
+    highlightedCard: BoardCard?,
+    dispatch: (RatRace2BoardAction) -> Unit
+) {
     val rounding = min(size.width, size.height) / 10
-    Box(
+    val blurRadius = min(size.width, size.height) / 3
+    val spreadRadius = min(size.width, size.height) / 6
+
+    val density = LocalDensity.current
+    BoxWithConstraints(
         modifier = Modifier
             .size(size.width, size.height)
-            .clip(RoundedCornerShape(rounding))
-            .background(card.color)
-    )
+            .onGloballyPositioned { layoutCoordinates ->
+                val positionInWindow = layoutCoordinates.positionInWindow()
+                val offsetX = with(density) { positionInWindow.x.toDp() }
+                val offsetY = with(density) { positionInWindow.y.toDp() }
+                val offset = DpOffset(offsetX, offsetY)
+                val coordinates = offset to size
+                cardCoordinatesMap.getOrPut(card) {
+                    mutableStateOf(coordinates)
+                }.value = coordinates
+            }
+            .optionalModifier(card == highlightedCard) {
+                boxShadow(
+                    blurRadius = blurRadius,
+                    spreadRadius = spreadRadius,
+                    shape = RoundedCornerShape(rounding),
+                    color = Color(0xFFFFD700),
+                ).clickable {
+                    dispatch(RatRace2BoardAction.SelectedCard(card))
+                }
+            }
+    ) {
+        BoardCardBack(card)
+    }
+}
+@Composable
+private fun BoxWithConstraintsScope.BoardCardBack(card: BoardCard) {
+    val width = maxWidth
+    val height = maxHeight
+    val rounding = min(width, height) / 10
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .clip(RoundedCornerShape(rounding))
+        .background(card.color)) {
+        OutlinedText(
+            text = when (card) {
+                BoardCard.BigBusiness -> "Big Business"
+                BoardCard.Chance -> "Chance"
+                BoardCard.Deputy -> "Deputy"
+                BoardCard.EventStore -> "Event Store"
+                BoardCard.Expenses -> "Expenses"
+                BoardCard.MediumBusiness -> "Medium Business"
+                BoardCard.Shopping -> "Shopping"
+                BoardCard.SmallBusiness -> "Small Business"
+            },
+            autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
+            fontFamily = FontFamily(
+                Font(
+                    Res.font.Bubbleboddy,
+                    weight = FontWeight.Medium
+                )
+            ),
+            modifier = Modifier.align(Alignment.Center)
+                .padding(min(width, height) / 14)
+                .optionalModifier(width < height) {
+                    rotateLayout(Rotation.ROT_90)
+                },
+            fillColor = Color.White,
+            outlineColor = Color(0xFF8A8A8A),
+            outlineDrawStyle = Stroke(2f),
+            maxLines = 1
+        )
+    }
 }
 
 @Composable
@@ -470,7 +619,6 @@ private fun BoxScope.Places(
                     .offset(x = place.offset.x, y = place.offset.y)
                     .background(place.type.color)
             ) {
-
                 PlaceContent(place.type, place.size, place.isVertical)
             }
         }
@@ -481,7 +629,7 @@ private fun BoxScope.Places(
                     position = moveTo(it.state.position, layer.cellCount, route.offset),
                     color = it.attrs.color,
                     level = it.state.level,
-                    name = it.professionCard.profession
+                    name = it.professionCard.profession,
                 )
             }
         }
@@ -543,7 +691,7 @@ fun BoxWithConstraintsScope.ColorsSelector(
 ) {
     val players by players
     FlowRow(modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 64.dp)) {
-        (pointerColors - players.filter { it.id != currentPlayerId }
+        (pointerColors - players.filter { !it.isCurrentPlayer }
             .map { it.attrs.color }).forEach { color ->
             RadioButton(
                 selected = color == state.color,
@@ -554,6 +702,9 @@ fun BoxWithConstraintsScope.ColorsSelector(
         }
     }
 }
+
+val Player.isCurrentPlayer: Boolean
+    get() = id == currentPlayerId
 
 private fun PlaceType.getDpSize(
     location: Location,
@@ -638,9 +789,12 @@ private val PlaceType.text: String
         }
     }
 
-
-val outRoute = BoardRoute(26, 18, outPlaces)
-val inRoute = BoardRoute(28, 18, inPlaces)
+val board = Board(
+    layers = mapOf(
+        BoardLayer.OUTER to BoardRoute(26, 18, outPlaces),
+        BoardLayer.INNER to BoardRoute(28, 18, inPlaces),
+    )
+)
 
 private fun Modifier.rotateOnDrag(
     rotX: Animatable<Float, AnimationVector1D>,
@@ -663,7 +817,6 @@ private fun Modifier.rotateOnDrag(
                         launch {
                             dRotX = rotX.value + it.positionChange().y * 0.09f
                             dRotY = rotY.value + it.positionChange().x * 0.09f
-                            // TODO Constrain 180 deg flip only on one axis at a time
                             rotX.snapTo(dRotX)
                             rotY.snapTo(dRotY)
                         }

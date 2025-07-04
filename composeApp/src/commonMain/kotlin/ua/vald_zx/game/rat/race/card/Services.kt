@@ -2,7 +2,6 @@ package ua.vald_zx.game.rat.race.card
 
 import com.russhwolf.settings.get
 import com.russhwolf.settings.set
-import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.request.url
@@ -43,7 +42,6 @@ suspend fun startService() {
             }
         }
     }.withService()
-    Napier.d { "service launched" }
     settings["currentPlayerId"] = service?.hello(currentPlayerId)
     val state = raceRate2KStore.get()
     val professionCard = state?.playerCard
@@ -61,10 +59,8 @@ fun RatRace2CardState.toState(): PlayerState {
 }
 
 suspend fun RaceRatService.updatePlayers(actualIds: Set<String>) {
-    Napier.d("Users: ")
-    actualIds.forEach {
-        Napier.d(it)
-    }
     val oldList = players.value
-    players.value = actualIds.mapNotNull { id -> oldList.find { id == it.id } ?: getPlayer(id) }
+    players.value = actualIds.mapNotNull { id ->
+        oldList.find { id == it.id } ?: getPlayer(id)
+    }
 }

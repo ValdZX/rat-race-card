@@ -48,10 +48,9 @@ class RaceRatServiceImpl(
         val initialInstance = if (uuid != id && instances.value.contains(id)) {
             val instance = instances.value[id]
             instances.value = instances.value.toMutableMap().apply { remove(id) }
-            instance ?: Instance()
+            instance ?: Instance(player = Player(uuid, PlayerAttributes(color = getRandomColor())))
         } else Instance()
         instances.value = instances.value.toMutableMap().apply { this[uuid] = initialInstance }
-        LOGGER.debug("User $uuid")
         return this.uuid
     }
 
@@ -91,14 +90,17 @@ class RaceRatServiceImpl(
 
     private suspend fun changeCurrentPlayer(todo: Player.() -> Player) {
         val instance = instances.value[uuid] ?: return
-        val color = (pointerColors - instances.value.values.mapNotNull {
-            it.player?.attrs?.color
-        }.toSet()).random()
-        val player = instance.player ?: Player(uuid, PlayerAttributes(color = color))
+        val player = instance.player ?: Player(uuid, PlayerAttributes(color = getRandomColor()))
         instances.value = instances.value.toMutableMap().apply {
             val updatedPlayer = player.todo()
             internalEventBus.emit(InternalEvent.PlayerChanged(updatedPlayer))
             this[uuid] = instance.copy(player = updatedPlayer)
         }
+    }
+
+    private fun getRandomColor(): Long {
+        return (pointerColors - instances.value.values.mapNotNull {
+            it.player?.attrs?.color
+        }.toSet()).random()
     }
 }

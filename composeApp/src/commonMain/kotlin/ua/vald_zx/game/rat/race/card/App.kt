@@ -103,8 +103,12 @@ internal fun App() {
 
                     is Event.PlayerChanged -> {
                         val playersList = players.value
-                        playersList.find { it.id == event.player.id }?.let { oldPlayer ->
+                        val changedPlayer = event.player
+                        val oldPlayer = playersList.find { it.id == changedPlayer.id }
+                        if (oldPlayer != null) {
                             players.value = playersList.replaceItem(oldPlayer, event.player)
+                        } else {
+                            players.value = players.value + event.player
                         }
                         if (changedPlayer.id == currentPlayerId) {
                             raceRate2BoardStore.dispatch(

@@ -13,16 +13,31 @@ val storeColor = Color(0xff0788e8)
 val shoppingColor = Color.Cyan
 
 val deputyColor = Color(0xff8a8fdc)
-sealed class Card(val color: Color) {
-    data object Chance : Card(cnanceColor)
-    data object SmallBusiness : Card(Color(0xffb3ff99))
-    data object MediumBusiness : Card(businessColor)
-    data object BigBusiness : Card(bigBusinessColor)
-    data object Expenses : Card(expensesColor)
-    data object EventStore : Card(storeColor)
-    data object Shopping : Card(shoppingColor)
-    data object Deputy : Card(deputyColor)
+
+enum class BoardCard {
+    Chance,
+    SmallBusiness,
+    MediumBusiness,
+    BigBusiness,
+    Expenses,
+    EventStore,
+    Shopping,
+    Deputy,
 }
+
+val BoardCard.color: Color
+    get() {
+        return when (this) {
+            BoardCard.Chance -> cnanceColor
+            BoardCard.SmallBusiness -> Color(0xffb3ff99)
+            BoardCard.MediumBusiness -> businessColor
+            BoardCard.BigBusiness -> bigBusinessColor
+            BoardCard.Expenses -> expensesColor
+            BoardCard.EventStore -> storeColor
+            BoardCard.Shopping -> shoppingColor
+            BoardCard.Deputy -> deputyColor
+        }
+    }
 
 
 sealed class PlaceType(val name: String, val color: Color, val isBig: Boolean = false) {
