@@ -91,6 +91,7 @@ compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "comp
 compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources", version.ref = "compottie" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 sceneview = { module = "io.github.sceneview:sceneview", version = "2.3.0" }
+constraintlayout = { module = "tech.annexflow.compose:constraintlayout-compose-multiplatform", version = "0.6.0" }
 
 
 [plugins]

@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.compose.ExperimentalMotionApi
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import dev.lennartegb.shadows.boxShadow
@@ -178,6 +179,7 @@ class Board2Screen : Screen {
     }
 }
 
+@OptIn(ExperimentalMotionApi::class)
 @Composable
 fun BoardScreenContent(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
     val rotX = remember { Animatable(0f) }
@@ -325,28 +327,10 @@ fun BoardScreenContent(state: RatRace2BoardState, dispatch: (RatRace2BoardAction
             content = { Icon(Images.Dice, contentDescription = null) }
         )
         val selectedCard: BoardCard? by selectedCardState
-        if (selectedCard != null) {
-            val coordinatesState = remember(selectedCard) {
-                cardCoordinatesMap[selectedCard]
-            }
-            if (coordinatesState != null) {
-                val coordinates by coordinatesState
-                val size = remember(coordinates.second, state.layer) {
-                    val scale = if (state.layer == BoardLayer.INNER) INNER_LAYER_SCALE else 1.0f
-                    coordinates.second * scale
-                }
-                val offset = coordinates.first
-                BoxWithConstraints(
-                    modifier = Modifier
-                        .size(size.width, size.height)
-                        .offset(offset.x, offset.y)
-                        .clickable { selectedCardState.value = null }) {
-                    BoardCardBack(selectedCard!!)
-                }
-            }
-        }
+        CardDialog(state, selectedCard)
     }
 }
+
 
 @Composable
 fun BackSide() {
@@ -378,17 +362,21 @@ fun BoxWithConstraintsScope.Board(
 ) {
     val maxWidth = maxWidth
     val maxHeight = maxHeight
+    val density = LocalDensity.current
     Box(
         modifier = Modifier.fillMaxSize()
             .shadow(30.dp, shape = RoundedCornerShape(8.dp))
             .clip(RoundedCornerShape(8.dp))
-            .background(Brush.radialGradient(
-                0.0f to Color(0xFFFFEC73),
-                0.5f to Color(0xFFFFDC85),
-                1.0f to Color(0xFFFFB370),
-                radius = min(maxWidth, maxHeight).value,
-                tileMode = TileMode.Repeated
-            ))
+            .background(
+                Brush.radialGradient(
+                    0.0f to Color(0xFFFFEC73),
+                    0.4f to Color(0xFFFFDC85),
+                    0.6f to Color(0xFFFFB370),
+                    1.0f to Color(0xFFFFB370),
+                    radius = with(density) { min(maxWidth, maxHeight).toPx() },
+                    tileMode = TileMode.Repeated
+                )
+            )
     ) {
         val outRoute = board.layers[BoardLayer.OUTER] ?: return
         val inRoute = board.layers[BoardLayer.INNER] ?: return
@@ -511,8 +499,8 @@ fun CardDeck(
     dispatch: (RatRace2BoardAction) -> Unit
 ) {
     val rounding = min(size.width, size.height) / 10
-    val blurRadius = min(size.width, size.height) / 3
-    val spreadRadius = min(size.width, size.height) / 6
+    val blurRadius = min(size.width, size.height) / 10
+    val spreadRadius = min(size.width, size.height) / 20
 
     val density = LocalDensity.current
     BoxWithConstraints(
@@ -533,52 +521,13 @@ fun CardDeck(
                     blurRadius = blurRadius,
                     spreadRadius = spreadRadius,
                     shape = RoundedCornerShape(rounding),
-                    color = Color(0xFFFFD700),
+                    color = Color.White,
                 ).clickable {
                     dispatch(RatRace2BoardAction.SelectedCard(card))
                 }
             }
     ) {
         BoardCardBack(card)
-    }
-}
-@Composable
-private fun BoxWithConstraintsScope.BoardCardBack(card: BoardCard) {
-    val width = maxWidth
-    val height = maxHeight
-    val rounding = min(width, height) / 10
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .clip(RoundedCornerShape(rounding))
-        .background(card.color)) {
-        OutlinedText(
-            text = when (card) {
-                BoardCard.BigBusiness -> "Big Business"
-                BoardCard.Chance -> "Chance"
-                BoardCard.Deputy -> "Deputy"
-                BoardCard.EventStore -> "Event Store"
-                BoardCard.Expenses -> "Expenses"
-                BoardCard.MediumBusiness -> "Medium Business"
-                BoardCard.Shopping -> "Shopping"
-                BoardCard.SmallBusiness -> "Small Business"
-            },
-            autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
-            fontFamily = FontFamily(
-                Font(
-                    Res.font.Bubbleboddy,
-                    weight = FontWeight.Medium
-                )
-            ),
-            modifier = Modifier.align(Alignment.Center)
-                .padding(min(width, height) / 14)
-                .optionalModifier(width < height) {
-                    rotateLayout(Rotation.ROT_90)
-                },
-            fillColor = Color.White,
-            outlineColor = Color(0xFF8A8A8A),
-            outlineDrawStyle = Stroke(2f),
-            maxLines = 1
-        )
     }
 }
 

@@ -10,6 +10,7 @@ import kotlinx.rpc.krpc.ktor.client.rpc
 import kotlinx.rpc.krpc.ktor.client.rpcConfig
 import kotlinx.rpc.krpc.serialization.json.json
 import kotlinx.rpc.withService
+import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.logic.total
@@ -61,6 +62,14 @@ fun RatRace2CardState.toState(): PlayerState {
 suspend fun RaceRatService.updatePlayers(actualIds: Set<String>) {
     val oldList = players.value
     players.value = actualIds.mapNotNull { id ->
-        oldList.find { id == it.id } ?: getPlayer(id)
+        oldList.find { id == it.id } ?: getPlayer(id)?.apply {
+            if (this.id == currentPlayerId) {
+                raceRate2BoardStore.dispatch(
+                    RatRace2BoardAction.UpdateCurrentPlayer(
+                        this
+                    )
+                )
+            }
+        }
     }
 }

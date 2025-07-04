@@ -78,6 +78,7 @@ kotlin {
             implementation(libs.tts.compose)
             implementation(libs.compottie)
             implementation(libs.compottie.resources)
+            implementation(libs.constraintlayout)
 //            implementation(libs.zoomable)//add after wasm support
         }
 
