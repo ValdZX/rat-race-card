@@ -1,6 +1,8 @@
 package ua.vald_zx.game.rat.race.server
 
 import io.ktor.util.logging.KtorSimpleLogger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
@@ -16,7 +18,6 @@ import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.card.shared.mapState
 import ua.vald_zx.game.rat.race.card.shared.pointerColors
-import kotlin.coroutines.CoroutineContext
 
 internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
@@ -24,8 +25,7 @@ private val internalEventBus = MutableSharedFlow<InternalEvent>()
 
 class RaceRatServiceImpl(
     private val uuid: String,
-    override val coroutineContext: CoroutineContext
-) : RaceRatService {
+) : RaceRatService, CoroutineScope by CoroutineScope(Dispatchers.Default) {
     private val eventBus = MutableSharedFlow<Event>()
 
     init {

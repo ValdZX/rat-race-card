@@ -1,7 +1,6 @@
 package ua.vald_zx.game.rat.race.card.shared
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.rpc.RemoteService
 import kotlinx.rpc.annotations.Rpc
 import kotlinx.serialization.Serializable
 
@@ -59,7 +58,7 @@ sealed class Event {
 }
 
 @Rpc
-interface RaceRatService : RemoteService {
+interface RaceRatService {
     suspend fun hello(id: String = ""): String
     suspend fun updatePlayerCard(professionCard: ProfessionCard)
     suspend fun updateState(state: PlayerState)

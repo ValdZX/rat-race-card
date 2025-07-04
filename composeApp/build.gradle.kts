@@ -1,7 +1,6 @@
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.compose.reload.ComposeHotRun
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
@@ -210,7 +209,3 @@ tasks.register("buildDist") {
         File("composeApp/build/dist/wasmJs/productionExecutable").copyRecursively(file)
     }
 }.dependsOn("wasmJsBrowserDistribution")
-
-tasks.withType<ComposeHotRun>().configureEach {
-    mainClass.set("MainKt")
-}

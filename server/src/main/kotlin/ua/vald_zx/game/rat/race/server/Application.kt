@@ -56,8 +56,8 @@ fun Application.module() {
                 }
             }
 
-            registerService<RaceRatService> { ctx ->
-                RaceRatServiceImpl(uuid, ctx)
+            registerService<RaceRatService> {
+                RaceRatServiceImpl(uuid)
             }
             closeReason.invokeOnCompletion {
                 instances.value = instances.value.toMutableMap().apply {

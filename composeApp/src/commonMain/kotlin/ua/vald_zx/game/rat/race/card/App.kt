@@ -3,7 +3,6 @@ package ua.vald_zx.game.rat.race.card
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,7 +19,6 @@ import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -34,8 +32,8 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.logic.Statistics
-import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
-import ua.vald_zx.game.rat.race.card.screen.second.RaceRate2Screen
+import ua.vald_zx.game.rat.race.card.logic.players
+import ua.vald_zx.game.rat.race.card.screen.board.Board2Screen
 import ua.vald_zx.game.rat.race.card.shared.Event
 import ua.vald_zx.game.rat.race.card.shared.replaceItem
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -124,7 +122,6 @@ internal fun App() {
         onDispose {
             coroutineScope.launch {
                 service?.closeSession()
-                service?.cancel()
                 client.close()
             }
         }
