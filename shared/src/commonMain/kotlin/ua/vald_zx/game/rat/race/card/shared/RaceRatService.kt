@@ -5,47 +5,17 @@ import kotlinx.rpc.annotations.Rpc
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Player(
-    val id: String,
-    val attrs: PlayerAttributes,
-    val professionCard: ProfessionCard = ProfessionCard(),
-    val state: PlayerState = PlayerState()
-)
-
-@Serializable
-data class PlayerAttributes(
-    val color: Long,
-    val avatar: Int = 0,
-)
-
-@Serializable
-data class ProfessionCard(
-    val profession: String = "",
-    val salary: Long = 0,
-    val rent: Long = 0,
-    val food: Long = 0,
-    val cloth: Long = 0,
-    val transport: Long = 0,
-    val phone: Long = 0,
-)
-
-@Serializable
-data class PlayerState(
-    val position: Int = 1,
-    val level: Int = 0,
-    val totalExpenses: Long = 0,
-    val cashFlow: Long = 0,
-)
-
-@Serializable
-sealed class InternalEvent {
+sealed class GlobalEvent {
 
     @Serializable
     data class MoneyIncome(val playerId: String, val receiverId: String, val amount: Long) :
-        InternalEvent()
+        GlobalEvent()
 
     @Serializable
-    data class PlayerChanged(val player: Player) : InternalEvent()
+    data class PlayerChanged(val player: Player) : GlobalEvent()
+
+    @Serializable
+    data class RollDice(val playerId: String, val dice: Int) : GlobalEvent()
 }
 
 @Serializable
@@ -55,19 +25,40 @@ sealed class Event {
 
     @Serializable
     data class PlayerChanged(val player: Player) : Event()
+
+    @Serializable
+    data class RollDice(val dice: Int) : Event()
+
+    @Serializable
+    data class BoardChanged(val board: Board) : Event()
 }
+
+@Serializable
+data class Instance(val id: String, val boardId: String)
 
 @Rpc
 interface RaceRatService {
-    suspend fun hello(id: String = ""): String
-    suspend fun updatePlayerCard(professionCard: ProfessionCard)
+    suspend fun hello(id: String = ""): Instance
+    suspend fun getBoards(): List<BoardId>
+    fun observeBoards(): Flow<List<BoardId>>
+    suspend fun createBoard(name: String): Board
+    suspend fun selectBoard(boardId: String): Board?
+    suspend fun makePlayerOnBoard(): Set<String>
+    suspend fun updatePlayerCard(playerCard: PlayerCard)
     suspend fun updateState(state: PlayerState)
     suspend fun updateAttributes(attrs: PlayerAttributes)
     fun eventsObserve(): Flow<Event>
-    suspend fun playersList(): Set<String>
-    fun playersListObserve(): Flow<Set<String>>
     suspend fun getPlayer(id: String): Player?
     suspend fun sendMoney(receiverId: String, amount: Long)
+
+    suspend fun rollDice(): Int
+
     suspend fun changePosition(position: Int, level: Int)
+
+    suspend fun takeCard(cardType: BoardCardType)
+    suspend fun discardPile()
+
+    suspend fun nextPlayer()
+
     suspend fun closeSession()
 }

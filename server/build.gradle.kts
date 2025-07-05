@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "ua.vald_zx.game.rat.race.server"
-version = "0.1.7"
+version = "0.1.8"
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
 }
@@ -15,6 +15,7 @@ dependencies {
     implementation(projects.shared)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.logback)
+    implementation(libs.kotlinx.datetime)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.cors.jvm)

@@ -38,7 +38,7 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
-import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
+import ua.vald_zx.game.rat.race.card.shared.PlayerCard
 
 class PersonCard2Screen : Screen {
     @Composable
@@ -91,7 +91,7 @@ class EditPersonCardScreen : Screen {
 }
 
 @Composable
-fun ProfessionCardForm(card: ProfessionCard? = null, filled: (ProfessionCard) -> Unit) {
+fun ProfessionCardForm(card: PlayerCard? = null, filled: (PlayerCard) -> Unit) {
     var profession by remember { mutableStateOf(card?.profession.orEmpty()) }
     val salary = remember { mutableStateOf(TextFieldValue(card?.salary?.toString().orEmpty())) }
     val rent = remember { mutableStateOf(TextFieldValue(card?.rent?.toString().orEmpty())) }
@@ -139,7 +139,7 @@ fun ProfessionCardForm(card: ProfessionCard? = null, filled: (ProfessionCard) ->
             .widthIn(min = 200.dp),
         onClick = {
             filled(
-                ProfessionCard(
+                PlayerCard(
                     profession = profession.trim(),
                     salary = salary.value.text.toLong(),
                     rent = rent.value.text.toLong(),

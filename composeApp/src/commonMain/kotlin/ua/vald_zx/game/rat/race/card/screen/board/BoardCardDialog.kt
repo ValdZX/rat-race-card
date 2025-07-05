@@ -12,34 +12,42 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.unit.max
-import androidx.compose.ui.unit.min
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.Dimension
 import androidx.constraintlayout.compose.ExperimentalMotionApi
 import androidx.constraintlayout.compose.MotionLayout
 import androidx.constraintlayout.compose.MotionScene
 import androidx.constraintlayout.compose.Visibility
+import ua.vald_zx.game.rat.race.card.currentPlayerId
+import ua.vald_zx.game.rat.race.card.logic.BoardAction
 import ua.vald_zx.game.rat.race.card.logic.BoardLayer
-import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction
-import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardState
+import ua.vald_zx.game.rat.race.card.logic.BoardState
 
-const val animationDuration = 2000
+const val cardMoveAnimationDuration = 2000
 
 @OptIn(ExperimentalMotionApi::class)
 @Composable
 fun CardDialog(
-    state: RatRace2BoardState,
-    selectedCard: BoardCardType?,
-    dispatch: (RatRace2BoardAction) -> Unit
+    state: BoardState,
+    dispatch: (BoardAction) -> Unit
 ) {
-    if (selectedCard != null) {
+    val takenCard = state.board?.takenCard
+    var showDialog by remember { mutableStateOf(false) }
+    LaunchedEffect(takenCard) {
+        if (takenCard != null) {
+            showDialog = true
+        }
+    }
+    if (showDialog) {
+        val card = remember { takenCard ?: error("Illegal state") }
         var targetProgress by remember { mutableStateOf(0f) }
         val progress by animateFloatAsState(
             targetValue = targetProgress,
-            animationSpec = tween(durationMillis = animationDuration)
+            animationSpec = tween(durationMillis = cardMoveAnimationDuration)
         )
-        val deckCoordinatesState = remember(selectedCard) {
-            deckCoordinatesMap[selectedCard]
+        val deckCoordinatesState = remember(card) {
+            deckCoordinatesMap[card.type]
         }
         if (deckCoordinatesState != null) {
             val deckCoordinates by deckCoordinatesState
@@ -48,7 +56,7 @@ fun CardDialog(
                 val size = deckCoordinates.second * scale
                 val deckOffset = deckCoordinates.first
                 val discardOffset =
-                    discardPilesCoordinatesMap[selectedCard]?.value?.first ?: deckOffset
+                    discardPilesCoordinatesMap[card.type]?.value?.first ?: deckOffset
                 MotionScene {
                     val back = createRefFor("back")
                     val front = createRefFor("front")
@@ -113,8 +121,8 @@ fun CardDialog(
                         constrain(front) {
                             visibility = Visibility.Visible
                             centerTo(parent)
-                            width = Dimension.value(max(size.width, size.height) * 4)
-                            height = Dimension.value(min(size.width, size.height) * 4)
+                            width = Dimension.value(300.dp)
+                            height = Dimension.value(200.dp)
                             rotationY = 0f
                         }
                     }
@@ -176,12 +184,19 @@ fun CardDialog(
                 }
             ) {
                 BoxWithConstraints(modifier = Modifier.layoutId("back")) {
-                    BoardCardBack(selectedCard)
+                    BoardCardBack(card.type, DpSize(maxWidth, maxHeight))
                 }
                 BoxWithConstraints(modifier = Modifier.layoutId("front")) {
-                    BoardCardFront(selectedCard) {
+                    val isActive = remember(card) { currentPlayerId == state.board?.activePlayer }
+                    BoardCardFront(card, isActive) {
+                        dispatch(BoardAction.ToDiscardPile)
                         targetProgress = 6f
                     }
+                }
+            }
+            LaunchedEffect(takenCard) {
+                if (takenCard == null) {
+                    targetProgress = 6f
                 }
             }
             LaunchedEffect(Unit) {
@@ -189,8 +204,7 @@ fun CardDialog(
             }
             if (progress == 6f) {
                 LaunchedEffect(Unit) {
-                    dispatch(RatRace2BoardAction.ToDiscardPile(selectedCard))
-                    selectedCardState.value = null
+                    showDialog = false
                 }
             }
         }

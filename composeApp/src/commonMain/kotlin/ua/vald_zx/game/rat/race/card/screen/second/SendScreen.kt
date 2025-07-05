@@ -13,7 +13,7 @@ class SendScreen(private val player: Player) : Screen {
     @Composable
     override fun Content() {
         InputScreen(
-            inputLabel = "Відправити кошти до ${player.professionCard.profession}",
+            inputLabel = "Відправити кошти до ${player.playerCard.profession}",
             buttonText = "Відправити",
             validation = { price -> price.isNotEmpty() },
             onClick = { price ->

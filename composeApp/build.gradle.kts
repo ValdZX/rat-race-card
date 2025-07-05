@@ -60,11 +60,13 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+            implementation(compose.materialIconsExtended)
             implementation(libs.voyager.navigator)
             implementation(libs.voyager.bottom.sheet.navigator)
             implementation(libs.napier)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.kstore)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.websockets)
@@ -79,6 +81,7 @@ kotlin {
             implementation(libs.compottie)
             implementation(libs.compottie.resources)
             implementation(libs.constraintlayout)
+            implementation(libs.composables.core)
 //            implementation(libs.zoomable)//add after wasm support
         }
 

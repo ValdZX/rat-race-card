@@ -46,6 +46,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -111,12 +112,31 @@ fun Button(
     text: String,
     containerColor: Color = ButtonDefaults.elevatedButtonColors().containerColor,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) = ElevatedButton(
     modifier = modifier
         .padding(horizontal = 8.dp, vertical = 4.dp)
         .widthIn(min = 240.dp),
     onClick = onClick,
+    enabled = enabled,
+    content = {
+        Text(text)
+    },
+    colors = ButtonDefaults.elevatedButtonColors().copy(containerColor = containerColor)
+)
+
+@Composable
+fun TextButton(
+    text: String,
+    containerColor: Color = ButtonDefaults.elevatedButtonColors().containerColor,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) = TextButton(
+    modifier = modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+    onClick = onClick,
+    enabled = enabled,
     content = {
         Text(text)
     },
@@ -309,23 +329,30 @@ fun CashFlowField(
     value: String,
     fontSize: TextUnit = 20.sp,
     rainbow: List<Color> = SkittlesRainbow,
-    onClick: () -> Unit = {},
+    onClick: (() -> Unit)? = null,
     salary: (() -> Unit)? = null
 ) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .run {
+                if (onClick != null) {
+                    clickable(onClick = onClick)
+                } else this
+            }
             .padding(start = 8.dp)
     ) {
         SmoothRainbowText(
             name,
             rainbow = rainbow,
-            style = LocalTextStyle.current.copy(fontSize = fontSize)
+            style = LocalTextStyle.current.copy(fontSize = fontSize),
+            modifier = Modifier.weight(1f)
         )
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(end = 8.dp)
+        ) {
             Text(value.splitDecimal(), fontSize = fontSize)
             if (salary != null) {
                 IconButton(

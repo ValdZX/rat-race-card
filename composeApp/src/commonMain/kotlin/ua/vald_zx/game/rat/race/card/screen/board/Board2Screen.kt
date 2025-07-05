@@ -1,16 +1,19 @@
 package ua.vald_zx.game.rat.race.card.screen.board
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -23,14 +26,18 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.runtime.Composable
@@ -47,7 +54,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -57,7 +63,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -70,7 +75,11 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ExperimentalMotionApi
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
-import dev.lennartegb.shadows.boxShadow
+import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
+import com.composables.core.BottomSheet
+import com.composables.core.SheetDetent
+import com.composables.core.SheetDetent.Companion.FullyExpanded
+import com.composables.core.rememberBottomSheetState
 import io.github.alexzhirkevich.compottie.LottieComposition
 import io.github.alexzhirkevich.compottie.LottieCompositionSpec
 import io.github.alexzhirkevich.compottie.rememberLottieAnimatable
@@ -79,6 +88,7 @@ import io.github.alexzhirkevich.compottie.rememberLottiePainter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -94,19 +104,18 @@ import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.components.rotateLayout
 import ua.vald_zx.game.rat.race.card.currentPlayerId
+import ua.vald_zx.game.rat.race.card.logic.BoardAction
 import ua.vald_zx.game.rat.race.card.logic.BoardLayer
-import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction
-import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardSideEffect
-import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardState
-import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardStore
+import ua.vald_zx.game.rat.race.card.logic.BoardSideEffect
+import ua.vald_zx.game.rat.race.card.logic.BoardState
+import ua.vald_zx.game.rat.race.card.logic.BoardStore
 import ua.vald_zx.game.rat.race.card.logic.moveTo
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.Dice
 import ua.vald_zx.game.rat.race.card.resource.images.Money
-import ua.vald_zx.game.rat.race.card.resource.images.UpDoubleArrow
+import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.pointerColors
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -156,23 +165,65 @@ data class BoardRoute(
 
 const val INNER_LAYER_SCALE = 1.2f
 
+val navigationBarHeightState = mutableStateOf(0.dp)
+val statusBarHeightState = mutableStateOf(0.dp)
 val deckCoordinatesMap = mutableMapOf<BoardCardType, MutableState<Pair<DpOffset, DpSize>>>()
 val discardPilesCoordinatesMap = mutableMapOf<BoardCardType, MutableState<Pair<DpOffset, DpSize>>>()
-val selectedCardState = mutableStateOf<BoardCardType?>(null)
+val littleDetailsHeight = 100.dp
+val HalfExpanded: SheetDetent =
+    SheetDetent("hidden") { containerHeight, sheetHeight -> littleDetailsHeight }
 
 class Board2Screen : Screen {
 
     override val key: ScreenKey = "Board2Screen"
 
+    @OptIn(ExperimentalMaterialApi::class)
     @Composable
     override fun Content() {
         val state by raceRate2BoardStore.observeState().collectAsState()
-        BoardScreenContent(state, raceRate2BoardStore::dispatch)
+        var dice by remember { mutableStateOf(0) }
+        val scaffoldState = rememberBottomSheetState(
+            initialDetent = HalfExpanded,
+            detents = listOf(HalfExpanded, FullyExpanded)
+        )
+        Box {
+            BottomSheetNavigator {
+                BoardScreenContent(state, raceRate2BoardStore::dispatch, dice)
+                Box(modifier = Modifier.systemBarsPadding()) {
+                    BottomSheet(state = scaffoldState) { Board2PlayerDetailsScreen(scaffoldState) }
+                }
+            }
+            val density = LocalDensity.current
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.background
+                            )
+                        )
+                    )
+                    .onGloballyPositioned {
+                        with(density) { navigationBarHeightState.value = it.size.height.toDp() }
+                    }
+            ) {
+                Box(modifier = Modifier.navigationBarsPadding())
+            }
+            Box(modifier = Modifier.fillMaxWidth().onGloballyPositioned {
+                with(density) { statusBarHeightState.value = it.size.height.toDp() }
+            }) {
+                Box(modifier = Modifier.statusBarsPadding())
+            }
+        }
         LaunchedEffect(Unit) {
             raceRate2BoardStore.observeSideEffect().onEach { effect ->
                 when (effect) {
-                    is RatRace2BoardSideEffect.ShowCard -> {
-                        selectedCardState.value = effect.card
+                    is BoardSideEffect.ShowDice -> {
+                        dice = effect.dice
+                        delay(5000)
+                        dice = 0
                     }
                 }
             }.launchIn(this)
@@ -180,155 +231,159 @@ class Board2Screen : Screen {
     }
 }
 
-@OptIn(ExperimentalMotionApi::class)
+@OptIn(ExperimentalMotionApi::class, ExperimentalMaterialApi::class)
 @Composable
-fun BoardScreenContent(state: RatRace2BoardState, dispatch: (RatRace2BoardAction) -> Unit) {
+fun BoardScreenContent(
+    state: BoardState,
+    dispatch: (BoardAction) -> Unit,
+    dice: Int
+) {
+    Box(modifier = Modifier.fillMaxSize().padding(bottom = littleDetailsHeight)) {
+        Board(state, dispatch)
+        Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
+            Controls(state, dispatch, dice)
+        }
+        CardDialog(state, dispatch)
+    }
+}
+
+@Composable
+fun Board(
+    state: BoardState,
+    dispatch: (BoardAction) -> Unit,
+) {
     val rotX = remember { Animatable(0f) }
     val rotY = remember { Animatable(0f) }
     BoxWithConstraints(
-        modifier = Modifier.systemBarsPadding().fillMaxSize()
-    ) {
+        modifier = Modifier
+            .fillMaxSize()
+            .rotateOnDrag(rotX, rotY)
+    )
+    {
+        val outRoute = boardLayers.layers[BoardLayer.OUTER] ?: error("Fix board")
+        val horizontalRatio =
+            outRoute.horizontalCells.toFloat() / outRoute.verticalCells.toFloat()
+        val verticalRatio =
+            outRoute.verticalCells.toFloat() / outRoute.horizontalCells.toFloat()
+        val isVertical = maxHeight > maxWidth
+        val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) INNER_LAYER_SCALE else 1.0f)
         BoxWithConstraints(
             modifier = Modifier
-                .fillMaxSize()
-                .rotateOnDrag(rotX, rotY)
-        ) {
-            val outRoute = board.layers[BoardLayer.OUTER] ?: error("Fix board")
-            val horizontalRatio =
-                outRoute.horizontalCells.toFloat() / outRoute.verticalCells.toFloat()
-            val verticalRatio =
-                outRoute.verticalCells.toFloat() / outRoute.horizontalCells.toFloat()
-            val isVertical = maxHeight > maxWidth
-            val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) INNER_LAYER_SCALE else 1.0f)
-            BoxWithConstraints(
-                modifier = Modifier
-                    .padding(32.dp)
-                    .align(Alignment.Center)
-                    .let { modifier ->
-                        if (isVertical) {
-                            if (maxWidth / maxHeight > horizontalRatio) {
-                                modifier.fillMaxWidth().aspectRatio(verticalRatio)
-                            } else {
-                                modifier.fillMaxHeight().aspectRatio(verticalRatio)
-                            }
+                .padding(32.dp)
+                .align(Alignment.Center)
+                .let { modifier ->
+                    if (isVertical) {
+                        if (maxWidth / maxHeight > horizontalRatio) {
+                            modifier.fillMaxWidth().aspectRatio(verticalRatio)
                         } else {
-                            if (maxWidth / maxHeight > horizontalRatio) {
-                                modifier.fillMaxHeight().aspectRatio(horizontalRatio)
-                            } else {
-                                modifier.fillMaxWidth().aspectRatio(horizontalRatio)
-                            }
+                            modifier.fillMaxHeight().aspectRatio(verticalRatio)
+                        }
+                    } else {
+                        if (maxWidth / maxHeight > horizontalRatio) {
+                            modifier.fillMaxHeight().aspectRatio(horizontalRatio)
+                        } else {
+                            modifier.fillMaxWidth().aspectRatio(horizontalRatio)
                         }
                     }
-                    .graphicsLayer {
-                        rotationX = (-rotX.value).coerceIn(-180f, 180f)
-                        rotationY = rotY.value.coerceIn(-180f, 180f)
-                        cameraDistance = 25f
-                        shape = RoundedCornerShape(6.dp)
-                        scaleX = scale
-                        scaleY = scale
-                    }
-            ) {
-                Board(state, isVertical, dispatch)
-                if (isFlipped(rotY, rotX)) {
-                    BackSide()
                 }
+                .graphicsLayer {
+                    rotationX = (-rotX.value).coerceIn(-180f, 180f)
+                    rotationY = rotY.value.coerceIn(-180f, 180f)
+                    cameraDistance = 25f
+                    shape = RoundedCornerShape(6.dp)
+                    scaleX = scale
+                    scaleY = scale
+                }
+        ) {
+            Board(state, isVertical, dispatch)
+            if (isFlipped(rotY, rotX)) {
+                BackSide()
             }
         }
-        ColorsSelector(state, dispatch)
-        ElevatedButton(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                .align(Alignment.TopStart),
-            onClick = {
-                dispatch(RatRace2BoardAction.SwitchLayer)
-            },
-            content = {
-                Icon(
-                    Images.UpDoubleArrow,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .optionalModifier(state.layer == BoardLayer.OUTER) {
-                            rotate(180f)
-                        })
-            },
-        )
+    }
+}
 
-        val cube1 by rememberLottieComposition {
-            LottieCompositionSpec.JsonString(
-                Res.readBytes("files/cube_1.json").decodeToString()
-            )
-        }
-        val cube2 by rememberLottieComposition {
-            LottieCompositionSpec.JsonString(
-                Res.readBytes("files/cube_2.json").decodeToString()
-            )
-        }
-        val cube3 by rememberLottieComposition {
-            LottieCompositionSpec.JsonString(
-                Res.readBytes("files/cube_3.json").decodeToString()
-            )
-        }
-        val cube4 by rememberLottieComposition {
-            LottieCompositionSpec.JsonString(
-                Res.readBytes("files/cube_4.json").decodeToString()
-            )
-        }
-        val cube5 by rememberLottieComposition {
-            LottieCompositionSpec.JsonString(
-                Res.readBytes("files/cube_5.json").decodeToString()
-            )
-        }
-        val cube6 by rememberLottieComposition {
-            LottieCompositionSpec.JsonString(
-                Res.readBytes("files/cube_6.json").decodeToString()
-            )
-        }
-        val animatable = rememberLottieAnimatable()
-        val coroutineScope = rememberCoroutineScope()
-        var composition by remember { mutableStateOf<LottieComposition?>(null) }
-        var dice by remember { mutableStateOf(0) }
-        LaunchedEffect(animatable.isAtEnd) {
-            if (animatable.isAtEnd) {
-                dispatch(RatRace2BoardAction.Move(dice))
-            }
-        }
-        ElevatedButton(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                .align(Alignment.BottomStart),
-            onClick = {
-                dispatch(RatRace2BoardAction.BackLastMove)
-            },
-            content = { Icon(Images.Back, contentDescription = null) },
-            enabled = state.positionsHistory.size > 1
+@Composable
+fun BoxScope.Controls(
+    state: BoardState,
+    dispatch: (BoardAction) -> Unit,
+    dice: Int
+) {
+    val cube1 by rememberLottieComposition {
+        LottieCompositionSpec.JsonString(
+            Res.readBytes("files/cube_1.json").decodeToString()
         )
+    }
+    val cube2 by rememberLottieComposition {
+        LottieCompositionSpec.JsonString(
+            Res.readBytes("files/cube_2.json").decodeToString()
+        )
+    }
+    val cube3 by rememberLottieComposition {
+        LottieCompositionSpec.JsonString(
+            Res.readBytes("files/cube_3.json").decodeToString()
+        )
+    }
+    val cube4 by rememberLottieComposition {
+        LottieCompositionSpec.JsonString(
+            Res.readBytes("files/cube_4.json").decodeToString()
+        )
+    }
+    val cube5 by rememberLottieComposition {
+        LottieCompositionSpec.JsonString(
+            Res.readBytes("files/cube_5.json").decodeToString()
+        )
+    }
+    val cube6 by rememberLottieComposition {
+        LottieCompositionSpec.JsonString(
+            Res.readBytes("files/cube_6.json").decodeToString()
+        )
+    }
+    val animatable = rememberLottieAnimatable()
+    val coroutineScope = rememberCoroutineScope()
+    var composition by remember { mutableStateOf<LottieComposition?>(null) }
+    LaunchedEffect(dice) {
+        composition = when (dice) {
+            1 -> cube1
+            2 -> cube2
+            3 -> cube3
+            4 -> cube4
+            5 -> cube5
+            else -> cube6
+        }
+        coroutineScope.launch {
+            animatable.animate(composition, iterations = 1, initialProgress = 0f)
+        }
+    }
+    LaunchedEffect(animatable.isAtEnd) {
+        if (animatable.isAtEnd && currentPlayerId == state.board?.activePlayer && dice != 0) {
+            dispatch(BoardAction.Move(dice))
+        }
+    }
+    AnimatedVisibility(
+        visible = dice != 0,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = Modifier.align(Alignment.Center)
+    ) {
         Image(
             painter = rememberLottiePainter(
                 composition = composition,
                 progress = animatable::value
             ),
             contentDescription = "Lottie animation",
-            modifier = Modifier.align(Alignment.BottomCenter).size(100.dp)
+            modifier = Modifier.size(100.dp)
         )
+    }
+    if (currentPlayerId == state.board?.activePlayer) {
         ElevatedButton(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 .align(Alignment.BottomEnd),
             onClick = {
-                dice = (1..6).random()
-                composition = when (dice) {
-                    1 -> cube1
-                    2 -> cube2
-                    3 -> cube3
-                    4 -> cube4
-                    5 -> cube5
-                    else -> cube6
-                }
-                coroutineScope.launch {
-                    animatable.animate(composition, iterations = 1, initialProgress = 0f)
-                }
+                dispatch(BoardAction.RollDice)
             },
             content = { Icon(Images.Dice, contentDescription = null) }
         )
-        val selectedCard: BoardCardType? by selectedCardState
-        CardDialog(state, selectedCard, dispatch)
     }
 }
 
@@ -357,30 +412,42 @@ fun BackSide() {
 
 @Composable
 fun BoxWithConstraintsScope.Board(
-    state: RatRace2BoardState,
+    state: BoardState,
     isVertical: Boolean,
-    dispatch: (RatRace2BoardAction) -> Unit
+    dispatch: (BoardAction) -> Unit
 ) {
     val maxWidth = maxWidth
     val maxHeight = maxHeight
     val density = LocalDensity.current
+    val inDarkTheme = isSystemInDarkTheme()
     Box(
         modifier = Modifier.fillMaxSize()
             .shadow(30.dp, shape = RoundedCornerShape(8.dp))
             .clip(RoundedCornerShape(8.dp))
             .background(
-                Brush.radialGradient(
-                    0.0f to Color(0xFFFFEC73),
-                    0.4f to Color(0xFFFFDC85),
-                    0.6f to Color(0xFFFFB370),
-                    1.0f to Color(0xFFFFB370),
-                    radius = with(density) { min(maxWidth, maxHeight).toPx() },
-                    tileMode = TileMode.Repeated
-                )
+                if (inDarkTheme) {
+                    Brush.radialGradient(
+                        0.0f to Color(0xFF807440),
+                        0.4f to Color(0xFF827145),
+                        0.6f to Color(0xFF755738),
+                        1.0f to Color(0xFF755738),
+                        radius = with(density) { min(maxWidth, maxHeight).toPx() },
+                        tileMode = TileMode.Repeated
+                    )
+                } else {
+                    Brush.radialGradient(
+                        0.0f to Color(0xFFFFEC73),
+                        0.4f to Color(0xFFFFDC85),
+                        0.6f to Color(0xFFFFB370),
+                        1.0f to Color(0xFFFFB370),
+                        radius = with(density) { min(maxWidth, maxHeight).toPx() },
+                        tileMode = TileMode.Repeated
+                    )
+                }
             )
     ) {
-        val outRoute = board.layers[BoardLayer.OUTER] ?: return
-        val inRoute = board.layers[BoardLayer.INNER] ?: return
+        val outRoute = boardLayers.layers[BoardLayer.OUTER] ?: return
+        val inRoute = boardLayers.layers[BoardLayer.INNER] ?: return
         val actualOutRoute = remember(isVertical) {
             if (isVertical) outRoute.rotate() else outRoute
         }
@@ -389,6 +456,7 @@ fun BoxWithConstraintsScope.Board(
             layer = BoardLayer.OUTER,
             size = DpSize(maxWidth, maxHeight),
             route = actualOutRoute,
+            dispatch = dispatch,
         )
         val outSpotSize =
             maxWidth / actualOutRoute.horizontalCells
@@ -405,6 +473,7 @@ fun BoxWithConstraintsScope.Board(
             layer = BoardLayer.INNER,
             size = DpSize(inBoardWidth, inBoardHeight),
             route = actualInRoute,
+            dispatch = dispatch,
         )
         val inSpotSize =
             inBoardWidth / actualInRoute.horizontalCells
@@ -414,6 +483,7 @@ fun BoxWithConstraintsScope.Board(
         val cardsHeight =
             (inBoardHeight - inSpotSize * 4 - cardsPadding * 2)
         CardDecks(
+            state = state,
             size = DpSize(cardsWidth, cardsHeight),
             highlightedCard = state.highlightedCard,
             dispatch = dispatch
@@ -425,7 +495,8 @@ fun BoxWithConstraintsScope.Board(
 fun BoxScope.CardDecks(
     size: DpSize,
     highlightedCard: BoardCardType?,
-    dispatch: (RatRace2BoardAction) -> Unit
+    dispatch: (BoardAction) -> Unit,
+    state: BoardState
 ) {
     Box(
         modifier = Modifier
@@ -444,13 +515,13 @@ fun BoxScope.CardDecks(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                    LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch, state = state)
                 }
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    LeftDiscardPiles(cardSize, dispatch = dispatch)
+                    LeftDiscardPiles(cardSize, state = state)
                 }
             }
             Column(
@@ -461,13 +532,13 @@ fun BoxScope.CardDecks(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    RightDiscardPiles(cardSize, dispatch = dispatch)
+                    RightDiscardPiles(cardSize, state = state)
                 }
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    RightCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                    RightCardDecks(highlightedCard, cardSize, dispatch = dispatch, state = state)
                 }
             }
         } else {
@@ -482,13 +553,16 @@ fun BoxScope.CardDecks(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxHeight()
                 ) {
-                    LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                    LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch, state = state)
                 }
                 Column(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxHeight()
                 ) {
-                    LeftDiscardPiles(cardSize, dispatch = dispatch)
+                    LeftDiscardPiles(
+                        size = cardSize,
+                        state = state,
+                    )
                 }
             }
             Row(
@@ -499,13 +573,13 @@ fun BoxScope.CardDecks(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxHeight()
                 ) {
-                    RightDiscardPiles(cardSize, dispatch = dispatch)
+                    RightDiscardPiles(cardSize, state = state)
                 }
                 Column(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxHeight()
                 ) {
-                    RightCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                    RightCardDecks(highlightedCard, cardSize, dispatch = dispatch, state = state)
                 }
             }
         }
@@ -516,116 +590,54 @@ fun BoxScope.CardDecks(
 fun LeftCardDecks(
     highlightedCard: BoardCardType?,
     size: DpSize,
-    dispatch: (RatRace2BoardAction) -> Unit
+    dispatch: (BoardAction) -> Unit,
+    state: BoardState
 ) {
-    CardDeck(BoardCardType.Chance, size, highlightedCard, dispatch)
-    CardDeck(BoardCardType.BigBusiness, size, highlightedCard, dispatch)
-    CardDeck(BoardCardType.MediumBusiness, size, highlightedCard, dispatch)
-    CardDeck(BoardCardType.SmallBusiness, size, highlightedCard, dispatch)
+    CardDeck(BoardCardType.Chance, size, highlightedCard, state, dispatch)
+    CardDeck(BoardCardType.BigBusiness, size, highlightedCard, state, dispatch)
+    CardDeck(BoardCardType.MediumBusiness, size, highlightedCard, state, dispatch)
+    CardDeck(BoardCardType.SmallBusiness, size, highlightedCard, state, dispatch)
 }
 
 @Composable
 fun RightCardDecks(
     highlightedCard: BoardCardType?,
     size: DpSize,
-    dispatch: (RatRace2BoardAction) -> Unit
+    dispatch: (BoardAction) -> Unit,
+    state: BoardState
 ) {
-    CardDeck(BoardCardType.Expenses, size, highlightedCard, dispatch)
-    CardDeck(BoardCardType.Deputy, size, highlightedCard, dispatch)
-    CardDeck(BoardCardType.EventStore, size, highlightedCard, dispatch)
-    CardDeck(BoardCardType.Shopping, size, highlightedCard, dispatch)
+    CardDeck(BoardCardType.Expenses, size, highlightedCard, state, dispatch)
+    CardDeck(BoardCardType.Deputy, size, highlightedCard, state, dispatch)
+    CardDeck(BoardCardType.EventStore, size, highlightedCard, state, dispatch)
+    CardDeck(BoardCardType.Shopping, size, highlightedCard, state, dispatch)
 }
 
 @Composable
 fun LeftDiscardPiles(
     size: DpSize,
-    dispatch: (RatRace2BoardAction) -> Unit
+    state: BoardState
 ) {
-    DiscardPile(BoardCardType.Chance, size, dispatch)
-    DiscardPile(BoardCardType.BigBusiness, size, dispatch)
-    DiscardPile(BoardCardType.MediumBusiness, size, dispatch)
-    DiscardPile(BoardCardType.SmallBusiness, size, dispatch)
+    DiscardPile(BoardCardType.Chance, size, state)
+    DiscardPile(BoardCardType.BigBusiness, size, state)
+    DiscardPile(BoardCardType.MediumBusiness, size, state)
+    DiscardPile(BoardCardType.SmallBusiness, size, state)
 }
 
 @Composable
 fun RightDiscardPiles(
     size: DpSize,
-    dispatch: (RatRace2BoardAction) -> Unit
+    state: BoardState
 ) {
-    DiscardPile(BoardCardType.Expenses, size, dispatch)
-    DiscardPile(BoardCardType.Deputy, size, dispatch)
-    DiscardPile(BoardCardType.EventStore, size, dispatch)
-    DiscardPile(BoardCardType.Shopping, size, dispatch)
-}
-
-@Composable
-fun CardDeck(
-    card: BoardCardType,
-    size: DpSize,
-    highlightedCard: BoardCardType?,
-    dispatch: (RatRace2BoardAction) -> Unit
-) {
-    val rounding = min(size.width, size.height) / 10
-    val blurRadius = min(size.width, size.height) / 10
-    val spreadRadius = min(size.width, size.height) / 20
-
-    val density = LocalDensity.current
-    BoxWithConstraints(
-        modifier = Modifier
-            .size(size.width, size.height)
-            .onGloballyPositioned { layoutCoordinates ->
-                val positionInWindow = layoutCoordinates.positionInWindow()
-                val offsetX = with(density) { positionInWindow.x.toDp() }
-                val offsetY = with(density) { positionInWindow.y.toDp() }
-                val offset = DpOffset(offsetX, offsetY)
-                val coordinates = offset to size
-                deckCoordinatesMap.getOrPut(card) {
-                    mutableStateOf(coordinates)
-                }.value = coordinates
-            }
-            .optionalModifier(card == highlightedCard) {
-                boxShadow(
-                    blurRadius = blurRadius,
-                    spreadRadius = spreadRadius,
-                    shape = RoundedCornerShape(rounding),
-                    color = Color.White,
-                ).clickable {
-                    dispatch(RatRace2BoardAction.SelectedCard(card))
-                }
-            }
-    ) {
-        BoardCardBack(card)
-    }
-}
-
-@Composable
-fun DiscardPile(
-    card: BoardCardType,
-    size: DpSize,
-    dispatch: (RatRace2BoardAction) -> Unit
-) {
-    val density = LocalDensity.current
-    BoxWithConstraints(
-        modifier = Modifier
-            .size(size.width, size.height)
-            .onGloballyPositioned { layoutCoordinates ->
-                val positionInWindow = layoutCoordinates.positionInWindow()
-                val offsetX = with(density) { positionInWindow.x.toDp() }
-                val offsetY = with(density) { positionInWindow.y.toDp() }
-                val offset = DpOffset(offsetX, offsetY)
-                val coordinates = offset to size
-                discardPilesCoordinatesMap.getOrPut(card) {
-                    mutableStateOf(coordinates)
-                }.value = coordinates
-            }
-    ) {
-        BoardCardBack(card)
-    }
+    DiscardPile(BoardCardType.Expenses, size, state)
+    DiscardPile(BoardCardType.Deputy, size, state)
+    DiscardPile(BoardCardType.EventStore, size, state)
+    DiscardPile(BoardCardType.Shopping, size, state)
 }
 
 @Composable
 private fun BoxScope.Places(
-    state: RatRace2BoardState,
+    state: BoardState,
+    dispatch: (BoardAction) -> Unit,
     layer: BoardLayer,
     size: DpSize,
     route: BoardRoute,
@@ -663,24 +675,28 @@ private fun BoxScope.Places(
                 PlaceContent(place.type, place.size, place.isVertical)
             }
         }
-        val players by players
-        val points = remember(players, route) {
+        val players by players.collectAsState()
+        val points = remember(players, route, state.board?.activePlayer) {
             players.filter { layer.level == it.state.level }.map {
                 PlayerPointState(
                     position = moveTo(it.state.position, layer.cellCount, route.offset),
                     color = it.attrs.color,
                     level = it.state.level,
-                    name = it.professionCard.profession,
+                    name = it.playerCard.profession,
+                    player = it,
+                    isCurrentPlayer = it.id == currentPlayerId,
+                    isActivePlayer = it.id == state.board?.activePlayer,
                 )
             }
         }
         points.groupBy { it.position }.forEach { (_, gPoints) ->
-            gPoints.forEachIndexed { index, state ->
+            gPoints.forEachIndexed { index, pointerState ->
                 PlayerPoint(
                     places = places,
+                    pointerState = pointerState,
                     state = state,
-                    spotWidth = spotWidth,
-                    spotHeight = spotHeight,
+                    dispatch = dispatch,
+                    spotSize = DpSize(spotWidth, spotHeight),
                     index = index,
                     count = gPoints.size
                 )
@@ -716,7 +732,7 @@ private fun BoxScope.PlaceContent(
                     .optionalModifier(isVertical) {
                         rotateLayout(Rotation.ROT_90)
                     },
-                fillColor = Color.White,
+                fillColor = MaterialTheme.colorScheme.onPrimary,
                 outlineColor = Color(0xFF8A8A8A),
                 outlineDrawStyle = Stroke(2f),
                 maxLines = 1
@@ -726,17 +742,17 @@ private fun BoxScope.PlaceContent(
 }
 
 @Composable
-fun BoxWithConstraintsScope.ColorsSelector(
-    state: RatRace2BoardState,
-    dispatch: (RatRace2BoardAction) -> Unit
+fun BoxScope.ColorsSelector(
+    state: BoardState,
+    dispatch: (BoardAction) -> Unit
 ) {
-    val players by players
+    val players by players.collectAsState()
     FlowRow(modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 64.dp)) {
         (pointerColors - players.filter { !it.isCurrentPlayer }
             .map { it.attrs.color }).forEach { color ->
             RadioButton(
                 selected = color == state.color,
-                onClick = { dispatch(RatRace2BoardAction.ChangeColor(color)) },
+                onClick = { dispatch(BoardAction.ChangeColor(color)) },
                 colors = RadioButtonDefaults.colors()
                     .copy(selectedColor = Color(color), unselectedColor = Color(color)),
             )
@@ -830,7 +846,7 @@ private val PlaceType.text: String
         }
     }
 
-val board = Board(
+val boardLayers = Board(
     layers = mapOf(
         BoardLayer.OUTER to BoardRoute(26, 18, outPlaces),
         BoardLayer.INNER to BoardRoute(28, 18, inPlaces),
@@ -897,9 +913,9 @@ fun isFlipped(
 @Preview
 @Composable
 fun Board2Preview() {
-    val store = remember { RatRace2BoardStore() }
+    val store = remember { BoardStore() }
     val state by store.observeState().collectAsState()
     AppTheme {
-        BoardScreenContent(state, store::dispatch)
+        BoardScreenContent(state, store::dispatch, 0)
     }
 }

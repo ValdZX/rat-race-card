@@ -12,10 +12,10 @@ fun main() {
     application {
         Window(
             title = "Cashflow: Rat Race Edition",
-            state = rememberWindowState(width = 300.dp, height = 700.dp),
+            state = rememberWindowState(width = 800.dp, height = 600.dp),
             onCloseRequest = ::exitApplication,
         ) {
-            window.minimumSize = Dimension(100, 100)
+            window.minimumSize = Dimension(800, 600)
             App()
         }
     }

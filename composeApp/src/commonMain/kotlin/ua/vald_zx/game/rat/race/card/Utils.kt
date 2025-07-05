@@ -1,5 +1,8 @@
 package ua.vald_zx.game.rat.race.card
 
+import androidx.compose.ui.unit.DpSize
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.format.char
 import ua.vald_zx.game.rat.race.card.beans.SharesType
 
 fun String.getDigits() = this.replace("\\D".toRegex(), "").toLongOrNull()?.toString().orEmpty()
@@ -57,3 +60,11 @@ fun Long.emptyIfZero(): String {
 fun SharesType.label(): String {
     return name.replace("SCT", "CST").replace("GS", "GC")
 }
+
+val dateFullDotsFormat = LocalDateTime.Format { //dd.MM.yyyy HH:mm:ss
+    day(); char('.'); monthNumber(); char('.'); year(); char(' ')
+    hour(); char(':'); minute(); char(':'); second()
+}
+
+val DpSize.isVertical: Boolean
+    get() = height > width

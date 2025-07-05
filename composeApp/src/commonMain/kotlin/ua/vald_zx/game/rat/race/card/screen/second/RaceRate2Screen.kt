@@ -124,7 +124,7 @@ class RaceRate2Screen : Screen {
                             style = MaterialTheme.typography.titleLarge,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        val players by players
+                        val players by players.collectAsState()
                         if (players.isNotEmpty()) {
                             IconButton(
                                 onClick = { bottomSheetNavigator.show(PlayersScreen()) },

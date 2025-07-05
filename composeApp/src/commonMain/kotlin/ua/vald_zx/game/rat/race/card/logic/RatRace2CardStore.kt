@@ -64,7 +64,7 @@ import ua.vald_zx.game.rat.race.card.raceRate2KStore
 import ua.vald_zx.game.rat.race.card.remove
 import ua.vald_zx.game.rat.race.card.replace
 import ua.vald_zx.game.rat.race.card.service
-import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
+import ua.vald_zx.game.rat.race.card.shared.PlayerCard
 import ua.vald_zx.game.rat.race.card.statistics2KStore
 import ua.vald_zx.game.rat.race.card.toState
 import kotlin.math.absoluteValue
@@ -77,7 +77,7 @@ data class Statistics(
 
 @Serializable
 data class RatRace2CardState(
-    val playerCard: ProfessionCard = ProfessionCard(),
+    val playerCard: PlayerCard = PlayerCard(),
     val cash: Long = 0,
     val deposit: Long = 0,
     val loan: Long = 0,
@@ -167,8 +167,8 @@ data class RatRace2CardState(
 
 sealed class RatRace2CardAction : Action {
     data class LoadState(val state: RatRace2CardState) : RatRace2CardAction()
-    data class FillProfessionCardRat(val playerCard: ProfessionCard) : RatRace2CardAction()
-    data class EditFillProfessionCardRat(val playerCard: ProfessionCard) : RatRace2CardAction()
+    data class FillProfessionCardRat(val playerCard: PlayerCard) : RatRace2CardAction()
+    data class EditFillProfessionCardRat(val playerCard: PlayerCard) : RatRace2CardAction()
     data object Fired : RatRace2CardAction()
     data object FiredConfirmed : RatRace2CardAction()
     data object GetSalary : RatRace2CardAction()
