@@ -29,7 +29,11 @@ import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.components.rotateLayout
 
 @Composable
-fun BoxWithConstraintsScope.BoardCardFront(card: BoardCard, modifier: Modifier = Modifier) {
+fun BoxWithConstraintsScope.BoardCardFront(
+    card: BoardCardType,
+    modifier: Modifier = Modifier,
+    discardCard: () -> Unit,
+) {
     val width = maxWidth
     val height = maxHeight
     val rounding = min(width, height) / 16
@@ -41,13 +45,13 @@ fun BoxWithConstraintsScope.BoardCardFront(card: BoardCard, modifier: Modifier =
             .background(Color.White)
     ) {
         Button("Pass") {
-            selectedCardState.value = null
+            discardCard()
         }
     }
 }
 
 @Composable
-fun BoxWithConstraintsScope.BoardCardBack(card: BoardCard, modifier: Modifier = Modifier) {
+fun BoxWithConstraintsScope.BoardCardBack(card: BoardCardType, modifier: Modifier = Modifier) {
     val width = maxWidth
     val height = maxHeight
     val rounding = min(width, height) / 16
@@ -59,14 +63,14 @@ fun BoxWithConstraintsScope.BoardCardBack(card: BoardCard, modifier: Modifier = 
     ) {
         OutlinedText(
             text = when (card) {
-                BoardCard.BigBusiness -> "Big Business"
-                BoardCard.Chance -> "Chance"
-                BoardCard.Deputy -> "Deputy"
-                BoardCard.EventStore -> "Event Store"
-                BoardCard.Expenses -> "Expenses"
-                BoardCard.MediumBusiness -> "Medium Business"
-                BoardCard.Shopping -> "Shopping"
-                BoardCard.SmallBusiness -> "Small Business"
+                BoardCardType.BigBusiness -> "Big Business"
+                BoardCardType.Chance -> "Chance"
+                BoardCardType.Deputy -> "Deputy"
+                BoardCardType.EventStore -> "Event Store"
+                BoardCardType.Expenses -> "Expenses"
+                BoardCardType.MediumBusiness -> "Medium Business"
+                BoardCardType.Shopping -> "Shopping"
+                BoardCardType.SmallBusiness -> "Small Business"
             },
             autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
             fontFamily = FontFamily(

@@ -14,7 +14,7 @@ val shoppingColor = Color.Cyan
 
 val deputyColor = Color(0xff8a8fdc)
 
-enum class BoardCard {
+enum class BoardCardType {
     Chance,
     SmallBusiness,
     MediumBusiness,
@@ -25,17 +25,17 @@ enum class BoardCard {
     Deputy,
 }
 
-val BoardCard.color: Color
+val BoardCardType.color: Color
     get() {
         return when (this) {
-            BoardCard.Chance -> cnanceColor
-            BoardCard.SmallBusiness -> Color(0xffb3ff99)
-            BoardCard.MediumBusiness -> businessColor
-            BoardCard.BigBusiness -> bigBusinessColor
-            BoardCard.Expenses -> expensesColor
-            BoardCard.EventStore -> storeColor
-            BoardCard.Shopping -> shoppingColor
-            BoardCard.Deputy -> deputyColor
+            BoardCardType.Chance -> cnanceColor
+            BoardCardType.SmallBusiness -> Color(0xffb3ff99)
+            BoardCardType.MediumBusiness -> businessColor
+            BoardCardType.BigBusiness -> bigBusinessColor
+            BoardCardType.Expenses -> expensesColor
+            BoardCardType.EventStore -> storeColor
+            BoardCardType.Shopping -> shoppingColor
+            BoardCardType.Deputy -> deputyColor
         }
     }
 

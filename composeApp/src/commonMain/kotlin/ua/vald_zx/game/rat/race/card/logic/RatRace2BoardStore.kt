@@ -11,7 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardAction.LoadState
-import ua.vald_zx.game.rat.race.card.screen.board.BoardCard
+import ua.vald_zx.game.rat.race.card.logic.RatRace2BoardSideEffect.ShowCard
+import ua.vald_zx.game.rat.race.card.screen.board.BoardCardType
 import ua.vald_zx.game.rat.race.card.screen.board.PlaceType
 import ua.vald_zx.game.rat.race.card.screen.board.board
 import ua.vald_zx.game.rat.race.card.service
@@ -33,7 +34,7 @@ fun Int.toLayer(): BoardLayer {
 data class RatRace2BoardState(
     val positionsHistory: List<Int> = listOf(1),
     val currentPlayer: Player? = null,
-    val highlightedCard: BoardCard? = null,
+    val highlightedCard: BoardCardType? = null,
 ) : State {
     val layer: BoardLayer
         get() = currentPlayer?.state?.level?.toLayer() ?: BoardLayer.INNER
@@ -48,12 +49,13 @@ sealed class RatRace2BoardAction : Action {
     data object BackLastMove : RatRace2BoardAction()
     data object SwitchLayer : RatRace2BoardAction()
     data class UpdateCurrentPlayer(val player: Player) : RatRace2BoardAction()
-    data class HighlightCard(val card: BoardCard) : RatRace2BoardAction()
-    data class SelectedCard(val card: BoardCard) : RatRace2BoardAction()
+    data class HighlightCard(val card: BoardCardType) : RatRace2BoardAction()
+    data class SelectedCard(val card: BoardCardType) : RatRace2BoardAction()
+    data class ToDiscardPile(val card: BoardCardType) : RatRace2BoardAction()
 }
 
 sealed class RatRace2BoardSideEffect : Effect {
-    data class ShowCard(val card: BoardCard) : RatRace2BoardSideEffect()
+    data class ShowCard(val card: BoardCardType) : RatRace2BoardSideEffect()
 }
 
 class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRace2BoardSideEffect>,
@@ -92,7 +94,7 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
             }
 
             is RatRace2BoardAction.SelectedCard -> {
-                launch { sideEffect.emit(RatRace2BoardSideEffect.ShowCard(action.card)) }
+                launch { sideEffect.emit(ShowCard(action.card)) }
                 oldState.copy(highlightedCard = null)
             }
 
@@ -129,6 +131,10 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
                 launch { service?.updateAttributes(PlayerAttributes(color = action.color)) }
                 oldState
             }
+
+            is RatRace2BoardAction.ToDiscardPile -> {
+                oldState//todo
+            }
         }
         if (newState != oldState) {
             state.value = newState
@@ -146,11 +152,11 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
             }
 
             PlaceType.Business -> {
-                dispatch(RatRace2BoardAction.HighlightCard(BoardCard.SmallBusiness))
+                dispatch(RatRace2BoardAction.HighlightCard(BoardCardType.SmallBusiness))
             }
 
             PlaceType.Chance -> {
-                dispatch(RatRace2BoardAction.HighlightCard(BoardCard.Chance))
+                dispatch(RatRace2BoardAction.HighlightCard(BoardCardType.Chance))
             }
 
             PlaceType.Child -> {
@@ -174,7 +180,7 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
             }
 
             PlaceType.Expenses -> {
-                dispatch(RatRace2BoardAction.HighlightCard(BoardCard.Expenses))
+                dispatch(RatRace2BoardAction.HighlightCard(BoardCardType.Expenses))
             }
 
             PlaceType.Love -> {
@@ -190,7 +196,7 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
             }
 
             PlaceType.Shopping -> {
-                dispatch(RatRace2BoardAction.HighlightCard(BoardCard.Shopping))
+                dispatch(RatRace2BoardAction.HighlightCard(BoardCardType.Shopping))
             }
 
             PlaceType.Start -> {
@@ -198,7 +204,7 @@ class RatRace2BoardStore : Store<RatRace2BoardState, RatRace2BoardAction, RatRac
             }
 
             PlaceType.Store -> {
-                dispatch(RatRace2BoardAction.HighlightCard(BoardCard.EventStore))
+                dispatch(RatRace2BoardAction.HighlightCard(BoardCardType.EventStore))
             }
 
             PlaceType.TaxInspection -> {

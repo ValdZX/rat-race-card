@@ -156,8 +156,9 @@ data class BoardRoute(
 
 const val INNER_LAYER_SCALE = 1.2f
 
-val cardCoordinatesMap = mutableMapOf<BoardCard, MutableState<Pair<DpOffset, DpSize>>>()
-val selectedCardState = mutableStateOf<BoardCard?>(null)
+val deckCoordinatesMap = mutableMapOf<BoardCardType, MutableState<Pair<DpOffset, DpSize>>>()
+val discardPilesCoordinatesMap = mutableMapOf<BoardCardType, MutableState<Pair<DpOffset, DpSize>>>()
+val selectedCardState = mutableStateOf<BoardCardType?>(null)
 
 class Board2Screen : Screen {
 
@@ -326,8 +327,8 @@ fun BoardScreenContent(state: RatRace2BoardState, dispatch: (RatRace2BoardAction
             },
             content = { Icon(Images.Dice, contentDescription = null) }
         )
-        val selectedCard: BoardCard? by selectedCardState
-        CardDialog(state, selectedCard)
+        val selectedCard: BoardCardType? by selectedCardState
+        CardDialog(state, selectedCard, dispatch)
     }
 }
 
@@ -412,7 +413,7 @@ fun BoxWithConstraintsScope.Board(
             (inBoardWidth - inSpotSize * 4 - cardsPadding * 2)
         val cardsHeight =
             (inBoardHeight - inSpotSize * 4 - cardsPadding * 2)
-        Cards(
+        CardDecks(
             size = DpSize(cardsWidth, cardsHeight),
             highlightedCard = state.highlightedCard,
             dispatch = dispatch
@@ -421,9 +422,9 @@ fun BoxWithConstraintsScope.Board(
 }
 
 @Composable
-fun BoxScope.Cards(
+fun BoxScope.CardDecks(
     size: DpSize,
-    highlightedCard: BoardCard?,
+    highlightedCard: BoardCardType?,
     dispatch: (RatRace2BoardAction) -> Unit
 ) {
     Box(
@@ -435,33 +436,77 @@ fun BoxScope.Cards(
             val width = size.width / 5
             val height = (width * 3) / 2
             val cardSize = DpSize(width, height)
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth().align(Alignment.TopStart)
+            Column(
+                modifier = Modifier.fillMaxWidth().align(Alignment.TopStart),
+                verticalArrangement = Arrangement.spacedBy(width / 2)
             ) {
-                LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                }
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    LeftDiscardPiles(cardSize, dispatch = dispatch)
+                }
             }
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart)
+            Column(
+                modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart),
+                verticalArrangement = Arrangement.spacedBy(width / 2)
             ) {
-                RightCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    RightDiscardPiles(cardSize, dispatch = dispatch)
+                }
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    RightCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                }
             }
         } else {
             val height = size.height / 5
             val width = (height * 3) / 2
             val cardSize = DpSize(width, height)
-            Column(
-                verticalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)
+            Row(
+                modifier = Modifier.fillMaxHeight().align(Alignment.TopStart),
+                horizontalArrangement = Arrangement.spacedBy(height / 2)
             ) {
-                LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxHeight()
+                ) {
+                    LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                }
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxHeight()
+                ) {
+                    LeftDiscardPiles(cardSize, dispatch = dispatch)
+                }
             }
-            Column(
-                verticalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxHeight().align(Alignment.TopEnd)
+            Row(
+                modifier = Modifier.fillMaxHeight().align(Alignment.TopEnd),
+                horizontalArrangement = Arrangement.spacedBy(height / 2)
             ) {
-                RightCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxHeight()
+                ) {
+                    RightDiscardPiles(cardSize, dispatch = dispatch)
+                }
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxHeight()
+                ) {
+                    RightCardDecks(highlightedCard, cardSize, dispatch = dispatch)
+                }
             }
         }
     }
@@ -469,33 +514,55 @@ fun BoxScope.Cards(
 
 @Composable
 fun LeftCardDecks(
-    highlightedCard: BoardCard?,
+    highlightedCard: BoardCardType?,
     size: DpSize,
     dispatch: (RatRace2BoardAction) -> Unit
 ) {
-    CardDeck(BoardCard.Chance, size, highlightedCard, dispatch)
-    CardDeck(BoardCard.BigBusiness, size, highlightedCard, dispatch)
-    CardDeck(BoardCard.MediumBusiness, size, highlightedCard, dispatch)
-    CardDeck(BoardCard.SmallBusiness, size, highlightedCard, dispatch)
+    CardDeck(BoardCardType.Chance, size, highlightedCard, dispatch)
+    CardDeck(BoardCardType.BigBusiness, size, highlightedCard, dispatch)
+    CardDeck(BoardCardType.MediumBusiness, size, highlightedCard, dispatch)
+    CardDeck(BoardCardType.SmallBusiness, size, highlightedCard, dispatch)
 }
 
 @Composable
 fun RightCardDecks(
-    highlightedCard: BoardCard?,
+    highlightedCard: BoardCardType?,
     size: DpSize,
     dispatch: (RatRace2BoardAction) -> Unit
 ) {
-    CardDeck(BoardCard.Expenses, size, highlightedCard, dispatch)
-    CardDeck(BoardCard.Deputy, size, highlightedCard, dispatch)
-    CardDeck(BoardCard.EventStore, size, highlightedCard, dispatch)
-    CardDeck(BoardCard.Shopping, size, highlightedCard, dispatch)
+    CardDeck(BoardCardType.Expenses, size, highlightedCard, dispatch)
+    CardDeck(BoardCardType.Deputy, size, highlightedCard, dispatch)
+    CardDeck(BoardCardType.EventStore, size, highlightedCard, dispatch)
+    CardDeck(BoardCardType.Shopping, size, highlightedCard, dispatch)
+}
+
+@Composable
+fun LeftDiscardPiles(
+    size: DpSize,
+    dispatch: (RatRace2BoardAction) -> Unit
+) {
+    DiscardPile(BoardCardType.Chance, size, dispatch)
+    DiscardPile(BoardCardType.BigBusiness, size, dispatch)
+    DiscardPile(BoardCardType.MediumBusiness, size, dispatch)
+    DiscardPile(BoardCardType.SmallBusiness, size, dispatch)
+}
+
+@Composable
+fun RightDiscardPiles(
+    size: DpSize,
+    dispatch: (RatRace2BoardAction) -> Unit
+) {
+    DiscardPile(BoardCardType.Expenses, size, dispatch)
+    DiscardPile(BoardCardType.Deputy, size, dispatch)
+    DiscardPile(BoardCardType.EventStore, size, dispatch)
+    DiscardPile(BoardCardType.Shopping, size, dispatch)
 }
 
 @Composable
 fun CardDeck(
-    card: BoardCard,
+    card: BoardCardType,
     size: DpSize,
-    highlightedCard: BoardCard?,
+    highlightedCard: BoardCardType?,
     dispatch: (RatRace2BoardAction) -> Unit
 ) {
     val rounding = min(size.width, size.height) / 10
@@ -512,7 +579,7 @@ fun CardDeck(
                 val offsetY = with(density) { positionInWindow.y.toDp() }
                 val offset = DpOffset(offsetX, offsetY)
                 val coordinates = offset to size
-                cardCoordinatesMap.getOrPut(card) {
+                deckCoordinatesMap.getOrPut(card) {
                     mutableStateOf(coordinates)
                 }.value = coordinates
             }
@@ -525,6 +592,31 @@ fun CardDeck(
                 ).clickable {
                     dispatch(RatRace2BoardAction.SelectedCard(card))
                 }
+            }
+    ) {
+        BoardCardBack(card)
+    }
+}
+
+@Composable
+fun DiscardPile(
+    card: BoardCardType,
+    size: DpSize,
+    dispatch: (RatRace2BoardAction) -> Unit
+) {
+    val density = LocalDensity.current
+    BoxWithConstraints(
+        modifier = Modifier
+            .size(size.width, size.height)
+            .onGloballyPositioned { layoutCoordinates ->
+                val positionInWindow = layoutCoordinates.positionInWindow()
+                val offsetX = with(density) { positionInWindow.x.toDp() }
+                val offsetY = with(density) { positionInWindow.y.toDp() }
+                val offset = DpOffset(offsetX, offsetY)
+                val coordinates = offset to size
+                discardPilesCoordinatesMap.getOrPut(card) {
+                    mutableStateOf(coordinates)
+                }.value = coordinates
             }
     ) {
         BoardCardBack(card)
