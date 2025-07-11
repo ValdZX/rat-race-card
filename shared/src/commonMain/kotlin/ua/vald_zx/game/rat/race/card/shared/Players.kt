@@ -1,6 +1,7 @@
 package ua.vald_zx.game.rat.race.card.shared
 
 import kotlinx.serialization.Serializable
+@Serializable
 enum class Gender { MALE, FEMALE }
 
 @Serializable

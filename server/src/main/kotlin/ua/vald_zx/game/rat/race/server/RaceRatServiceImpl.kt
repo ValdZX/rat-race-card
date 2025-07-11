@@ -84,7 +84,7 @@ class RaceRatServiceImpl(
                     boardState.value =
                         oldBoard.copy(players = oldBoard.players.toMutableMap().apply {
                             this.remove(id)
-                            this[uuid] = oldPlayer.copy(id = uuid)
+                            this[uuid] = oldPlayer.copy(id = uuid, isInactive = false)
                         })
                 }
                 invalidateNextPlayer(oldBoard.activePlayer)
