@@ -61,6 +61,7 @@ data class BoardState(
     val discard: MutableMap<BoardCardType, MutableList<Int>> = mutableMapOf(),
     val players: Map<String, Player> = mutableMapOf(),
     val activePlayer: String = "",
+    val moveCount: Int = 0,
 )
 
 val boards = MutableStateFlow<List<MutableStateFlow<BoardState>>>(emptyList())

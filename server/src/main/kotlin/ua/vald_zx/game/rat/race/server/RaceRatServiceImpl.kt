@@ -211,7 +211,7 @@ class RaceRatServiceImpl(
         if (oldState.players[nextPlayer]?.isInactive == true) {
             nextPlayer()
         } else {
-            boardState.value = boardState.value.copy(activePlayer = nextPlayer)
+            boardState.value = oldState.copy(activePlayer = nextPlayer, moveCount = oldState.moveCount + 1)
         }
     }
 
@@ -260,6 +260,7 @@ private fun BoardState.toBoard(): Board {
         players = players.keys,
         activePlayer = activePlayer,
         takenCard = takenCard,
+        moveCount = moveCount,
     )
 }
 

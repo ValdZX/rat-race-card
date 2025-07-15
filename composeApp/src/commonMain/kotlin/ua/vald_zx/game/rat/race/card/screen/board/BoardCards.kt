@@ -1,7 +1,9 @@
 package ua.vald_zx.game.rat.race.card.screen.board
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
+import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 sealed class BoardCard(val type: BoardCardType) {
     data class SmallBusiness(
@@ -26,16 +28,16 @@ sealed class BoardCard(val type: BoardCardType) {
     ) : BoardCard(BoardCardType.BigBusiness)
 }
 
-val BoardCardType.color: Color
-    get() {
-        return when (this) {
-            BoardCardType.Chance -> cnanceColor
-            BoardCardType.SmallBusiness -> smallBusinessColor
-            BoardCardType.MediumBusiness -> businessColor
-            BoardCardType.BigBusiness -> bigBusinessColor
-            BoardCardType.Expenses -> expensesColor
-            BoardCardType.EventStore -> storeColor
-            BoardCardType.Shopping -> shoppingColor
-            BoardCardType.Deputy -> deputyColor
-        }
+@Composable
+fun BoardCardType.color(): Color {
+    return when (this) {
+        BoardCardType.Chance -> AppTheme.colors.chance
+        BoardCardType.SmallBusiness -> AppTheme.colors.smallBusiness
+        BoardCardType.MediumBusiness -> AppTheme.colors.business
+        BoardCardType.BigBusiness -> AppTheme.colors.bigBusiness
+        BoardCardType.Expenses -> AppTheme.colors.expenses
+        BoardCardType.EventStore -> AppTheme.colors.store
+        BoardCardType.Shopping -> AppTheme.colors.shopping
+        BoardCardType.Deputy -> AppTheme.colors.deputy
     }
+}

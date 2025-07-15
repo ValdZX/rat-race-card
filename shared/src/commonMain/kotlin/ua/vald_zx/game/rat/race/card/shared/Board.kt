@@ -19,5 +19,6 @@ data class Board(
     val discard: Map<BoardCardType, List<Int>>,
     val players: Set<String>,
     val activePlayer: String,
+    val moveCount: Int,
     val takenCard: CardLink?,
 )

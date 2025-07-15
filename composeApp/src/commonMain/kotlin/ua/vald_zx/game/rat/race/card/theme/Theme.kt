@@ -7,12 +7,10 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.Color
 
 
 private val lightScheme = lightColorScheme(
@@ -91,18 +89,6 @@ private val darkScheme = darkColorScheme(
     surfaceContainerHighest = surfaceContainerHighestDark,
 )
 
-@Immutable
-data class ColorFamily(
-    val color: Color,
-    val onColor: Color,
-    val colorContainer: Color,
-    val onColorContainer: Color
-)
-
-val unspecified_scheme = ColorFamily(
-    Color.Unspecified, Color.Unspecified, Color.Unspecified, Color.Unspecified
-)
-
 internal val LocalThemeIsDark = compositionLocalOf { mutableStateOf(true) }
 
 @Composable
@@ -113,18 +99,7 @@ internal fun AppTheme(
     val isDarkState = remember { mutableStateOf(systemInDarkTheme) }
     val darkTheme by isDarkState
     val colors = if (darkTheme) DarkIfobsColors else LightIfobsColors
-    val colorPalette = remember {
-        AppColors(
-            cash = colors.cash,
-            positive = colors.positive,
-            negative = colors.negative,
-            action = colors.action,
-            buy = colors.buy,
-            family = colors.family,
-            funds = colors.funds,
-            isDark = colors.isDark,
-        )
-    }
+    val colorPalette = remember { colors.copy() }
     colorPalette.update(colors)
     CompositionLocalProvider(
         LocalThemeIsDark provides isDarkState,

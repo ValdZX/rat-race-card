@@ -37,6 +37,7 @@ data class BoardState(
     val currentPlayer: Player? = null,
     val highlightedCard: BoardCardType? = null,
     val board: Board? = null,
+    val canRoll: Boolean = false,
 ) : State {
     val layer: BoardLayer
         get() = currentPlayer?.state?.level?.toLayer() ?: BoardLayer.INNER
@@ -156,11 +157,17 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
 
             BoardAction.RollDice -> {
                 launch { service?.rollDice() }
-                oldState
+                oldState.copy(canRoll = false)
             }
 
             is BoardAction.UpdateBoard -> {
-                oldState.copy(board = action.board)
+                val rollCountChanged =
+                    oldState.board?.moveCount != action.board.moveCount || action.board.moveCount == 0
+                val canRoll = oldState.canRoll || rollCountChanged &&
+                        action.board.activePlayer == currentPlayerId &&
+                        action.board.takenCard == null &&
+                        oldState.highlightedCard == null
+                oldState.copy(board = action.board, canRoll = canRoll)
             }
         }
         if (newState != oldState) {
@@ -168,14 +175,14 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
         }
     }
 
-    private fun BoardState.processPlace(place: PlaceType) {
+    private fun BoardState.processPlace(place: PlaceType) = launch {
         when (place) {
             PlaceType.Bankruptcy -> {
-                //todo
+                service?.nextPlayer()
             }
 
             PlaceType.BigBusiness -> {
-                //todo
+                service?.nextPlayer()
             }
 
             PlaceType.Business -> {
@@ -187,23 +194,23 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
             }
 
             PlaceType.Child -> {
-                //todo
+                service?.nextPlayer()
             }
 
             PlaceType.Deputy -> {
-                //todo
+                service?.nextPlayer()
             }
 
             PlaceType.Desire -> {
-                //todo
+                service?.nextPlayer()
             }
 
             PlaceType.Divorce -> {
-                //todo
+                service?.nextPlayer()
             }
 
             PlaceType.Exaltation -> {
-                //todo
+                service?.nextPlayer()
             }
 
             PlaceType.Expenses -> {
@@ -211,15 +218,15 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
             }
 
             PlaceType.Love -> {
-                //todo
+                service?.nextPlayer()
             }
 
             PlaceType.Rest -> {
-                //todo
+                service?.nextPlayer()
             }
 
             PlaceType.Salary -> {
-                //todo
+                service?.nextPlayer()
             }
 
             PlaceType.Shopping -> {

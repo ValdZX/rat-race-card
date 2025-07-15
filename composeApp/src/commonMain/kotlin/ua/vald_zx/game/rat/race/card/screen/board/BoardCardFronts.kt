@@ -53,7 +53,7 @@ fun BoxWithConstraintsScope.BoardCardFront(
         modifier = modifier
             .fillMaxSize()
             .clip(RoundedCornerShape(rounding))
-            .border(2.dp, card.type.color, RoundedCornerShape(rounding))
+            .border(2.dp, card.type.color(), RoundedCornerShape(rounding))
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {

@@ -93,7 +93,7 @@ fun CardDeck(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(rounding))
-                    .border(trueHeight / 40f, card.color)
+                    .border(trueHeight / 40f, card.color())
             ) {
                 BoardCardText(card, size)
             }
@@ -122,7 +122,7 @@ fun BoardCardBack(card: BoardCardType, size: DpSize, modifier: Modifier = Modifi
         modifier = modifier
             .fillMaxSize()
             .clip(RoundedCornerShape(rounding))
-            .background(card.color)
+            .background(card.color())
     ) {
         BoardCardText(card, size)
     }
@@ -132,14 +132,14 @@ fun BoardCardBack(card: BoardCardType, size: DpSize, modifier: Modifier = Modifi
 fun BoxScope.BoardCardText(card: BoardCardType, size: DpSize) {
     OutlinedText(
         text = when (card) {
-            BoardCardType.BigBusiness -> "Big Business"
-            BoardCardType.Chance -> "Chance"
-            BoardCardType.Deputy -> "Deputy"
-            BoardCardType.EventStore -> "Event Store"
-            BoardCardType.Expenses -> "Expenses"
-            BoardCardType.MediumBusiness -> "Medium Business"
-            BoardCardType.Shopping -> "Shopping"
-            BoardCardType.SmallBusiness -> "Small Business"
+            BoardCardType.BigBusiness -> "Великий бізнес"
+            BoardCardType.Chance -> "Шанс!"
+            BoardCardType.Deputy -> "Депутати"
+            BoardCardType.EventStore -> "Ринок"
+            BoardCardType.Expenses -> "Витрати"
+            BoardCardType.MediumBusiness -> "Середній бізнес"
+            BoardCardType.Shopping -> "Покупки"
+            BoardCardType.SmallBusiness -> "Малий бізнес"
         },
         autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
         fontFamily = FontFamily(
@@ -194,7 +194,7 @@ fun DiscardPile(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(rounding))
-                    .border(trueHeight / 40f, card.color)
+                    .border(trueHeight / 40f, card.color())
             ) {
                 BoardCardText(card, size)
             }
