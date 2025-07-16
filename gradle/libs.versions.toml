@@ -25,7 +25,7 @@ tts = "3.0.0"
 charts = "0.1.7"
 app-update = "2.1.0"
 fragment = "1.8.8"
-kotlinx-rpc = "0.8.0"
+kotlinx-rpc = "0.8.1"
 logback = "1.5.18"
 zoomable = "2.8.1"
 compottie = "2.0.0-rc04"
@@ -35,7 +35,7 @@ uiAndroid = "1.8.3"
 
 google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.31.8" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
-kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version = "0.7.0" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version = "0.7.1" }
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 androidx-testManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-uiTest" }
 androidx-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidx-uiTest" }
@@ -88,6 +88,7 @@ charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "char
 fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
 lexilabs-basic-sound = { module = "app.lexilabs.basic:basic-sound", version.ref = "lexilabs-sound" }
 lexilabs-basic-haptic = { module = "app.lexilabs.basic:basic-haptic", version.ref = "lexilabs-haptic"}
+kottie = { module = "io.github.ismai117:kottie", version = "2.0.1" }
 compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "compottie" }
 compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources", version.ref = "compottie" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }

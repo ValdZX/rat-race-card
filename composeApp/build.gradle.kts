@@ -78,6 +78,7 @@ kotlin {
             implementation(libs.charts)
             implementation(libs.tts)
             implementation(libs.tts.compose)
+//            implementation(libs.kottie)
             implementation(libs.compottie)
             implementation(libs.compottie.resources)
             implementation(libs.constraintlayout)

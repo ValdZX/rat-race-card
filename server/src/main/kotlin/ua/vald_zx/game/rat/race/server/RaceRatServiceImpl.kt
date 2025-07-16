@@ -191,7 +191,7 @@ class RaceRatServiceImpl(
 
     private suspend fun invalidateNextPlayer(activePlayer: String) {
         val players = currentBoardState?.value?.players.orEmpty()
-        if (activePlayer.isEmpty() || !players.containsKey(activePlayer)) {
+        if (activePlayer.isEmpty() || !players.containsKey(activePlayer) || players[activePlayer]?.isInactive == true) {
             nextPlayer()
         }
     }

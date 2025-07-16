@@ -3,6 +3,7 @@ package ua.vald_zx.game.rat.race.card.screen.board
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
+import dev.lennartegb.shadows.boxShadow
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import rat_race_card.composeapp.generated.resources.Bubbleboddy
@@ -289,22 +291,50 @@ private fun PlaceType.color(): Color {
 
 @Composable
 fun BoxScope.PlaceContent(
-    placeType: PlaceType,
-    cellSize: DpSize,
-    isVertical: Boolean,
+    place: Place,
+    dispatch: (BoardAction) -> Unit,
+    state: BoardState,
+    layer: BoardLayer,
+    index: Int,
+    route: BoardRoute,
 ) {
-    val minSide = min(cellSize.height, cellSize.width)
-    val maxSide = max(cellSize.height, cellSize.width)
+    val minSide = min(place.size.height, place.size.width)
+    val maxSide = max(place.size.height, place.size.width)
     val density = LocalDensity.current
-    when (placeType) {
+    when (place.type) {
         PlaceType.Salary -> {
-            Box(Modifier.fillMaxSize().background(placeType.color())) {
+            val blurRadius = min(place.size.width, place.size.height) / 5
+            val spreadRadius = min(place.size.width, place.size.height) / 15
+            val canTakeSalary = remember(state.canTakeSalary) {
+                state.canTakeSalary != null &&
+                        layer.level == state.layer.level &&
+                        index == moveTo(
+                    position = state.canTakeSalary,
+                    cellCount = layer.cellCount,
+                    toMove = route.offset
+                )
+            }
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .optionalModifier(canTakeSalary) {
+                        boxShadow(
+                            blurRadius = blurRadius,
+                            spreadRadius = spreadRadius,
+                            color = Color.White,
+                        )
+                    }
+                    .background(place.type.color())
+                    .clickable(canTakeSalary) {
+                        dispatch(BoardAction.TakeSalary)
+                    }
+            ) {
                 Image(Images.Money, contentDescription = null)
             }
         }
 
         PlaceType.Child -> {
-            Box(Modifier.fillMaxSize().background(placeType.color())) {
+            Box(Modifier.fillMaxSize().background(place.type.color())) {
                 Image(
                     painterResource(Res.drawable.child),
                     contentDescription = null,
@@ -314,7 +344,7 @@ fun BoxScope.PlaceContent(
         }
 
         PlaceType.Bankruptcy -> {
-            Box(Modifier.fillMaxSize().background(placeType.color())) {
+            Box(Modifier.fillMaxSize().background(place.type.color())) {
                 Image(
                     painterResource(Res.drawable.business_failure),
                     contentDescription = null,
@@ -324,7 +354,7 @@ fun BoxScope.PlaceContent(
         }
 
         PlaceType.TaxInspection -> {
-            Box(Modifier.fillMaxSize().background(placeType.color())) {
+            Box(Modifier.fillMaxSize().background(place.type.color())) {
                 Image(
                     painterResource(Res.drawable.detective),
                     contentDescription = null,
@@ -338,7 +368,7 @@ fun BoxScope.PlaceContent(
                 Modifier.fillMaxSize().background(
                     Brush.radialGradient(
                         0.0f to AppTheme.colors.rest,
-                        1.0f to placeType.color(),
+                        1.0f to place.type.color(),
                         radius = with(density) { maxSide.toPx() },
                         tileMode = TileMode.Repeated
                     )
@@ -357,7 +387,7 @@ fun BoxScope.PlaceContent(
                 Modifier.fillMaxSize().background(
                     Brush.radialGradient(
                         0.0f to AppTheme.colors.rest,
-                        1.0f to placeType.color(),
+                        1.0f to place.type.color(),
                         radius = with(density) { maxSide.toPx() },
                         tileMode = TileMode.Repeated
                     )
@@ -376,7 +406,7 @@ fun BoxScope.PlaceContent(
                 Modifier.fillMaxSize().background(
                     Brush.radialGradient(
                         0.0f to AppTheme.colors.rest,
-                        1.0f to placeType.color(),
+                        1.0f to place.type.color(),
                         radius = with(density) { maxSide.toPx() },
                         tileMode = TileMode.Repeated
                     )
@@ -395,14 +425,14 @@ fun BoxScope.PlaceContent(
                 Modifier.fillMaxSize().background(
                     Brush.radialGradient(
                         0.0f to AppTheme.colors.rest,
-                        1.0f to placeType.color(),
+                        1.0f to place.type.color(),
                         radius = with(density) { maxSide.toPx() },
                         tileMode = TileMode.Repeated
                     )
                 )
             ) {
                 OutlinedText(
-                    text = placeType.text,
+                    text = place.type.text,
                     autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
                     fontFamily = FontFamily(
                         Font(
@@ -412,7 +442,7 @@ fun BoxScope.PlaceContent(
                     ),
                     modifier = Modifier.align(Alignment.Center)
                         .padding(minSide / 14)
-                        .optionalModifier(isVertical) {
+                        .optionalModifier(place.isVertical) {
                             rotateLayout(Rotation.ROT_90)
                         },
                     fillColor = MaterialTheme.colorScheme.onPrimary,
@@ -424,9 +454,9 @@ fun BoxScope.PlaceContent(
         }
 
         else -> {
-            Box(Modifier.fillMaxSize().background(placeType.color())) {
+            Box(Modifier.fillMaxSize().background(place.type.color())) {
                 OutlinedText(
-                    text = placeType.text,
+                    text = place.type.text,
                     autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
                     fontFamily = FontFamily(
                         Font(
@@ -436,7 +466,7 @@ fun BoxScope.PlaceContent(
                     ),
                     modifier = Modifier.align(Alignment.Center)
                         .padding(minSide / 14)
-                        .optionalModifier(isVertical) {
+                        .optionalModifier(place.isVertical) {
                             rotateLayout(Rotation.ROT_90)
                         },
                     fillColor = MaterialTheme.colorScheme.onPrimary,
@@ -462,7 +492,7 @@ fun BoxScope.Places(
     val spotHeight = size.height / route.verticalCells
     val places = remember(route.places, size) {
         var placeOffset = 0
-        route.places.map { type ->
+        route.places.mapIndexed { index, type ->
             val location =
                 getLocationOnBoard(placeOffset, route.horizontalCells, route.verticalCells)
             val cellSize = type.getDpSize(location, spotWidth, spotHeight)
@@ -474,20 +504,27 @@ fun BoxScope.Places(
                 route.verticalCells
             )
             placeOffset += if (type.isBig) 2 else 1
-            Place(type, location, cellOffset, cellSize)
-        }
+            index to Place(type, location, cellOffset, cellSize)
+        }.sortedBy { (_, place) -> place.type == PlaceType.Salary }
     }
     val alpha by animateFloatAsState(if (state.layer == layer) 1f else 0.7f)
     Box(
         modifier = Modifier.align(Alignment.Center).size(size).alpha(alpha)
     ) {
-        places.forEach { place ->
+        places.forEach { (index, place) ->
             Box(
                 modifier = Modifier
                     .size(width = place.size.width, height = place.size.height)
                     .offset(x = place.offset.x, y = place.offset.y)
             ) {
-                PlaceContent(place.type, place.size, place.isVertical)
+                PlaceContent(
+                    index = index,
+                    place = place,
+                    state = state,
+                    route = route,
+                    layer = layer,
+                    dispatch = dispatch,
+                )
             }
         }
         val players by players.collectAsState()
@@ -507,7 +544,7 @@ fun BoxScope.Places(
         points.groupBy { it.position }.forEach { (_, gPoints) ->
             gPoints.forEachIndexed { index, pointerState ->
                 PlayerPoint(
-                    places = places,
+                    places = places.toMap(),
                     pointerState = pointerState,
                     state = state,
                     dispatch = dispatch,

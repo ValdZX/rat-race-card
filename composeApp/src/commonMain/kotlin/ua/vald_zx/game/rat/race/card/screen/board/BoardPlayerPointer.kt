@@ -80,7 +80,7 @@ data class PlayerPointState(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerPoint(
-    places: List<Place>,
+    places: Map<Int, Place>,
     pointerState: PlayerPointState,
     state: BoardState,
     dispatch: (BoardAction) -> Unit,
@@ -88,12 +88,13 @@ fun PlayerPoint(
     index: Int,
     count: Int,
 ) {
+
     var offset by remember {
-        val place = places[pointerState.position]
+        val place = places[pointerState.position]!!
         mutableStateOf(calculatePointerOffset(spotSize.width, spotSize.height, place, index, count))
     }
     LaunchedEffect(pointerState.position, count, spotSize.width, spotSize.height) {
-        val place = places[pointerState.position]
+        val place = places[pointerState.position]!!
         offset = calculatePointerOffset(spotSize.width, spotSize.height, place, index, count)
     }
     val animatedX by animateDpAsState(offset.first)

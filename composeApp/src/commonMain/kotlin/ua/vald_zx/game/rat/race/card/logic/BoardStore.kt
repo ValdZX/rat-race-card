@@ -38,6 +38,7 @@ data class BoardState(
     val highlightedCard: BoardCardType? = null,
     val board: Board? = null,
     val canRoll: Boolean = false,
+    val canTakeSalary: Int? = null,
 ) : State {
     val layer: BoardLayer
         get() = currentPlayer?.state?.level?.toLayer() ?: BoardLayer.INNER
@@ -53,6 +54,8 @@ sealed class BoardAction : Action {
     data class ChangeColor(val color: Long) : BoardAction()
     data object BackLastMove : BoardAction()
     data object SwitchLayer : BoardAction()
+    data class CanTakeSalary(val salaryPosition: Int) : BoardAction()
+    data object TakeSalary : BoardAction()
     data object RollDice : BoardAction()
     data class UpdateCurrentPlayer(val player: Player) : BoardAction()
     data class HighlightCard(val card: BoardCardType) : BoardAction()
@@ -117,6 +120,25 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                 launch {
                     service?.changePosition(position, oldState.layer.level)
                     delay(500)
+                    oldState.currentPlayer?.state?.position?.let { currentPosition ->
+                        val layer = boardLayers.layers[oldState.layer]
+                        val list = if (currentPosition > position) {
+                            layer?.places?.subList(currentPosition + 1, layer.places.size)
+                                .orEmpty() +
+                                    layer?.places?.subList(0, position + 1).orEmpty()
+                        } else {
+                            layer?.places?.subList(currentPosition + 1, position + 1)
+                        }
+                        val salaryContains = list?.contains(PlaceType.Salary) ?: false
+                        if (salaryContains) {
+                            var salaryPosition = currentPosition + list.indexOf(PlaceType.Salary) + 1
+                            val placeCount = layer?.places?.size ?: 0
+                            if (salaryPosition >= placeCount) {
+                                salaryPosition = salaryPosition - placeCount
+                            }
+                            dispatch(BoardAction.CanTakeSalary(salaryPosition))
+                        }
+                    }
                     boardLayers.layers[oldState.layer]?.places[position]?.let { place ->
                         oldState.processPlace(place)
                     }
@@ -124,6 +146,16 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                 oldState.copy(
                     positionsHistory = oldState.positionsHistory + position,
                 )
+            }
+
+            is BoardAction.CanTakeSalary -> {
+                oldState.copy(canTakeSalary = action.salaryPosition)
+            }
+
+            is BoardAction.TakeSalary -> {
+                card.dispatch(CardAction.GetSalaryApproved)
+                launch { service?.nextPlayer() }
+                oldState.copy(canTakeSalary = null)
             }
 
             BoardAction.SwitchLayer -> {
@@ -226,7 +258,7 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
             }
 
             PlaceType.Salary -> {
-                service?.nextPlayer()
+                //TODO
             }
 
             PlaceType.Shopping -> {
