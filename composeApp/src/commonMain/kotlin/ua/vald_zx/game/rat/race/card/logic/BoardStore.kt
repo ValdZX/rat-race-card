@@ -319,7 +319,7 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
 
     private suspend fun startService() {
         service = client.rpc {
-            url("ws://192.168.31.121:8080/api")
+            url("wss://race-rat-online-1033277102369.us-central1.run.app/api")
             rpcConfig {
                 serialization {
                     json()
