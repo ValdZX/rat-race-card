@@ -46,7 +46,6 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.RepayLoan
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.SellBusiness
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.SellShares
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.SellingAllBusinessConfirmed
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.SendCash
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.SideExpenses
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.SideProfit
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.ToDeposit
@@ -63,10 +62,8 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.SubCash
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
 import ua.vald_zx.game.rat.race.card.remove
 import ua.vald_zx.game.rat.race.card.replace
-import ua.vald_zx.game.rat.race.card.service
 import ua.vald_zx.game.rat.race.card.shared.PlayerCard
 import ua.vald_zx.game.rat.race.card.statistics2KStore
-import ua.vald_zx.game.rat.race.card.toState
 import kotlin.math.absoluteValue
 
 @Serializable
@@ -199,7 +196,6 @@ sealed class RatRace2CardAction : Action {
     data class BuyShares(val shares: Shares) : RatRace2CardAction()
     data class UpdateConfig(val config: Config) : RatRace2CardAction()
     data class BackToState(val state: RatRace2CardState, val backCount: Int) : RatRace2CardAction()
-    data class SendCash(val id: String, val cash: Long) : RatRace2CardAction()
     data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) :
         RatRace2CardAction()
 
@@ -246,9 +242,6 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             is FillProfessionCardRat -> {
-                launch {
-                    service?.updatePlayerCard(action.playerCard)
-                }
                 RatRace2CardState(
                     playerCard = action.playerCard,
                     business = listOf(
@@ -263,9 +256,6 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             is EditFillProfessionCardRat -> {
-                launch {
-                    service?.updatePlayerCard(action.playerCard)
-                }
                 oldState.copy(playerCard = action.playerCard)
             }
 
@@ -511,14 +501,6 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
                 repeat(action.backCount) { statistics?.log?.removeLastOrNull() }
                 action.state
             }
-
-            is SendCash -> {
-                launch {
-                    service?.sendMoney(action.id, action.cash)
-                    dispatch(SideExpenses(action.cash))
-                }
-                oldState
-            }
         }
         if (newState != oldState) {
             state.value = newState
@@ -534,7 +516,6 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             storedStatistics.log += newState
             statistics2KStore.set(storedStatistics)
             statistics = storedStatistics
-            service?.updateState(newState.toState())
         }
     }
 

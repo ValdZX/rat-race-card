@@ -1,5 +1,9 @@
 package ua.vald_zx.game.rat.race.card.logic
 
+import com.russhwolf.settings.set
+import io.github.aakira.napier.Napier
+import io.ktor.client.request.url
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -7,18 +11,54 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.rpc.krpc.ktor.client.rpc
+import kotlinx.rpc.krpc.ktor.client.rpcConfig
+import kotlinx.rpc.krpc.serialization.json.json
+import kotlinx.rpc.withService
 import kotlinx.serialization.Serializable
+import ua.vald_zx.game.rat.race.card.client
 import ua.vald_zx.game.rat.race.card.currentPlayerId
+import ua.vald_zx.game.rat.race.card.invalidServerState
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.BackLastMove
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.CanTakeSalary
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.ChangeColor
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.CloseSession
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.CreateBoard
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.DiceRolled
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.HighlightCard
 import ua.vald_zx.game.rat.race.card.logic.BoardAction.LoadState
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.Move
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.RollDice
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.SelectBoard
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.SelectedCard
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.SendCash
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.StartServices
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.SwitchLayer
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.TakeSalary
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.ToDiscardPile
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.UpdateBoard
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.UpdateCurrentPlayer
 import ua.vald_zx.game.rat.race.card.logic.BoardSideEffect.ShowDice
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.ReceivedCash
+import ua.vald_zx.game.rat.race.card.needStartServerState
+import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
+import ua.vald_zx.game.rat.race.card.raceRate2KStore
+import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.screen.board.PlaceType
 import ua.vald_zx.game.rat.race.card.screen.board.boardLayers
 import ua.vald_zx.game.rat.race.card.service
+import ua.vald_zx.game.rat.race.card.settings
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
+import ua.vald_zx.game.rat.race.card.shared.Event
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
+import ua.vald_zx.game.rat.race.card.shared.PlayerState
+import ua.vald_zx.game.rat.race.card.shared.RaceRatService
+import ua.vald_zx.game.rat.race.card.shared.replaceItem
 
 val players = MutableStateFlow(emptyList<Player>())
 
@@ -34,7 +74,7 @@ fun Int.toLayer(): BoardLayer {
 @Serializable
 data class BoardState(
     val positionsHistory: List<Int> = listOf(1),
-    val currentPlayer: Player? = null,
+    val currentPlayer: Player? = players.value.find { it.id == currentPlayerId },
     val highlightedCard: BoardCardType? = null,
     val board: Board? = null,
     val canRoll: Boolean = false,
@@ -54,6 +94,10 @@ sealed class BoardAction : Action {
     data class ChangeColor(val color: Long) : BoardAction()
     data object BackLastMove : BoardAction()
     data object SwitchLayer : BoardAction()
+    data object StartServices : BoardAction()
+    data object CloseSession : BoardAction()
+    data class CreateBoard(val name: String) : BoardAction()
+    data class SelectBoard(val boardId: String) : BoardAction()
     data class CanTakeSalary(val salaryPosition: Int) : BoardAction()
     data object TakeSalary : BoardAction()
     data object RollDice : BoardAction()
@@ -63,10 +107,15 @@ sealed class BoardAction : Action {
     data object ToDiscardPile : BoardAction()
     data class UpdateBoard(val board: Board) : BoardAction()
     data class DiceRolled(val dice: Int) : BoardAction()
+
+    data class SendCash(val id: String, val cash: Long) : BoardAction()
 }
 
 sealed class BoardSideEffect : Effect {
     data class ShowDice(val dice: Int) : BoardSideEffect()
+    data object GotoBoardList : BoardSideEffect()
+    data object GotoInitPlayer : BoardSideEffect()
+    data object GotoBoard : BoardSideEffect()
 }
 
 class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
@@ -81,6 +130,16 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
 
     override fun observeSideEffect(): Flow<BoardSideEffect> = sideEffect
 
+    init {
+        players.onEach { players ->
+            players.forEach { player ->
+                if (player.id == currentPlayerId) {
+                    dispatch(UpdateCurrentPlayer(player))
+                }
+            }
+        }.launchIn(this)
+    }
+
     override fun dispatch(action: BoardAction) {
         val oldState = state.value
         val newState = when (action) {
@@ -88,11 +147,11 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                 action.state
             }
 
-            is BoardAction.UpdateCurrentPlayer -> {
+            is UpdateCurrentPlayer -> {
                 oldState.copy(currentPlayer = action.player)
             }
 
-            BoardAction.BackLastMove -> {
+            BackLastMove -> {
                 val moves = oldState.positionsHistory
                 val newMoves = moves.subList(0, moves.lastIndex)
                 val position = newMoves.last()
@@ -102,16 +161,16 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                 )
             }
 
-            is BoardAction.HighlightCard -> {
+            is HighlightCard -> {
                 oldState.copy(highlightedCard = action.card)
             }
 
-            is BoardAction.SelectedCard -> {
+            is SelectedCard -> {
                 launch { service?.takeCard(action.card) }
                 oldState.copy(highlightedCard = null)
             }
 
-            is BoardAction.Move -> {
+            is Move -> {
                 val position = moveTo(
                     oldState.currentPlayer?.state?.position ?: 1,
                     oldState.layer.cellCount,
@@ -131,12 +190,13 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                         }
                         val salaryContains = list?.contains(PlaceType.Salary) ?: false
                         if (salaryContains) {
-                            var salaryPosition = currentPosition + list.indexOf(PlaceType.Salary) + 1
+                            var salaryPosition =
+                                currentPosition + list.indexOf(PlaceType.Salary) + 1
                             val placeCount = layer?.places?.size ?: 0
                             if (salaryPosition >= placeCount) {
                                 salaryPosition = salaryPosition - placeCount
                             }
-                            dispatch(BoardAction.CanTakeSalary(salaryPosition))
+                            dispatch(CanTakeSalary(salaryPosition))
                         }
                     }
                     boardLayers.layers[oldState.layer]?.places[position]?.let { place ->
@@ -148,17 +208,17 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                 )
             }
 
-            is BoardAction.CanTakeSalary -> {
+            is CanTakeSalary -> {
                 oldState.copy(canTakeSalary = action.salaryPosition)
             }
 
-            is BoardAction.TakeSalary -> {
+            is TakeSalary -> {
                 card.dispatch(CardAction.GetSalaryApproved)
                 launch { service?.nextPlayer() }
                 oldState.copy(canTakeSalary = null)
             }
 
-            BoardAction.SwitchLayer -> {
+            SwitchLayer -> {
                 val currentLayer = oldState.layer
                 val layer = if (currentLayer == BoardLayer.INNER) {
                     BoardLayer.OUTER
@@ -169,12 +229,12 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                 oldState
             }
 
-            is BoardAction.ChangeColor -> {
+            is ChangeColor -> {
                 launch { service?.updateAttributes(PlayerAttributes(color = action.color)) }
                 oldState
             }
 
-            BoardAction.ToDiscardPile -> {
+            ToDiscardPile -> {
                 launch {
                     service?.discardPile()
                     service?.nextPlayer()
@@ -182,28 +242,138 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                 oldState//todo
             }
 
-            is BoardAction.DiceRolled -> {
+            is DiceRolled -> {
                 launch { sideEffect.emit(ShowDice(action.dice)) }
                 oldState
             }
 
-            BoardAction.RollDice -> {
+            RollDice -> {
                 launch { service?.rollDice() }
                 oldState.copy(canRoll = false)
             }
 
-            is BoardAction.UpdateBoard -> {
+            is UpdateBoard -> {
                 val rollCountChanged =
                     oldState.board?.moveCount != action.board.moveCount || action.board.moveCount == 0
                 val canRoll = oldState.canRoll || rollCountChanged &&
                         action.board.activePlayer == currentPlayerId &&
                         action.board.takenCard == null &&
                         oldState.highlightedCard == null
+                launch {
+                    service?.updatePlayers(action.board.players)
+                }
                 oldState.copy(board = action.board, canRoll = canRoll)
+            }
+
+            is SendCash -> {
+                launch {
+                    service?.sendMoney(action.id, action.cash)
+                    card.dispatch(CardAction.SideExpenses(action.cash))
+                }
+                oldState
+            }
+
+            StartServices -> {
+                val handler = CoroutineExceptionHandler { _, t ->
+                    Napier.e("Invalid server", t)
+                    invalidServerState.value = true
+                    needStartServerState.value = false
+                }
+                CoroutineScope(Dispatchers.Default).launch(handler) {
+                    startService()
+                }
+                oldState
+            }
+
+            is CreateBoard -> {
+                launch {
+                    service?.createBoard(action.name)?.let { board ->
+                        loadBoard(board)
+                    }
+                }
+                oldState
+            }
+
+            is SelectBoard -> {
+                launch {
+                    service?.selectBoard(action.boardId)?.let { board ->
+                        loadBoard(board)
+                    }
+                }
+                oldState
+            }
+
+            CloseSession -> {
+                launch {
+                    if (!invalidServerState.value) {
+                        service?.closeSession()
+                    }
+                }
+                oldState
             }
         }
         if (newState != oldState) {
             state.value = newState
+        }
+    }
+
+    private suspend fun startService() {
+        service = client.rpc {
+            url("ws://192.168.31.121:8080/api")
+            rpcConfig {
+                serialization {
+                    json()
+                }
+            }
+        }.withService()
+        val instance = service?.hello(currentPlayerId) ?: return
+        settings["currentPlayerId"] = instance.id
+        if (instance.boardId.isEmpty()) {
+            sideEffect.emit(BoardSideEffect.GotoBoardList)
+        } else {
+            service?.selectBoard(instance.boardId)?.let { board ->
+                loadBoard(board)
+            }
+        }
+        service?.eventsObserve()?.onEach { event ->
+            when (event) {
+                is Event.MoneyIncome -> {
+                    raceRate2store.dispatch(
+                        ReceivedCash(
+                            payerId = event.playerId,
+                            amount = event.amount
+                        )
+                    )
+                }
+
+                is Event.PlayerChanged -> {
+                    val playersList = players.value
+                    val changedPlayer = event.player
+                    val oldPlayer = playersList.find { it.id == changedPlayer.id }
+                    if (oldPlayer != null) {
+                        players.value = playersList.replaceItem(oldPlayer, event.player)
+                    } else {
+                        players.value = players.value + event.player
+                    }
+                    if (changedPlayer.id == currentPlayerId) {
+                        raceRate2BoardStore.dispatch(UpdateCurrentPlayer(changedPlayer))
+                    }
+                }
+
+                is Event.RollDice -> {
+                    raceRate2BoardStore.dispatch(DiceRolled(event.dice))
+                }
+
+                is Event.BoardChanged -> {
+                    raceRate2BoardStore.dispatch(UpdateBoard(event.board))
+                }
+            }
+        }?.launchIn(this)
+        val state = raceRate2KStore.get()
+        val professionCard = state?.playerCard
+        if (professionCard?.profession?.isNotEmpty() == true) {
+            service?.updatePlayerCard(professionCard)
+            service?.updateState(state.toState())
         }
     }
 
@@ -218,11 +388,11 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
             }
 
             PlaceType.Business -> {
-                dispatch(BoardAction.HighlightCard(BoardCardType.SmallBusiness))
+                dispatch(HighlightCard(BoardCardType.SmallBusiness))
             }
 
             PlaceType.Chance -> {
-                dispatch(BoardAction.HighlightCard(BoardCardType.Chance))
+                dispatch(HighlightCard(BoardCardType.Chance))
             }
 
             PlaceType.Child -> {
@@ -246,7 +416,7 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
             }
 
             PlaceType.Expenses -> {
-                dispatch(BoardAction.HighlightCard(BoardCardType.Expenses))
+                dispatch(HighlightCard(BoardCardType.Expenses))
             }
 
             PlaceType.Love -> {
@@ -262,7 +432,7 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
             }
 
             PlaceType.Shopping -> {
-                dispatch(BoardAction.HighlightCard(BoardCardType.Shopping))
+                dispatch(HighlightCard(BoardCardType.Shopping))
             }
 
             PlaceType.Start -> {
@@ -270,13 +440,39 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
             }
 
             PlaceType.Store -> {
-                dispatch(BoardAction.HighlightCard(BoardCardType.EventStore))
+                dispatch(HighlightCard(BoardCardType.EventStore))
             }
 
             PlaceType.TaxInspection -> {
                 //todo
             }
         }
+    }
+
+    suspend fun loadBoard(board: Board) {
+        raceRate2BoardStore.dispatch(UpdateBoard(board))
+        val player = service?.getPlayer(currentPlayerId)
+        if (player == null || player.playerCard.name.isEmpty()) {
+            service?.makePlayerOnBoard()
+            sideEffect.emit(BoardSideEffect.GotoInitPlayer)
+        } else {
+            sideEffect.emit(BoardSideEffect.GotoBoard)
+        }
+    }
+
+    fun RatRace2CardState.toState(): PlayerState {
+        return PlayerState(
+            totalExpenses = total(),
+            cashFlow = cashFlow()
+        )
+    }
+
+    suspend fun RaceRatService.updatePlayers(actualIds: Set<String>) {
+        val oldPlayers = players.value
+        val unknownKeys = actualIds - oldPlayers.map { it.id }
+        val actualPlayers = oldPlayers.filter { actualIds.contains(it.id) }
+        val unknownPlayers = if (unknownKeys.isNotEmpty()) getPlayers(unknownKeys) else emptyList()
+        players.value = actualPlayers + unknownPlayers
     }
 }
 

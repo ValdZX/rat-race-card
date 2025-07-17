@@ -23,7 +23,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,16 +30,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import kotlinx.datetime.format
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.TextButton
 import ua.vald_zx.game.rat.race.card.dateFullDotsFormat
-import ua.vald_zx.game.rat.race.card.loadBoard
+import ua.vald_zx.game.rat.race.card.logic.BoardAction
+import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
 import ua.vald_zx.game.rat.race.card.service
 import ua.vald_zx.game.rat.race.card.shared.BoardId
 
@@ -48,10 +45,8 @@ class BoardListScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
         var boardList by remember { mutableStateOf(emptyList<BoardId>()) }
         var newBoardDialog by remember { mutableStateOf(false) }
-        val coroutineScope = rememberCoroutineScope()
         LaunchedEffect(Unit) {
             boardList = service?.getBoards().orEmpty()
             service?.observeBoards()?.onEach {
@@ -80,11 +75,7 @@ class BoardListScreen : Screen {
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.primaryContainer)
                             .clickable {
-                                coroutineScope.launch {
-                                    service?.selectBoard(board.id)?.let { board ->
-                                        loadBoard(board, navigator)
-                                    }
-                                }
+                                raceRate2BoardStore.dispatch(BoardAction.SelectBoard(board.id))
                             }.padding(8.dp)
                     ) {
                         Text(text = board.name)
@@ -116,11 +107,7 @@ class BoardListScreen : Screen {
                             newBoardDialog = false
                         }
                         TextButton("Створити стіл", enabled = boardName.isNotEmpty()) {
-                            coroutineScope.launch {
-                                service?.createBoard(boardName)?.let { board ->
-                                    loadBoard(board, navigator)
-                                }
-                            }
+                            raceRate2BoardStore.dispatch(BoardAction.CreateBoard(boardName))
                         }
                     }
                 }

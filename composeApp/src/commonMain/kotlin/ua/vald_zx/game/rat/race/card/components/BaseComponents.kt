@@ -341,7 +341,8 @@ fun CashFlowField(
                     clickable(onClick = onClick)
                 } else this
             }
-            .padding(start = 8.dp)
+            .padding(start = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         SmoothRainbowText(
             name,

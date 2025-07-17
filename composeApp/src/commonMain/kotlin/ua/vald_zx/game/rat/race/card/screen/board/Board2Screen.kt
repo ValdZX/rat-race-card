@@ -215,6 +215,10 @@ class Board2Screen : Screen {
                         delay(5000)
                         dice = 0
                     }
+
+                    else -> {
+                        //nop
+                    }
                 }
             }.launchIn(this)
         }

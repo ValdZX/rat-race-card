@@ -37,12 +37,12 @@ class RaceRatServiceImpl(
 ) : RaceRatService, CoroutineScope by CoroutineScope(Dispatchers.Default) {
     private val eventBus = MutableSharedFlow<Event>()
     private val boardId: String
-        get() = currentBoardState?.value?.id.orEmpty()
+        get() = boardState?.value?.id.orEmpty()
     private val globalEventBus: MutableSharedFlow<GlobalEvent>
         get() = getGlobalEventBus(boardId)
     private var boardStateSubJob: Job? = null
     private var boardGlobalEventsJob: Job? = null
-    private var currentBoardState: MutableStateFlow<BoardState>? = null
+    private var boardState: MutableStateFlow<BoardState>? = null
         set(value) {
             field = value
             if (value != null) {
@@ -79,7 +79,7 @@ class RaceRatServiceImpl(
         boards.value.forEach { boardState ->
             val oldBoard = boardState.value
             if (oldBoard.players.containsKey(id)) {
-                currentBoardState = boardState
+                this@RaceRatServiceImpl.boardState = boardState
                 oldBoard.players[id]?.let { oldPlayer ->
                     boardState.value =
                         oldBoard.copy(players = oldBoard.players.toMutableMap().apply {
@@ -111,26 +111,25 @@ class RaceRatServiceImpl(
         val boardState = BoardState(name)
         val boardFlow = MutableStateFlow(boardState)
         boards.value = boards.value.toMutableList().apply { add(boardFlow) }
-        currentBoardState = boardFlow
+        this@RaceRatServiceImpl.boardState = boardFlow
         return boardState.toBoard()
     }
 
     override suspend fun selectBoard(boardId: String): Board? {
         return boards.value.find { it.value.id == boardId }
-            ?.apply { currentBoardState = this }
+            ?.apply { boardState = this }
             ?.value?.toBoard()
     }
 
-    override suspend fun makePlayerOnBoard(): Set<String> {
-        currentBoardState?.value?.let { oldBoard ->
-            currentBoardState?.value = oldBoard.copy(
+    override suspend fun makePlayerOnBoard() {
+        boardState?.value?.let { oldBoard ->
+            boardState?.value = oldBoard.copy(
                 players = oldBoard.players.toMutableMap()
                     .apply {
                         this[uuid] = Player(uuid, PlayerAttributes(color = getRandomColor()))
                     })
         }
-        invalidateNextPlayer(currentBoardState?.value?.activePlayer.orEmpty())
-        return currentBoardState?.value?.players?.keys.orEmpty()
+        invalidateNextPlayer(boardState?.value?.activePlayer.orEmpty())
     }
 
     override suspend fun updatePlayerCard(playerCard: PlayerCard) = changeCurrentPlayer {
@@ -148,7 +147,11 @@ class RaceRatServiceImpl(
     override fun eventsObserve(): Flow<Event> = eventBus
 
     override suspend fun getPlayer(id: String): Player? {
-        return currentBoardState?.value?.players?.get(id)
+        return boardState?.value?.players?.get(id)
+    }
+
+    override suspend fun getPlayers(ids: Set<String>): List<Player> {
+        return ids.mapNotNull { id -> boardState?.value?.players?.get(id) }
     }
 
     override suspend fun sendMoney(receiverId: String, amount: Long) {
@@ -166,7 +169,7 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun takeCard(cardType: BoardCardType) {
-        val boardState = currentBoardState ?: return
+        val boardState = boardState ?: return
         val oldState = boardState.value
         val someCard = oldState.cards[cardType]?.random() ?: return
         boardState.value = oldState.copy(
@@ -178,7 +181,7 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun discardPile() {
-        val boardState = currentBoardState ?: return
+        val boardState = boardState ?: return
         val oldState = boardState.value
         val takenCard = oldState.takenCard ?: return
         boardState.value = oldState.copy(
@@ -190,14 +193,14 @@ class RaceRatServiceImpl(
     }
 
     private suspend fun invalidateNextPlayer(activePlayer: String) {
-        val players = currentBoardState?.value?.players.orEmpty()
+        val players = boardState?.value?.players.orEmpty()
         if (activePlayer.isEmpty() || !players.containsKey(activePlayer) || players[activePlayer]?.isInactive == true) {
             nextPlayer()
         }
     }
 
     override suspend fun nextPlayer() {
-        val boardState = currentBoardState ?: return
+        val boardState = boardState ?: return
         val oldState = boardState.value
         val activePlayers = oldState.players.filter { (_, player) -> !player.isInactive }
         if (activePlayers.isEmpty()) return
@@ -211,26 +214,27 @@ class RaceRatServiceImpl(
         if (oldState.players[nextPlayer]?.isInactive == true) {
             nextPlayer()
         } else {
-            boardState.value = oldState.copy(activePlayer = nextPlayer, moveCount = oldState.moveCount + 1)
+            boardState.value =
+                oldState.copy(activePlayer = nextPlayer, moveCount = oldState.moveCount + 1)
         }
     }
 
     override suspend fun closeSession() {
         changeCurrentPlayer {
-            if (currentBoardState?.value?.activePlayer == uuid) {
+            if (boardState?.value?.activePlayer == uuid) {
                 nextPlayer()
             }
             copy(isInactive = true)
         }
-        currentBoardState?.value?.let { board ->
+        boardState?.value?.let { board ->
             validateBoard(board.id)
         }
     }
 
     private suspend fun changeCurrentPlayer(todo: suspend Player.() -> Player) {
-        val player = currentBoardState?.value?.players[uuid] ?: return
-        currentBoardState?.value?.let { oldBoard ->
-            currentBoardState?.value = oldBoard.copy(
+        val player = boardState?.value?.players[uuid] ?: return
+        boardState?.value?.let { oldBoard ->
+            boardState?.value = oldBoard.copy(
                 players = oldBoard.players.toMutableMap()
                     .apply {
                         val updatedPlayer = player.todo()
@@ -242,7 +246,7 @@ class RaceRatServiceImpl(
     }
 
     private fun getRandomColor(): Long {
-        val otherPlayersColors = currentBoardState?.value
+        val otherPlayersColors = boardState?.value
             ?.players?.values
             ?.map { player -> player.attrs.color }
             ?.toSet().orEmpty()

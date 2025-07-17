@@ -43,12 +43,13 @@ interface RaceRatService {
     fun observeBoards(): Flow<List<BoardId>>
     suspend fun createBoard(name: String): Board
     suspend fun selectBoard(boardId: String): Board?
-    suspend fun makePlayerOnBoard(): Set<String>
+    suspend fun makePlayerOnBoard()
     suspend fun updatePlayerCard(playerCard: PlayerCard)
     suspend fun updateState(state: PlayerState)
     suspend fun updateAttributes(attrs: PlayerAttributes)
     fun eventsObserve(): Flow<Event>
     suspend fun getPlayer(id: String): Player?
+    suspend fun getPlayers(ids: Set<String>): List<Player>
     suspend fun sendMoney(receiverId: String, amount: Long)
 
     suspend fun rollDice(): Int

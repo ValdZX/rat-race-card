@@ -1,3 +1,5 @@
+@file:OptIn(InternalCompottieApi::class)
+
 package ua.vald_zx.game.rat.race.card
 
 import androidx.compose.runtime.Composable
@@ -16,7 +18,13 @@ import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import io.github.alexzhirkevich.compottie.Compottie
+import io.github.alexzhirkevich.compottie.InternalCompottieApi
+import io.github.alexzhirkevich.compottie.LocalLottieCache
+import io.github.alexzhirkevich.compottie.LottieCompositionSpec
+import io.github.alexzhirkevich.compottie.ioDispatcher
 import io.github.xxfast.kstore.KStore
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
@@ -26,7 +34,7 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.logic.Statistics
-import ua.vald_zx.game.rat.race.card.screen.LoadScreen
+import ua.vald_zx.game.rat.race.card.screen.SelectTypeScreen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
@@ -38,7 +46,8 @@ val statistics2KStore: KStore<Statistics>
 val raceRate2store by lazy { RatRace2CardStore() }
 val raceRate2BoardStore by lazy { BoardStore() }
 val settings: Settings = Settings()
-val invalidServer = mutableStateOf(false)
+val invalidServerState = mutableStateOf(false)
+val needStartServerState = mutableStateOf(false)
 
 @Composable
 internal fun App() {
@@ -51,9 +60,12 @@ internal fun App() {
     AppTheme {
         var kStoreLoaded by remember { mutableStateOf(false) }
         if (kStoreLoaded) {
-            Navigator(LoadScreen()) { navigator ->
+            Navigator(SelectTypeScreen()) { navigator ->
                 CurrentScreen()
-                StartServices(navigator)
+                val needStartServer by needStartServerState
+                if(needStartServer) {
+                    StartServices(navigator)
+                }
             }
         } else {
             LaunchedEffect(Unit) {
@@ -62,6 +74,17 @@ internal fun App() {
                     raceRate2store.dispatch(RatRace2CardAction.LoadState(state2))
                 }
                 kStoreLoaded = true
+            }
+        }
+    }
+    val lottieCache = LocalLottieCache.current
+    LaunchedEffect(Unit) {
+        (1..6).forEach { side ->
+            withContext(Compottie.ioDispatcher()) {
+                val specInstance = LottieCompositionSpec.JsonString(
+                    Res.readBytes("files/cube_$side.json").decodeToString()
+                )
+                lottieCache.getOrPut(specInstance.key, specInstance::load)
             }
         }
     }
