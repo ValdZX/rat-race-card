@@ -96,8 +96,9 @@ class BoardListScreen : Screen {
                 ) {
                     var boardName by remember { mutableStateOf("") }
                     OutlinedTextField(
-                        boardName,
-                        label = { Text("Назва стола") },
+                        value = boardName,
+                        singleLine = true,
+                        label = { Text("Назва столу") },
                         onValueChange = { boardName = it })
                     Row(
                         modifier = Modifier.fillMaxWidth(),
