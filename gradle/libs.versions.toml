@@ -7,7 +7,7 @@ appdirs = "1.4.0"
 firebaseBom = "33.16.0"
 kotlin = "2.2.0"
 compose = "1.9.0-alpha03"
-compose-hot-reload = "1.0.0-beta03"
+compose-hot-reload = "1.0.0-beta04"
 agp = "8.11.1"
 androidx-activityCompose = "1.10.1"
 androidx-uiTest = "1.8.3"
@@ -16,7 +16,7 @@ voyager = "1.1.0-beta03"
 napier = "2.7.1"
 buildConfig = "5.6.7"
 kotlinx-coroutines = "1.10.2"
-ktor = "3.2.1"
+ktor = "3.2.2"
 kotlinx-serialization = "1.9.0"
 kstore = "1.0.0"
 lexilabs-sound = "0.2.6-beta01"
@@ -25,7 +25,7 @@ tts = "3.0.0"
 charts = "0.1.7"
 app-update = "2.1.0"
 fragment = "1.8.8"
-kotlinx-rpc = "0.8.1"
+kotlinx-rpc = "0.9.1"
 logback = "1.5.18"
 zoomable = "2.8.1"
 compottie = "2.0.0-rc04"
@@ -33,7 +33,7 @@ uiAndroid = "1.8.3"
 
 [libraries]
 
-google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.31.8" }
+google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.31.9" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version = "0.7.1" }
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
@@ -94,7 +94,7 @@ compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources",
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 sceneview = { module = "io.github.sceneview:sceneview", version = "2.3.0" }
 constraintlayout = { module = "tech.annexflow.compose:constraintlayout-compose-multiplatform", version = "0.6.0" }
-composables-core = { module = "com.composables:core", version = "1.36.1" }
+composables-core = { module = "com.composables:core", version = "1.37.0" }
 
 
 [plugins]

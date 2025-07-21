@@ -50,6 +50,7 @@ fun CardDialog(
             deckCoordinatesMap[card.type]
         }
         if (deckCoordinatesState != null) {
+            val cardSize = DpSize(300.dp, 200.dp)
             val deckCoordinates by deckCoordinatesState
             val motionScene = remember(deckCoordinates.second, state.layer) {
                 val scale = if (state.layer == BoardLayer.INNER) INNER_LAYER_SCALE else 1.0f
@@ -121,8 +122,8 @@ fun CardDialog(
                         constrain(front) {
                             visibility = Visibility.Visible
                             centerTo(parent)
-                            width = Dimension.value(300.dp)
-                            height = Dimension.value(200.dp)
+                            width = Dimension.value(cardSize.width)
+                            height = Dimension.value(cardSize.height)
                             rotationY = 0f
                         }
                     }
@@ -188,7 +189,7 @@ fun CardDialog(
                 }
                 BoxWithConstraints(modifier = Modifier.layoutId("front")) {
                     val isActive = remember(card) { currentPlayerId == state.board?.activePlayer }
-                    BoardCardFront(card, isActive) {
+                    BoardCardFront(card, isActive, cardSize) {
                         dispatch(BoardAction.ToDiscardPile)
                         targetProgress = 6f
                     }

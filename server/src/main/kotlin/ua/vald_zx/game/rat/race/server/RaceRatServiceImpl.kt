@@ -204,18 +204,17 @@ class RaceRatServiceImpl(
         val oldState = boardState.value
         val activePlayers = oldState.players.filter { (_, player) -> !player.isInactive }
         if (activePlayers.isEmpty()) return
-        val playerIds = oldState.players.keys.toList()
+        val playerIds = oldState.players.filter { (_, player) -> !player.isInactive }.keys.toList()
         val activePlayerIndex = playerIds.indexOf(oldState.activePlayer)
         val nextPlayer = if (activePlayerIndex + 1 == playerIds.size) {
             playerIds.first()
         } else {
             playerIds[activePlayerIndex + 1]
         }
-        if (oldState.players[nextPlayer]?.isInactive == true) {
-            nextPlayer()
-        } else {
-            boardState.value =
-                oldState.copy(activePlayer = nextPlayer, moveCount = oldState.moveCount + 1)
+        boardState.value =
+            oldState.copy(activePlayer = nextPlayer, moveCount = oldState.moveCount + 1)
+        if(oldState.takenCard != null) {
+            discardPile()
         }
     }
 
