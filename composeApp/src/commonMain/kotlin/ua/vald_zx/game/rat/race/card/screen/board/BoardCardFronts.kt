@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
-import io.github.aakira.napier.Napier
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.Button
@@ -52,9 +51,8 @@ fun BoxWithConstraintsScope.BoardCardFront(
 ) {
     val width = maxWidth
     val height = maxHeight
-    val scaleX = width / size.width
-    val scaleY = height / size.height
-    Napier.d("maxWidth $width maxHeight $height size $size")
+    val scaleX = size.width / width
+    val scaleY = size.height / height
     val rounding = min(width, height) / 16
     Box(
         modifier = modifier

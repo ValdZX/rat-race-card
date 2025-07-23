@@ -305,11 +305,11 @@ fun BoxScope.PlaceContent(
         PlaceType.Salary -> {
             val blurRadius = min(place.size.width, place.size.height) / 5
             val spreadRadius = min(place.size.width, place.size.height) / 15
-            val canTakeSalary = remember(state.canTakeSalary) {
-                state.canTakeSalary != null &&
+            val canTakeSalary = remember(state.takeSalaryPosition) {
+                state.takeSalaryPosition != null &&
                         layer.level == state.layer.level &&
                         index == moveTo(
-                    position = state.canTakeSalary,
+                    position = state.takeSalaryPosition,
                     cellCount = layer.cellCount,
                     toMove = route.offset
                 )
@@ -454,7 +454,17 @@ fun BoxScope.PlaceContent(
         }
 
         else -> {
-            Box(Modifier.fillMaxSize().background(place.type.color())) {
+            Box(Modifier.fillMaxSize().background(place.type.color()).clickable {
+                dispatch(
+                    BoardAction.ChangePosition(
+                        moveTo(
+                            position = index,
+                            cellCount = layer.cellCount,
+                            toMove = -route.offset
+                        )
+                    )
+                )
+            }) {
                 OutlinedText(
                     text = place.type.text,
                     autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
