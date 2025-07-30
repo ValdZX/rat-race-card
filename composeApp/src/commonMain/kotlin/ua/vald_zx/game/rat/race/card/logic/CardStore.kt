@@ -16,6 +16,7 @@ import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.beans.Fund
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
+import ua.vald_zx.game.rat.race.card.boardCard
 import ua.vald_zx.game.rat.race.card.logic.CardAction.AddBaby
 import ua.vald_zx.game.rat.race.card.logic.CardAction.AddFund
 import ua.vald_zx.game.rat.race.card.logic.CardAction.BackToState
@@ -63,6 +64,20 @@ import ua.vald_zx.game.rat.race.card.replace
 import ua.vald_zx.game.rat.race.card.service
 import ua.vald_zx.game.rat.race.card.shared.Player
 import kotlin.math.absoluteValue
+
+@Serializable
+data class CardStatistics(
+    val notes: List<CardNote>
+)
+
+@Serializable
+data class CardNote(
+    val total: Long,
+    val cashFlow: Long,
+    val cash: Long,
+    val deposit: Long,
+    val loan: Long,
+)
 
 @Serializable
 data class CardState(
@@ -154,7 +169,7 @@ data class CardState(
 }
 
 sealed class CardAction : Action {
-    data class LoadState(val state: CardState) : CardAction()
+    data class LoadState(val state: CardState?) : CardAction()
     data object Fired : CardAction()
     data object FiredConfirmed : CardAction()
     data object GetSalary : CardAction()
@@ -211,7 +226,8 @@ sealed class CardSideEffect : Effect {
     data object ShowSalaryApprove : CardSideEffect()
 }
 
-class CardStore(private val boardState: MutableStateFlow<BoardState>) : Store<CardState, CardAction, CardSideEffect>,
+class CardStore(private val boardState: MutableStateFlow<BoardState>) :
+    Store<CardState, CardAction, CardSideEffect>,
     CoroutineScope by CoroutineScope(Dispatchers.Main) {
 
     private val state = MutableStateFlow(CardState())
@@ -227,7 +243,7 @@ class CardStore(private val boardState: MutableStateFlow<BoardState>) : Store<Ca
         val oldState = state.value
         val newState = when (action) {
             is LoadState -> {
-                action.state
+                action.state ?: CardState()
             }
 
             is CardAction.ReceivedCash -> {
@@ -315,14 +331,14 @@ class CardStore(private val boardState: MutableStateFlow<BoardState>) : Store<Ca
 
             GetSalaryApproved -> {
                 statistics?.salaryCount = statistics?.salaryCount?.plus(1) ?: 0
-                boardState.value.currentPlayer?.let {currentPlayer->
+                boardState.value.currentPlayer?.let { currentPlayer ->
                     val cashFlow = oldState.cashFlow(currentPlayer)
                     if (cashFlow >= 0) {
                         oldState.plusCash(cashFlow)
                     } else {
                         oldState.minusCash(cashFlow.absoluteValue)
                     }
-                }?:oldState
+                } ?: oldState
             }
 
             is SellShares -> {
@@ -484,6 +500,9 @@ class CardStore(private val boardState: MutableStateFlow<BoardState>) : Store<Ca
             }
         }
         if (newState != oldState) {
+            boardState.value.board?.id?.let { boardId ->
+                launch { boardCard(boardId).set(newState) }
+            }
             state.value = newState
         }
     }

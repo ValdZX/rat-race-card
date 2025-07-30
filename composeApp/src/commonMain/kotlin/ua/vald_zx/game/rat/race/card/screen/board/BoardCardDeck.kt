@@ -50,9 +50,9 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
 @Composable
 fun CardDeck(
-    card: BoardCardType,
+    cardType: BoardCardType,
     size: DpSize,
-    highlightedCard: BoardCardType?,
+    highlightedCardType: BoardCardType?,
     state: BoardState,
     dispatch: (BoardAction) -> Unit
 ) {
@@ -70,35 +70,35 @@ fun CardDeck(
                 val offsetY = with(density) { positionInWindow.y.toDp() }
                 val offset = DpOffset(offsetX, offsetY)
                 val coordinates = offset to size
-                deckCoordinatesMap.getOrPut(card) {
+                deckCoordinatesMap.getOrPut(cardType) {
                     mutableStateOf(coordinates)
                 }.value = coordinates
             }
-            .optionalModifier(card == highlightedCard && state.currentPlayerIsActive) {
+            .optionalModifier(cardType == highlightedCardType && state.currentPlayerIsActive) {
                 boxShadow(
                     blurRadius = blurRadius,
                     spreadRadius = spreadRadius,
                     shape = RoundedCornerShape(rounding),
                     color = Color.White,
                 ).clickable {
-                    dispatch(BoardAction.SelectedCard(card))
+                    dispatch(BoardAction.SelectedCardType(cardType))
                 }
             }
     ) {
         val trueHeight = min(size.width, size.height)
-        val count = state.board?.cards[card].orEmpty().size
+        val count = state.board?.cards[cardType].orEmpty().size
         if (count == 0) {
             val rounding = trueHeight / 16
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(rounding))
-                    .border(trueHeight / 40f, card.color())
+                    .border(trueHeight / 40f, cardType.color())
             ) {
-                BoardCardText(card, size)
+                BoardCardText(cardType, size)
             }
         } else {
-            BoardCardBack(card, size)
+            BoardCardBack(cardType, size)
             Box(modifier = Modifier.fillMaxSize().optionalModifier(size.isVertical) {
                 rotateLayout(Rotation.ROT_90)
             }) {

@@ -19,6 +19,7 @@ import kotlinx.rpc.krpc.ktor.client.rpcConfig
 import kotlinx.rpc.krpc.serialization.json.json
 import kotlinx.rpc.withService
 import kotlinx.serialization.Serializable
+import ua.vald_zx.game.rat.race.card.boardCard
 import ua.vald_zx.game.rat.race.card.client
 import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.invalidServerState
@@ -33,7 +34,7 @@ import ua.vald_zx.game.rat.race.card.logic.BoardAction.LoadState
 import ua.vald_zx.game.rat.race.card.logic.BoardAction.Move
 import ua.vald_zx.game.rat.race.card.logic.BoardAction.RollDice
 import ua.vald_zx.game.rat.race.card.logic.BoardAction.SelectBoard
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.SelectedCard
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.SelectedCardType
 import ua.vald_zx.game.rat.race.card.logic.BoardAction.SendCash
 import ua.vald_zx.game.rat.race.card.logic.BoardAction.StartServices
 import ua.vald_zx.game.rat.race.card.logic.BoardAction.SwitchLayer
@@ -42,11 +43,9 @@ import ua.vald_zx.game.rat.race.card.logic.BoardAction.ToDiscardPile
 import ua.vald_zx.game.rat.race.card.logic.BoardAction.UpdateBoard
 import ua.vald_zx.game.rat.race.card.logic.BoardAction.UpdateCurrentPlayer
 import ua.vald_zx.game.rat.race.card.logic.BoardSideEffect.ShowDice
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.ReceivedCash
 import ua.vald_zx.game.rat.race.card.needStartServerState
 import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
-import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.screen.board.PlaceType
 import ua.vald_zx.game.rat.race.card.screen.board.boardLayers
 import ua.vald_zx.game.rat.race.card.service
@@ -104,7 +103,7 @@ sealed class BoardAction : Action {
     data object RollDice : BoardAction()
     data class UpdateCurrentPlayer(val player: Player) : BoardAction()
     data class HighlightCard(val card: BoardCardType) : BoardAction()
-    data class SelectedCard(val card: BoardCardType) : BoardAction()
+    data class SelectedCardType(val card: BoardCardType) : BoardAction()
     data object ToDiscardPile : BoardAction()
     data class UpdateBoard(val board: Board) : BoardAction()
     data class DiceRolled(val dice: Int) : BoardAction()
@@ -166,9 +165,9 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                 oldState.copy(highlightedCard = action.card)
             }
 
-            is SelectedCard -> {
+            is SelectedCardType -> {
                 launch { service?.takeCard(action.card) }
-                oldState.copy(highlightedCard = null)
+                oldState.copy(highlightedCard = null, takeSalaryPosition = null)
             }
 
             is BoardAction.ChangePosition -> {
@@ -348,8 +347,8 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
         service?.eventsObserve()?.onEach { event ->
             when (event) {
                 is Event.MoneyIncome -> {
-                    raceRate2store.dispatch(
-                        ReceivedCash(
+                    card.dispatch(
+                        CardAction.ReceivedCash(
                             payerId = event.playerId,
                             amount = event.amount
                         )
@@ -387,7 +386,7 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
         }
     }
 
-    private fun BoardState.processPlace(place: PlaceType) = launch {
+    private fun processPlace(place: PlaceType) = launch {
         when (place) {
             PlaceType.Bankruptcy -> {
                 service?.nextPlayer()
@@ -461,6 +460,8 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
 
     suspend fun loadBoard(board: Board) {
         raceRate2BoardStore.dispatch(UpdateBoard(board))
+        val storedCard = boardCard(board.id).get()
+        raceRate2BoardStore.card.dispatch(CardAction.LoadState(storedCard))
         val player = service?.getPlayer(currentPlayerId)
         if (player == null || player.playerCard.name.isEmpty()) {
             service?.makePlayerOnBoard()

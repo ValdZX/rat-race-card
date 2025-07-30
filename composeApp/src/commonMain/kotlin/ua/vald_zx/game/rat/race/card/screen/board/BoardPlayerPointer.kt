@@ -159,8 +159,7 @@ fun PlayerPoint(
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         TooltipBox(
             modifier = Modifier,
-            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
-            onDismissRequest = {},
+            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
             tooltip = {
                 if (pointerState.isCurrentPlayer) {
                     CurrentPlayerTooltip(

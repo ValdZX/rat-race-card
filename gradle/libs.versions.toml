@@ -4,9 +4,9 @@ android-compileSdk = "36"
 android-minSdk = "26"
 android-targetSdk = "36"
 appdirs = "1.4.0"
-firebaseBom = "33.16.0"
+firebaseBom = "34.0.0"
 kotlin = "2.2.0"
-compose = "1.9.0-alpha03"
+compose = "1.9.0-beta01"
 compose-hot-reload = "1.0.0-beta04"
 agp = "8.11.1"
 androidx-activityCompose = "1.10.1"
@@ -16,7 +16,7 @@ voyager = "1.1.0-beta03"
 napier = "2.7.1"
 buildConfig = "5.6.7"
 kotlinx-coroutines = "1.10.2"
-ktor = "3.2.2"
+ktor = "3.2.3"
 kotlinx-serialization = "1.9.0"
 kstore = "1.0.0"
 lexilabs-sound = "0.2.6-beta01"
@@ -33,7 +33,7 @@ uiAndroid = "1.8.3"
 
 [libraries]
 
-google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.31.9" }
+google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.32.0" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version = "0.7.1" }
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
@@ -94,7 +94,7 @@ compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources",
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 sceneview = { module = "io.github.sceneview:sceneview", version = "2.3.0" }
 constraintlayout = { module = "tech.annexflow.compose:constraintlayout-compose-multiplatform", version = "0.6.0" }
-composables-core = { module = "com.composables:core", version = "1.37.0" }
+composables-core = { module = "com.composables:core", version = "1.39.0" }
 
 
 [plugins]
@@ -107,7 +107,7 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 buildConfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildConfig" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version = "4.4.3" }
-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version = "3.0.4" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version = "3.0.5" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 kotlinx-rpc = { id = "org.jetbrains.kotlinx.rpc.plugin", version.ref = "kotlinx-rpc" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

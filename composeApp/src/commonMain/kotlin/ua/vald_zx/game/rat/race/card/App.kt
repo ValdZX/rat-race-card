@@ -23,26 +23,18 @@ import io.github.alexzhirkevich.compottie.InternalCompottieApi
 import io.github.alexzhirkevich.compottie.LocalLottieCache
 import io.github.alexzhirkevich.compottie.LottieCompositionSpec
 import io.github.alexzhirkevich.compottie.ioDispatcher
-import io.github.xxfast.kstore.KStore
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 import rat_race_card.composeapp.generated.resources.Res
 import ua.vald_zx.game.rat.race.card.logic.BoardStore
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
-import ua.vald_zx.game.rat.race.card.logic.Statistics
 import ua.vald_zx.game.rat.race.card.screen.SelectTypeScreen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
-internal expect inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T>
-val raceRate2KStore: KStore<RatRace2CardState>
-    get() = getStore("raceRate2.json")
-val statistics2KStore: KStore<Statistics>
-    get() = getStore("statistics2.json")
+
 val raceRate2store by lazy { RatRace2CardStore() }
 val raceRate2BoardStore by lazy { BoardStore() }
 val settings: Settings = Settings()
