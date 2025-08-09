@@ -5,32 +5,32 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddShoppingCart
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
-import androidx.compose.ui.unit.sp
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.Button
@@ -54,7 +54,7 @@ fun BoxWithConstraintsScope.BoardCardFront(
     val scaleX = size.width / width
     val scaleY = size.height / height
     val rounding = min(width, height) / 16
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .graphicsLayer(
@@ -64,7 +64,6 @@ fun BoxWithConstraintsScope.BoardCardFront(
             .clip(RoundedCornerShape(rounding))
             .border(2.dp, card.type.color(), RoundedCornerShape(rounding))
             .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
     ) {
         when (card.type) {
             BoardCardType.Chance -> {
@@ -116,7 +115,7 @@ fun BoxScope.ChanceCardFront(
 }
 
 @Composable
-fun BoxScope.SmallBusinessCardFront(
+fun BoxWithConstraintsScope.SmallBusinessCardFront(
     card: CardLink,
     isActive: Boolean,
     discardCard: () -> Unit,
@@ -124,44 +123,53 @@ fun BoxScope.SmallBusinessCardFront(
     remember(card.id) {
         businessCardsLangs[card.id]
     }?.let { card ->
-        Column {
+        val density = LocalDensity.current
+        val cardWidth = max(maxWidth, 100.dp)
+        val unitTS = with(density) { (cardWidth.toPx() / 300).toSp() }
+        val unitDp = cardWidth / 300
+        val padding = unitDp * 12
+        val smallPadding = unitDp * 6
+        Column(modifier = Modifier.padding(padding)) {
             Row {
                 Text(
                     text = card.title,
-                    modifier = Modifier.weight(1f),
-                    fontSize = 12.sp,
-                    lineHeight = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
+                    fontSize = unitTS * 14,
+                    lineHeight = unitTS * 12,
+                    fontWeight = FontWeight.Bold,
                 )
-                Box(Modifier.background(Color.Black).padding(8.dp)) {
+                Box(
+                    modifier = Modifier
+                        .background(Color.Black)
+                        .size(unitDp * 40),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = "MБ",
                         color = Color.White,
-                        fontSize = 16.sp,
+                        fontSize = unitTS * 20,
                         fontWeight = FontWeight.Bold,
                     )
                 }
             }
             Text(
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = smallPadding),
                 text = card.description,
-                fontSize = 9.sp,
-                lineHeight = 9.sp
+                fontSize = unitTS * 12,
+                lineHeight = unitTS * 10,
             )
             Row(
-                modifier = Modifier.padding(top = 16.dp).fillMaxWidth(),
+                modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 Text(
                     "Початкові вкладення:",
-                    fontSize = 10.sp,
-                    lineHeight = 10.sp,
+                    fontSize = unitTS * 10,
                     textAlign = TextAlign.Center
                 )
                 Text(
                     "Постійний прибуток:",
-                    fontSize = 10.sp,
-                    lineHeight = 10.sp,
+                    fontSize = unitTS * 10,
                     textAlign = TextAlign.Center
                 )
             }
@@ -171,48 +179,48 @@ fun BoxScope.SmallBusinessCardFront(
             ) {
                 Text(
                     "$${card.price}",
-                    fontSize = 12.sp,
-                    lineHeight = 12.sp,
+                    fontSize = unitTS * 12,
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     "$${card.profit}",
-                    fontSize = 12.sp,
-                    lineHeight = 12.sp,
+                    fontSize = unitTS * 12,
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold
                 )
             }
             if (isActive) {
                 Row(
-                    modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    IconButton({ discardCard() }) {
-                        Icon(
-                            Icons.Default.Cancel,
-                            contentDescription = null
-                        )
-                    }
-                    IconButton({
-                        raceRate2BoardStore.card.dispatch(
-                            CardAction.BuyBusiness(
-                                Business(
-                                    type = BusinessType.SMALL,
-                                    name = "Name",
-                                    price = card.price,
-                                    profit = card.profit
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = { discardCard() },
+                        content = {
+                            Text("Пас", fontSize = unitTS * 14)
+                        },
+                    )
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = {
+                            raceRate2BoardStore.card.dispatch(
+                                CardAction.BuyBusiness(
+                                    Business(
+                                        type = BusinessType.SMALL,
+                                        name = "Name",
+                                        price = card.price,
+                                        profit = card.profit
+                                    )
                                 )
                             )
-                        )
-                        discardCard()
-                    }) {
-                        Icon(
-                            Icons.Default.AddShoppingCart,
-                            contentDescription = null
-                        )
-                    }
+                            discardCard()
+                        },
+                        content = {
+                            Text("Купити", fontSize = unitTS * 14)
+                        },
+                    )
                 }
             }
         }
