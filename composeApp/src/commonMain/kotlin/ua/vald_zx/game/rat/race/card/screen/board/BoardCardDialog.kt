@@ -71,7 +71,6 @@ fun BoxWithConstraintsScope.CardDialog(
             val onBoardSize = deckCoordinates.second
             val onBoardSizeScaled = onBoardSize * scale
             val onBoardScaleToLow = onBoardSizeScaled.max / dialogSize.max
-            val onBoardScaleToHigh = dialogSize.max / onBoardSizeScaled.max
             val motionScene = remember(onBoardSize, state.layer) {
                 val deckOffset = deckCoordinates.first
                 val discardOffset = discardPilesCoordinatesMap[card.type]?.value?.first!!
