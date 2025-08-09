@@ -232,7 +232,7 @@ fun BoardScreenContent(
     dispatch: (BoardAction) -> Unit,
     dice: Int
 ) {
-    Box(modifier = Modifier.fillMaxSize().padding(bottom = littleDetailsHeight)) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(bottom = littleDetailsHeight)) {
         Board(state, dispatch)
         Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
             Controls(state, dispatch, dice)

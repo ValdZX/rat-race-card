@@ -1,6 +1,8 @@
 package ua.vald_zx.game.rat.race.card
 
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.max
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.char
 import ua.vald_zx.game.rat.race.card.beans.SharesType
@@ -68,3 +70,6 @@ val dateFullDotsFormat = LocalDateTime.Format { //dd.MM.yyyy HH:mm:ss
 
 val DpSize.isVertical: Boolean
     get() = height > width
+
+val DpSize.max: Dp
+    get() = max(width, height)

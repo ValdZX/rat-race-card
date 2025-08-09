@@ -95,10 +95,10 @@ fun CardDeck(
                     .clip(RoundedCornerShape(rounding))
                     .border(trueHeight / 40f, cardType.color())
             ) {
-                BoardCardText(cardType, size)
+                BoardCardText(cardType, size, size.isVertical)
             }
         } else {
-            BoardCardBack(cardType, size)
+            BoardCardBack(cardType, size, size.isVertical)
             Box(modifier = Modifier.fillMaxSize().optionalModifier(size.isVertical) {
                 rotateLayout(Rotation.ROT_90)
             }) {
@@ -116,7 +116,12 @@ fun CardDeck(
 }
 
 @Composable
-fun BoardCardBack(card: BoardCardType, size: DpSize, modifier: Modifier = Modifier) {
+fun BoardCardBack(
+    card: BoardCardType,
+    size: DpSize,
+    isVertical: Boolean,
+    modifier: Modifier = Modifier
+) {
     val rounding = min(size.width, size.height) / 16
     Box(
         modifier = modifier
@@ -124,12 +129,13 @@ fun BoardCardBack(card: BoardCardType, size: DpSize, modifier: Modifier = Modifi
             .clip(RoundedCornerShape(rounding))
             .background(card.color())
     ) {
-        BoardCardText(card, size)
+        BoardCardText(card, size, isVertical)
     }
 }
 
 @Composable
-fun BoxScope.BoardCardText(card: BoardCardType, size: DpSize) {
+fun BoxScope.BoardCardText(card: BoardCardType, size: DpSize, isVertical: Boolean) {
+    val min = min(size.width, size.height)
     OutlinedText(
         text = when (card) {
             BoardCardType.BigBusiness -> "Великий бізнес"
@@ -149,13 +155,13 @@ fun BoxScope.BoardCardText(card: BoardCardType, size: DpSize) {
             )
         ),
         modifier = Modifier.align(Alignment.Center)
-            .padding(min(size.width, size.height) / 14)
-            .optionalModifier(size.width < size.height) {
+            .padding(min / 14)
+            .optionalModifier(isVertical) {
                 rotateLayout(Rotation.ROT_90)
             },
         fillColor = MaterialTheme.colorScheme.onPrimary,
         outlineColor = Color(0xFF8A8A8A),
-        outlineDrawStyle = Stroke(2f),
+        outlineDrawStyle = Stroke(min.value / 30f),
         maxLines = 1
     )
 }
@@ -196,10 +202,10 @@ fun DiscardPile(
                     .clip(RoundedCornerShape(rounding))
                     .border(trueHeight / 40f, card.color())
             ) {
-                BoardCardText(card, size)
+                BoardCardText(card, size, size.width < size.height)
             }
         } else {
-            BoardCardBack(card, size)
+            BoardCardBack(card, size, size.isVertical)
             Box(modifier = Modifier.fillMaxSize().optionalModifier(size.isVertical) {
                 rotateLayout(Rotation.ROT_90)
             }) {

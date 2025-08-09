@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import dev.lennartegb.shadows.boxShadow
+import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import rat_race_card.composeapp.generated.resources.Bubbleboddy
@@ -56,6 +57,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.Money
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 
+@Serializable
 sealed class PlaceType(val name: String, val isBig: Boolean = false) {
     data object Start : PlaceType("Start")
     data object Salary : PlaceType("Salary", isBig = true)

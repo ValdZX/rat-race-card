@@ -3,6 +3,7 @@ package ua.vald_zx.game.rat.race.card.screen.board
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,21 +15,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.min
 import androidx.constraintlayout.compose.Dimension
 import androidx.constraintlayout.compose.ExperimentalMotionApi
 import androidx.constraintlayout.compose.MotionLayout
 import androidx.constraintlayout.compose.MotionScene
 import androidx.constraintlayout.compose.Visibility
 import ua.vald_zx.game.rat.race.card.currentPlayerId
+import ua.vald_zx.game.rat.race.card.isVertical
 import ua.vald_zx.game.rat.race.card.logic.BoardAction
 import ua.vald_zx.game.rat.race.card.logic.BoardLayer
 import ua.vald_zx.game.rat.race.card.logic.BoardState
+import ua.vald_zx.game.rat.race.card.max
 
 const val cardMoveAnimationDuration = 2000
 
 @OptIn(ExperimentalMotionApi::class)
 @Composable
-fun CardDialog(
+fun BoxWithConstraintsScope.CardDialog(
     state: BoardState,
     dispatch: (BoardAction) -> Unit
 ) {
@@ -42,21 +47,32 @@ fun CardDialog(
     if (showDialog) {
         val card = remember { takenCard ?: error("Illegal state") }
         var targetProgress by remember { mutableStateOf(0f) }
+
         val progress by animateFloatAsState(
             targetValue = targetProgress,
             animationSpec = tween(durationMillis = cardMoveAnimationDuration)
         )
+//        var progress by remember { mutableStateOf(0f) }
+//        Slider(
+//            value = progress,
+//            onValueChange = { progress = it },
+//            valueRange = 0f..6f,
+//            steps = 120,
+//            modifier = Modifier.padding(30.dp)
+//        )
         val deckCoordinatesState = remember(card) {
             deckCoordinatesMap[card.type]
         }
         if (deckCoordinatesState != null) {
-            val cardSize = DpSize(300.dp, 200.dp)
+            val dialogWidth = min(max(min(maxWidth, maxHeight) * 2.7f / 3f, 300.dp), 600.dp)
+            val dialogSize = DpSize(dialogWidth, dialogWidth * 2f / 3f)
             val deckCoordinates by deckCoordinatesState
-            val motionScene = remember(deckCoordinates.second, state.layer) {
-                val scale = if (state.layer == BoardLayer.INNER) INNER_LAYER_SCALE else 1.0f
-                val onBoardSize = deckCoordinates.second * scale
-                val onBoardScaleX = onBoardSize.width / cardSize.width
-                val onBoardScaleY = onBoardSize.height / cardSize.height
+            val scale = if (state.layer == BoardLayer.INNER) INNER_LAYER_SCALE else 1.0f
+            val onBoardSize = deckCoordinates.second
+            val onBoardSizeScaled = onBoardSize * scale
+            val onBoardScaleToLow = onBoardSizeScaled.max / dialogSize.max
+            val onBoardScaleToHigh = dialogSize.max / onBoardSizeScaled.max
+            val motionScene = remember(onBoardSize, state.layer) {
                 val deckOffset = deckCoordinates.first
                 val discardOffset = discardPilesCoordinatesMap[card.type]?.value?.first!!
                 MotionScene {
@@ -67,10 +83,10 @@ fun CardDialog(
                             visibility = Visibility.Visible
                             start.linkTo(parent.start, deckOffset.x)
                             top.linkTo(parent.top, deckOffset.y)
-                            width = Dimension.value(cardSize.width)
-                            height = Dimension.value(cardSize.height)
-                            scaleX = onBoardScaleX
-                            scaleY = onBoardScaleY
+                            width = Dimension.value(onBoardSizeScaled.width)
+                            height = Dimension.value(onBoardSizeScaled.height)
+                            scaleX = 1f
+                            scaleY = 1f
                             pivotX = 0f
                             pivotY = 0f
                         }
@@ -85,10 +101,10 @@ fun CardDialog(
                         constrain(back) {
                             visibility = Visibility.Visible
                             centerTo(parent)
-                            width = Dimension.value(cardSize.width)
-                            height = Dimension.value(cardSize.height)
-                            scaleX = onBoardScaleX
-                            scaleY = onBoardScaleY
+                            width = Dimension.value(onBoardSizeScaled.width)
+                            height = Dimension.value(onBoardSizeScaled.height)
+                            scaleX = 1f
+                            scaleY = 1f
                             pivotX = 0.5f
                             pivotY = 0.5f
                             if (onBoardSize.width < onBoardSize.height) {
@@ -105,10 +121,8 @@ fun CardDialog(
                         constrain(back) {
                             visibility = Visibility.Visible
                             centerTo(parent)
-                            width = Dimension.value(cardSize.width)
-                            height = Dimension.value(cardSize.height)
-                            scaleX = onBoardScaleX
-                            scaleY = onBoardScaleY
+                            width = Dimension.value(onBoardSizeScaled.width)
+                            height = Dimension.value(onBoardSizeScaled.height)
                             pivotX = 0.5f
                             pivotY = 0.5f
                             rotationY = 90f
@@ -119,10 +133,10 @@ fun CardDialog(
                         constrain(front) {
                             visibility = Visibility.Visible
                             centerTo(parent)
-                            width = Dimension.value(cardSize.width)
-                            height = Dimension.value(cardSize.height)
-                            scaleX = onBoardScaleX
-                            scaleY = onBoardScaleY
+                            width = Dimension.value(dialogSize.width)
+                            height = Dimension.value(dialogSize.height)
+                            scaleX = onBoardScaleToLow
+                            scaleY = onBoardScaleToLow
                             pivotX = 0.5f
                             pivotY = 0.5f
                             rotationY = -90f
@@ -132,6 +146,7 @@ fun CardDialog(
                         constrain(back) {
                             visibility = Visibility.Gone
                             centerTo(parent)
+                            rotationY = 90f
                             if (onBoardSize.width < onBoardSize.height) {
                                 rotationZ = -90f
                             }
@@ -139,8 +154,8 @@ fun CardDialog(
                         constrain(front) {
                             visibility = Visibility.Visible
                             centerTo(parent)
-                            width = Dimension.value(cardSize.width)
-                            height = Dimension.value(cardSize.height)
+                            width = Dimension.value(dialogSize.width)
+                            height = Dimension.value(dialogSize.height)
                             rotationY = 0f
                             scaleX = 1f
                             scaleY = 1f
@@ -151,10 +166,10 @@ fun CardDialog(
                             visibility = Visibility.Visible
                             start.linkTo(parent.start, discardOffset.x)
                             top.linkTo(parent.top, discardOffset.y)
-                            width = Dimension.value(cardSize.width)
-                            height = Dimension.value(cardSize.height)
-                            scaleX = onBoardScaleX
-                            scaleY = onBoardScaleY
+                            width = Dimension.value(onBoardSizeScaled.width)
+                            height = Dimension.value(onBoardSizeScaled.height)
+                            scaleX = 1f
+                            scaleY = 1f
                             pivotX = 0f
                             pivotY = 0f
                         }
@@ -208,11 +223,13 @@ fun CardDialog(
                 }
             ) {
                 BoxWithConstraints(modifier = Modifier.layoutId("back")) {
-                    BoardCardBack(card.type, DpSize(maxWidth, maxHeight))
+                    BoardCardBack(
+                        card.type, DpSize(maxWidth, maxHeight), onBoardSize.isVertical
+                    )
                 }
                 BoxWithConstraints(modifier = Modifier.layoutId("front")) {
                     val isActive = remember(card) { currentPlayerId == state.board?.activePlayer }
-                    BoardCardFront(card, isActive, cardSize) {
+                    BoardCardFront(card, isActive, dialogSize) {
                         dispatch(BoardAction.ToDiscardPile)
                         targetProgress = 6f
                     }

@@ -78,6 +78,7 @@ data class BoardState(
     val board: Board? = null,
     val canRoll: Boolean = false,
     val takeSalaryPosition: Int? = null,
+    val currentPositionPlace: PlaceType? = null,
 ) : State {
     val layer: BoardLayer
         get() = currentPlayer?.state?.level?.toLayer() ?: BoardLayer.INNER
@@ -109,6 +110,7 @@ sealed class BoardAction : Action {
     data class DiceRolled(val dice: Int) : BoardAction()
 
     data class SendCash(val id: String, val cash: Long) : BoardAction()
+    data class CurrentPositionPlace(val place: PlaceType) : BoardAction()
 }
 
 sealed class BoardSideEffect : Effect {
@@ -194,9 +196,15 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                 oldState.copy(takeSalaryPosition = action.salaryPosition)
             }
 
+            is BoardAction.CurrentPositionPlace -> {
+                oldState.copy(currentPositionPlace = action.place)
+            }
+
             is TakeSalary -> {
                 card.dispatch(CardAction.GetSalaryApproved)
-                launch { service?.nextPlayer() }
+                if(oldState.currentPositionPlace == PlaceType.Salary) {
+                    launch { service?.nextPlayer() }
+                }
                 oldState.copy(takeSalaryPosition = null)
             }
 
@@ -387,6 +395,7 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
     }
 
     private fun processPlace(place: PlaceType) = launch {
+        dispatch(BoardAction.CurrentPositionPlace(place))
         when (place) {
             PlaceType.Bankruptcy -> {
                 service?.nextPlayer()
