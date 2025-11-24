@@ -2,25 +2,9 @@ package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -33,16 +17,8 @@ import cafe.adriel.voyager.core.screen.Screen
 import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.extensions.format
-import ir.ehsannarmani.compose_charts.models.AnimationMode
-import ir.ehsannarmani.compose_charts.models.HorizontalIndicatorProperties
-import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
-import ir.ehsannarmani.compose_charts.models.Line
-import ir.ehsannarmani.compose_charts.models.PopupProperties
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
-import ua.vald_zx.game.rat.race.card.components.GoldRainbow
-import ua.vald_zx.game.rat.race.card.components.RainbowOrange
-import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
-import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
+import ir.ehsannarmani.compose_charts.models.*
+import ua.vald_zx.game.rat.race.card.components.*
 import ua.vald_zx.game.rat.race.card.logic.total
 import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -199,8 +175,8 @@ class StatisticsScreen : Screen {
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 ),
-                                contentBuilder = { dataIndex, valueIndex, value ->
-                                    value.format(0) + " $"
+                                contentBuilder = { popup ->
+                                    popup.value.format(0) + " $"
                                 },
                                 containerColor = Color(0xff414141)
                             ),

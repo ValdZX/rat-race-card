@@ -2,62 +2,20 @@ package ua.vald_zx.game.rat.race.card.logic
 
 import com.russhwolf.settings.set
 import io.github.aakira.napier.Napier
-import io.ktor.client.request.url
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
+import io.ktor.client.request.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlinx.rpc.krpc.ktor.client.rpc
 import kotlinx.rpc.krpc.ktor.client.rpcConfig
 import kotlinx.rpc.krpc.serialization.json.json
 import kotlinx.rpc.withService
 import kotlinx.serialization.Serializable
-import ua.vald_zx.game.rat.race.card.boardCard
-import ua.vald_zx.game.rat.race.card.client
-import ua.vald_zx.game.rat.race.card.currentPlayerId
-import ua.vald_zx.game.rat.race.card.invalidServerState
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.BackLastMove
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.CanTakeSalary
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.ChangeColor
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.CloseSession
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.CreateBoard
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.DiceRolled
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.HighlightCard
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.LoadState
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.Move
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.RollDice
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.SelectBoard
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.SelectedCardType
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.SendCash
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.StartServices
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.SwitchLayer
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.TakeSalary
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.ToDiscardPile
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.UpdateBoard
-import ua.vald_zx.game.rat.race.card.logic.BoardAction.UpdateCurrentPlayer
+import ua.vald_zx.game.rat.race.card.*
+import ua.vald_zx.game.rat.race.card.logic.BoardAction.*
 import ua.vald_zx.game.rat.race.card.logic.BoardSideEffect.ShowDice
-import ua.vald_zx.game.rat.race.card.needStartServerState
-import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
-import ua.vald_zx.game.rat.race.card.raceRate2KStore
 import ua.vald_zx.game.rat.race.card.screen.board.PlaceType
 import ua.vald_zx.game.rat.race.card.screen.board.boardLayers
-import ua.vald_zx.game.rat.race.card.service
-import ua.vald_zx.game.rat.race.card.settings
-import ua.vald_zx.game.rat.race.card.shared.Board
-import ua.vald_zx.game.rat.race.card.shared.BoardCardType
-import ua.vald_zx.game.rat.race.card.shared.Event
-import ua.vald_zx.game.rat.race.card.shared.Player
-import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
-import ua.vald_zx.game.rat.race.card.shared.PlayerState
-import ua.vald_zx.game.rat.race.card.shared.RaceRatService
-import ua.vald_zx.game.rat.race.card.shared.replaceItem
+import ua.vald_zx.game.rat.race.card.shared.*
 
 val players = MutableStateFlow(emptyList<Player>())
 
@@ -325,7 +283,7 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                     currentPosition + list.indexOf(PlaceType.Salary) + 1
                 val placeCount = layer?.places?.size ?: 0
                 if (salaryPosition >= placeCount) {
-                    salaryPosition = salaryPosition - placeCount
+                    salaryPosition -= placeCount
                 }
                 dispatch(CanTakeSalary(salaryPosition))
             }
