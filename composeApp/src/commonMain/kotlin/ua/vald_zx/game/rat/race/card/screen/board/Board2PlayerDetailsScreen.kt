@@ -3,44 +3,24 @@ package ua.vald_zx.game.rat.race.card.screen.board
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import com.composables.core.BottomSheetState
-import com.composables.core.SheetDetent.Companion.FullyExpanded
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import ua.vald_zx.game.rat.race.card.*
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.components.FundsField
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
@@ -49,17 +29,12 @@ import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
 import ua.vald_zx.game.rat.race.card.logic.CardAction
 import ua.vald_zx.game.rat.race.card.logic.CardSideEffect
 import ua.vald_zx.game.rat.race.card.logic.total
-import ua.vald_zx.game.rat.race.card.playCoin
-import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
 import ua.vald_zx.game.rat.race.card.screen.board.page.BusinessListPage
 import ua.vald_zx.game.rat.race.card.screen.board.page.FundsPage
 import ua.vald_zx.game.rat.race.card.screen.board.page.SharesPage
 import ua.vald_zx.game.rat.race.card.screen.board.page.StatePage
 import ua.vald_zx.game.rat.race.card.screen.second.BuyFundScreen
-import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
-import ua.vald_zx.game.rat.race.card.tts
-import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
 
 @OptIn(
@@ -76,15 +51,16 @@ fun Board2PlayerDetailsScreen(scaffoldState: BottomSheetState) {
     val coroutineScope = rememberCoroutineScope()
     Box(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .shadow(8.dp)
             .background(MaterialTheme.colorScheme.background)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) {
-                if (scaffoldState.currentDetent != FullyExpanded) {
+                if (scaffoldState.currentDetent != ContentExpanded) {
                     coroutineScope.launch {
-                        scaffoldState.animateTo(FullyExpanded)
+                        scaffoldState.animateTo(ContentExpanded)
                     }
                 }
             }

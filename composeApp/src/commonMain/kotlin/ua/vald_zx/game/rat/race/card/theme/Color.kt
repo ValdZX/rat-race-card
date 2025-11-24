@@ -1,10 +1,6 @@
 package ua.vald_zx.game.rat.race.card.theme
 
-import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 
 val primaryLight = Color(0xFF79590C)
@@ -25,7 +21,7 @@ val errorContainerLight = Color(0xFFFFDAD6)
 val onErrorContainerLight = Color(0xFF93000A)
 val backgroundLight = Color(0xFFFFF8F2)
 val onBackgroundLight = Color(0xFF201B13)
-val surfaceLight = Color(0xFFFFF8F2)
+val surfaceLight = Color(0xFFFFFFFF)
 val onSurfaceLight = Color(0xFF201B13)
 val surfaceVariantLight = Color(0xFFEEE1CF)
 val onSurfaceVariantLight = Color(0xFF4E4639)

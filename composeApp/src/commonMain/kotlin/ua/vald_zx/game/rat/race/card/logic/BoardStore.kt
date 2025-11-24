@@ -201,15 +201,18 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
             }
 
             is UpdateBoard -> {
-                val rollCountChanged =
-                    oldState.board?.moveCount != action.board.moveCount || action.board.moveCount == 0
-                val canRoll = oldState.canRoll || rollCountChanged &&
+                val canRoll = oldState.canRoll ||
                         action.board.activePlayer == currentPlayerId &&
                         action.board.takenCard == null &&
                         oldState.highlightedCard == null
                 launch {
                     service?.updatePlayers(action.board.players)
                 }
+                Napier.d("canRoll $canRoll")
+                Napier.d("action.board.activePlayer ${action.board.activePlayer}")
+                Napier.d("action.board.takenCard ${action.board.takenCard}")
+                Napier.d("oldState.highlightedCard ${oldState.highlightedCard}")
+                Napier.d("currentPlayerId $currentPlayerId")
                 oldState.copy(board = action.board, canRoll = canRoll)
             }
 
@@ -328,7 +331,7 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                     if (oldPlayer != null) {
                         players.value = playersList.replaceItem(oldPlayer, event.player)
                     } else {
-                        players.value = players.value + event.player
+                        players.value += event.player
                     }
                     if (changedPlayer.id == currentPlayerId) {
                         raceRate2BoardStore.dispatch(UpdateCurrentPlayer(changedPlayer))

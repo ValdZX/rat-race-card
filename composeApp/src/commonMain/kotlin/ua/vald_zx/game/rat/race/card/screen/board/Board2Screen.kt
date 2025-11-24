@@ -1,11 +1,7 @@
 package ua.vald_zx.game.rat.race.card.screen.board
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
@@ -13,40 +9,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.BoxWithConstraintsScope
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -59,48 +26,32 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.min
+import androidx.compose.ui.unit.*
 import androidx.constraintlayout.compose.ExperimentalMotionApi
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import com.composables.core.BottomSheet
 import com.composables.core.SheetDetent
-import com.composables.core.SheetDetent.Companion.FullyExpanded
 import com.composables.core.rememberBottomSheetState
 import com.russhwolf.settings.set
-import io.github.alexzhirkevich.compottie.LottieComposition
-import io.github.alexzhirkevich.compottie.LottieCompositionSpec
-import io.github.alexzhirkevich.compottie.rememberLottieAnimatable
-import io.github.alexzhirkevich.compottie.rememberLottieComposition
-import io.github.alexzhirkevich.compottie.rememberLottiePainter
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import io.github.aakira.napier.Napier
+import io.github.alexzhirkevich.compottie.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.logo
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
+import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.currentPlayerId
-import ua.vald_zx.game.rat.race.card.logic.BoardAction
-import ua.vald_zx.game.rat.race.card.logic.BoardLayer
-import ua.vald_zx.game.rat.race.card.logic.BoardSideEffect
-import ua.vald_zx.game.rat.race.card.logic.BoardState
-import ua.vald_zx.game.rat.race.card.logic.BoardStore
-import ua.vald_zx.game.rat.race.card.logic.players
+import ua.vald_zx.game.rat.race.card.logic.*
 import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Dice
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.settings
@@ -159,9 +110,19 @@ val navigationBarHeightState = mutableStateOf(0.dp)
 val statusBarHeightState = mutableStateOf(0.dp)
 val deckCoordinatesMap = mutableMapOf<BoardCardType, MutableState<Pair<DpOffset, DpSize>>>()
 val discardPilesCoordinatesMap = mutableMapOf<BoardCardType, MutableState<Pair<DpOffset, DpSize>>>()
-val littleDetailsHeight = 100.dp
+val littleDetailsHeight
+    get() = 100.dp + statusBarHeightState.value + navigationBarHeightState.value
+var sheetContentSize = mutableStateOf(0.dp)
 val HalfExpanded: SheetDetent =
-    SheetDetent("hidden") { containerHeight, sheetHeight -> littleDetailsHeight }
+    SheetDetent("hidden") { _, _ -> littleDetailsHeight + statusBarHeightState.value + navigationBarHeightState.value }
+val ContentExpanded: SheetDetent =
+    SheetDetent("content") { containerHeight, _ ->
+        if (sheetContentSize.value == 0.dp) {
+            containerHeight
+        } else {
+            sheetContentSize.value
+        }
+    }
 
 class Board2Screen : Screen {
 
@@ -174,16 +135,24 @@ class Board2Screen : Screen {
         var dice by remember { mutableStateOf(0) }
         val scaffoldState = rememberBottomSheetState(
             initialDetent = HalfExpanded,
-            detents = listOf(HalfExpanded, FullyExpanded)
+            detents = listOf(HalfExpanded, ContentExpanded)
         )
+        val density = LocalDensity.current
         Box {
             BottomSheetNavigator {
-                BoardScreenContent(state, raceRate2BoardStore::dispatch, dice)
-                Box(modifier = Modifier.systemBarsPadding()) {
-                    BottomSheet(state = scaffoldState) { Board2PlayerDetailsScreen(scaffoldState) }
+                Box(modifier = Modifier.padding(bottom = littleDetailsHeight)) {
+                    BoardScreenContent(state, raceRate2BoardStore::dispatch, dice)
+                }
+                BottomSheet(state = scaffoldState) {
+                    Box(Modifier.navigationBarsPadding().onSizeChanged { size ->
+                        Napier.v("Screen size changed to ${size.height}")
+                        sheetContentSize.value = with(density) { size.height.toDp() }
+                        scaffoldState.invalidateDetents()
+                    }) {
+                        Board2PlayerDetailsScreen(scaffoldState)
+                    }
                 }
             }
-            val density = LocalDensity.current
             Box(
                 modifier = Modifier.fillMaxWidth()
                     .align(Alignment.BottomCenter)
@@ -196,13 +165,19 @@ class Board2Screen : Screen {
                         )
                     )
                     .onGloballyPositioned {
-                        with(density) { navigationBarHeightState.value = it.size.height.toDp() }
+                        with(density) {
+                            navigationBarHeightState.value = it.size.height.toDp()
+                            scaffoldState.invalidateDetents()
+                        }
                     }
             ) {
                 Box(modifier = Modifier.navigationBarsPadding())
             }
             Box(modifier = Modifier.fillMaxWidth().onGloballyPositioned {
-                with(density) { statusBarHeightState.value = it.size.height.toDp() }
+                with(density) {
+                    statusBarHeightState.value = it.size.height.toDp()
+                    scaffoldState.invalidateDetents()
+                }
             }) {
                 Box(modifier = Modifier.statusBarsPadding())
             }
@@ -232,10 +207,10 @@ fun BoardScreenContent(
     dispatch: (BoardAction) -> Unit,
     dice: Int
 ) {
-    BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(bottom = littleDetailsHeight)) {
-        Board(state, dispatch)
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        Board(state, dice, dispatch)
         Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-            Controls(state, dispatch, dice)
+            Controls()
         }
         CardDialog(state, dispatch)
     }
@@ -244,6 +219,7 @@ fun BoardScreenContent(
 @Composable
 fun Board(
     state: BoardState,
+    dice: Int,
     dispatch: (BoardAction) -> Unit,
 ) {
     val rotX = remember { Animatable(0f) }
@@ -293,16 +269,13 @@ fun Board(
             if (isFlipped(rotY, rotX)) {
                 BackSide()
             }
+            Dice(state, dispatch, dice)
         }
     }
 }
 
 @Composable
-fun BoxScope.Controls(
-    state: BoardState,
-    dispatch: (BoardAction) -> Unit,
-    dice: Int
-) {
+fun BoxScope.Controls() {
     var isDark by LocalThemeIsDark.current
     val icon = remember(isDark) {
         if (isDark) Images.IcLightMode
@@ -318,6 +291,14 @@ fun BoxScope.Controls(
             Icon(icon, contentDescription = null)
         }
     )
+}
+
+@Composable
+fun BoxWithConstraintsScope.Dice(
+    state: BoardState,
+    dispatch: (BoardAction) -> Unit,
+    dice: Int
+) {
     val cube1 by rememberLottieComposition {
         LottieCompositionSpec.JsonString(
             Res.readBytes("files/cube_1.json").decodeToString()
@@ -369,8 +350,9 @@ fun BoxScope.Controls(
             dispatch(BoardAction.Move(dice))
         }
     }
+    val size = min(maxWidth, maxHeight) / 6
     AnimatedVisibility(
-        visible = dice != 0,
+        visible = dice != 0 && !state.canRoll,
         enter = fadeIn(),
         exit = fadeOut(),
         modifier = Modifier.align(Alignment.Center)
@@ -381,17 +363,22 @@ fun BoxScope.Controls(
                 progress = animatable::value
             ),
             contentDescription = "Lottie animation",
-            modifier = Modifier.size(100.dp)
+            modifier = Modifier.size(size)
         )
     }
-    if (state.canRoll) {
-        ElevatedButton(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                .align(Alignment.BottomEnd),
-            onClick = {
-                dispatch(BoardAction.RollDice)
-            },
-            content = { Icon(Images.Dice, contentDescription = null) }
+    AnimatedVisibility(
+        visible = state.canRoll && dice == 0,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = Modifier.align(Alignment.Center)
+    ) {
+        Image(
+            painter = rememberLottiePainter(
+                composition = composition ?: cube3,
+                progress = { 1f }
+            ),
+            contentDescription = "Lottie animation",
+            modifier = Modifier.size(size).clickableSingle { dispatch(BoardAction.RollDice) }
         )
     }
 }
@@ -651,7 +638,7 @@ fun BoxScope.ColorsSelector(
     val players by players.collectAsState()
     FlowRow(modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 64.dp)) {
         (pointerColors - players.filter { !it.isCurrentPlayer }
-            .map { it.attrs.color }).forEach { color ->
+            .map { it.attrs.color }.toSet()).forEach { color ->
             RadioButton(
                 selected = color == state.color,
                 onClick = { dispatch(BoardAction.ChangeColor(color)) },
