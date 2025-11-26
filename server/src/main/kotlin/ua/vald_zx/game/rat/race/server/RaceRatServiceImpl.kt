@@ -1,6 +1,6 @@
 package ua.vald_zx.game.rat.race.server
 
-import io.ktor.util.logging.KtorSimpleLogger
+import io.ktor.util.logging.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -9,21 +9,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
-import ua.vald_zx.game.rat.race.card.shared.Board
-import ua.vald_zx.game.rat.race.card.shared.BoardCardType
-import ua.vald_zx.game.rat.race.card.shared.BoardId
-import ua.vald_zx.game.rat.race.card.shared.CardLink
-import ua.vald_zx.game.rat.race.card.shared.Event
+import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.shared.Event.MoneyIncome
 import ua.vald_zx.game.rat.race.card.shared.Event.PlayerChanged
-import ua.vald_zx.game.rat.race.card.shared.GlobalEvent
-import ua.vald_zx.game.rat.race.card.shared.Instance
-import ua.vald_zx.game.rat.race.card.shared.Player
-import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
-import ua.vald_zx.game.rat.race.card.shared.PlayerCard
-import ua.vald_zx.game.rat.race.card.shared.PlayerState
-import ua.vald_zx.game.rat.race.card.shared.RaceRatService
-import ua.vald_zx.game.rat.race.card.shared.pointerColors
 
 internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
@@ -107,8 +95,10 @@ class RaceRatServiceImpl(
         }
     }
 
-    override suspend fun createBoard(name: String): Board {
-        val boardState = BoardState(name)
+    override suspend fun createBoard(name: String, decks: Map<BoardCardType, Int>): Board {
+        val boardState = BoardState(name, cards = decks.map { (type, size) ->
+            type to (1..size).toMutableList()
+        }.toMap())
         val boardFlow = MutableStateFlow(boardState)
         boards.value = boards.value.toMutableList().apply { add(boardFlow) }
         this@RaceRatServiceImpl.boardState = boardFlow

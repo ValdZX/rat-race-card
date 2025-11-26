@@ -2,17 +2,14 @@
 
 package ua.vald_zx.game.rat.race.server
 
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMethod
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.http.content.staticResources
-import io.ktor.server.netty.Netty
-import io.ktor.server.plugins.cors.routing.CORS
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.get
-import io.ktor.server.routing.routing
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.http.content.*
+import io.ktor.server.netty.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -47,16 +44,7 @@ data class BoardState(
         .toLocalDateTime(TimeZone.currentSystemDefault()),
     val lastCheckTime: LocalDateTime = createDateTime,
     val id: String = Uuid.random().toString(),
-    val cards: Map<BoardCardType, MutableList<Int>> = mapOf(
-        BoardCardType.Chance to (1..52).toMutableList(),
-        BoardCardType.SmallBusiness to (1..53).toMutableList(),
-        BoardCardType.MediumBusiness to (1..52).toMutableList(),
-        BoardCardType.BigBusiness to (1..52).toMutableList(),
-        BoardCardType.Expenses to (1..52).toMutableList(),
-        BoardCardType.EventStore to (1..52).toMutableList(),
-        BoardCardType.Shopping to (1..52).toMutableList(),
-        BoardCardType.Deputy to (1..52).toMutableList(),
-    ),
+    val cards: Map<BoardCardType, MutableList<Int>>,
     val takenCard: CardLink? = null,
     val discard: MutableMap<BoardCardType, MutableList<Int>> = mutableMapOf(),
     val players: Map<String, Player> = mutableMapOf(),

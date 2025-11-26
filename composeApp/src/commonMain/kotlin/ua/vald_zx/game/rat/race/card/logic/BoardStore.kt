@@ -15,6 +15,7 @@ import ua.vald_zx.game.rat.race.card.logic.BoardAction.*
 import ua.vald_zx.game.rat.race.card.logic.BoardSideEffect.ShowDice
 import ua.vald_zx.game.rat.race.card.screen.board.PlaceType
 import ua.vald_zx.game.rat.race.card.screen.board.boardLayers
+import ua.vald_zx.game.rat.race.card.screen.board.cards.decks
 import ua.vald_zx.game.rat.race.card.shared.*
 
 val players = MutableStateFlow(emptyList<Player>())
@@ -136,6 +137,7 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
                 }
                 oldState
             }
+
             is Move -> {
                 val position = moveTo(
                     oldState.currentPlayer?.state?.position ?: 1,
@@ -160,7 +162,7 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
 
             is TakeSalary -> {
                 card.dispatch(CardAction.GetSalaryApproved)
-                if(oldState.currentPositionPlace == PlaceType.Salary) {
+                if (oldState.currentPositionPlace == PlaceType.Salary) {
                     launch { service?.nextPlayer() }
                 }
                 oldState.copy(takeSalaryPosition = null)
@@ -238,7 +240,12 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
 
             is CreateBoard -> {
                 launch {
-                    service?.createBoard(action.name)?.let { board ->
+                    service?.createBoard(
+                        name = action.name,
+                        decks = decks.map { (type, map) ->
+                            type to map.size
+                        }.toMap()
+                    )?.let { board ->
                         loadBoard(board)
                     }
                 }
@@ -295,6 +302,7 @@ class BoardStore : Store<BoardState, BoardAction, BoardSideEffect>,
             processPlace(place)
         }
     }
+
     private suspend fun startService() {
         service = client.rpc {
             url("wss://race-rat-online-1033277102369.us-central1.run.app/api")

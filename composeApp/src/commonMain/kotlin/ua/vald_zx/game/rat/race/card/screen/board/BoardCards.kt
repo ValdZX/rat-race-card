@@ -28,6 +28,18 @@ sealed class BoardCard(val type: BoardCardType) {
         val credit: String,//TODO
     ) : BoardCard(BoardCardType.Shopping)
 
+    data class EventStore(
+        val description: String,
+    ) : BoardCard(BoardCardType.EventStore)
+
+    data class Deputy(
+        val description: String,
+    ) : BoardCard(BoardCardType.Deputy)
+
+    data class Chance(
+        val description: String,
+    ) : BoardCard(BoardCardType.Chance)
+
     data class Expenses(
         val description: String,
         val priceTitle: String,

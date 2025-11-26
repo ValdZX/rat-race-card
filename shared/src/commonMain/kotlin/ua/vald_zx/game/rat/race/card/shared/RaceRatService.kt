@@ -41,7 +41,7 @@ interface RaceRatService {
     suspend fun hello(id: String = ""): Instance
     suspend fun getBoards(): List<BoardId>
     fun observeBoards(): Flow<List<BoardId>>
-    suspend fun createBoard(name: String): Board
+    suspend fun createBoard(name: String, decks: Map<BoardCardType, Int>): Board
     suspend fun selectBoard(boardId: String): Board?
     suspend fun makePlayerOnBoard()
     suspend fun updatePlayerCard(playerCard: PlayerCard)

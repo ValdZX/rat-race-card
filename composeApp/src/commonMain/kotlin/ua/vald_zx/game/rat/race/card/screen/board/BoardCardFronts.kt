@@ -606,7 +606,23 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = {
-                            raceRate2BoardStore.card.dispatch(CardAction.BuyYacht(card.price))
+                            when(card.shopType) {
+                                ShopType.AUTO -> {
+                                    raceRate2BoardStore.card.dispatch(CardAction.BuyCar(card.price))
+                                }
+                                ShopType.HOUSE -> {
+                                    raceRate2BoardStore.card.dispatch(CardAction.BuyCottage(card.price))
+                                }
+                                ShopType.APARTMENT -> {
+                                    raceRate2BoardStore.card.dispatch(CardAction.BuyApartment(card.price))
+                                }
+                                ShopType.YACHT -> {
+                                    raceRate2BoardStore.card.dispatch(CardAction.BuyYacht(card.price))
+                                }
+                                ShopType.FLY -> {
+                                    raceRate2BoardStore.card.dispatch(CardAction.BuyFlight(card.price))
+                                }
+                            }
                             discardCard()
                         },
                         content = {
