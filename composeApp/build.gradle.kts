@@ -57,6 +57,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
+            implementation(compose.preview)
             implementation(compose.material3)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -176,13 +177,13 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".debug"
             signingConfig = signingConfigs.getByName("debug")
-            manifestPlaceholders["appIcon"]="@mipmap/ic_launcher_debug"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_debug"
             isMinifyEnabled = false
             isShrinkResources = false
         }
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
-            manifestPlaceholders["appIcon"]="@mipmap/ic_launcher"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.txt")

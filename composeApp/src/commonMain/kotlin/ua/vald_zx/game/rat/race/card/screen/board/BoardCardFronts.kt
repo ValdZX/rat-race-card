@@ -2,17 +2,7 @@ package ua.vald_zx.game.rat.race.card.screen.board
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.BoxWithConstraintsScope
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
@@ -31,14 +21,18 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.CardAction
 import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
-import ua.vald_zx.game.rat.race.card.screen.board.cards.businessCardsLangs
+import ua.vald_zx.game.rat.race.card.screen.board.cards.*
+import ua.vald_zx.game.rat.race.card.screen.board.visualize.color
+import ua.vald_zx.game.rat.race.card.screen.board.visualize.getLocal
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.CardLink
+import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 
 @Composable
@@ -121,7 +115,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
     discardCard: () -> Unit,
 ) {
     remember(card.id) {
-        businessCardsLangs[card.id]
+        smallBusinessCards[card.id]
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)
@@ -132,7 +126,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
         Column(modifier = Modifier.padding(padding)) {
             Row {
                 Text(
-                    text = card.title,
+                    text = card.type.title,
                     modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                     fontSize = unitTS * 14,
                     lineHeight = unitTS * 12,
@@ -228,7 +222,306 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
 }
 
 @Composable
-fun BoxScope.MediumBusinessCardFront(
+fun BoxWithConstraintsScope.MediumBusinessCardFront(
+    card: CardLink,
+    isActive: Boolean,
+    discardCard: () -> Unit,
+) {
+    remember(card.id) {
+        mediumBusinessCards[card.id]
+    }?.let { card ->
+        val density = LocalDensity.current
+        val cardWidth = max(maxWidth, 100.dp)
+        val unitTS = with(density) { (cardWidth.toPx() / 300).toSp() }
+        val unitDp = cardWidth / 300
+        val padding = unitDp * 12
+        val smallPadding = unitDp * 6
+        Column(modifier = Modifier.padding(padding)) {
+            Row {
+                Text(
+                    text = card.type.title,
+                    modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
+                    fontSize = unitTS * 14,
+                    lineHeight = unitTS * 12,
+                    fontWeight = FontWeight.Bold,
+                )
+                Box(
+                    modifier = Modifier
+                        .background(Color.Black)
+                        .size(unitDp * 40),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "СБ",
+                        color = Color.White,
+                        fontSize = unitTS * 20,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+            Text(
+                modifier = Modifier.padding(top = smallPadding),
+                text = card.description,
+                fontSize = unitTS * 12,
+                lineHeight = unitTS * 10,
+            )
+            Row(
+                modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                Text(
+                    "Початкові вкладення:",
+                    fontSize = unitTS * 10,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    "Постійний прибуток:",
+                    fontSize = unitTS * 10,
+                    textAlign = TextAlign.Center
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                Text(
+                    "$${card.price}",
+                    fontSize = unitTS * 12,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "$${card.profit}",
+                    fontSize = unitTS * 12,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            if (isActive) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = { discardCard() },
+                        content = {
+                            Text("Пас", fontSize = unitTS * 14)
+                        },
+                    )
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = {
+                            raceRate2BoardStore.card.dispatch(
+                                CardAction.BuyBusiness(
+                                    Business(
+                                        type = BusinessType.SMALL,
+                                        name = "Name",
+                                        price = card.price,
+                                        profit = card.profit
+                                    )
+                                )
+                            )
+                            discardCard()
+                        },
+                        content = {
+                            Text("Купити", fontSize = unitTS * 14)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BoxWithConstraintsScope.BigBusinessCardFront(
+    card: CardLink,
+    isActive: Boolean,
+    discardCard: () -> Unit,
+) {
+    remember(card.id) {
+        bigBusinessCards[card.id]
+    }?.let { card ->
+        val density = LocalDensity.current
+        val cardWidth = max(maxWidth, 100.dp)
+        val unitTS = with(density) { (cardWidth.toPx() / 300).toSp() }
+        val unitDp = cardWidth / 300
+        val padding = unitDp * 12
+        val smallPadding = unitDp * 6
+        Column(modifier = Modifier.padding(padding)) {
+            Row {
+                Text(
+                    text = card.type.title,
+                    modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
+                    fontSize = unitTS * 14,
+                    lineHeight = unitTS * 12,
+                    fontWeight = FontWeight.Bold,
+                )
+                Box(
+                    modifier = Modifier
+                        .background(Color.Black)
+                        .size(unitDp * 40),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "ВБ",
+                        color = Color.White,
+                        fontSize = unitTS * 20,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+            Text(
+                modifier = Modifier.padding(top = smallPadding),
+                text = card.description,
+                fontSize = unitTS * 12,
+                lineHeight = unitTS * 10,
+            )
+            Row(
+                modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                Text(
+                    "Початкові вкладення:",
+                    fontSize = unitTS * 10,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    "Постійний прибуток:",
+                    fontSize = unitTS * 10,
+                    textAlign = TextAlign.Center
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                Text(
+                    "$${card.price}",
+                    fontSize = unitTS * 12,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "$${card.profit}",
+                    fontSize = unitTS * 12,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            if (isActive) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = { discardCard() },
+                        content = {
+                            Text("Пас", fontSize = unitTS * 14)
+                        },
+                    )
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = {
+                            raceRate2BoardStore.card.dispatch(
+                                CardAction.BuyBusiness(
+                                    Business(
+                                        type = BusinessType.SMALL,
+                                        name = "Name",
+                                        price = card.price,
+                                        profit = card.profit
+                                    )
+                                )
+                            )
+                            discardCard()
+                        },
+                        content = {
+                            Text("Купити", fontSize = unitTS * 14)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BoxWithConstraintsScope.ExpensesCardFront(
+    card: CardLink,
+    isActive: Boolean,
+    discardCard: () -> Unit,
+) {
+    remember(card.id) {
+        expensesCards[card.id]
+    }?.let { card ->
+        val density = LocalDensity.current
+        val cardWidth = max(maxWidth, 100.dp)
+        val unitTS = with(density) { (cardWidth.toPx() / 300).toSp() }
+        val unitDp = cardWidth / 300
+        val padding = unitDp * 12
+        val smallPadding = unitDp * 6
+        Column(modifier = Modifier.padding(padding)) {
+            Row {
+                Text(
+                    modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
+                    text = card.description,
+                    fontSize = unitTS * 12,
+                    lineHeight = unitTS * 10,
+                )
+                Box(
+                    modifier = Modifier
+                        .background(Color.Black)
+                        .size(unitDp * 40),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "НВ",
+                        color = Color.White,
+                        fontSize = unitTS * 20,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+            Text(
+                modifier = Modifier.padding(top = padding).fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                text = card.priceTitle,
+                fontSize = unitTS * 14,
+                lineHeight = unitTS * 12,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                text = card.payer.getLocal(),
+                fontSize = unitTS * 12,
+                lineHeight = unitTS * 10,
+            )
+            if (isActive) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = {
+                            raceRate2BoardStore.card.dispatch(CardAction.SideExpenses(card.price))
+                            discardCard()
+                        },
+                        content = {
+                            Text("Заплатити", fontSize = unitTS * 14)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BoxWithConstraintsScope.EventStoreCardFront(
     card: CardLink,
     isActive: Boolean,
     discardCard: () -> Unit,
@@ -241,7 +534,93 @@ fun BoxScope.MediumBusinessCardFront(
 }
 
 @Composable
-fun BoxScope.BigBusinessCardFront(
+fun BoxWithConstraintsScope.ShoppingCardFront(
+    card: CardLink,
+    isActive: Boolean,
+    discardCard: () -> Unit,
+) {
+
+    remember(card.id) {
+        shoppingCards[card.id]
+    }?.let { card ->
+        val density = LocalDensity.current
+        val cardWidth = max(maxWidth, 100.dp)
+        val unitTS = with(density) { (cardWidth.toPx() / 300).toSp() }
+        val unitDp = cardWidth / 300
+        val padding = unitDp * 12
+        val smallPadding = unitDp * 6
+        Column(modifier = Modifier.padding(padding)) {
+            Row {
+                Text(
+                    text = card.type.title,
+                    modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
+                    fontSize = unitTS * 14,
+                    lineHeight = unitTS * 12,
+                    fontWeight = FontWeight.Bold,
+                )
+                Box(
+                    modifier = Modifier
+                        .background(Color.Black)
+                        .size(unitDp * 40),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "ВП",
+                        color = Color.White,
+                        fontSize = unitTS * 20,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+            Text(
+                modifier = Modifier.padding(top = smallPadding),
+                text = card.description,
+                fontSize = unitTS * 12,
+                lineHeight = unitTS * 10,
+            )
+            Text(
+                "Повна вартість",
+                fontSize = unitTS * 10,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+            Text(
+                "$${card.price}",
+                fontSize = unitTS * 12,
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+            if (isActive) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = { discardCard() },
+                        content = {
+                            Text("Пас", fontSize = unitTS * 14)
+                        },
+                    )
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = {
+                            raceRate2BoardStore.card.dispatch(CardAction.BuyYacht(card.price))
+                            discardCard()
+                        },
+                        content = {
+                            Text("Купити", fontSize = unitTS * 14)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BoxWithConstraintsScope.DeputyCardFront(
     card: CardLink,
     isActive: Boolean,
     discardCard: () -> Unit,
@@ -253,54 +632,79 @@ fun BoxScope.BigBusinessCardFront(
     }
 }
 
+@Preview
 @Composable
-fun BoxScope.ExpensesCardFront(
-    card: CardLink,
-    isActive: Boolean,
-    discardCard: () -> Unit,
-) {
-    if (isActive) {
-        Button("Ok") {
-            discardCard()
+fun CardSmallFrontPreview() {
+    AppTheme {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+            BoxWithConstraints(
+                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+            ) {
+                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 1), isActive = false) {}
+            }
+            BoxWithConstraints(
+                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+            ) {
+                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 2), isActive = true) {}
+            }
         }
     }
 }
 
+
+@Preview
 @Composable
-fun BoxScope.EventStoreCardFront(
-    card: CardLink,
-    isActive: Boolean,
-    discardCard: () -> Unit,
-) {
-    if (isActive) {
-        Button("Pass") {
-            discardCard()
+fun CardMediumFrontPreview() {
+    AppTheme {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+            BoxWithConstraints(
+                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+            ) {
+                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 1), isActive = false) {}
+            }
+            BoxWithConstraints(
+                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+            ) {
+                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 2), isActive = true) {}
+            }
         }
     }
 }
 
+@Preview
 @Composable
-fun BoxScope.ShoppingCardFront(
-    card: CardLink,
-    isActive: Boolean,
-    discardCard: () -> Unit,
-) {
-    if (isActive) {
-        Button("Pass") {
-            discardCard()
+fun CardShoppingFrontPreview() {
+    AppTheme {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+            BoxWithConstraints(
+                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+            ) {
+                ShoppingCardFront(CardLink(BoardCardType.Shopping, 1), isActive = false) {}
+            }
+            BoxWithConstraints(
+                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+            ) {
+                ShoppingCardFront(CardLink(BoardCardType.Shopping, 2), isActive = true) {}
+            }
         }
     }
 }
 
+@Preview
 @Composable
-fun BoxScope.DeputyCardFront(
-    card: CardLink,
-    isActive: Boolean,
-    discardCard: () -> Unit,
-) {
-    if (isActive) {
-        Button("Pass") {
-            discardCard()
+fun CardExpensesFrontPreview() {
+    AppTheme {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+            BoxWithConstraints(
+                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+            ) {
+                ExpensesCardFront(CardLink(BoardCardType.Expenses, 1), isActive = false) {}
+            }
+            BoxWithConstraints(
+                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+            ) {
+                ExpensesCardFront(CardLink(BoardCardType.Expenses, 2), isActive = true) {}
+            }
         }
     }
 }

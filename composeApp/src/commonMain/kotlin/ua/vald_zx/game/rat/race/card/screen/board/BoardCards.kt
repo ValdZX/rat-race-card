@@ -1,43 +1,57 @@
 package ua.vald_zx.game.rat.race.card.screen.board
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
-import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 sealed class BoardCard(val type: BoardCardType) {
     data class SmallBusiness(
-        val title: String,
         val description: String,
         val price: Long,
         val profit: Long,
     ) : BoardCard(BoardCardType.SmallBusiness)
 
     data class MediumBusiness(
-        val title: String,
         val description: String,
         val price: Long,
         val profit: Long,
     ) : BoardCard(BoardCardType.MediumBusiness)
 
     data class BigBusiness(
-        val title: String,
         val description: String,
         val price: Long,
         val profit: Long,
     ) : BoardCard(BoardCardType.BigBusiness)
+
+    data class Shopping(
+        val description: String,
+        val price: Long,
+        val shopType: ShopType,
+        val credit: String,//TODO
+    ) : BoardCard(BoardCardType.Shopping)
+
+    data class Expenses(
+        val description: String,
+        val priceTitle: String,
+        val price: Long,
+        val payer: PayerType,
+    ) : BoardCard(BoardCardType.Expenses)
 }
 
-@Composable
-fun BoardCardType.color(): Color {
-    return when (this) {
-        BoardCardType.Chance -> AppTheme.colors.chance
-        BoardCardType.SmallBusiness -> AppTheme.colors.smallBusiness
-        BoardCardType.MediumBusiness -> AppTheme.colors.business
-        BoardCardType.BigBusiness -> AppTheme.colors.bigBusiness
-        BoardCardType.Expenses -> AppTheme.colors.expenses
-        BoardCardType.EventStore -> AppTheme.colors.store
-        BoardCardType.Shopping -> AppTheme.colors.shopping
-        BoardCardType.Deputy -> AppTheme.colors.deputy
-    }
+enum class ShopType {
+    AUTO,
+    HOUSE,
+    APARTMENT,
+    YACHT,
+    FLY
+}
+
+enum class PayerType {
+    ALL,
+    FREE_W_OR_MARRIED_M,
+    AUTO_OWNER,
+    MEN,
+    PARENT,
+    MARRIED_M,
+    APARTMENT_OWNER,
+    APARTMENT_OR_HOUSE_OWNER,
+    ANIMAL_OWNER,
 }
