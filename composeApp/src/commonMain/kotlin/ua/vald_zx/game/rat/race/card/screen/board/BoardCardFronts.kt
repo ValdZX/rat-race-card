@@ -121,7 +121,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
         val cardWidth = max(maxWidth, 100.dp)
         val unitTS = with(density) { (cardWidth.toPx() / 300).toSp() }
         val unitDp = cardWidth / 300
-        val padding = unitDp * 12
+        val padding = unitDp * 10
         val smallPadding = unitDp * 6
         Column(modifier = Modifier.padding(padding)) {
             Row {
@@ -501,11 +501,11 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
             )
             if (isActive) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                    modifier = Modifier.fillMaxWidth().weight(1f).padding(top = smallPadding),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     ElevatedButton(
-                        modifier = Modifier,
+                        modifier = Modifier.align(Alignment.CenterVertically),
                         onClick = {
                             raceRate2BoardStore.card.dispatch(CardAction.SideExpenses(card.price))
                             discardCard()
@@ -591,6 +591,12 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
+            Text(
+                modifier = Modifier.padding(top = smallPadding),
+                text = card.credit,
+                fontSize = unitTS * 12,
+                lineHeight = unitTS * 10,
+            )
             if (isActive) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
@@ -606,19 +612,23 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = {
-                            when(card.shopType) {
+                            when (card.shopType) {
                                 ShopType.AUTO -> {
                                     raceRate2BoardStore.card.dispatch(CardAction.BuyCar(card.price))
                                 }
+
                                 ShopType.HOUSE -> {
                                     raceRate2BoardStore.card.dispatch(CardAction.BuyCottage(card.price))
                                 }
+
                                 ShopType.APARTMENT -> {
                                     raceRate2BoardStore.card.dispatch(CardAction.BuyApartment(card.price))
                                 }
+
                                 ShopType.YACHT -> {
                                     raceRate2BoardStore.card.dispatch(CardAction.BuyYacht(card.price))
                                 }
+
                                 ShopType.FLY -> {
                                     raceRate2BoardStore.card.dispatch(CardAction.BuyFlight(card.price))
                                 }
@@ -654,12 +664,14 @@ fun CardSmallFrontPreview() {
     AppTheme {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
             BoxWithConstraints(
-                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 1), isActive = false) {}
             }
             BoxWithConstraints(
-                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 2), isActive = true) {}
             }
@@ -674,12 +686,14 @@ fun CardMediumFrontPreview() {
     AppTheme {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
             BoxWithConstraints(
-                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 1), isActive = false) {}
             }
             BoxWithConstraints(
-                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 2), isActive = true) {}
             }
@@ -693,12 +707,14 @@ fun CardShoppingFrontPreview() {
     AppTheme {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
             BoxWithConstraints(
-                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 ShoppingCardFront(CardLink(BoardCardType.Shopping, 1), isActive = false) {}
             }
             BoxWithConstraints(
-                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 ShoppingCardFront(CardLink(BoardCardType.Shopping, 2), isActive = true) {}
             }
@@ -712,12 +728,14 @@ fun CardExpensesFrontPreview() {
     AppTheme {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
             BoxWithConstraints(
-                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 ExpensesCardFront(CardLink(BoardCardType.Expenses, 1), isActive = false) {}
             }
             BoxWithConstraints(
-                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background)
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 ExpensesCardFront(CardLink(BoardCardType.Expenses, 2), isActive = true) {}
             }
