@@ -15,18 +15,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
-import ua.vald_zx.game.rat.race.card.logic.CardState
-import ua.vald_zx.game.rat.race.card.screen.second.SellFundScreen
+import ua.vald_zx.game.rat.race.card.screen.board.SellFundScreen
+import ua.vald_zx.game.rat.race.card.shared.Player
 
 @Composable
-fun FundsPage(state: CardState) {
+fun FundsPage(player: Player) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
     ) {
         LazyColumn(modifier = Modifier.weight(1f)) {
-            items(state.funds) { fund ->
+            items(player.funds) { fund ->
                 Column(modifier = Modifier.padding(top = 8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         SDetailsField(

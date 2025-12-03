@@ -2,8 +2,8 @@ package ua.vald_zx.game.rat.race.card.screen.board.visualize
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import ua.vald_zx.game.rat.race.card.screen.board.PayerType
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
+import ua.vald_zx.game.rat.race.card.shared.PayerType
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 

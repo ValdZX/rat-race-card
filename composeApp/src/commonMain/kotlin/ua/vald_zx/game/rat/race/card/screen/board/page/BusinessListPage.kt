@@ -15,17 +15,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
-import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
-import ua.vald_zx.game.rat.race.card.logic.CardState
-import ua.vald_zx.game.rat.race.card.screen.second.SellBusinessScreen
+import ua.vald_zx.game.rat.race.card.screen.board.SellBusinessScreen
+import ua.vald_zx.game.rat.race.card.shared.BusinessType
+import ua.vald_zx.game.rat.race.card.shared.Player
 
 @Composable
-fun BusinessListPage(state: CardState) {
+fun BusinessListPage(state: Player) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     Column {
         LazyColumn(modifier = Modifier.weight(1f)) {
-            itemsIndexed(state.business.filter { it.type != BusinessType.WORK }) { index, business ->
+            itemsIndexed(state.businesses.filter { it.type != BusinessType.WORK }) { index, business ->
                 Column(
                     modifier = Modifier
                         .background(

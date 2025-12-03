@@ -40,25 +40,23 @@ import com.russhwolf.settings.set
 import io.github.aakira.napier.Napier
 import io.github.alexzhirkevich.compottie.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.logo
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.currentPlayerId
-import ua.vald_zx.game.rat.race.card.logic.*
-import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
+import ua.vald_zx.game.rat.race.card.logic.BoardState
+import ua.vald_zx.game.rat.race.card.logic.BoardUiAction
+import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.settings
-import ua.vald_zx.game.rat.race.card.shared.BoardCardType
-import ua.vald_zx.game.rat.race.card.shared.Player
-import ua.vald_zx.game.rat.race.card.shared.pointerColors
-import ua.vald_zx.game.rat.race.card.theme.AppTheme
+import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 import kotlin.math.absoluteValue
 
@@ -81,7 +79,7 @@ data class Place(
         get() = (location.side == Side.TOP || location.side == Side.BOTTOM) && !type.isBig
 }
 
-data class Board(
+data class BoardLayers(
     val layers: Map<BoardLayer, BoardRoute>
 )
 
@@ -124,14 +122,20 @@ val ContentExpanded: SheetDetent =
         }
     }
 
-class Board2Screen : Screen {
+class BoardScreen(
+    private val board: Board,
+    private val player: Player,
+) : Screen {
 
     override val key: ScreenKey = "Board2Screen"
 
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
     override fun Content() {
-        val state by raceRate2BoardStore.observeState().collectAsState()
+        val vm = koinViewModel<BoardViewModel>(
+            parameters = { parametersOf(board, player) }
+        )
+        val state by vm.uiState.collectAsState()
         var dice by remember { mutableStateOf(0) }
         val scaffoldState = rememberBottomSheetState(
             initialDetent = HalfExpanded,
@@ -141,7 +145,7 @@ class Board2Screen : Screen {
         Box {
             BottomSheetNavigator {
                 Box(modifier = Modifier.padding(bottom = littleDetailsHeight)) {
-                    BoardScreenContent(state, raceRate2BoardStore::dispatch, dice)
+                    BoardScreenContent(state, vm, dice)
                 }
                 BottomSheet(state = scaffoldState) {
                     Box(Modifier.navigationBarsPadding().onSizeChanged { size ->
@@ -149,7 +153,7 @@ class Board2Screen : Screen {
                         sheetContentSize.value = with(density) { size.height.toDp() }
                         scaffoldState.invalidateDetents()
                     }) {
-                        Board2PlayerDetailsScreen(scaffoldState)
+                        Board2PlayerDetailsScreen(state, scaffoldState)
                     }
                 }
             }
@@ -183,19 +187,15 @@ class Board2Screen : Screen {
             }
         }
         LaunchedEffect(Unit) {
-            raceRate2BoardStore.observeSideEffect().onEach { effect ->
-                when (effect) {
-                    is BoardSideEffect.ShowDice -> {
-                        dice = effect.dice
+            vm.actions.collect { event ->
+                when (event) {
+                    is BoardUiAction.ShowDice -> {
+                        dice = event.dice
                         delay(5000)
                         dice = 0
                     }
-
-                    else -> {
-                        //nop
-                    }
                 }
-            }.launchIn(this)
+            }
         }
     }
 }
@@ -204,23 +204,23 @@ class Board2Screen : Screen {
 @Composable
 fun BoardScreenContent(
     state: BoardState,
-    dispatch: (BoardAction) -> Unit,
+    vm: BoardViewModel,
     dice: Int
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        Board(state, dice, dispatch)
+        BoardFragment(state, dice, vm)
         Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
             Controls()
         }
-        CardDialog(state, dispatch)
+        CardDialog(state, vm)
     }
 }
 
 @Composable
-fun Board(
+fun BoardFragment(
     state: BoardState,
     dice: Int,
-    dispatch: (BoardAction) -> Unit,
+    vm: BoardViewModel,
 ) {
     val rotX = remember { Animatable(0f) }
     val rotY = remember { Animatable(0f) }
@@ -265,11 +265,11 @@ fun Board(
                     scaleY = scale
                 }
         ) {
-            Board(state, isVertical, dispatch)
+            BoardPanel(state, isVertical, vm)
             if (isFlipped(rotY, rotX)) {
                 BackSide()
             }
-            Dice(state, dispatch, dice)
+            Dice(state, vm, dice)
         }
     }
 }
@@ -296,7 +296,7 @@ fun BoxScope.Controls() {
 @Composable
 fun BoxWithConstraintsScope.Dice(
     state: BoardState,
-    dispatch: (BoardAction) -> Unit,
+    vm: BoardViewModel,
     dice: Int
 ) {
     val cube1 by rememberLottieComposition {
@@ -346,13 +346,13 @@ fun BoxWithConstraintsScope.Dice(
         }
     }
     LaunchedEffect(animatable.isAtEnd) {
-        if (animatable.isAtEnd && currentPlayerId == state.board?.activePlayer && dice != 0) {
-            dispatch(BoardAction.Move(dice))
+        if (animatable.isAtEnd && currentPlayerId == state.board.activePlayer && dice != 0) {
+            vm.move()
         }
     }
     val size = min(maxWidth, maxHeight) / 6
     AnimatedVisibility(
-        visible = dice != 0 && !state.canRoll,
+        visible = dice != 0,
         enter = fadeIn(),
         exit = fadeOut(),
         modifier = Modifier.align(Alignment.Center)
@@ -363,22 +363,7 @@ fun BoxWithConstraintsScope.Dice(
                 progress = animatable::value
             ),
             contentDescription = "Lottie animation",
-            modifier = Modifier.size(size)
-        )
-    }
-    AnimatedVisibility(
-        visible = state.canRoll && dice == 0,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = Modifier.align(Alignment.Center)
-    ) {
-        Image(
-            painter = rememberLottiePainter(
-                composition = composition ?: cube3,
-                progress = { 1f }
-            ),
-            contentDescription = "Lottie animation",
-            modifier = Modifier.size(size).clickableSingle { dispatch(BoardAction.RollDice) }
+            modifier = Modifier.size(size).clickableSingle(enabled = state.canRoll) { vm.rollDice() }
         )
     }
 }
@@ -407,10 +392,10 @@ fun BackSide() {
 }
 
 @Composable
-fun BoxWithConstraintsScope.Board(
+fun BoxWithConstraintsScope.BoardPanel(
     state: BoardState,
     isVertical: Boolean,
-    dispatch: (BoardAction) -> Unit
+    vm: BoardViewModel,
 ) {
     val maxWidth = maxWidth
     val maxHeight = maxHeight
@@ -452,7 +437,7 @@ fun BoxWithConstraintsScope.Board(
             layer = BoardLayer.OUTER,
             size = DpSize(maxWidth, maxHeight),
             route = actualOutRoute,
-            dispatch = dispatch,
+            vm = vm,
         )
         val outSpotSize =
             maxWidth / actualOutRoute.horizontalCells
@@ -469,7 +454,7 @@ fun BoxWithConstraintsScope.Board(
             layer = BoardLayer.INNER,
             size = DpSize(inBoardWidth, inBoardHeight),
             route = actualInRoute,
-            dispatch = dispatch,
+            vm = vm,
         )
         val inSpotSize =
             inBoardWidth / actualInRoute.horizontalCells
@@ -481,8 +466,8 @@ fun BoxWithConstraintsScope.Board(
         CardDecks(
             state = state,
             size = DpSize(cardsWidth, cardsHeight),
-            highlightedCard = state.highlightedCard,
-            dispatch = dispatch
+            highlightedDeck = state.board.canTakeCard,
+            vm = vm,
         )
     }
 }
@@ -490,8 +475,8 @@ fun BoxWithConstraintsScope.Board(
 @Composable
 fun BoxScope.CardDecks(
     size: DpSize,
-    highlightedCard: BoardCardType?,
-    dispatch: (BoardAction) -> Unit,
+    highlightedDeck: BoardCardType?,
+    vm: BoardViewModel,
     state: BoardState
 ) {
     Box(
@@ -511,7 +496,7 @@ fun BoxScope.CardDecks(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch, state = state)
+                    LeftCardDecks(highlightedDeck, cardSize, vm = vm, state = state)
                 }
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -534,7 +519,7 @@ fun BoxScope.CardDecks(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    RightCardDecks(highlightedCard, cardSize, dispatch = dispatch, state = state)
+                    RightCardDecks(highlightedDeck, cardSize, vm = vm, state = state)
                 }
             }
         } else {
@@ -549,7 +534,7 @@ fun BoxScope.CardDecks(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxHeight()
                 ) {
-                    LeftCardDecks(highlightedCard, cardSize, dispatch = dispatch, state = state)
+                    LeftCardDecks(highlightedDeck, cardSize, vm = vm, state = state)
                 }
                 Column(
                     verticalArrangement = Arrangement.SpaceBetween,
@@ -575,7 +560,7 @@ fun BoxScope.CardDecks(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxHeight()
                 ) {
-                    RightCardDecks(highlightedCard, cardSize, dispatch = dispatch, state = state)
+                    RightCardDecks(highlightedDeck, cardSize, vm = vm, state = state)
                 }
             }
         }
@@ -586,26 +571,26 @@ fun BoxScope.CardDecks(
 fun LeftCardDecks(
     highlightedCard: BoardCardType?,
     size: DpSize,
-    dispatch: (BoardAction) -> Unit,
+    vm: BoardViewModel,
     state: BoardState
 ) {
-    CardDeck(BoardCardType.Chance, size, highlightedCard, state, dispatch)
-    CardDeck(BoardCardType.BigBusiness, size, highlightedCard, state, dispatch)
-    CardDeck(BoardCardType.MediumBusiness, size, highlightedCard, state, dispatch)
-    CardDeck(BoardCardType.SmallBusiness, size, highlightedCard, state, dispatch)
+    CardDeck(BoardCardType.Chance, size, highlightedCard, state, vm)
+    CardDeck(BoardCardType.BigBusiness, size, highlightedCard, state, vm)
+    CardDeck(BoardCardType.MediumBusiness, size, highlightedCard, state, vm)
+    CardDeck(BoardCardType.SmallBusiness, size, highlightedCard, state, vm)
 }
 
 @Composable
 fun RightCardDecks(
     highlightedCard: BoardCardType?,
     size: DpSize,
-    dispatch: (BoardAction) -> Unit,
+    vm: BoardViewModel,
     state: BoardState
 ) {
-    CardDeck(BoardCardType.Expenses, size, highlightedCard, state, dispatch)
-    CardDeck(BoardCardType.Deputy, size, highlightedCard, state, dispatch)
-    CardDeck(BoardCardType.EventStore, size, highlightedCard, state, dispatch)
-    CardDeck(BoardCardType.Shopping, size, highlightedCard, state, dispatch)
+    CardDeck(BoardCardType.Expenses, size, highlightedCard, state, vm)
+    CardDeck(BoardCardType.Deputy, size, highlightedCard, state, vm)
+    CardDeck(BoardCardType.EventStore, size, highlightedCard, state, vm)
+    CardDeck(BoardCardType.Shopping, size, highlightedCard, state, vm)
 }
 
 @Composable
@@ -632,16 +617,17 @@ fun RightDiscardPiles(
 
 @Composable
 fun BoxScope.ColorsSelector(
-    state: BoardState,
-    dispatch: (BoardAction) -> Unit
+    colorState: MutableState<Long>,
 ) {
     val players by players.collectAsState()
     FlowRow(modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 64.dp)) {
         (pointerColors - players.filter { !it.isCurrentPlayer }
             .map { it.attrs.color }.toSet()).forEach { color ->
             RadioButton(
-                selected = color == state.color,
-                onClick = { dispatch(BoardAction.ChangeColor(color)) },
+                selected = color == colorState.value,
+                onClick = {
+                    colorState.value = color
+                },
                 colors = RadioButtonDefaults.colors()
                     .copy(selectedColor = Color(color), unselectedColor = Color(color)),
             )
@@ -716,7 +702,7 @@ fun getLocationOnBoard(
     }
 }
 
-val boardLayers = Board(
+val boardLayers = BoardLayers(
     layers = mapOf(
         BoardLayer.OUTER to BoardRoute(26, 18, outPlaces),
         BoardLayer.INNER to BoardRoute(28, 18, inPlaces),
@@ -779,13 +765,3 @@ fun isFlipped(
     rotY: Animatable<Float, AnimationVector1D>,
     rotX: Animatable<Float, AnimationVector1D>
 ) = rotY.value.absoluteValue > FlipThreshDeg || rotX.value.absoluteValue > FlipThreshDeg
-
-@Preview
-@Composable
-fun Board2Preview() {
-    val store = remember { BoardStore() }
-    val state by store.observeState().collectAsState()
-    AppTheme {
-        BoardScreenContent(state, store::dispatch, 0)
-    }
-}

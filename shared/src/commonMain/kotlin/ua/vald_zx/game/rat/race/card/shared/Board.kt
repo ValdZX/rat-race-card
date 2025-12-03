@@ -10,15 +10,40 @@ data class BoardId(
     val name: String,
     val createDateTime: LocalDateTime,
 )
+
 @Serializable
 data class Board(
-    val id: String,
-    val createDateTime: LocalDateTime,
     val name: String,
+    val createDateTime: LocalDateTime,
+    val lastCheckTime: LocalDateTime = createDateTime,
+    val id: String,
     val cards: Map<BoardCardType, List<Int>>,
-    val discard: Map<BoardCardType, List<Int>>,
-    val players: Set<String>,
-    val activePlayer: String,
-    val moveCount: Int,
-    val takenCard: CardLink?,
+    val canRoll: Boolean = false,
+    val canTakeCard: BoardCardType? = null,
+    val takenCard: CardLink? = null,
+    val discard: Map<BoardCardType, List<Int>> = emptyMap(),
+    val playerIds: Set<String> = emptySet(),
+    val activePlayer: String = "",
+    val moveCount: Int = 0,
+    val dice: Int = 6,
+    val salaryPosition: Int? = null,
 )
+
+fun Board.toBoardId(): BoardId {
+    return BoardId(
+        id = id,
+        createDateTime = createDateTime,
+        name = name,
+    )
+}
+
+fun moveTo(position: Int, cellCount: Int, toMove: Int): Int {
+    val nextPosition = position + toMove
+    return if (nextPosition < 0) {
+        cellCount + nextPosition
+    } else if (cellCount <= nextPosition) {
+        nextPosition - cellCount
+    } else {
+        nextPosition
+    }
+}

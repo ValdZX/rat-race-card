@@ -1,19 +1,11 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
@@ -24,11 +16,11 @@ import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
-import ua.vald_zx.game.rat.race.card.emptyIfZero
 import ua.vald_zx.game.rat.race.card.label
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
-import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.raceRate2store
+import ua.vald_zx.game.rat.race.card.shared.emptyIfZero
+import ua.vald_zx.game.rat.race.card.splitDecimal
 
 class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0)) : Screen {
     @Composable

@@ -5,29 +5,20 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
-import androidx.constraintlayout.compose.Dimension
-import androidx.constraintlayout.compose.ExperimentalMotionApi
-import androidx.constraintlayout.compose.MotionLayout
-import androidx.constraintlayout.compose.MotionScene
-import androidx.constraintlayout.compose.Visibility
+import androidx.constraintlayout.compose.*
 import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.isVertical
-import ua.vald_zx.game.rat.race.card.logic.BoardAction
-import ua.vald_zx.game.rat.race.card.logic.BoardLayer
 import ua.vald_zx.game.rat.race.card.logic.BoardState
+import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.max
+import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 
 const val cardMoveAnimationDuration = 2000
 
@@ -35,9 +26,9 @@ const val cardMoveAnimationDuration = 2000
 @Composable
 fun BoxWithConstraintsScope.CardDialog(
     state: BoardState,
-    dispatch: (BoardAction) -> Unit
+    vm: BoardViewModel,
 ) {
-    val takenCard = state.board?.takenCard
+    val takenCard = state.board.takenCard
     var showDialog by remember { mutableStateOf(false) }
     LaunchedEffect(takenCard) {
         if (takenCard != null) {
@@ -227,11 +218,14 @@ fun BoxWithConstraintsScope.CardDialog(
                     )
                 }
                 BoxWithConstraints(modifier = Modifier.layoutId("front")) {
-                    val isActive = remember(card) { currentPlayerId == state.board?.activePlayer }
-                    BoardCardFront(card, isActive, dialogSize) {
-                        dispatch(BoardAction.ToDiscardPile)
-                        targetProgress = 6f
-                    }
+                    val isActive = remember(card) { currentPlayerId == state.board.activePlayer }
+                    BoardCardFront(
+                        card = card,
+                        isActive = isActive,
+                        size = dialogSize,
+                        discardCard = { targetProgress = 6f },
+                        vm = vm
+                    )
                 }
             }
             LaunchedEffect(takenCard) {

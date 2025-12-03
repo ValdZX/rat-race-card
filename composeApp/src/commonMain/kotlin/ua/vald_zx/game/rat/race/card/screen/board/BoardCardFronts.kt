@@ -21,18 +21,15 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import ua.vald_zx.game.rat.race.card.beans.Business
-import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.Button
-import ua.vald_zx.game.rat.race.card.logic.CardAction
-import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
+import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.cards.*
 import ua.vald_zx.game.rat.race.card.screen.board.visualize.color
 import ua.vald_zx.game.rat.race.card.screen.board.visualize.getLocal
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
+import ua.vald_zx.game.rat.race.card.shared.Business
+import ua.vald_zx.game.rat.race.card.shared.BusinessType
 import ua.vald_zx.game.rat.race.card.shared.CardLink
-import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 
 @Composable
@@ -42,6 +39,7 @@ fun BoxWithConstraintsScope.BoardCardFront(
     size: DpSize,
     modifier: Modifier = Modifier,
     discardCard: () -> Unit,
+    vm: BoardViewModel,
 ) {
     val width = maxWidth
     val height = maxHeight
@@ -61,35 +59,35 @@ fun BoxWithConstraintsScope.BoardCardFront(
     ) {
         when (card.type) {
             BoardCardType.Chance -> {
-                ChanceCardFront(card, isActive, discardCard)
+                ChanceCardFront(card, isActive, discardCard, vm)
             }
 
             BoardCardType.SmallBusiness -> {
-                SmallBusinessCardFront(card, isActive, discardCard)
+                SmallBusinessCardFront(card, isActive, discardCard, vm)
             }
 
             BoardCardType.MediumBusiness -> {
-                MediumBusinessCardFront(card, isActive, discardCard)
+                MediumBusinessCardFront(card, isActive, discardCard, vm)
             }
 
             BoardCardType.BigBusiness -> {
-                BigBusinessCardFront(card, isActive, discardCard)
+                BigBusinessCardFront(card, isActive, discardCard, vm)
             }
 
             BoardCardType.Expenses -> {
-                ExpensesCardFront(card, isActive, discardCard)
+                ExpensesCardFront(card, isActive, discardCard, vm)
             }
 
             BoardCardType.EventStore -> {
-                EventStoreCardFront(card, isActive, discardCard)
+                EventStoreCardFront(card, isActive, discardCard, vm)
             }
 
             BoardCardType.Shopping -> {
-                ShoppingCardFront(card, isActive, discardCard)
+                ShoppingCardFront(card, isActive, discardCard, vm)
             }
 
             BoardCardType.Deputy -> {
-                DeputyCardFront(card, isActive, discardCard)
+                DeputyCardFront(card, isActive, discardCard, vm)
             }
         }
     }
@@ -100,9 +98,11 @@ fun BoxScope.ChanceCardFront(
     card: CardLink,
     isActive: Boolean,
     discardCard: () -> Unit,
+    vm: BoardViewModel,
 ) {
     if (isActive) {
         Button("Pass") {
+            vm.discardPile()
             discardCard()
         }
     }
@@ -110,12 +110,13 @@ fun BoxScope.ChanceCardFront(
 
 @Composable
 fun BoxWithConstraintsScope.SmallBusinessCardFront(
-    card: CardLink,
+    cardLink: CardLink,
     isActive: Boolean,
     discardCard: () -> Unit,
+    vm: BoardViewModel,
 ) {
-    remember(card.id) {
-        smallBusinessCards[card.id]
+    remember(cardLink.id) {
+        smallBusinessCards[cardLink.id]
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)
@@ -199,14 +200,12 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = {
-                            raceRate2BoardStore.card.dispatch(
-                                CardAction.BuyBusiness(
-                                    Business(
-                                        type = BusinessType.SMALL,
-                                        name = "Name",
-                                        price = card.price,
-                                        profit = card.profit
-                                    )
+                            vm.buyBusiness(
+                                Business(
+                                    type = BusinessType.SMALL,
+                                    name = cardLink.id.toString(),
+                                    price = card.price,
+                                    profit = card.profit
                                 )
                             )
                             discardCard()
@@ -223,12 +222,13 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
 
 @Composable
 fun BoxWithConstraintsScope.MediumBusinessCardFront(
-    card: CardLink,
+    cardLink: CardLink,
     isActive: Boolean,
     discardCard: () -> Unit,
+    vm: BoardViewModel,
 ) {
-    remember(card.id) {
-        mediumBusinessCards[card.id]
+    remember(cardLink.id) {
+        mediumBusinessCards[cardLink.id]
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)
@@ -312,14 +312,12 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = {
-                            raceRate2BoardStore.card.dispatch(
-                                CardAction.BuyBusiness(
-                                    Business(
-                                        type = BusinessType.SMALL,
-                                        name = "Name",
-                                        price = card.price,
-                                        profit = card.profit
-                                    )
+                            vm.buyBusiness(
+                                Business(
+                                    type = BusinessType.MEDIUM,
+                                    name = cardLink.id.toString(),
+                                    price = card.price,
+                                    profit = card.profit
                                 )
                             )
                             discardCard()
@@ -336,12 +334,13 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
 
 @Composable
 fun BoxWithConstraintsScope.BigBusinessCardFront(
-    card: CardLink,
+    cardLink: CardLink,
     isActive: Boolean,
     discardCard: () -> Unit,
+    vm: BoardViewModel,
 ) {
-    remember(card.id) {
-        bigBusinessCards[card.id]
+    remember(cardLink.id) {
+        bigBusinessCards[cardLink.id]
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)
@@ -425,14 +424,12 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = {
-                            raceRate2BoardStore.card.dispatch(
-                                CardAction.BuyBusiness(
-                                    Business(
-                                        type = BusinessType.SMALL,
-                                        name = "Name",
-                                        price = card.price,
-                                        profit = card.profit
-                                    )
+                            vm.buyBusiness(
+                                Business(
+                                    type = BusinessType.LARGE,
+                                    name = cardLink.id.toString(),
+                                    price = card.price,
+                                    profit = card.profit
                                 )
                             )
                             discardCard()
@@ -452,6 +449,7 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
     card: CardLink,
     isActive: Boolean,
     discardCard: () -> Unit,
+    vm: BoardViewModel,
 ) {
     remember(card.id) {
         expensesCards[card.id]
@@ -507,7 +505,7 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
                     ElevatedButton(
                         modifier = Modifier.align(Alignment.CenterVertically),
                         onClick = {
-                            raceRate2BoardStore.card.dispatch(CardAction.SideExpenses(card.price))
+                            vm.sideExpenses(card.price)
                             discardCard()
                         },
                         content = {
@@ -525,6 +523,7 @@ fun BoxWithConstraintsScope.EventStoreCardFront(
     card: CardLink,
     isActive: Boolean,
     discardCard: () -> Unit,
+    vm: BoardViewModel,
 ) {
     if (isActive) {
         Button("Pass") {
@@ -538,6 +537,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
     card: CardLink,
     isActive: Boolean,
     discardCard: () -> Unit,
+    vm: BoardViewModel,
 ) {
 
     remember(card.id) {
@@ -612,27 +612,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = {
-                            when (card.shopType) {
-                                ShopType.AUTO -> {
-                                    raceRate2BoardStore.card.dispatch(CardAction.BuyCar(card.price))
-                                }
-
-                                ShopType.HOUSE -> {
-                                    raceRate2BoardStore.card.dispatch(CardAction.BuyCottage(card.price))
-                                }
-
-                                ShopType.APARTMENT -> {
-                                    raceRate2BoardStore.card.dispatch(CardAction.BuyApartment(card.price))
-                                }
-
-                                ShopType.YACHT -> {
-                                    raceRate2BoardStore.card.dispatch(CardAction.BuyYacht(card.price))
-                                }
-
-                                ShopType.FLY -> {
-                                    raceRate2BoardStore.card.dispatch(CardAction.BuyFlight(card.price))
-                                }
-                            }
+                            vm.buy(card)
                             discardCard()
                         },
                         content = {
@@ -650,6 +630,7 @@ fun BoxWithConstraintsScope.DeputyCardFront(
     card: CardLink,
     isActive: Boolean,
     discardCard: () -> Unit,
+    vm: BoardViewModel,
 ) {
     if (isActive) {
         Button("Pass") {
@@ -657,88 +638,88 @@ fun BoxWithConstraintsScope.DeputyCardFront(
         }
     }
 }
-
-@Preview
-@Composable
-fun CardSmallFrontPreview() {
-    AppTheme {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
-            BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 1), isActive = false) {}
-            }
-            BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 2), isActive = true) {}
-            }
-        }
-    }
-}
-
-
-@Preview
-@Composable
-fun CardMediumFrontPreview() {
-    AppTheme {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
-            BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 1), isActive = false) {}
-            }
-            BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 2), isActive = true) {}
-            }
-        }
-    }
-}
-
-@Preview
-@Composable
-fun CardShoppingFrontPreview() {
-    AppTheme {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
-            BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                ShoppingCardFront(CardLink(BoardCardType.Shopping, 1), isActive = false) {}
-            }
-            BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                ShoppingCardFront(CardLink(BoardCardType.Shopping, 2), isActive = true) {}
-            }
-        }
-    }
-}
-
-@Preview
-@Composable
-fun CardExpensesFrontPreview() {
-    AppTheme {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
-            BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                ExpensesCardFront(CardLink(BoardCardType.Expenses, 1), isActive = false) {}
-            }
-            BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                ExpensesCardFront(CardLink(BoardCardType.Expenses, 2), isActive = true) {}
-            }
-        }
-    }
-}
+//
+//@Preview
+//@Composable
+//fun CardSmallFrontPreview() {
+//    AppTheme {
+//        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+//            BoxWithConstraints(
+//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+//                    .background(MaterialTheme.colorScheme.background)
+//            ) {
+//                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 1), isActive = false) {}
+//            }
+//            BoxWithConstraints(
+//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+//                    .background(MaterialTheme.colorScheme.background)
+//            ) {
+//                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 2), isActive = true) {}
+//            }
+//        }
+//    }
+//}
+//
+//
+//@Preview
+//@Composable
+//fun CardMediumFrontPreview() {
+//    AppTheme {
+//        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+//            BoxWithConstraints(
+//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+//                    .background(MaterialTheme.colorScheme.background)
+//            ) {
+//                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 1), isActive = false) {}
+//            }
+//            BoxWithConstraints(
+//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+//                    .background(MaterialTheme.colorScheme.background)
+//            ) {
+//                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 2), isActive = true) {}
+//            }
+//        }
+//    }
+//}
+//
+//@Preview
+//@Composable
+//fun CardShoppingFrontPreview() {
+//    AppTheme {
+//        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+//            BoxWithConstraints(
+//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+//                    .background(MaterialTheme.colorScheme.background)
+//            ) {
+//                ShoppingCardFront(CardLink(BoardCardType.Shopping, 1), isActive = false) {}
+//            }
+//            BoxWithConstraints(
+//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+//                    .background(MaterialTheme.colorScheme.background)
+//            ) {
+//                ShoppingCardFront(CardLink(BoardCardType.Shopping, 2), isActive = true) {}
+//            }
+//        }
+//    }
+//}
+//
+//@Preview
+//@Composable
+//fun CardExpensesFrontPreview() {
+//    AppTheme {
+//        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+//            BoxWithConstraints(
+//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+//                    .background(MaterialTheme.colorScheme.background)
+//            ) {
+//                ExpensesCardFront(CardLink(BoardCardType.Expenses, 1), isActive = false) {}
+//            }
+//            BoxWithConstraints(
+//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+//                    .background(MaterialTheme.colorScheme.background)
+//            ) {
+//                ExpensesCardFront(CardLink(BoardCardType.Expenses, 2), isActive = true) {}
+//            }
+//        }
+//    }
+//}

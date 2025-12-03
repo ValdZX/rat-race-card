@@ -33,8 +33,8 @@ import ua.vald_zx.game.rat.race.card.components.Rotation
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.components.rotateLayout
 import ua.vald_zx.game.rat.race.card.isVertical
-import ua.vald_zx.game.rat.race.card.logic.BoardAction
 import ua.vald_zx.game.rat.race.card.logic.BoardState
+import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.visualize.color
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
@@ -45,7 +45,7 @@ fun CardDeck(
     size: DpSize,
     highlightedCardType: BoardCardType?,
     state: BoardState,
-    dispatch: (BoardAction) -> Unit
+    vm: BoardViewModel,
 ) {
     val rounding = min(size.width, size.height) / 10
     val blurRadius = min(size.width, size.height) / 10
@@ -72,12 +72,12 @@ fun CardDeck(
                     shape = RoundedCornerShape(rounding),
                     color = Color.White,
                 ).clickable {
-                    dispatch(BoardAction.SelectedCardType(cardType))
+                    vm.selectCard(cardType)
                 }
             }
     ) {
         val trueHeight = min(size.width, size.height)
-        val count = state.board?.cards[cardType].orEmpty().size
+        val count = state.board.cards[cardType].orEmpty().size
         if (count == 0) {
             val rounding = trueHeight / 16
             Box(

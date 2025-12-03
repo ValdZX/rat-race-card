@@ -2,46 +2,18 @@
 
 package ua.vald_zx.game.rat.race.card.screen.board
 
-import androidx.compose.animation.core.AnimationVector
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.TwoWayConverter
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateValue
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.TooltipState
-import androidx.compose.material3.rememberTooltipState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,12 +29,11 @@ import kotlinx.coroutines.launch
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
-import ua.vald_zx.game.rat.race.card.logic.BoardAction
 import ua.vald_zx.game.rat.race.card.logic.BoardState
+import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.RatPlayer1
 import ua.vald_zx.game.rat.race.card.resource.images.Send
-import ua.vald_zx.game.rat.race.card.screen.second.SendScreen
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
@@ -83,7 +54,7 @@ fun PlayerPoint(
     places: Map<Int, Place>,
     pointerState: PlayerPointState,
     state: BoardState,
-    dispatch: (BoardAction) -> Unit,
+    vm: BoardViewModel,
     spotSize: DpSize,
     index: Int,
     count: Int,
@@ -163,11 +134,10 @@ fun PlayerPoint(
             tooltip = {
                 if (pointerState.isCurrentPlayer) {
                     CurrentPlayerTooltip(
-                        pointerState,
-                        state,
-                        dispatch,
-                        tooltipState,
-                        coroutineScope
+                        pointerState = pointerState,
+                        vm = vm,
+                        tooltipState = tooltipState,
+                        coroutineScope = coroutineScope
                     )
                 } else {
                     PlayerTooltip(pointerState, tooltipState, coroutineScope) {
@@ -192,8 +162,7 @@ fun PlayerPoint(
 @Composable
 fun CurrentPlayerTooltip(
     pointerState: PlayerPointState,
-    state: BoardState,
-    dispatch: (BoardAction) -> Unit,
+    vm: BoardViewModel,
     tooltipState: TooltipState,
     coroutineScope: CoroutineScope,
 ) {
@@ -206,7 +175,11 @@ fun CurrentPlayerTooltip(
             onClick = { coroutineScope.launch { tooltipState.dismiss() } }) {
             Icon(Icons.Default.Close, contentDescription = null)
         }
-        ColorsSelector(state, dispatch)
+        val colorState = remember { mutableStateOf(pointerState.color) }
+        ColorsSelector(colorState)
+        LaunchedEffect(colorState.value) {
+            vm.changePlayerColor(colorState.value)
+        }
     }
 }
 
@@ -234,16 +207,16 @@ fun PlayerTooltip(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
-                Text(state.player.playerCard.profession)
+                Text(state.player.card.profession)
                 CashFlowField(
                     name = "Статки",
                     rainbow = GoldRainbow,
-                    value = state.player.state.totalExpenses.splitDecimal(),
+                    value = state.player.location.totalExpenses.splitDecimal(),
                     fontSize = 12.sp
                 )
                 CashFlowField(
                     name = "Cash Flow",
-                    value = state.player.state.cashFlow.splitDecimal(),
+                    value = state.player.location.cashFlow.splitDecimal(),
                     fontSize = 12.sp
                 )
             }

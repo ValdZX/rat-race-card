@@ -11,15 +11,14 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.datetime.LocalDateTime
+import kotlinx.coroutines.flow.update
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.rpc.krpc.ktor.server.Krpc
 import kotlinx.rpc.krpc.ktor.server.rpc
 import kotlinx.rpc.krpc.serialization.json.json
-import ua.vald_zx.game.rat.race.card.shared.BoardCardType
-import ua.vald_zx.game.rat.race.card.shared.CardLink
+import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import kotlin.time.Clock
@@ -38,21 +37,12 @@ fun main() {
     ).start(wait = true)
 }
 
-data class BoardState(
-    val name: String,
-    val createDateTime: LocalDateTime = Clock.System.now()
-        .toLocalDateTime(TimeZone.currentSystemDefault()),
-    val lastCheckTime: LocalDateTime = createDateTime,
-    val id: String = Uuid.random().toString(),
-    val cards: Map<BoardCardType, MutableList<Int>>,
-    val takenCard: CardLink? = null,
-    val discard: MutableMap<BoardCardType, MutableList<Int>> = mutableMapOf(),
-    val players: Map<String, Player> = mutableMapOf(),
-    val activePlayer: String = "",
-    val moveCount: Int = 0,
-)
 
-val boards = MutableStateFlow<List<MutableStateFlow<BoardState>>>(emptyList())
+val boards = MutableStateFlow<List<MutableStateFlow<Board>>>(emptyList())
+val players = MutableStateFlow<Map<String, MutableStateFlow<Player>>>(emptyMap())
+operator fun MutableStateFlow<Map<String, MutableStateFlow<Player>>>.get(key: String): Player {
+    return this.value[key]?.value ?: error("No player found for $key")
+}
 
 fun Application.module() {
     install(Krpc)
@@ -79,16 +69,16 @@ fun Application.module() {
                 RaceRatServiceImpl(uuid)
             }
             closeReason.invokeOnCompletion {
+                players.update {
+                    it.filter { (id, _) -> id != uuid }
+                }
                 boards.value.find { board ->
-                    board.value.players.keys.contains(uuid)
-                }?.let { board ->
-                    board.value =
-                        board.value.copy(players = board.value.players.toMutableMap().apply {
-                            this[uuid]?.let { player ->
-                                this[uuid] = player.copy(isInactive = true)
-                            }
-                        })
-                    validateBoard(board.value.id)
+                    board.value.playerIds.contains(uuid)
+                }?.let { boardState ->
+                    boardState.update { board ->
+                        board.copy(playerIds = board.playerIds - uuid)
+                    }
+                    validateBoard(boardState.value.id)
                 }
             }
         }
@@ -99,7 +89,7 @@ fun validateBoard(boardId: String) {
     boards.value.find { boardState -> boardState.value.id == boardId }?.let { boardState ->
         val board = boardState.value
         val timeZone = TimeZone.currentSystemDefault()
-        if (board.players.values.none { !it.isInactive }) {
+        if (players.value.none { (_, player) -> !player.value.isInactive }) {
             val now = Clock.System.now()
             val lastCheckTime = board.lastCheckTime.toInstant(timeZone)
             val duration: Duration = now - lastCheckTime

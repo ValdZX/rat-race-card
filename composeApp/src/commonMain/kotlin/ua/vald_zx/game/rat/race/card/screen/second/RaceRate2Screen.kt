@@ -2,38 +2,13 @@ package ua.vald_zx.game.rat.race.card.screen.second
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,30 +22,19 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import ua.vald_zx.game.rat.race.card.*
 import ua.vald_zx.game.rat.race.card.beans.Business
-import ua.vald_zx.game.rat.race.card.components.BalanceField
-import ua.vald_zx.game.rat.race.card.components.CashFlowField
-import ua.vald_zx.game.rat.race.card.components.FundsField
-import ua.vald_zx.game.rat.race.card.components.GoldRainbow
-import ua.vald_zx.game.rat.race.card.components.NegativeField
-import ua.vald_zx.game.rat.race.card.components.PositiveField
-import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
+import ua.vald_zx.game.rat.race.card.components.*
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect
 import ua.vald_zx.game.rat.race.card.logic.total
-import ua.vald_zx.game.rat.race.card.playCoin
-import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Menu
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
-import ua.vald_zx.game.rat.race.card.screen.board.Board2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.page.BusinessListPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.FundsPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.SharesPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.StatePage
-import ua.vald_zx.game.rat.race.card.splitDecimal
-import ua.vald_zx.game.rat.race.card.tts
-import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
 
 class RaceRate2Screen : Screen {
@@ -102,10 +66,7 @@ class RaceRate2Screen : Screen {
                     modifier = Modifier.align(Alignment.TopEnd)
                         .size(48.dp)
                         .clip(CircleShape)
-                        .combinedClickable(
-                            onLongClick = {
-                                navigator?.push(Board2Screen())
-                            }, onClick = { navigator?.push(SettingsScreen()) })
+                        .combinedClickable(onClick = { navigator?.push(SettingsScreen()) })
                         .padding(8.dp),
                 )
                 Column(

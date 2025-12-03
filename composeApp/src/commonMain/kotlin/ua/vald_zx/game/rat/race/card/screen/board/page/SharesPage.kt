@@ -12,11 +12,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
-import ua.vald_zx.game.rat.race.card.label
-import ua.vald_zx.game.rat.race.card.logic.CardState
+import ua.vald_zx.game.rat.race.card.shared.Player
+import ua.vald_zx.game.rat.race.card.shared.SharesType
 
 @Composable
-fun SharesPage(state: CardState) {
+fun SharesPage(state: Player) {
     Column {
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(state.sharesList) { shares ->
@@ -39,4 +39,8 @@ fun SharesPage(state: CardState) {
             }
         }
     }
+}
+
+fun SharesType.label(): String {
+    return name.replace("SCT", "CST").replace("GS", "GC")
 }

@@ -4,7 +4,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
 val decks = BoardCardType.entries.associate { type ->
     when (type) {
-        BoardCardType.Chance -> type to сhanceCards
+        BoardCardType.Chance -> type to chanceCards
         BoardCardType.SmallBusiness -> type to smallBusinessCards
         BoardCardType.MediumBusiness -> type to mediumBusinessCards
         BoardCardType.BigBusiness -> type to bigBusinessCards

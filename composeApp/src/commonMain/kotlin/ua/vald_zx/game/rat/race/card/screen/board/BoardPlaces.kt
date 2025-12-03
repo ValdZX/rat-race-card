@@ -4,12 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -31,220 +26,24 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import dev.lennartegb.shadows.boxShadow
-import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
-import rat_race_card.composeapp.generated.resources.Bubbleboddy
-import rat_race_card.composeapp.generated.resources.Res
-import rat_race_card.composeapp.generated.resources.business_failure
-import rat_race_card.composeapp.generated.resources.child
-import rat_race_card.composeapp.generated.resources.detective
-import rat_race_card.composeapp.generated.resources.divorce
-import rat_race_card.composeapp.generated.resources.love
-import rat_race_card.composeapp.generated.resources.vacation
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.OutlinedText
 import ua.vald_zx.game.rat.race.card.components.Rotation
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.components.rotateLayout
 import ua.vald_zx.game.rat.race.card.currentPlayerId
-import ua.vald_zx.game.rat.race.card.logic.BoardAction
-import ua.vald_zx.game.rat.race.card.logic.BoardLayer
 import ua.vald_zx.game.rat.race.card.logic.BoardState
-import ua.vald_zx.game.rat.race.card.logic.moveTo
+import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Money
+import ua.vald_zx.game.rat.race.card.shared.BoardLayer
+import ua.vald_zx.game.rat.race.card.shared.PlaceType
+import ua.vald_zx.game.rat.race.card.shared.moveTo
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
-
-@Serializable
-sealed class PlaceType(val name: String, val isBig: Boolean = false) {
-    data object Start : PlaceType("Start")
-    data object Salary : PlaceType("Salary", isBig = true)
-
-    data object Business : PlaceType("Business")
-    data object BigBusiness : PlaceType("BigBusiness")
-    data object Shopping : PlaceType("Shopping")
-
-    data object Chance : PlaceType("Chance")
-    data object Expenses : PlaceType("Expenses")
-
-    data object Store : PlaceType("Store")
-    data object Bankruptcy : PlaceType("Bankruptcy", isBig = true)
-    data object Child : PlaceType("Child", isBig = true)
-    data object Love : PlaceType("Love")
-    data object Rest : PlaceType("Rest")
-    data object Divorce : PlaceType("Divorce")
-    data object Desire : PlaceType("Desire")
-    data object Deputy : PlaceType("Deputy")
-    data object TaxInspection : PlaceType("TaxInspection", isBig = true)
-    data object Exaltation : PlaceType("Exaltation")
-}
-
-
-val inPlaces = listOf(
-    PlaceType.Salary,
-    PlaceType.Start,
-    PlaceType.Business,
-    PlaceType.Shopping,
-    PlaceType.Chance,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Shopping,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Business,
-    PlaceType.Bankruptcy,
-    PlaceType.Store,
-    PlaceType.Expenses,
-    PlaceType.Business,
-    PlaceType.Chance,
-    PlaceType.Shopping,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Expenses,
-    PlaceType.Store,
-
-    PlaceType.Salary,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Love,
-    PlaceType.Shopping,
-    PlaceType.Chance,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Rest,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Expenses,
-    PlaceType.Store,
-
-    PlaceType.Salary,
-    PlaceType.Shopping,
-    PlaceType.Chance,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Shopping,
-    PlaceType.Business,
-    PlaceType.Child,
-    PlaceType.Expenses,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Divorce,
-    PlaceType.Shopping,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Expenses,
-
-    PlaceType.Salary,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Business,
-    PlaceType.Exaltation,
-    PlaceType.Expenses,
-    PlaceType.Chance,
-    PlaceType.Shopping,
-    PlaceType.Business,
-    PlaceType.Love,
-    PlaceType.Expenses,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Expenses,
-)
-
-val outPlaces = listOf(
-    PlaceType.Salary,
-    PlaceType.Start,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.BigBusiness,
-    PlaceType.Desire,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Desire,
-    PlaceType.BigBusiness,
-    PlaceType.Store,
-    PlaceType.Bankruptcy,
-    PlaceType.Chance,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Desire,
-    PlaceType.BigBusiness,
-    PlaceType.Chance,
-    PlaceType.Store,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Desire,
-    PlaceType.Salary,
-
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.BigBusiness,
-    PlaceType.Deputy,
-    PlaceType.Desire,
-    PlaceType.Chance,
-    PlaceType.Store,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.BigBusiness,
-    PlaceType.Deputy,
-    PlaceType.Desire,
-    PlaceType.Chance,
-    PlaceType.Store,
-    PlaceType.Salary,
-
-    PlaceType.Chance,
-    PlaceType.Desire,
-    PlaceType.BigBusiness,
-    PlaceType.Shopping,
-    PlaceType.Desire,
-    PlaceType.Store,
-    PlaceType.Chance,
-    PlaceType.Desire,
-    PlaceType.BigBusiness,
-    PlaceType.Chance,
-    PlaceType.TaxInspection,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Desire,
-    PlaceType.Store,
-    PlaceType.BigBusiness,
-    PlaceType.Desire,
-    PlaceType.Chance,
-    PlaceType.Shopping,
-    PlaceType.Desire,
-    PlaceType.Store,
-    PlaceType.Salary,
-
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.BigBusiness,
-    PlaceType.Deputy,
-    PlaceType.Desire,
-    PlaceType.Chance,
-    PlaceType.Store,
-    PlaceType.Desire,
-    PlaceType.Shopping,
-    PlaceType.Chance,
-    PlaceType.Deputy,
-    PlaceType.Desire,
-    PlaceType.Chance,
-    PlaceType.Store,
-)
 
 private val PlaceType.text: String
     get() {
@@ -294,7 +93,7 @@ private fun PlaceType.color(): Color {
 @Composable
 fun BoxScope.PlaceContent(
     place: Place,
-    dispatch: (BoardAction) -> Unit,
+    vm: BoardViewModel,
     state: BoardState,
     layer: BoardLayer,
     index: Int,
@@ -307,11 +106,12 @@ fun BoxScope.PlaceContent(
         PlaceType.Salary -> {
             val blurRadius = min(place.size.width, place.size.height) / 5
             val spreadRadius = min(place.size.width, place.size.height) / 15
-            val canTakeSalary = remember(state.takeSalaryPosition) {
-                state.takeSalaryPosition != null &&
+            val salaryPosition = state.board.salaryPosition
+            val canTakeSalary = remember(salaryPosition) {
+                salaryPosition != null &&
                         layer.level == state.layer.level &&
                         index == moveTo(
-                    position = state.takeSalaryPosition,
+                    position = salaryPosition,
                     cellCount = layer.cellCount,
                     toMove = route.offset
                 )
@@ -328,7 +128,7 @@ fun BoxScope.PlaceContent(
                     }
                     .background(place.type.color())
                     .clickable(canTakeSalary) {
-                        dispatch(BoardAction.TakeSalary)
+                        vm.takeSalary()
                     }
             ) {
                 Image(Images.Money, contentDescription = null)
@@ -457,15 +257,13 @@ fun BoxScope.PlaceContent(
 
         else -> {
             Box(Modifier.fillMaxSize().background(place.type.color()).clickable {
-                dispatch(
-                    BoardAction.ChangePosition(
-                        moveTo(
-                            position = index,
-                            cellCount = layer.cellCount,
-                            toMove = -route.offset
-                        )
-                    )
-                )
+//                vm.changePosition(
+//                    moveTo(
+//                        position = index,
+//                        cellCount = layer.cellCount,
+//                        toMove = -route.offset
+//                    )
+//                )
             }) {
                 OutlinedText(
                     text = place.type.text,
@@ -495,7 +293,7 @@ fun BoxScope.PlaceContent(
 @Composable
 fun BoxScope.Places(
     state: BoardState,
-    dispatch: (BoardAction) -> Unit,
+    vm: BoardViewModel,
     layer: BoardLayer,
     size: DpSize,
     route: BoardRoute,
@@ -535,21 +333,21 @@ fun BoxScope.Places(
                     state = state,
                     route = route,
                     layer = layer,
-                    dispatch = dispatch,
+                    vm = vm,
                 )
             }
         }
         val players by players.collectAsState()
-        val points = remember(players, route, state.board?.activePlayer) {
-            players.filter { layer.level == it.state.level }.map {
+        val points = remember(players, route, state.board.activePlayer) {
+            players.filter { layer.level == it.location.level }.map {
                 PlayerPointState(
-                    position = moveTo(it.state.position, layer.cellCount, route.offset),
+                    position = moveTo(it.location.position, layer.cellCount, route.offset),
                     color = it.attrs.color,
-                    level = it.state.level,
-                    name = it.playerCard.profession,
+                    level = it.location.level,
+                    name = it.card.profession,
                     player = it,
                     isCurrentPlayer = it.id == currentPlayerId,
-                    isActivePlayer = it.id == state.board?.activePlayer,
+                    isActivePlayer = it.id == state.board.activePlayer,
                 )
             }
         }
@@ -559,7 +357,7 @@ fun BoxScope.Places(
                     places = places.toMap(),
                     pointerState = pointerState,
                     state = state,
-                    dispatch = dispatch,
+                    vm = vm,
                     spotSize = DpSize(spotWidth, spotHeight),
                     index = index,
                     count = gPoints.size

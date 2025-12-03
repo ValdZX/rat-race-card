@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import ua.vald_zx.game.rat.race.card.shared.PlaceType
 
 fun calculatePointerOffset(
     pointerWidth: Dp,

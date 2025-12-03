@@ -3,13 +3,7 @@ package ua.vald_zx.game.rat.race.card.shared
 import kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 
 fun <T> List<T>.replaceItem(item: T, newItem: T): List<T> {
     val list = toMutableList()
@@ -51,4 +45,31 @@ fun <T1, T2, R> combineStates(flow: StateFlow<T1>, flow2: StateFlow<T2>, transfo
         getValue = { transform(flow.value, flow2.value) },
         flow = combine(flow, flow2) { a, b -> transform(a, b) }
     )
+}
+
+fun <T> List<T>.remove(item: T): List<T> {
+    val index = indexOf(item)
+    return if (index >= 0) {
+        val newList = toMutableList()
+        newList.remove(item)
+        newList
+    } else {
+        this
+    }
+}
+
+fun <T> List<T>.replace(item: T, newItem: T): List<T> {
+    val index = indexOf(item)
+    return if (index >= 0) {
+        val newList = toMutableList()
+        newList.remove(item)
+        newList.add(index, newItem)
+        newList
+    } else {
+        this
+    }
+}
+
+fun Long.emptyIfZero(): String {
+    return if (this == 0L) "" else this.toString()
 }

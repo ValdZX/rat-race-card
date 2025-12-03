@@ -2,15 +2,7 @@ package ua.vald_zx.game.rat.race.card.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,40 +10,42 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.datetime.format
+import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.TextButton
 import ua.vald_zx.game.rat.race.card.dateFullDotsFormat
-import ua.vald_zx.game.rat.race.card.logic.BoardAction
-import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
-import ua.vald_zx.game.rat.race.card.service
+import ua.vald_zx.game.rat.race.card.screen.board.InitPlayerScreen
+import ua.vald_zx.game.rat.race.card.screen.board.cards.decks
 import ua.vald_zx.game.rat.race.card.shared.BoardId
+import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 
 class BoardListScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
+        val service = koinInject<RaceRatService>()
+        val coroutineScope = rememberCoroutineScope()
+        val navigator = LocalNavigator.currentOrThrow
         var boardList by remember { mutableStateOf(emptyList<BoardId>()) }
         var newBoardDialog by remember { mutableStateOf(false) }
         LaunchedEffect(Unit) {
-            boardList = service?.getBoards().orEmpty()
-            service?.observeBoards()?.onEach {
+            boardList = service.getBoards()
+            service.observeBoards().onEach {
                 boardList = it
-            }?.launchIn(this)
+            }.launchIn(this)
         }
         Column(
             modifier = Modifier
@@ -75,7 +69,10 @@ class BoardListScreen : Screen {
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.primaryContainer)
                             .clickable {
-                                raceRate2BoardStore.dispatch(BoardAction.SelectBoard(board.id))
+                                coroutineScope.launch {
+                                    val selectedBoard = service.selectBoard(board.id)
+                                    navigator.push(InitPlayerScreen(selectedBoard))
+                                }
                             }.padding(8.dp)
                     ) {
                         Text(text = board.name)
@@ -108,7 +105,15 @@ class BoardListScreen : Screen {
                             newBoardDialog = false
                         }
                         TextButton("Створити стіл", enabled = boardName.isNotEmpty()) {
-                            raceRate2BoardStore.dispatch(BoardAction.CreateBoard(boardName))
+                            coroutineScope.launch {
+                                val board = service.createBoard(
+                                    name = boardName,
+                                    decks = decks.map { (type, map) ->
+                                        type to map.size
+                                    }.toMap()
+                                )
+                                navigator.push(InitPlayerScreen(board))
+                            }
                         }
                     }
                 }

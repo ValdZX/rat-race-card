@@ -1,7 +1,7 @@
 package ua.vald_zx.game.rat.race.card.screen.board.cards
 
-import ua.vald_zx.game.rat.race.card.screen.board.BoardCard
-import ua.vald_zx.game.rat.race.card.screen.board.ShopType
+import ua.vald_zx.game.rat.race.card.shared.BoardCard
+import ua.vald_zx.game.rat.race.card.shared.ShopType
 
 val shoppingCards = mapOf(
     1 to BoardCard.Shopping(

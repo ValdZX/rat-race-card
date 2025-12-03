@@ -13,9 +13,6 @@ sealed class GlobalEvent {
 
     @Serializable
     data class PlayerChanged(val player: Player) : GlobalEvent()
-
-    @Serializable
-    data class RollDice(val playerId: String, val dice: Int) : GlobalEvent()
 }
 
 @Serializable
@@ -27,39 +24,58 @@ sealed class Event {
     data class PlayerChanged(val player: Player) : Event()
 
     @Serializable
-    data class RollDice(val dice: Int) : Event()
+    data class BoardChanged(val board: Board) : Event()
 
     @Serializable
-    data class BoardChanged(val board: Board) : Event()
+    data class LoanAdded(val balance: Long) : Event()
+
+    @Serializable
+    data class DepositWithdraw(val balance: Long) : Event()
+
+    @Serializable
+    data class SubCash(val amount: Long) : Event()
+
+    @Serializable
+    data class ConfirmDismissal(val business: Business) : Event()
+
+    @Serializable
+    data class ConfirmSellingAllBusiness(val business: Business) : Event()
 }
 
 @Serializable
-data class Instance(val id: String, val boardId: String)
+data class Instance(val playerId: String, val board: Board?, val player: Player?)
 
 @Rpc
 interface RaceRatService {
     suspend fun hello(id: String = ""): Instance
+    suspend fun closeSession()
     suspend fun getBoards(): List<BoardId>
     fun observeBoards(): Flow<List<BoardId>>
     suspend fun createBoard(name: String, decks: Map<BoardCardType, Int>): Board
-    suspend fun selectBoard(boardId: String): Board?
-    suspend fun makePlayerOnBoard()
-    suspend fun updatePlayerCard(playerCard: PlayerCard)
-    suspend fun updateState(state: PlayerState)
+    suspend fun selectBoard(boardId: String): Board
     suspend fun updateAttributes(attrs: PlayerAttributes)
+    suspend fun getPlayer(): Player
+    suspend fun makePlayer(
+        name: String,
+        gender: Gender,
+        color: Long,
+    ): Player
+
     fun eventsObserve(): Flow<Event>
-    suspend fun getPlayer(id: String): Player?
-    suspend fun getPlayers(ids: Set<String>): List<Player>
+    suspend fun getPlayers(): List<Player>
+
     suspend fun sendMoney(receiverId: String, amount: Long)
 
-    suspend fun rollDice(): Int
+    suspend fun rollDice()
+    suspend fun move()
 
-    suspend fun changePosition(position: Int, level: Int)
-
-    suspend fun takeCard(cardType: BoardCardType)
     suspend fun discardPile()
+    suspend fun takeCard(cardType: BoardCardType)
+    suspend fun takeSalary()
+    suspend fun buyBusiness(business: Business)
 
-    suspend fun nextPlayer()
-
-    suspend fun closeSession()
+    suspend fun dismissalConfirmed(business: Business)
+    suspend fun sellingAllBusinessConfirmed(business: Business)
+    suspend fun minusCash(price: Long)
+    suspend fun buy(card: BoardCard.Shopping)
 }

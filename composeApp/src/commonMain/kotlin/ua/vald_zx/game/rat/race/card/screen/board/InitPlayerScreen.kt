@@ -1,26 +1,13 @@
 package ua.vald_zx.game.rat.race.card.screen.board
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,23 +18,22 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
-import ua.vald_zx.game.rat.race.card.beans.Business
-import ua.vald_zx.game.rat.race.card.beans.BusinessType
+import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
-import ua.vald_zx.game.rat.race.card.logic.CardAction
-import ua.vald_zx.game.rat.race.card.raceRate2BoardStore
-import ua.vald_zx.game.rat.race.card.service
+import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Gender
+import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 
-class InitPlayerScreen : Screen {
+class InitPlayerScreen(private val board: Board) : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val coroutineScope = rememberCoroutineScope()
-        val state by raceRate2BoardStore.observeState().collectAsState()
+        val service = koinInject<RaceRatService>()
+        val colorState = remember { mutableStateOf(0L) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -57,7 +43,7 @@ class InitPlayerScreen : Screen {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                ColorsSelector(state, raceRate2BoardStore::dispatch)
+                ColorsSelector(colorState)
             }
             var playerName by remember { mutableStateOf("") }
             OutlinedTextField(
@@ -73,11 +59,11 @@ class InitPlayerScreen : Screen {
                 iconSize = 100.dp,
                 femaleStyle = GenderOptionStyle.FemaleDefault.copy(
                     effectOrigin = TransformOrigin(1f, 0.5f),
-                    fillColor = Color(state.color)
+                    fillColor = Color(colorState.value)
                 ),
                 maleStyle = GenderOptionStyle.MaleDefault.copy(
                     effectOrigin = TransformOrigin(0f, 0.5f),
-                    fillColor = Color(state.color)
+                    fillColor = Color(colorState.value)
                 ),
                 onGenderChange = {
                     currentGender = it
@@ -85,25 +71,12 @@ class InitPlayerScreen : Screen {
             )
             Button("Далі", enabled = playerName.isNotEmpty()) {
                 coroutineScope.launch {
-                    state.currentPlayer?.playerCard?.let { card ->
-                        val professionCard = card.copy(
-                            name = playerName,
-                            salary = 1234,
-                            profession = "work"
-                        )
-                        service?.updatePlayerCard(professionCard)
-                        raceRate2BoardStore.card.dispatch(
-                            CardAction.BuyBusiness(
-                                Business(
-                                    type = BusinessType.WORK,
-                                    name = professionCard.profession,
-                                    price = 0,
-                                    profit = professionCard.salary
-                                )
-                            )
-                        )
-                    }
-                    navigator.push(Board2Screen())
+                    val player = service.makePlayer(
+                        name = playerName,
+                        gender = currentGender,
+                        color = colorState.value
+                    )
+                    navigator.push(BoardScreen(board, player))
                 }
             }
         }
