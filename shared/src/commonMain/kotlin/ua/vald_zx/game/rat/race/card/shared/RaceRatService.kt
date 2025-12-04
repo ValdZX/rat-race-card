@@ -63,6 +63,7 @@ interface RaceRatService {
 
     fun eventsObserve(): Flow<Event>
     suspend fun getPlayers(): List<Player>
+    suspend fun getBoard(): Board
 
     suspend fun sendMoney(receiverId: String, amount: Long)
 

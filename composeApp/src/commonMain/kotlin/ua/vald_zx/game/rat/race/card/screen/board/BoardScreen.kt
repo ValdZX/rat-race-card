@@ -136,7 +136,7 @@ class BoardScreen(
             parameters = { parametersOf(board, player) }
         )
         val state by vm.uiState.collectAsState()
-        var dice by remember { mutableStateOf(0) }
+        var dice by remember { mutableStateOf(6) }
         val scaffoldState = rememberBottomSheetState(
             initialDetent = HalfExpanded,
             detents = listOf(HalfExpanded, ContentExpanded)
@@ -352,7 +352,7 @@ fun BoxWithConstraintsScope.Dice(
     }
     val size = min(maxWidth, maxHeight) / 6
     AnimatedVisibility(
-        visible = dice != 0,
+        visible = dice != 0 || state.canRoll,
         enter = fadeIn(),
         exit = fadeOut(),
         modifier = Modifier.align(Alignment.Center)

@@ -40,6 +40,7 @@ class BoardViewModel(
     init {
         viewModelScope.launch {
             players.value = service.getPlayers()
+            _uiState.update { it.copy(board = service.getBoard()) }
             service.eventsObserve().collect { event ->
                 when (event) {
                     is Event.MoneyIncome -> {

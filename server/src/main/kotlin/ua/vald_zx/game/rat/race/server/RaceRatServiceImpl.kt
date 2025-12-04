@@ -90,6 +90,9 @@ class RaceRatServiceImpl(
                     this.remove(id)
                     this[uuid] = playerState
                 }
+                changeBoard {
+                    copy(playerIds = playerIds - id + uuid)
+                }
                 playerStateSubJob?.cancel()
                 playerStateSubJob = launch {
                     playerState.collect { player ->
@@ -180,6 +183,10 @@ class RaceRatServiceImpl(
         return boardState?.value?.playerIds?.map { playerId ->
             players.value[playerId]?.value ?: error("No player found for $playerId")
         }?.toList().orEmpty()
+    }
+
+    override suspend fun getBoard(): Board {
+        return board
     }
 
     override suspend fun sendMoney(receiverId: String, amount: Long) {
