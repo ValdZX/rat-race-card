@@ -20,7 +20,7 @@ val baseModule = module {
             installKrpc()
         }
     }
-    factory {
+    single {
         get<HttpClient>().rpc {
             url("ws://192.168.0.159:8080/api")
             rpcConfig { serialization { json() } }

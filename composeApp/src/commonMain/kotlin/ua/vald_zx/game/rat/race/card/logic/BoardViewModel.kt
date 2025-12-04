@@ -38,42 +38,45 @@ class BoardViewModel(
     val actions = _actions.receiveAsFlow()
 
     init {
-        service.eventsObserve().onEach { event ->
-            when (event) {
-                is Event.MoneyIncome -> {
+        viewModelScope.launch {
+            players.value = service.getPlayers()
+            service.eventsObserve().collect { event ->
+                when (event) {
+                    is Event.MoneyIncome -> {
 //                    card.dispatch(
 //                        ReceivedCash(
 //                            payerId = event.playerId,
 //                            amount = event.amount
 //                        )
 //                    )
-                }
-
-                is Event.PlayerChanged -> {
-                    val playersList = players.value
-                    val changedPlayer = event.player
-                    val oldPlayer = playersList.find { it.id == changedPlayer.id }
-                    if (oldPlayer != null) {
-                        players.value = playersList.replaceItem(oldPlayer, event.player)
-                    } else {
-                        players.value += event.player
                     }
-                    if (changedPlayer.id == currentPlayerId) {
-                        _uiState.update { it.copy(player = changedPlayer) }
+
+                    is Event.PlayerChanged -> {
+                        val playersList = players.value
+                        val changedPlayer = event.player
+                        val oldPlayer = playersList.find { it.id == changedPlayer.id }
+                        if (oldPlayer != null) {
+                            players.value = playersList.replaceItem(oldPlayer, event.player)
+                        } else {
+                            players.value += event.player
+                        }
+                        if (changedPlayer.id == currentPlayerId) {
+                            _uiState.update { it.copy(player = changedPlayer) }
+                        }
                     }
-                }
 
-                is Event.BoardChanged -> {
-                    _uiState.update { it.copy(board = event.board) }
-                }
+                    is Event.BoardChanged -> {
+                        _uiState.update { it.copy(board = event.board) }
+                    }
 
-                is Event.ConfirmDismissal -> TODO()
-                is Event.ConfirmSellingAllBusiness -> TODO()
-                is Event.DepositWithdraw -> TODO()
-                is Event.LoanAdded -> TODO()
-                is Event.SubCash -> TODO()
+                    is Event.ConfirmDismissal -> TODO()
+                    is Event.ConfirmSellingAllBusiness -> TODO()
+                    is Event.DepositWithdraw -> TODO()
+                    is Event.LoanAdded -> TODO()
+                    is Event.SubCash -> TODO()
+                }
             }
-        }.launchIn(viewModelScope)
+        }
     }
 
     fun discardPile() {

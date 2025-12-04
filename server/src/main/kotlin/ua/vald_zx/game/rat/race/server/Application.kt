@@ -12,6 +12,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
@@ -19,6 +20,7 @@ import kotlinx.rpc.krpc.ktor.server.Krpc
 import kotlinx.rpc.krpc.ktor.server.rpc
 import kotlinx.rpc.krpc.serialization.json.json
 import ua.vald_zx.game.rat.race.card.shared.Board
+import ua.vald_zx.game.rat.race.card.shared.GlobalEvent
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import kotlin.time.Clock
@@ -69,16 +71,12 @@ fun Application.module() {
                 RaceRatServiceImpl(uuid)
             }
             closeReason.invokeOnCompletion {
-                players.update {
-                    it.filter { (id, _) -> id != uuid }
-                }
-                boards.value.find { board ->
-                    board.value.playerIds.contains(uuid)
-                }?.let { boardState ->
-                    boardState.update { board ->
-                        board.copy(playerIds = board.playerIds - uuid)
+                launch {
+                    players.value[uuid]?.let { playerFlow ->
+                        val player = playerFlow.value.copy(isInactive = true)
+                        playerFlow.update { player }
+                        getGlobalEventBus(player.boardId).emit(GlobalEvent.PlayerChanged(player))
                     }
-                    validateBoard(boardState.value.id)
                 }
             }
         }

@@ -21,7 +21,7 @@ import kotlin.uuid.Uuid
 
 internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
-private val globalEventBusMap = mutableMapOf<String, MutableSharedFlow<GlobalEvent>>()
+val globalEventBusMap = mutableMapOf<String, MutableSharedFlow<GlobalEvent>>()
 fun getGlobalEventBus(boardId: String): MutableSharedFlow<GlobalEvent> {
     return globalEventBusMap.getOrPut(boardId) { MutableSharedFlow() }
 }
@@ -93,7 +93,7 @@ class RaceRatServiceImpl(
                 playerStateSubJob?.cancel()
                 playerStateSubJob = launch {
                     playerState.collect { player ->
-                        eventBus.emit(PlayerChanged(player))
+                        globalEventBus.emit(GlobalEvent.PlayerChanged(player))
                     }
                 }
                 invalidateNextPlayer(oldBoard.activePlayer)
@@ -127,7 +127,7 @@ class RaceRatServiceImpl(
         )
         val boardFlow = MutableStateFlow(board)
         boards.value = boards.value.toMutableList().apply { add(boardFlow) }
-        this@RaceRatServiceImpl.boardState = boardFlow
+        boardState = boardFlow
         return board
     }
 
@@ -156,6 +156,9 @@ class RaceRatServiceImpl(
                 )
             )//TODO profession card
         )
+        players.value = players.value.toMutableMap().apply {
+            this[uuid] = MutableStateFlow(newPlayer)
+        }
         changeBoard {
             copy(playerIds = playerIds + uuid)
         }
@@ -355,7 +358,9 @@ class RaceRatServiceImpl(
 
     private suspend fun changePlayer(todo: suspend Player.() -> Player) {
         players.value[uuid]?.let { playerState ->
-            playerState.value = playerState.value.todo()
+            val player = playerState.value.todo()
+            playerState.value = player
+            globalEventBus.emit(GlobalEvent.PlayerChanged(player))
         }
     }
 

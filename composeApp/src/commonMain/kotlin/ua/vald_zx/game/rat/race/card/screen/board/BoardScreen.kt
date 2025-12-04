@@ -621,8 +621,14 @@ fun BoxScope.ColorsSelector(
 ) {
     val players by players.collectAsState()
     FlowRow(modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 64.dp)) {
-        (pointerColors - players.filter { !it.isCurrentPlayer }
-            .map { it.attrs.color }.toSet()).forEach { color ->
+        val colors = pointerColors - players.filter { !it.isCurrentPlayer }
+            .map { it.attrs.color }.toSet()
+        LaunchedEffect(colors) {
+            if(!colors.contains(colorState.value)) {
+                colorState.value = colors.first()
+            }
+        }
+        colors.forEach { color ->
             RadioButton(
                 selected = color == colorState.value,
                 onClick = {
