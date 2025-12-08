@@ -102,7 +102,7 @@ fun BoxScope.ChanceCardFront(
 ) {
     if (isActive) {
         Button("Pass") {
-            vm.discardPile()
+            vm.pass()
             discardCard()
         }
     }
@@ -527,6 +527,7 @@ fun BoxWithConstraintsScope.EventStoreCardFront(
 ) {
     if (isActive) {
         Button("Pass") {
+            vm.pass()
             discardCard()
         }
     }
@@ -604,7 +605,10 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                 ) {
                     ElevatedButton(
                         modifier = Modifier,
-                        onClick = { discardCard() },
+                        onClick = {
+                            vm.pass()
+                            discardCard()
+                        },
                         content = {
                             Text("Пас", fontSize = unitTS * 14)
                         },
@@ -634,6 +638,7 @@ fun BoxWithConstraintsScope.DeputyCardFront(
 ) {
     if (isActive) {
         Button("Pass") {
+            vm.pass()
             discardCard()
         }
     }

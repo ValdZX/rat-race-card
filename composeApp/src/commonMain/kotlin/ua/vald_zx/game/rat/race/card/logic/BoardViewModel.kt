@@ -2,6 +2,7 @@ package ua.vald_zx.game.rat.race.card.logic
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.aakira.napier.Napier
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,11 +18,15 @@ data class BoardState(
     val layer: BoardLayer = player.location.level.toLayer()
     val color: Long = player.attrs.color
     val currentPlayerIsActive: Boolean = currentPlayerId == board.activePlayer
-    val canRoll: Boolean = board.canRoll && currentPlayerIsActive
+    val canRoll: Boolean = board.canRoll &&
+            currentPlayerIsActive
+
+    init {
+        Napier.d("BoardState: $this")
+    }
 }
 
 sealed class BoardUiAction {
-    data class ShowDice(val dice: Int) : BoardUiAction()
 }
 
 class BoardViewModel(
@@ -70,19 +75,30 @@ class BoardViewModel(
                         _uiState.update { it.copy(board = event.board) }
                     }
 
-                    is Event.ConfirmDismissal -> TODO()
-                    is Event.ConfirmSellingAllBusiness -> TODO()
-                    is Event.DepositWithdraw -> TODO()
-                    is Event.LoanAdded -> TODO()
-                    is Event.SubCash -> TODO()
+                    is Event.ConfirmDismissal -> {
+                        //todo
+                    }
+                    is Event.ConfirmSellingAllBusiness -> {
+                        //todo
+                    }
+                    is Event.DepositWithdraw -> {
+                        //todo
+                    }
+                    is Event.LoanAdded -> {
+                        //todo
+                    }
+
+                    is Event.SubCash -> {
+                        //todo
+                    }
                 }
             }
         }
     }
 
-    fun discardPile() {
+    fun pass() {
         viewModelScope.launch {
-            service.discardPile()
+            service.next()
         }
     }
 
@@ -107,12 +123,13 @@ class BoardViewModel(
     fun sideExpenses(price: Long) {
         viewModelScope.launch {
             service.minusCash(price)
+            service.next()
         }
     }
 
     fun buy(card: BoardCard.Shopping) {
         viewModelScope.launch {
-            service.buy(card)
+            service.buyThing(card)
         }
     }
 

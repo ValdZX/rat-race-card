@@ -18,14 +18,15 @@ data class Board(
     val lastCheckTime: LocalDateTime = createDateTime,
     val id: String,
     val cards: Map<BoardCardType, List<Int>>,
-    val canRoll: Boolean = false,
     val canTakeCard: BoardCardType? = null,
     val takenCard: CardLink? = null,
     val discard: Map<BoardCardType, List<Int>> = emptyMap(),
     val playerIds: Set<String> = emptySet(),
     val activePlayer: String = "",
     val moveCount: Int = 0,
+    val canRoll: Boolean = true,
     val dice: Int = 6,
+    val diceRolling: Boolean = false,
     val salaryPosition: Int? = null,
 )
 

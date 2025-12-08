@@ -1,15 +1,13 @@
 package ua.vald_zx.game.rat.race.card.screen.board
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.*
@@ -37,9 +35,16 @@ import com.composables.core.BottomSheet
 import com.composables.core.SheetDetent
 import com.composables.core.rememberBottomSheetState
 import com.russhwolf.settings.set
+import dev.lennartegb.shadows.boxShadow
 import io.github.aakira.napier.Napier
-import io.github.alexzhirkevich.compottie.*
-import kotlinx.coroutines.*
+import io.github.alexzhirkevich.compottie.LottieCompositionSpec
+import io.github.alexzhirkevich.compottie.rememberLottieAnimatable
+import io.github.alexzhirkevich.compottie.rememberLottieComposition
+import io.github.alexzhirkevich.compottie.rememberLottiePainter
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -49,7 +54,6 @@ import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.logic.BoardState
-import ua.vald_zx.game.rat.race.card.logic.BoardUiAction
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.resource.Images
@@ -111,16 +115,16 @@ val discardPilesCoordinatesMap = mutableMapOf<BoardCardType, MutableState<Pair<D
 val littleDetailsHeight
     get() = 100.dp + statusBarHeightState.value + navigationBarHeightState.value
 var sheetContentSize = mutableStateOf(0.dp)
-val HalfExpanded: SheetDetent =
-    SheetDetent("hidden") { _, _ -> littleDetailsHeight + statusBarHeightState.value + navigationBarHeightState.value }
-val ContentExpanded: SheetDetent =
-    SheetDetent("content") { containerHeight, _ ->
-        if (sheetContentSize.value == 0.dp) {
-            containerHeight
-        } else {
-            sheetContentSize.value
-        }
+val HalfExpanded = SheetDetent("hidden") { _, _ ->
+    littleDetailsHeight + statusBarHeightState.value + navigationBarHeightState.value
+}
+val ContentExpanded = SheetDetent("content") { containerHeight, _ ->
+    if (sheetContentSize.value == 0.dp) {
+        containerHeight
+    } else {
+        sheetContentSize.value
     }
+}
 
 class BoardScreen(
     private val board: Board,
@@ -136,7 +140,6 @@ class BoardScreen(
             parameters = { parametersOf(board, player) }
         )
         val state by vm.uiState.collectAsState()
-        var dice by remember { mutableStateOf(6) }
         val scaffoldState = rememberBottomSheetState(
             initialDetent = HalfExpanded,
             detents = listOf(HalfExpanded, ContentExpanded)
@@ -145,7 +148,7 @@ class BoardScreen(
         Box {
             BottomSheetNavigator {
                 Box(modifier = Modifier.padding(bottom = littleDetailsHeight)) {
-                    BoardScreenContent(state, vm, dice)
+                    BoardScreenContent(state, vm)
                 }
                 BottomSheet(state = scaffoldState) {
                     Box(Modifier.navigationBarsPadding().onSizeChanged { size ->
@@ -186,17 +189,6 @@ class BoardScreen(
                 Box(modifier = Modifier.statusBarsPadding())
             }
         }
-        LaunchedEffect(Unit) {
-            vm.actions.collect { event ->
-                when (event) {
-                    is BoardUiAction.ShowDice -> {
-                        dice = event.dice
-                        delay(5000)
-                        dice = 0
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -204,11 +196,10 @@ class BoardScreen(
 @Composable
 fun BoardScreenContent(
     state: BoardState,
-    vm: BoardViewModel,
-    dice: Int
+    vm: BoardViewModel
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        BoardFragment(state, dice, vm)
+        BoardFragment(state, vm)
         Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
             Controls()
         }
@@ -219,7 +210,6 @@ fun BoardScreenContent(
 @Composable
 fun BoardFragment(
     state: BoardState,
-    dice: Int,
     vm: BoardViewModel,
 ) {
     val rotX = remember { Animatable(0f) }
@@ -228,8 +218,7 @@ fun BoardFragment(
         modifier = Modifier
             .fillMaxSize()
             .rotateOnDrag(rotX, rotY)
-    )
-    {
+    ) {
         val outRoute = boardLayers.layers[BoardLayer.OUTER] ?: error("Fix board")
         val horizontalRatio =
             outRoute.horizontalCells.toFloat() / outRoute.verticalCells.toFloat()
@@ -269,7 +258,7 @@ fun BoardFragment(
             if (isFlipped(rotY, rotX)) {
                 BackSide()
             }
-            Dice(state, vm, dice)
+            Dice(state, vm)
         }
     }
 }
@@ -297,7 +286,6 @@ fun BoxScope.Controls() {
 fun BoxWithConstraintsScope.Dice(
     state: BoardState,
     vm: BoardViewModel,
-    dice: Int
 ) {
     val cube1 by rememberLottieComposition {
         LottieCompositionSpec.JsonString(
@@ -329,43 +317,69 @@ fun BoxWithConstraintsScope.Dice(
             Res.readBytes("files/cube_6.json").decodeToString()
         )
     }
+
+    val composition = when (state.board.dice) {
+        1 -> cube1
+        2 -> cube2
+        3 -> cube3
+        4 -> cube4
+        5 -> cube5
+        else -> cube6
+    }
+
     val animatable = rememberLottieAnimatable()
+    LaunchedEffect(Unit) {
+        animatable.snapTo(composition, progress = 1f)
+    }
     val coroutineScope = rememberCoroutineScope()
-    var composition by remember { mutableStateOf<LottieComposition?>(null) }
-    LaunchedEffect(dice) {
-        composition = when (dice) {
-            1 -> cube1
-            2 -> cube2
-            3 -> cube3
-            4 -> cube4
-            5 -> cube5
-            else -> cube6
-        }
-        coroutineScope.launch {
-            animatable.animate(composition, iterations = 1, initialProgress = 0f)
+    LaunchedEffect(state.board.dice, state.board.diceRolling) {
+        if (state.board.diceRolling) {
+            coroutineScope.launch {
+                animatable.animate(composition, iterations = 1, initialProgress = 0f)
+            }
         }
     }
     LaunchedEffect(animatable.isAtEnd) {
-        if (animatable.isAtEnd && currentPlayerId == state.board.activePlayer && dice != 0) {
+        if (animatable.isAtEnd && currentPlayerId == state.board.activePlayer) {
             vm.move()
         }
     }
     val size = min(maxWidth, maxHeight) / 6
-    AnimatedVisibility(
-        visible = dice != 0 || state.canRoll,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = Modifier.align(Alignment.Center)
-    ) {
+    val infiniteTransition = rememberInfiniteTransition(label = "InfiniteTransition")
+    val spreadRadius by infiniteTransition.animateValue(
+        initialValue = 0.dp,
+        targetValue = size * 0.6f,
+        animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
+        label = "FloatAnimation",
+        typeConverter = TwoWayConverter({ AnimationVector(it.value) }, { it.value.dp })
+    )
+    Napier.d("state.board.dice ${state.board.dice} composition $composition")
+    Box(modifier = Modifier.align(Alignment.Center), contentAlignment = Alignment.Center) {
+        if (state.canRoll) {
+            Box(
+                modifier = Modifier
+                    .size(size * 0.2f)
+                    .padding(top = size * 0.3f)
+                    .boxShadow(
+                        blurRadius = size * 0.6f,
+                        spreadRadius = spreadRadius,
+                        shape = CircleShape,
+                        color = Color.White,
+                    )
+            )
+        }
         Image(
             painter = rememberLottiePainter(
                 composition = composition,
                 progress = animatable::value
             ),
             contentDescription = "Lottie animation",
-            modifier = Modifier.size(size).clickableSingle(enabled = state.canRoll) { vm.rollDice() }
+            modifier = Modifier
+                .size(size)
+                .clickableSingle(enabled = state.canRoll) { vm.rollDice() }
         )
     }
+
 }
 
 
@@ -417,8 +431,8 @@ fun BoxWithConstraintsScope.BoardPanel(
                     )
                 } else {
                     Brush.radialGradient(
-                        0.0f to Color(0xFFFFEC73),
-                        0.4f to Color(0xFFFFDC85),
+                        0.0f to Color(0xFFD7C228),
+                        0.4f to Color(0xFFF8C954),
                         0.6f to Color(0xFFFFB370),
                         1.0f to Color(0xFFFFB370),
                         radius = with(density) { min(maxWidth, maxHeight).toPx() },
@@ -624,7 +638,7 @@ fun BoxScope.ColorsSelector(
         val colors = pointerColors - players.filter { !it.isCurrentPlayer }
             .map { it.attrs.color }.toSet()
         LaunchedEffect(colors) {
-            if(!colors.contains(colorState.value)) {
+            if (!colors.contains(colorState.value)) {
                 colorState.value = colors.first()
             }
         }

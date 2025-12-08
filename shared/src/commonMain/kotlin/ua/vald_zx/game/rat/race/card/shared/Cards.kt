@@ -17,25 +17,30 @@ enum class BoardCardType {
 @Serializable
 data class CardLink(val type: BoardCardType, val id: Int)
 
+@Serializable
 sealed class BoardCard(val type: BoardCardType) {
+    @Serializable
     data class SmallBusiness(
         val description: String,
         val price: Long,
         val profit: Long,
     ) : BoardCard(BoardCardType.SmallBusiness)
 
+    @Serializable
     data class MediumBusiness(
         val description: String,
         val price: Long,
         val profit: Long,
     ) : BoardCard(BoardCardType.MediumBusiness)
 
+    @Serializable
     data class BigBusiness(
         val description: String,
         val price: Long,
         val profit: Long,
     ) : BoardCard(BoardCardType.BigBusiness)
 
+    @Serializable
     data class Shopping(
         val description: String,
         val price: Long,
@@ -43,18 +48,22 @@ sealed class BoardCard(val type: BoardCardType) {
         val credit: String,//TODO
     ) : BoardCard(BoardCardType.Shopping)
 
+    @Serializable
     data class EventStore(
         val description: String,
     ) : BoardCard(BoardCardType.EventStore)
 
+    @Serializable
     data class Deputy(
         val description: String,
     ) : BoardCard(BoardCardType.Deputy)
 
+    @Serializable
     data class Chance(
         val description: String,
     ) : BoardCard(BoardCardType.Chance)
 
+    @Serializable
     data class Expenses(
         val description: String,
         val priceTitle: String,

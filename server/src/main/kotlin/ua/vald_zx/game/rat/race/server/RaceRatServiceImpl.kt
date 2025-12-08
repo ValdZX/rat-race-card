@@ -3,11 +3,8 @@
 package ua.vald_zx.game.rat.race.server
 
 import io.ktor.util.logging.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import ua.vald_zx.game.rat.race.card.shared.*
@@ -91,7 +88,10 @@ class RaceRatServiceImpl(
                     this[uuid] = playerState
                 }
                 changeBoard {
-                    copy(playerIds = playerIds - id + uuid)
+                    copy(
+                        playerIds = playerIds - id + uuid,
+                        activePlayer = if (id == activePlayer) uuid else activePlayer
+                    )
                 }
                 playerStateSubJob?.cancel()
                 playerStateSubJob = launch {
@@ -196,7 +196,11 @@ class RaceRatServiceImpl(
     override suspend fun rollDice() {
         changeBoard {
             val dice = (1..6).random()
-            copy(dice = dice)
+            copy(dice = dice, canRoll = false, diceRolling = true)
+        }
+        delay(5000)
+        changeBoard {
+            copy(diceRolling = false)
         }
     }
 
@@ -207,18 +211,42 @@ class RaceRatServiceImpl(
                 cards = cards.apply {
                     this[cardType]?.remove(card)
                 },
-                takenCard = CardLink(cardType, card)
+                takenCard = CardLink(cardType, card),
+                canTakeCard = null,
             )
         }
     }
 
-    override suspend fun discardPile() {
-        val boardState = boardState ?: return
-        val oldState = boardState.value
-        val takenCard = oldState.takenCard ?: return
-        val discard = oldState.discard.toMutableMap()
-        discard[takenCard.type] = oldState.discard[takenCard.type].orEmpty() + takenCard.id
-        boardState.value = oldState.copy(discard = discard, takenCard = null)
+    override suspend fun next() {
+        nextPlayer()
+    }
+
+    private fun Board.discardPileB(): Board {
+        val card = takenCard
+        return if (card != null) {
+            val discard = discard.toMutableMap()
+            discard[card.type] = discard[card.type].orEmpty() + card.id
+            val cards = cards.toMutableMap()
+            cards[card.type] = cards[card.type].orEmpty() - card.id
+            copy(
+                discard = discard,
+                cards = cards,
+                takenCard = null
+            ).invalidateDecks()
+        } else this
+    }
+
+
+    private fun Board.invalidateDecks(): Board {
+        val discard = discard.toMutableMap()
+        val cards = cards.map { (type, list) ->
+            type to list.ifEmpty {
+                val cards = discard[type]
+                discard[type] = emptyList()
+                cards
+            }.orEmpty()
+        }.toMap()
+        return copy(cards = cards, discard = discard)
     }
 
     private suspend fun invalidateNextPlayer(activePlayer: String) {
@@ -239,10 +267,7 @@ class RaceRatServiceImpl(
             playerIds[activePlayerIndex + 1]
         }
         changeBoard {
-            copy(activePlayer = nextPlayer, moveCount = moveCount + 1)
-        }
-        if (board.takenCard != null) {
-            discardPile()
+            discardPileB().copy(activePlayer = nextPlayer, moveCount = moveCount + 1, canRoll = true)
         }
     }
 
@@ -288,6 +313,7 @@ class RaceRatServiceImpl(
             changePlayer {
                 copy(businesses = currentBusiness + business).minusCash(business.price)
             }
+            nextPlayer()
         }
     }
 
@@ -410,7 +436,7 @@ class RaceRatServiceImpl(
         }
     }
 
-    override suspend fun buy(card: BoardCard.Shopping) {
+    override suspend fun buyThing(card: BoardCard.Shopping) {
         when (card.shopType) {
             ShopType.AUTO -> {
                 changePlayer {
@@ -442,5 +468,6 @@ class RaceRatServiceImpl(
                 }
             }
         }
+        nextPlayer()
     }
 }

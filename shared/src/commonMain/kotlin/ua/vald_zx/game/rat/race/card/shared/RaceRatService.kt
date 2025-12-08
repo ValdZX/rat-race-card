@@ -70,7 +70,7 @@ interface RaceRatService {
     suspend fun rollDice()
     suspend fun move()
 
-    suspend fun discardPile()
+    suspend fun next()
     suspend fun takeCard(cardType: BoardCardType)
     suspend fun takeSalary()
     suspend fun buyBusiness(business: Business)
@@ -78,5 +78,5 @@ interface RaceRatService {
     suspend fun dismissalConfirmed(business: Business)
     suspend fun sellingAllBusinessConfirmed(business: Business)
     suspend fun minusCash(price: Long)
-    suspend fun buy(card: BoardCard.Shopping)
+    suspend fun buyThing(card: BoardCard.Shopping)
 }
