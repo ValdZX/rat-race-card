@@ -338,6 +338,12 @@ class RaceRatServiceImpl(
         val cellCount = layer.cellCount
         val currentPosition = player.location.position
         val newPosition = moveTo(currentPosition, cellCount, board.dice)
+        processNewPosition(newPosition)
+    }
+
+    private suspend fun processNewPosition(newPosition: Int) {
+        val layer = player.location.level.toLayer()
+        val currentPosition = player.location.position
         val list = if (currentPosition > newPosition) {
             layer.places.subList(currentPosition + 1, layer.places.size) + layer.places.subList(0, newPosition + 1)
         } else {
@@ -352,6 +358,12 @@ class RaceRatServiceImpl(
             }
             salaryPosition
         } else null
+        changeBoard {
+            copy(
+                moveCount = moveCount + 1,
+                salaryPosition = salaryPosition,
+            )
+        }
         changePlayer {
             copy(location = location.copy(position = newPosition))
         }
@@ -540,5 +552,9 @@ class RaceRatServiceImpl(
             }
         }
         nextPlayer()
+    }
+
+    override suspend fun changePosition(position: Int) {
+        processNewPosition(position)
     }
 }

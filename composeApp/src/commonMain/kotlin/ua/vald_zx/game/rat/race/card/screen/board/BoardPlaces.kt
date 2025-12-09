@@ -257,13 +257,7 @@ fun BoxScope.PlaceContent(
 
         else -> {
             Box(Modifier.fillMaxSize().background(place.type.color()).clickable {
-//                vm.changePosition(
-//                    moveTo(
-//                        position = index,
-//                        cellCount = layer.cellCount,
-//                        toMove = -route.offset
-//                    )
-//                )
+                vm.changePosition(index)
             }) {
                 OutlinedText(
                     text = place.type.text,

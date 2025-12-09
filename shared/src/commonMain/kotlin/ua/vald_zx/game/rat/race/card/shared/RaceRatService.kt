@@ -82,4 +82,5 @@ interface RaceRatService {
     suspend fun sellingAllBusinessConfirmed(business: Business)
     suspend fun minusCash(price: Long)
     suspend fun buyThing(card: BoardCard.Shopping)
+    suspend fun changePosition(position: Int)
 }

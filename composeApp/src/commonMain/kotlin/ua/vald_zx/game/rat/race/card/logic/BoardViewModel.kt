@@ -154,4 +154,10 @@ class BoardViewModel(
             service.takeSalary()
         }
     }
+
+    fun changePosition(position: Int) {
+        viewModelScope.launch {
+            service.changePosition(position)
+        }
+    }
 }
