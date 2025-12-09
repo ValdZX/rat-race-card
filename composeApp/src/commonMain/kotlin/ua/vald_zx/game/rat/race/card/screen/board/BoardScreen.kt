@@ -353,7 +353,6 @@ fun BoxWithConstraintsScope.Dice(
         label = "FloatAnimation",
         typeConverter = TwoWayConverter({ AnimationVector(it.value) }, { it.value.dp })
     )
-    Napier.d("state.board.dice ${state.board.dice} composition $composition")
     Box(modifier = Modifier.align(Alignment.Center), contentAlignment = Alignment.Center) {
         if (state.canRoll) {
             Box(

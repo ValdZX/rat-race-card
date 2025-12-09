@@ -231,7 +231,7 @@ class RaceRatServiceImpl(
             copy(
                 discard = discard,
                 cards = cards,
-                takenCard = null
+                takenCard = null,
             ).invalidateDecks()
         } else this
     }
@@ -311,7 +311,8 @@ class RaceRatServiceImpl(
             eventBus.emit(Event.ConfirmSellingAllBusiness(business))
         } else {
             changePlayer {
-                copy(businesses = currentBusiness + business).minusCash(business.price)
+                copy(businesses = currentBusiness + business)
+                    .minusCash(business.price)
             }
             nextPlayer()
         }
@@ -355,31 +356,101 @@ class RaceRatServiceImpl(
             copy(location = location.copy(position = newPosition))
         }
         val place = layer.places[newPosition]
-        changeBoard {
-            copy(
-                moveCount = moveCount + 1,
-                salaryPosition = salaryPosition,
-                canTakeCard = getTakeCardType(place)
-            )
+        when (place) {
+            PlaceType.BigBusiness -> {
+                changeBoard {
+                    copy(canTakeCard = BoardCardType.BigBusiness)
+                }
+            }
+
+            PlaceType.Business -> {
+                changeBoard {
+                    copy(canTakeCard = BoardCardType.SmallBusiness)
+                }
+            }
+
+            PlaceType.Chance -> {
+                changeBoard {
+                    copy(canTakeCard = BoardCardType.Chance)
+                }
+            }
+
+            PlaceType.Deputy -> {
+                changeBoard {
+                    copy(canTakeCard = BoardCardType.Deputy)
+                }
+            }
+
+            PlaceType.Expenses -> {
+                changeBoard {
+                    copy(canTakeCard = BoardCardType.Expenses)
+                }
+            }
+
+            PlaceType.Shopping -> {
+                changeBoard {
+                    copy(canTakeCard = BoardCardType.Shopping)
+                }
+            }
+
+            PlaceType.Store -> {
+                changeBoard {
+                    copy(canTakeCard = BoardCardType.EventStore)
+                }
+            }
+
+            PlaceType.Bankruptcy -> {
+                changePlayer {
+                    if (businesses.isNotEmpty() && businesses.any { it.type != BusinessType.WORK }) {
+                        val random = businesses.filter { it.type != BusinessType.WORK }.random()
+                        eventBus.emit(Event.BankruptBusiness(random))
+                        copy(businesses = businesses - random)
+                    } else this
+                }
+                nextPlayer()
+            }
+
+            PlaceType.Child -> {
+                nextPlayer()
+            }
+
+            PlaceType.Desire -> {
+                nextPlayer()
+            }
+
+            PlaceType.Divorce -> {
+                nextPlayer()
+            }
+
+            PlaceType.Exaltation -> {
+                nextPlayer()
+            }
+
+            PlaceType.Love -> {
+                nextPlayer()
+            }
+
+            PlaceType.Rest -> {
+                nextPlayer()
+            }
+
+            PlaceType.Salary -> {
+                nextPlayer()
+            }
+
+            PlaceType.Start -> {
+                nextPlayer()
+            }
+
+            PlaceType.TaxInspection -> {
+                nextPlayer()
+            }
         }
     }
 
     override suspend fun minusCash(price: Long) {
         changePlayer {
             minusCash(price)
-        }
-    }
-
-    private fun getTakeCardType(place: PlaceType): BoardCardType? {
-        return when (place) {
-            PlaceType.BigBusiness -> BoardCardType.BigBusiness
-            PlaceType.Business -> BoardCardType.SmallBusiness
-            PlaceType.Chance -> BoardCardType.Chance
-            PlaceType.Deputy -> BoardCardType.Deputy
-            PlaceType.Expenses -> BoardCardType.Expenses
-            PlaceType.Shopping -> BoardCardType.Shopping
-            PlaceType.Store -> BoardCardType.EventStore
-            else -> null
         }
     }
 

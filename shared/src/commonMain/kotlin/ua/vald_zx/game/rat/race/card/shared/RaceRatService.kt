@@ -40,6 +40,9 @@ sealed class Event {
 
     @Serializable
     data class ConfirmSellingAllBusiness(val business: Business) : Event()
+
+    @Serializable
+    data class BankruptBusiness(val business: Business) : Event()
 }
 
 @Serializable

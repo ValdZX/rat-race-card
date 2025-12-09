@@ -223,7 +223,6 @@ fun BoxWithConstraintsScope.CardDialog(
                         card = card,
                         isActive = isActive,
                         size = dialogSize,
-                        discardCard = { targetProgress = 6f },
                         vm = vm
                     )
                 }

@@ -38,7 +38,6 @@ fun BoxWithConstraintsScope.BoardCardFront(
     isActive: Boolean,
     size: DpSize,
     modifier: Modifier = Modifier,
-    discardCard: () -> Unit,
     vm: BoardViewModel,
 ) {
     val width = maxWidth
@@ -59,35 +58,35 @@ fun BoxWithConstraintsScope.BoardCardFront(
     ) {
         when (card.type) {
             BoardCardType.Chance -> {
-                ChanceCardFront(card, isActive, discardCard, vm)
+                ChanceCardFront(card, isActive, vm)
             }
 
             BoardCardType.SmallBusiness -> {
-                SmallBusinessCardFront(card, isActive, discardCard, vm)
+                SmallBusinessCardFront(card, isActive, vm)
             }
 
             BoardCardType.MediumBusiness -> {
-                MediumBusinessCardFront(card, isActive, discardCard, vm)
+                MediumBusinessCardFront(card, isActive, vm)
             }
 
             BoardCardType.BigBusiness -> {
-                BigBusinessCardFront(card, isActive, discardCard, vm)
+                BigBusinessCardFront(card, isActive, vm)
             }
 
             BoardCardType.Expenses -> {
-                ExpensesCardFront(card, isActive, discardCard, vm)
+                ExpensesCardFront(card, isActive, vm)
             }
 
             BoardCardType.EventStore -> {
-                EventStoreCardFront(card, isActive, discardCard, vm)
+                EventStoreCardFront(card, isActive, vm)
             }
 
             BoardCardType.Shopping -> {
-                ShoppingCardFront(card, isActive, discardCard, vm)
+                ShoppingCardFront(card, isActive, vm)
             }
 
             BoardCardType.Deputy -> {
-                DeputyCardFront(card, isActive, discardCard, vm)
+                DeputyCardFront(card, isActive, vm)
             }
         }
     }
@@ -97,13 +96,11 @@ fun BoxWithConstraintsScope.BoardCardFront(
 fun BoxScope.ChanceCardFront(
     card: CardLink,
     isActive: Boolean,
-    discardCard: () -> Unit,
     vm: BoardViewModel,
 ) {
     if (isActive) {
         Button("Pass") {
             vm.pass()
-            discardCard()
         }
     }
 }
@@ -112,7 +109,6 @@ fun BoxScope.ChanceCardFront(
 fun BoxWithConstraintsScope.SmallBusinessCardFront(
     cardLink: CardLink,
     isActive: Boolean,
-    discardCard: () -> Unit,
     vm: BoardViewModel,
 ) {
     remember(cardLink.id) {
@@ -192,7 +188,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                 ) {
                     ElevatedButton(
                         modifier = Modifier,
-                        onClick = { discardCard() },
+                        onClick = { vm.pass() },
                         content = {
                             Text("Пас", fontSize = unitTS * 14)
                         },
@@ -208,7 +204,6 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                                     profit = card.profit
                                 )
                             )
-                            discardCard()
                         },
                         content = {
                             Text("Купити", fontSize = unitTS * 14)
@@ -224,7 +219,6 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
 fun BoxWithConstraintsScope.MediumBusinessCardFront(
     cardLink: CardLink,
     isActive: Boolean,
-    discardCard: () -> Unit,
     vm: BoardViewModel,
 ) {
     remember(cardLink.id) {
@@ -304,7 +298,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                 ) {
                     ElevatedButton(
                         modifier = Modifier,
-                        onClick = { discardCard() },
+                        onClick = { vm.pass() },
                         content = {
                             Text("Пас", fontSize = unitTS * 14)
                         },
@@ -320,7 +314,6 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                                     profit = card.profit
                                 )
                             )
-                            discardCard()
                         },
                         content = {
                             Text("Купити", fontSize = unitTS * 14)
@@ -336,7 +329,6 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
 fun BoxWithConstraintsScope.BigBusinessCardFront(
     cardLink: CardLink,
     isActive: Boolean,
-    discardCard: () -> Unit,
     vm: BoardViewModel,
 ) {
     remember(cardLink.id) {
@@ -416,7 +408,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                 ) {
                     ElevatedButton(
                         modifier = Modifier,
-                        onClick = { discardCard() },
+                        onClick = { vm.pass() },
                         content = {
                             Text("Пас", fontSize = unitTS * 14)
                         },
@@ -432,7 +424,6 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                                     profit = card.profit
                                 )
                             )
-                            discardCard()
                         },
                         content = {
                             Text("Купити", fontSize = unitTS * 14)
@@ -448,7 +439,6 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
 fun BoxWithConstraintsScope.ExpensesCardFront(
     card: CardLink,
     isActive: Boolean,
-    discardCard: () -> Unit,
     vm: BoardViewModel,
 ) {
     remember(card.id) {
@@ -506,7 +496,6 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
                         modifier = Modifier.align(Alignment.CenterVertically),
                         onClick = {
                             vm.sideExpenses(card.price)
-                            discardCard()
                         },
                         content = {
                             Text("Заплатити", fontSize = unitTS * 14)
@@ -522,13 +511,11 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
 fun BoxWithConstraintsScope.EventStoreCardFront(
     card: CardLink,
     isActive: Boolean,
-    discardCard: () -> Unit,
     vm: BoardViewModel,
 ) {
     if (isActive) {
         Button("Pass") {
             vm.pass()
-            discardCard()
         }
     }
 }
@@ -537,7 +524,6 @@ fun BoxWithConstraintsScope.EventStoreCardFront(
 fun BoxWithConstraintsScope.ShoppingCardFront(
     card: CardLink,
     isActive: Boolean,
-    discardCard: () -> Unit,
     vm: BoardViewModel,
 ) {
 
@@ -607,7 +593,6 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                         modifier = Modifier,
                         onClick = {
                             vm.pass()
-                            discardCard()
                         },
                         content = {
                             Text("Пас", fontSize = unitTS * 14)
@@ -617,7 +602,6 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                         modifier = Modifier,
                         onClick = {
                             vm.buy(card)
-                            discardCard()
                         },
                         content = {
                             Text("Купити", fontSize = unitTS * 14)
@@ -633,13 +617,11 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
 fun BoxWithConstraintsScope.DeputyCardFront(
     card: CardLink,
     isActive: Boolean,
-    discardCard: () -> Unit,
     vm: BoardViewModel,
 ) {
     if (isActive) {
         Button("Pass") {
             vm.pass()
-            discardCard()
         }
     }
 }

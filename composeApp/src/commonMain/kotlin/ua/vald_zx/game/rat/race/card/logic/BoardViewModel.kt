@@ -91,6 +91,10 @@ class BoardViewModel(
                     is Event.SubCash -> {
                         //todo
                     }
+
+                    is Event.BankruptBusiness -> {
+                        //todo
+                    }
                 }
             }
         }
