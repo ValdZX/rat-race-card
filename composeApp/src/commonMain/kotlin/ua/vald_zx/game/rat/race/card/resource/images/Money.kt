@@ -1,13 +1,25 @@
 package ua.vald_zx.game.rat.race.card.resource.images
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.theme.AppTheme
+
 
 val Images.Money: ImageVector
+    @Composable
+    get() {
+        return if (AppTheme.colors.isDark) {
+            MoneyDark
+        } else {
+            MoneyLight
+        }
+    }
+val Images.MoneyLight: ImageVector
     get() {
         if (_Money != null) {
             return _Money!!

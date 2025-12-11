@@ -54,8 +54,10 @@ import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.logic.BoardState
+import ua.vald_zx.game.rat.race.card.logic.BoardUiAction
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
+import ua.vald_zx.game.rat.race.card.playCoin
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
@@ -188,6 +190,150 @@ class BoardScreen(
             }) {
                 Box(modifier = Modifier.statusBarsPadding())
             }
+        }
+
+        var confirmDismissalDialog: Business? by remember { mutableStateOf(null) }
+        var confirmSellingAllBusinessDialog: Business? by remember { mutableStateOf(null) }
+        var depositWithdrawDialog by remember { mutableStateOf(0L) }
+        var loanAddedDialog by remember { mutableStateOf(0L) }
+        var receivedCashDialog by remember { mutableStateOf(0L) }
+        LaunchedEffect(Unit) {
+            vm.actions.collect { event ->
+                when (event) {
+                    is BoardUiAction.ConfirmDismissal -> {
+                        confirmDismissalDialog = event.business
+                    }
+
+                    is BoardUiAction.ConfirmSellingAllBusiness -> {
+                        confirmSellingAllBusinessDialog = event.business
+                    }
+
+                    is BoardUiAction.DepositWithdraw -> {
+                        depositWithdrawDialog = event.balance
+                    }
+
+                    is BoardUiAction.LoanAdded -> {
+                        loanAddedDialog = event.balance
+                    }
+
+                    is BoardUiAction.ReceivedCash -> {
+                        receivedCashDialog = event.amount
+                    }
+
+                    is BoardUiAction.AddCash -> {
+                        playCoin()
+                    }
+
+                    is BoardUiAction.SubCash -> {
+                        playCoin()
+                    }
+                }
+            }
+        }
+        confirmDismissalDialog?.let { business ->
+            AlertDialog(
+                title = { Text(text = "Звільнення з роботи") },
+                text = {
+                    Text(
+                        text = "При купівлі другого бізнесу, втрачається робота з зарплатою ${state.player.card.salary}"
+                    )
+                },
+                onDismissRequest = { confirmDismissalDialog = null },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            vm.dismissalConfirmed(business)
+                            confirmDismissalDialog = null
+                        }
+                    ) { Text("Звільнитися") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        vm.pass()
+                        confirmDismissalDialog = null
+                    }) { Text("Відміна") }
+                }
+            )
+        }
+        confirmSellingAllBusinessDialog?.let { business ->
+            AlertDialog(
+                title = { Text(text = "Купівля бізнесу") },
+                text = {
+                    Text(
+                        text = "Щоб купити бізнес вищого класу, потрібно продати всі наявні бізнеса. Сума продажу бізнесів: ${state.player.businesses.sumOf { it.price }}"
+                    )
+                },
+                onDismissRequest = { confirmSellingAllBusinessDialog = null },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            vm.sellingAllBusinessConfirmed(business)
+                            confirmSellingAllBusinessDialog = null
+                        }
+                    ) { Text("Купити") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        vm.pass()
+                        confirmSellingAllBusinessDialog = null
+                    }) { Text("Відміна") }
+                }
+            )
+        }
+
+
+        if (depositWithdrawDialog != 0L) {
+            AlertDialog(
+                title = { Text(text = "Увага") },
+                text = {
+                    Text(
+                        text = "Не вистачило готівки, тому було знато з депозита: $depositWithdrawDialog"
+                    )
+                },
+                onDismissRequest = { depositWithdrawDialog = 0 },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            depositWithdrawDialog = 0
+                        }
+                    ) { Text("Гаразд") }
+                },
+            )
+        }
+        if (loanAddedDialog != 0L) {
+            AlertDialog(
+                title = { Text(text = "Увага") },
+                text = {
+                    Text(
+                        text = "Не вистачило готівки, тому взято в кредит на суму: $loanAddedDialog"
+                    )
+                },
+                onDismissRequest = { loanAddedDialog = 0 },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            loanAddedDialog = 0
+                        }
+                    ) { Text("Гаразд") }
+                },
+            )
+        }
+        if (receivedCashDialog != 0L) {
+            AlertDialog(
+                text = {
+                    Text(
+                        text = "Вам прислали готівку: $receivedCashDialog"
+                    )
+                },
+                onDismissRequest = { receivedCashDialog = 0 },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            receivedCashDialog = 0
+                        }
+                    ) { Text("Чудово") }
+                },
+            )
         }
     }
 }

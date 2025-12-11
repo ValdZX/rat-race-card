@@ -267,7 +267,14 @@ class RaceRatServiceImpl(
             playerIds[activePlayerIndex + 1]
         }
         changeBoard {
-            discardPileB().copy(activePlayer = nextPlayer, moveCount = moveCount + 1, canRoll = true)
+            discardPileB().copy(
+                activePlayer = nextPlayer,
+                moveCount = moveCount + 1,
+                canRoll = true,
+                diceRolling = false,
+                takenCard = null,
+                canTakeCard = null
+            )
         }
     }
 
@@ -323,6 +330,7 @@ class RaceRatServiceImpl(
             val businesses = player.businesses.filter { it.type != BusinessType.WORK } + business
             copy(businesses = businesses).minusCash(business.price)
         }
+        nextPlayer()
     }
 
     override suspend fun sellingAllBusinessConfirmed(business: Business) {
@@ -331,6 +339,7 @@ class RaceRatServiceImpl(
                 .plusCash(player.businesses.sumOf { it.price })
                 .minusCash(business.price)
         }
+        nextPlayer()
     }
 
     override suspend fun move() {

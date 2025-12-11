@@ -33,6 +33,9 @@ sealed class Event {
     data class DepositWithdraw(val balance: Long) : Event()
 
     @Serializable
+    data class AddCash(val amount: Long) : Event()
+
+    @Serializable
     data class SubCash(val amount: Long) : Event()
 
     @Serializable

@@ -27,6 +27,13 @@ data class BoardState(
 }
 
 sealed class BoardUiAction {
+    data class ConfirmDismissal(val business: Business) : BoardUiAction()
+    data class ConfirmSellingAllBusiness(val business: Business) : BoardUiAction()
+    data class DepositWithdraw(val balance: Long) : BoardUiAction()
+    data class LoanAdded(val balance: Long) : BoardUiAction()
+    data class ReceivedCash(val amount: Long) : BoardUiAction()
+    data class AddCash(val amount: Long) : BoardUiAction()
+    data class SubCash(val amount: Long) : BoardUiAction()
 }
 
 class BoardViewModel(
@@ -49,12 +56,7 @@ class BoardViewModel(
             service.eventsObserve().collect { event ->
                 when (event) {
                     is Event.MoneyIncome -> {
-//                    card.dispatch(
-//                        ReceivedCash(
-//                            payerId = event.playerId,
-//                            amount = event.amount
-//                        )
-//                    )
+                        _actions.send(BoardUiAction.ReceivedCash(event.amount))
                     }
 
                     is Event.PlayerChanged -> {
@@ -73,23 +75,31 @@ class BoardViewModel(
 
                     is Event.BoardChanged -> {
                         _uiState.update { it.copy(board = event.board) }
+                        invalidatePlayers(event.board.playerIds)
                     }
 
                     is Event.ConfirmDismissal -> {
-                        //todo
+                        _actions.send(BoardUiAction.ConfirmDismissal(event.business))
                     }
+
                     is Event.ConfirmSellingAllBusiness -> {
-                        //todo
+                        _actions.send(BoardUiAction.ConfirmSellingAllBusiness(event.business))
                     }
+
                     is Event.DepositWithdraw -> {
-                        //todo
+                        _actions.send(BoardUiAction.DepositWithdraw(event.balance))
                     }
+
                     is Event.LoanAdded -> {
-                        //todo
+                        _actions.send(BoardUiAction.LoanAdded(event.balance))
+                    }
+
+                    is Event.AddCash -> {
+                        _actions.send(BoardUiAction.AddCash(event.amount))
                     }
 
                     is Event.SubCash -> {
-                        //todo
+                        _actions.send(BoardUiAction.SubCash(event.amount))
                     }
 
                     is Event.BankruptBusiness -> {
@@ -97,6 +107,13 @@ class BoardViewModel(
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun invalidatePlayers(playerIds: Set<String>) {
+        val localIds = players.value.map { player -> player.id }.toSet()
+        if (localIds != playerIds) {
+            players.value = service.getPlayers()
         }
     }
 
@@ -158,6 +175,18 @@ class BoardViewModel(
     fun changePosition(position: Int) {
         viewModelScope.launch {
             service.changePosition(position)
+        }
+    }
+
+    fun dismissalConfirmed(business: Business) {
+        viewModelScope.launch {
+            service.dismissalConfirmed(business)
+        }
+    }
+
+    fun sellingAllBusinessConfirmed(business: Business) {
+        viewModelScope.launch {
+            service.sellingAllBusinessConfirmed(business)
         }
     }
 }
