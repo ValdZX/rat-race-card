@@ -70,7 +70,7 @@ fun CardDeck(
                     blurRadius = blurRadius,
                     spreadRadius = spreadRadius,
                     shape = RoundedCornerShape(rounding),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.background,
                 ).clickable {
                     vm.selectCard(cardType)
                 }

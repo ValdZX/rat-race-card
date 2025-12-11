@@ -62,8 +62,6 @@ data class Business(
 data class PlayerLocation(
     val position: Int = 1,
     val level: Int = 0,
-    val totalExpenses: Long = 0,
-    val cashFlow: Long = 0,
 )
 
 enum class BusinessType(val klass: Int) {

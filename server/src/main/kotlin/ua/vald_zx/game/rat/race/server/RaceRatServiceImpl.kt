@@ -74,23 +74,22 @@ class RaceRatServiceImpl(
         }
     }
 
-    override suspend fun hello(id: String): Instance {
+    override suspend fun hello(helloUuid: String): Instance {
         boards.value.forEach { boardState ->
-            val oldBoard = boardState.value
-            if (oldBoard.playerIds.contains(id)) {
+            if (boardState.value.playerIds.contains(helloUuid)) {
                 this@RaceRatServiceImpl.boardState = boardState
-                val playerState = players.value[id] ?: error("No player found for $id")
+                val playerState = players.value[helloUuid] ?: error("No player found for $helloUuid")
                 playerState.update { player ->
-                    player.copy(id = uuid)
+                    player.copy(id = uuid, isInactive = false)
                 }
                 players.value = players.value.toMutableMap().apply {
-                    this.remove(id)
+                    this.remove(helloUuid)
                     this[uuid] = playerState
                 }
                 changeBoard {
                     copy(
-                        playerIds = playerIds - id + uuid,
-                        activePlayer = if (id == activePlayer) uuid else activePlayer
+                        playerIds = playerIds - helloUuid + uuid,
+                        activePlayer = if (helloUuid == activePlayer) uuid else activePlayer
                     )
                 }
                 playerStateSubJob?.cancel()
@@ -99,8 +98,8 @@ class RaceRatServiceImpl(
                         globalEventBus.emit(GlobalEvent.PlayerChanged(player))
                     }
                 }
-                invalidateNextPlayer(oldBoard.activePlayer)
-                return Instance(uuid, oldBoard, player)
+                invalidateNextPlayer(boardState.value.activePlayer)
+                return Instance(uuid, boardState.value, player)
             }
         }
         return Instance(uuid, null, null)
@@ -141,21 +140,20 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun makePlayer(
-        name: String,
-        gender: Gender,
-        color: Long
+        color: Long,
+        card: PlayerCard,
     ): Player {
         val newPlayer = Player(
             id = uuid,
             boardId = board.id,
             attrs = PlayerAttributes(color = color),
-            card = PlayerCard(name = name, gender = gender),
+            card = card,
             businesses = listOf(
                 Business(
                     type = BusinessType.WORK,
-                    name = "",
+                    name = card.profession,
                     price = 0,
-                    profit = 1234
+                    profit = card.salary
                 )
             )//TODO profession card
         )
@@ -165,8 +163,9 @@ class RaceRatServiceImpl(
         changeBoard {
             copy(playerIds = playerIds + uuid)
         }
+        takeSalary()
         invalidateNextPlayer(boardState?.value?.activePlayer.orEmpty())
-        return newPlayer
+        return players.value[uuid]?.value ?: error("No player found for $uuid")
     }
 
     override suspend fun getPlayer(): Player {
@@ -257,6 +256,7 @@ class RaceRatServiceImpl(
     }
 
     suspend fun nextPlayer() {
+        LOGGER.debug("next player")
         val activePlayers = board.players().filter { player -> !player.isInactive }
         if (activePlayers.isEmpty()) return
         val playerIds = activePlayers.map { it.id }

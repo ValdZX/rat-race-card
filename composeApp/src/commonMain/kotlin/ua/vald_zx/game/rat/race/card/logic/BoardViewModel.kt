@@ -2,7 +2,6 @@ package ua.vald_zx.game.rat.race.card.logic
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.aakira.napier.Napier
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -20,10 +19,6 @@ data class BoardState(
     val currentPlayerIsActive: Boolean = currentPlayerId == board.activePlayer
     val canRoll: Boolean = board.canRoll &&
             currentPlayerIsActive
-
-    init {
-        Napier.d("BoardState: $this")
-    }
 }
 
 sealed class BoardUiAction {
@@ -187,6 +182,12 @@ class BoardViewModel(
     fun sellingAllBusinessConfirmed(business: Business) {
         viewModelScope.launch {
             service.sellingAllBusinessConfirmed(business)
+        }
+    }
+
+    fun sendMoney(playerId: String, amount: Long) {
+        viewModelScope.launch {
+            service.sendMoney(playerId, amount)
         }
     }
 }

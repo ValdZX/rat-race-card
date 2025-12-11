@@ -118,14 +118,14 @@ val littleDetailsHeight
     get() = 100.dp + statusBarHeightState.value + navigationBarHeightState.value
 var sheetContentSize = mutableStateOf(0.dp)
 val HalfExpanded = SheetDetent("hidden") { _, _ ->
-    littleDetailsHeight + statusBarHeightState.value + navigationBarHeightState.value
+    littleDetailsHeight
 }
 val ContentExpanded = SheetDetent("content") { containerHeight, _ ->
     if (sheetContentSize.value == 0.dp) {
         containerHeight
     } else {
         sheetContentSize.value
-    }
+    } - statusBarHeightState.value
 }
 
 class BoardScreen(
@@ -509,7 +509,7 @@ fun BoxWithConstraintsScope.Dice(
                         blurRadius = size * 0.6f,
                         spreadRadius = spreadRadius,
                         shape = CircleShape,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.background,
                     )
             )
         }

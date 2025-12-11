@@ -18,13 +18,13 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
+import ua.vald_zx.game.rat.race.card.screen.board.cards.menProfessionCards
+import ua.vald_zx.game.rat.race.card.screen.board.cards.womenProfessionCards
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Gender
-import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 
 class InitPlayerScreen(private val board: Board) : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -32,7 +32,6 @@ class InitPlayerScreen(private val board: Board) : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val coroutineScope = rememberCoroutineScope()
-        val service = koinInject<RaceRatService>()
         val colorState = remember { mutableStateOf(0L) }
         Column(
             modifier = Modifier
@@ -71,12 +70,11 @@ class InitPlayerScreen(private val board: Board) : Screen {
             )
             Button("Далі", enabled = playerName.isNotEmpty()) {
                 coroutineScope.launch {
-                    val player = service.makePlayer(
-                        name = playerName,
-                        gender = currentGender,
-                        color = colorState.value
-                    )
-                    navigator.push(BoardScreen(board, player))
+                    val card = when (currentGender) {
+                        Gender.MALE -> menProfessionCards.random()
+                        Gender.FEMALE -> womenProfessionCards.random()
+                    }
+                    navigator.push(ProfessionScreen(board, card, playerName, colorState.value))
                 }
             }
         }

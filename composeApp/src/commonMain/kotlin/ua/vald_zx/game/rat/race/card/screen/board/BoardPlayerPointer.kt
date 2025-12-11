@@ -17,8 +17,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,9 +34,13 @@ import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.logic.BoardState
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Bow
 import ua.vald_zx.game.rat.race.card.resource.images.RatPlayer1
 import ua.vald_zx.game.rat.race.card.resource.images.Send
+import ua.vald_zx.game.rat.race.card.shared.Gender
 import ua.vald_zx.game.rat.race.card.shared.Player
+import ua.vald_zx.game.rat.race.card.shared.cashFlow
+import ua.vald_zx.game.rat.race.card.shared.total
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
 
@@ -86,74 +92,96 @@ fun PlayerPoint(
         modifier = Modifier
             .offset(animatedX, animatedY)
             .size(spotSize.width, spotSize.height)
-            .optionalModifier(pointerState.isActivePlayer) {
-                boxShadow(
-                    blurRadius = blurRadius,
-                    spreadRadius = spreadRadius,
-                    shape = CircleShape,
-                    color = Color.White,
-                )
-            }
-            .clip(CircleShape)
-            .background(Color.White)
-            .optionalModifier(pointerState.isCurrentPlayer) {
-                border(
-                    width = spotSize.width * 0.1f,
-                    shape = CircleShape,
-                    color = playerColor
-                )
-            }
-            .optionalModifier(!pointerState.isCurrentPlayer) {
-                border(
-                    width = spotSize.width * 0.1f,
-                    shape = CircleShape,
-                    brush = Brush.sweepGradient(
-                        listOf(
-                            playerColor,
-                            Color.White,
-                            playerColor,
-                            Color.White,
-                            playerColor,
-                            Color.White,
-                            playerColor,
-                            Color.White,
-                            playerColor,
-                            Color.White,
-                            playerColor,
+            .graphicsLayer(clip = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .optionalModifier(pointerState.isActivePlayer) {
+                    boxShadow(
+                        blurRadius = blurRadius,
+                        spreadRadius = spreadRadius,
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.background,
+                    )
+                }
+                .clip(CircleShape)
+                .background(Color.White)
+                .optionalModifier(pointerState.isCurrentPlayer) {
+                    border(
+                        width = spotSize.width * 0.1f,
+                        shape = CircleShape,
+                        color = playerColor
+                    )
+                }
+                .optionalModifier(!pointerState.isCurrentPlayer) {
+                    border(
+                        width = spotSize.width * 0.1f,
+                        shape = CircleShape,
+                        brush = Brush.sweepGradient(
+                            listOf(
+                                playerColor,
+                                playerColor,
+                                Color.Black,
+                                playerColor,
+                                playerColor,
+                                Color.Black,
+                                playerColor,
+                                playerColor,
+                                Color.Black,
+                                playerColor,
+                                playerColor,
+                                Color.Black,
+                                playerColor,
+                                playerColor,
+                                Color.Black,
+                                playerColor,
+                                playerColor,
+                            )
                         )
                     )
+                }
+        ) {
+            val coroutineScope = rememberCoroutineScope()
+            val tooltipState = rememberTooltipState(isPersistent = true)
+            val bottomSheetNavigator = LocalBottomSheetNavigator.current
+            TooltipBox(
+                modifier = Modifier,
+                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                tooltip = {
+                    if (pointerState.isCurrentPlayer) {
+                        CurrentPlayerTooltip(
+                            pointerState = pointerState,
+                            vm = vm,
+                            tooltipState = tooltipState,
+                            coroutineScope = coroutineScope
+                        )
+                    } else {
+                        PlayerTooltip(pointerState, tooltipState, coroutineScope) {
+                            bottomSheetNavigator.show(SendScreen(pointerState.player, vm))
+                        }
+                    }
+                },
+                state = tooltipState,
+                enableUserInput = false
+            ) {
+                Image(
+                    imageVector = Images.RatPlayer1,
+                    contentDescription = null,
+                    modifier = Modifier.clickable {
+                        coroutineScope.launch { tooltipState.show() }
+                    }
                 )
             }
-    ) {
-        val coroutineScope = rememberCoroutineScope()
-        val tooltipState = rememberTooltipState(isPersistent = true)
-        val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        TooltipBox(
-            modifier = Modifier,
-            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-            tooltip = {
-                if (pointerState.isCurrentPlayer) {
-                    CurrentPlayerTooltip(
-                        pointerState = pointerState,
-                        vm = vm,
-                        tooltipState = tooltipState,
-                        coroutineScope = coroutineScope
-                    )
-                } else {
-                    PlayerTooltip(pointerState, tooltipState, coroutineScope) {
-                        bottomSheetNavigator.show(SendScreen(pointerState.player))
-                    }
-                }
-            },
-            state = tooltipState,
-            enableUserInput = false
-        ) {
+        }
+        if (pointerState.player.card.gender == Gender.FEMALE) {
             Image(
-                imageVector = Images.RatPlayer1,
+                imageVector = Images.Bow,
                 contentDescription = null,
-                modifier = Modifier.clickable {
-                    coroutineScope.launch { tooltipState.show() }
-                }
+                modifier = Modifier
+                    .size(spotSize / 2)
+                    .offset(spotSize.width / 3.5f, -spotSize.height / 3.5f)
+                    .rotate(45f)
+                    .align(Alignment.Center)
             )
         }
     }
@@ -211,16 +239,16 @@ fun PlayerTooltip(
                 CashFlowField(
                     name = "Статки",
                     rainbow = GoldRainbow,
-                    value = state.player.location.totalExpenses.splitDecimal(),
+                    value = state.player.total().splitDecimal(),
                     fontSize = 12.sp
                 )
                 CashFlowField(
                     name = "Cash Flow",
-                    value = state.player.location.cashFlow.splitDecimal(),
+                    value = state.player.cashFlow().splitDecimal(),
                     fontSize = 12.sp
                 )
             }
-            androidx.compose.material3.IconButton(
+            IconButton(
                 onClick = { send() },
                 content = {
                     Icon(Images.Send, contentDescription = null)

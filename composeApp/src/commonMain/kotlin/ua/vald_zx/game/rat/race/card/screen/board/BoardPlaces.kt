@@ -123,7 +123,7 @@ fun BoxScope.PlaceContent(
                         boxShadow(
                             blurRadius = blurRadius,
                             spreadRadius = spreadRadius,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.background,
                         )
                     }
                     .background(place.type.color())
