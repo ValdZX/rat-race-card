@@ -22,7 +22,8 @@ val baseModule = module {
     }
     single {
         get<HttpClient>().rpc {
-            url("ws://192.168.0.159:8080/api")
+//            url("ws://192.168.0.159:8080/api")
+            url("wss://race-rat-online-1033277102369.us-central1.run.app/api")
             rpcConfig { serialization { json() } }
         }.withService<RaceRatService>()
     }
