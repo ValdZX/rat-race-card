@@ -359,13 +359,18 @@ class RaceRatServiceImpl(
             layer.places.subList(currentPosition + 1, newPosition + 1)
         }
         val salaryPosition = if (list.contains(PlaceType.Salary)) {
-            var salaryPosition =
-                currentPosition + list.indexOf(PlaceType.Salary) + 1
-            val placeCount = layer.places.size
-            if (salaryPosition >= placeCount) {
-                salaryPosition -= placeCount
+            if(player.cashFlow() > 0) {
+                var salaryPosition =
+                    currentPosition + list.indexOf(PlaceType.Salary) + 1
+                val placeCount = layer.places.size
+                if (salaryPosition >= placeCount) {
+                    salaryPosition -= placeCount
+                }
+                salaryPosition
+            } else {
+                takeSalary()
+                null
             }
-            salaryPosition
         } else null
         changeBoard {
             copy(
