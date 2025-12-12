@@ -14,9 +14,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
-import rat_race_card.composeapp.generated.resources.Res
-import rat_race_card.composeapp.generated.resources.buy_business
-import rat_race_card.composeapp.generated.resources.buy_shares
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.RainbowButton
@@ -29,30 +27,30 @@ class AllActionsScreen() : Screen {
     override fun Content() = ActionsScreen {
         val state by raceRate2store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        RainbowButton("Отримати дохід") {
+        RainbowButton(stringResource(Res.string.receive_income)) {
             bottomSheetNavigator.hide()
             raceRate2store.dispatch(RatRace2CardAction.GetSalary)
         }
-        Button("Сторонній дохід", AppTheme.colors.positive) {
+        Button(stringResource(Res.string.third_party_income), AppTheme.colors.positive) {
             bottomSheetNavigator.replace(SideProfitScreen())
         }
-        Button("Покласти на депозит", AppTheme.colors.positive) {
+        Button(stringResource(Res.string.deposit_to_deposit), AppTheme.colors.positive) {
             bottomSheetNavigator.replace(ToDepositScreen())
         }
-        Button("Погасити кредит", AppTheme.colors.positive) {
+        Button(stringResource(Res.string.repay_loan), AppTheme.colors.positive) {
             bottomSheetNavigator.replace(RepayCreditScreen())
         }
-        Button("Сторонні витрати", AppTheme.colors.negative) {
+        Button(stringResource(Res.string.third_party_expense), AppTheme.colors.negative) {
             bottomSheetNavigator.replace(SideExpensesScreen())
         }
-        Button("Зняти з депозиту", AppTheme.colors.negative) {
+        Button(stringResource(Res.string.withdraw_deposit), AppTheme.colors.negative) {
             bottomSheetNavigator.replace(FromDepositScreen())
         }
-        Button("Взяти кредит", AppTheme.colors.negative) {
+        Button(stringResource(Res.string.get_loan), AppTheme.colors.negative) {
             bottomSheetNavigator.replace(GetLoanScreen())
         }
         if (state.business.any { it.type == BusinessType.WORK }) {
-            Button("Звільнитися", AppTheme.colors.negative) {
+            Button(stringResource(Res.string.resign), AppTheme.colors.negative) {
                 raceRate2store.dispatch(RatRace2CardAction.Fired)
             }
         }
@@ -63,19 +61,19 @@ class AllActionsScreen() : Screen {
             bottomSheetNavigator.replace(BuySharesScreen())
         }
         if (state.sharesList.isNotEmpty()) {
-            Button("Продати акції", AppTheme.colors.action) {
+            Button(stringResource(Res.string.sell_shares), AppTheme.colors.action) {
                 bottomSheetNavigator.replace(SellSharesScreen())
             }
         }
         if (state.config.hasFunds) {
-            Button("Інвестувати", AppTheme.colors.funds) {
+            Button(stringResource(Res.string.invest), AppTheme.colors.funds) {
                 bottomSheetNavigator.replace(BuyFundScreen())
             }
         }
-        Button("Покупки", AppTheme.colors.buy) {
+        Button(stringResource(Res.string.purchases), AppTheme.colors.buy) {
             bottomSheetNavigator.replace(BuyScreen())
         }
-        Button("Сімейний стан", AppTheme.colors.family) {
+        Button(stringResource(Res.string.marital_status), AppTheme.colors.family) {
             bottomSheetNavigator.replace(MarriageScreen())
         }
     }

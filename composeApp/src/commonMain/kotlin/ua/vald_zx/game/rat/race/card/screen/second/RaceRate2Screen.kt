@@ -22,6 +22,8 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.*
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.components.*
@@ -234,12 +236,13 @@ class RaceRate2Screen : Screen {
             }
             if (salaryApproveDialog) {
                 AlertDialog(
-                    title = { Text(text = "Дохід") },
+                    title = { Text(text = stringResource(Res.string.profit)) },
                     text = {
                         Text(
-                            text = "Дохід з урахуванням, активів, пасивів та кредитів: ${
+                            text = stringResource(
+                                Res.string.income_with_assets_and_loans,
                                 state.cashFlow().splitDecimal()
-                            }"
+                            )
                         )
                     },
                     onDismissRequest = { salaryApproveDialog = false },
@@ -249,19 +252,22 @@ class RaceRate2Screen : Screen {
                                 raceRate2store.dispatch(RatRace2CardAction.GetSalaryApproved)
                                 salaryApproveDialog = false
                             }
-                        ) { Text("Отримати") }
+                        ) { Text(stringResource(Res.string.receive)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { salaryApproveDialog = false }) { Text("Відміна") }
+                        TextButton(onClick = { salaryApproveDialog = false }) { Text(stringResource(Res.string.cancel)) }
                     }
                 )
             }
             if (confirmDismissalDialog != null) {
                 AlertDialog(
-                    title = { Text(text = "Звільнення з роботи") },
+                    title = { Text(text = stringResource(Res.string.fire_from_job)) },
                     text = {
                         Text(
-                            text = "При купівлі другого бізнеса, втрачається робота з зарплатою ${state.playerCard.salary}"
+                            text = stringResource(
+                                Res.string.lose_job_on_second_business_with_salary,
+                                state.playerCard.salary.toString()
+                            )
                         )
                     },
                     onDismissRequest = { confirmDismissalDialog = null },
@@ -275,19 +281,19 @@ class RaceRate2Screen : Screen {
                                 )
                                 confirmDismissalDialog = null
                             }
-                        ) { Text("Звільнитися") }
+                        ) { Text(stringResource(Res.string.resign)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { confirmDismissalDialog = null }) { Text("Відміна") }
+                        TextButton(onClick = { confirmDismissalDialog = null }) { Text(stringResource(Res.string.cancel)) }
                     }
                 )
             }
             if (confirmFiredDialog) {
                 AlertDialog(
-                    title = { Text(text = "Звільнення з роботи") },
+                    title = { Text(text = stringResource(Res.string.fire_from_job)) },
                     text = {
                         Text(
-                            text = "При звільненні, втрачається дохід на сумму ${state.playerCard.salary}"
+                            text = stringResource(Res.string.fired_lose_income_amount, state.playerCard.salary.toString())
                         )
                     },
                     onDismissRequest = { confirmFiredDialog = false },
@@ -297,19 +303,22 @@ class RaceRate2Screen : Screen {
                                 raceRate2store.dispatch(RatRace2CardAction.FiredConfirmed)
                                 confirmFiredDialog = false
                             }
-                        ) { Text("Звільнитися") }
+                        ) { Text(stringResource(Res.string.resign)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { confirmFiredDialog = false }) { Text("Відміна") }
+                        TextButton(onClick = { confirmFiredDialog = false }) { Text(stringResource(Res.string.cancel)) }
                     }
                 )
             }
             if (confirmSellingAllBusinessDialog != null) {
                 AlertDialog(
-                    title = { Text(text = "Купівля бізнесу") },
+                    title = { Text(text = stringResource(Res.string.buy_business_title)) },
                     text = {
                         Text(
-                            text = "Щоб купити бізнес вищого класу, потрібно продати всі наявні бізнеса. Сума продажу бізнесів: ${state.business.sumOf { it.price }}"
+                            text = stringResource(
+                                Res.string.need_sell_all_businesses_with_sum,
+                                state.business.sumOf { it.price }.toString()
+                            )
                         )
                     },
                     onDismissRequest = { confirmSellingAllBusinessDialog = null },
@@ -323,21 +332,21 @@ class RaceRate2Screen : Screen {
                                 )
                                 confirmSellingAllBusinessDialog = null
                             }
-                        ) { Text("Купити") }
+                        ) { Text(stringResource(Res.string.buy)) }
                     },
                     dismissButton = {
                         TextButton(onClick = {
                             confirmSellingAllBusinessDialog = null
-                        }) { Text("Відміна") }
+                        }) { Text(stringResource(Res.string.cancel)) }
                     }
                 )
             }
             if (depositWithdrawDialog != 0L) {
                 AlertDialog(
-                    title = { Text(text = "Увага") },
+                    title = { Text(text = stringResource(Res.string.attention)) },
                     text = {
                         Text(
-                            text = "Не вистачило готівки, тому було знато з депозита: $depositWithdrawDialog"
+                            text = stringResource(Res.string.not_enough_cash_taken_from_deposit, depositWithdrawDialog.toString())
                         )
                     },
                     onDismissRequest = { depositWithdrawDialog = 0 },
@@ -346,16 +355,16 @@ class RaceRate2Screen : Screen {
                             onClick = {
                                 depositWithdrawDialog = 0
                             }
-                        ) { Text("Гаразд") }
+                        ) { Text(stringResource(Res.string.ok)) }
                     },
                 )
             }
             if (loanAddedDialog != 0L) {
                 AlertDialog(
-                    title = { Text(text = "Увага") },
+                    title = { Text(text = stringResource(Res.string.attention)) },
                     text = {
                         Text(
-                            text = "Не вистачило готівки, тому взято в кредит на суму: $loanAddedDialog"
+                            text = stringResource(Res.string.not_enough_cash_loan_taken, loanAddedDialog.toString())
                         )
                     },
                     onDismissRequest = { loanAddedDialog = 0 },
@@ -364,7 +373,7 @@ class RaceRate2Screen : Screen {
                             onClick = {
                                 loanAddedDialog = 0
                             }
-                        ) { Text("Гаразд") }
+                        ) { Text(stringResource(Res.string.ok)) }
                     },
                 )
             }
@@ -372,7 +381,7 @@ class RaceRate2Screen : Screen {
                 AlertDialog(
                     text = {
                         Text(
-                            text = "Вам прислали готівку: $receivedCashDialog"
+                            text = stringResource(Res.string.cash_received_amount, receivedCashDialog.toString())
                         )
                     },
                     onDismissRequest = { receivedCashDialog = 0 },
@@ -381,7 +390,7 @@ class RaceRate2Screen : Screen {
                             onClick = {
                                 receivedCashDialog = 0
                             }
-                        ) { Text("Чудово") }
+                        ) { Text(stringResource(Res.string.ok)) }
                     },
                 )
             }

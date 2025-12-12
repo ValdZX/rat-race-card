@@ -12,6 +12,11 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.buy
+import rat_race_card.composeapp.generated.resources.contribution
+import rat_race_card.composeapp.generated.resources.percent
 import ua.vald_zx.game.rat.race.card.beans.Fund
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
@@ -29,11 +34,11 @@ class BuyFundScreen() : Screen {
             val rate = inputRate.value.text
             NumberTextField(
                 input = inputRate,
-                inputLabel = "Процент",
+                inputLabel = stringResource(Res.string.percent),
             )
             NumberTextField(
                 input = inputAmount,
-                inputLabel = "Вклад",
+                inputLabel = stringResource(Res.string.contribution),
             )
             ElevatedButton(
                 modifier = Modifier
@@ -52,7 +57,7 @@ class BuyFundScreen() : Screen {
                 },
                 enabled = rate.isNotEmpty() && amount.isNotEmpty(),
                 content = {
-                    Text("Купити")
+                    Text(stringResource(Res.string.buy))
                 }
             )
         }

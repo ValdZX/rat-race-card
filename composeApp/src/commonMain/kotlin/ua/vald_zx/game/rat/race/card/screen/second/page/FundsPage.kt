@@ -6,21 +6,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.ExtendedButton
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
@@ -43,17 +36,17 @@ fun FundsPage(state: RatRace2CardState) {
                 Column(modifier = Modifier.padding(top = 8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         SDetailsField(
-                            name = "Фонд на",
+                            name = stringResource(Res.string.fund_at),
                             value = "${fund.rate}%",
                             modifier = Modifier.weight(1f)
                         )
                         SDetailsField(
-                            name = "Сума",
+                            name = stringResource(Res.string.amount),
                             value = fund.amount.toString(),
                             modifier = Modifier.weight(1f)
                         )
                         TextButton(onClick = { bottomSheetNavigator.show(SellFundScreen(fund)) }) {
-                            Text("Зняти")
+                            Text(stringResource(Res.string.withdraw))
                         }
                     }
                     HorizontalDivider()
@@ -73,14 +66,14 @@ fun FundsPage(state: RatRace2CardState) {
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp).weight(1f),
                     onClick = { capitalizationConfirm = true },
                     onLongClick = { capitalizationStarConfirm = true },
-                    content = { Text("Капіталізувати") },
+                    content = { Text(stringResource(Res.string.capitalize)) },
                 )
             }
         }
         if (capitalizationConfirm) {
             AlertDialog(
-                title = { Text(text = "Капіталізація") },
-                text = { Text(text = "Сума капіталізації: ${state.capitalization()}") },
+                title = { Text(text = stringResource(Res.string.capitalization)) },
+                text = { Text(text = stringResource(Res.string.capitalization_total, state.capitalization().toString())) },
                 onDismissRequest = { capitalizationConfirm = false },
                 confirmButton = {
                     TextButton(
@@ -88,17 +81,17 @@ fun FundsPage(state: RatRace2CardState) {
                             raceRate2store.dispatch(RatRace2CardAction.CapitalizeFunds)
                             capitalizationConfirm = false
                         }
-                    ) { Text("Капіталізувати") }
+                    ) { Text(stringResource(Res.string.capitalize)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { capitalizationConfirm = false }) { Text("Відміна") }
+                    TextButton(onClick = { capitalizationConfirm = false }) { Text(stringResource(Res.string.cancel)) }
                 }
             )
         }
         if (capitalizationStarConfirm) {
             AlertDialog(
-                title = { Text(text = "Капіталізація") },
-                text = { Text(text = "Сума капіталізації(${state.config.fundStartRate}%): ${state.capitalizationStart()}") },
+                title = { Text(text = stringResource(Res.string.capitalization)) },
+                text = { Text(text = stringResource(Res.string.capitalization_amount, state.config.fundStartRate.toString(), state.capitalizationStart().toString())) },
                 onDismissRequest = { capitalizationStarConfirm = false },
                 confirmButton = {
                     TextButton(
@@ -106,12 +99,12 @@ fun FundsPage(state: RatRace2CardState) {
                             raceRate2store.dispatch(RatRace2CardAction.CapitalizeStarsFunds)
                             capitalizationStarConfirm = false
                         }
-                    ) { Text("Капіталізувати") }
+                    ) { Text(stringResource(Res.string.capitalize)) }
                 },
                 dismissButton = {
                     TextButton(onClick = {
                         capitalizationStarConfirm = false
-                    }) { Text("Відміна") }
+                    }) { Text(stringResource(Res.string.cancel)) }
                 }
             )
         }

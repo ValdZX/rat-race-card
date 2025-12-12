@@ -49,9 +49,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import rat_race_card.composeapp.generated.resources.Res
-import rat_race_card.composeapp.generated.resources.great
-import rat_race_card.composeapp.generated.resources.logo
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.currentPlayerId
@@ -234,10 +232,10 @@ class BoardScreen(
         }
         confirmDismissalDialog?.let { business ->
             AlertDialog(
-                title = { Text(text = "Звільнення з роботи") },
+                title = { Text(text = stringResource(Res.string.fire_from_job)) },
                 text = {
                     Text(
-                        text = "При купівлі другого бізнесу, втрачається робота з зарплатою ${state.player.card.salary}"
+                        text = stringResource(Res.string.lose_job_on_second_business_with_salary, state.player.card.salary.toString())
                     )
                 },
                 onDismissRequest = { confirmDismissalDialog = null },
@@ -247,22 +245,25 @@ class BoardScreen(
                             vm.dismissalConfirmed(business)
                             confirmDismissalDialog = null
                         }
-                    ) { Text("Звільнитися") }
+                    ) { Text(stringResource(Res.string.resign)) }
                 },
                 dismissButton = {
                     TextButton(onClick = {
                         vm.pass()
                         confirmDismissalDialog = null
-                    }) { Text("Відміна") }
+                    }) { Text(stringResource(Res.string.cancel)) }
                 }
             )
         }
         confirmSellingAllBusinessDialog?.let { business ->
             AlertDialog(
-                title = { Text(text = "Купівля бізнесу") },
+                title = { Text(text = stringResource(Res.string.buy_business_title)) },
                 text = {
                     Text(
-                        text = "Щоб купити бізнес вищого класу, потрібно продати всі наявні бізнеса. Сума продажу бізнесів: ${state.player.businesses.sumOf { it.price }}"
+                        text = stringResource(
+                            Res.string.need_sell_all_businesses_with_sum,
+                            state.player.businesses.sumOf { it.price }.toString()
+                        )
                     )
                 },
                 onDismissRequest = { confirmSellingAllBusinessDialog = null },
@@ -272,13 +273,13 @@ class BoardScreen(
                             vm.sellingAllBusinessConfirmed(business)
                             confirmSellingAllBusinessDialog = null
                         }
-                    ) { Text("Купити") }
+                    ) { Text(stringResource(Res.string.buy)) }
                 },
                 dismissButton = {
                     TextButton(onClick = {
                         vm.pass()
                         confirmSellingAllBusinessDialog = null
-                    }) { Text("Відміна") }
+                    }) { Text(stringResource(Res.string.cancel)) }
                 }
             )
         }
@@ -286,10 +287,10 @@ class BoardScreen(
 
         if (depositWithdrawDialog != 0L) {
             AlertDialog(
-                title = { Text(text = "Увага") },
+                title = { Text(text = stringResource(Res.string.attention)) },
                 text = {
                     Text(
-                        text = "Не вистачило готівки, тому було знато з депозита: $depositWithdrawDialog"
+                        text = stringResource(Res.string.not_enough_cash_taken_from_deposit, depositWithdrawDialog.toString())
                     )
                 },
                 onDismissRequest = { depositWithdrawDialog = 0 },
@@ -298,16 +299,16 @@ class BoardScreen(
                         onClick = {
                             depositWithdrawDialog = 0
                         }
-                    ) { Text("Гаразд") }
+                    ) { Text(stringResource(Res.string.ok)) }
                 },
             )
         }
         if (loanAddedDialog != 0L) {
             AlertDialog(
-                title = { Text(text = "Увага") },
+                title = { Text(text = stringResource(Res.string.attention)) },
                 text = {
                     Text(
-                        text = "Не вистачило готівки, тому взято в кредит на суму: $loanAddedDialog"
+                        text = stringResource(Res.string.not_enough_cash_loan_taken, loanAddedDialog.toString())
                     )
                 },
                 onDismissRequest = { loanAddedDialog = 0 },
@@ -316,7 +317,7 @@ class BoardScreen(
                         onClick = {
                             loanAddedDialog = 0
                         }
-                    ) { Text("Гаразд") }
+                    ) { Text(stringResource(Res.string.ok)) }
                 },
             )
         }
@@ -324,7 +325,7 @@ class BoardScreen(
             AlertDialog(
                 text = {
                     Text(
-                        text = "Вам прислали готівку: $receivedCashDialog"
+                        text = stringResource(Res.string.cash_received_amount, receivedCashDialog.toString())
                     )
                 },
                 onDismissRequest = { receivedCashDialog = 0 },

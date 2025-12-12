@@ -600,7 +600,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                             vm.pass()
                         },
                         content = {
-                            Text("Пас", fontSize = unitTS * 14)
+                            Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
                         },
                     )
                     ElevatedButton(
@@ -609,7 +609,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                             vm.buy(card)
                         },
                         content = {
-                            Text("Купити", fontSize = unitTS * 14)
+                            Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
                         },
                     )
                 }
@@ -625,7 +625,7 @@ fun BoxWithConstraintsScope.DeputyCardFront(
     vm: BoardViewModel,
 ) {
     if (isActive) {
-        Button("Pass") {
+        Button(stringResource(Res.string.pass)) {
             vm.pass()
         }
     }

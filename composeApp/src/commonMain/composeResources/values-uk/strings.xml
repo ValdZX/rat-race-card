@@ -151,5 +151,31 @@
     <string name="salary_count">Кількість зарплат: %s</string>
     <string name="capitalization_amount">Сума капіталізації(%s%%): %s</string>
     <string name="capitalization_total">Сума капіталізації: %s</string>
+    
+    <!-- Dialogs/Titles/Messages -->
+    <string name="attention">Увага</string>
+    <string name="buy_business_title">Купівля бізнесу</string>
+    <string name="resign">Звільнитися</string>
+    <string name="lose_job_on_second_business_with_salary">При купівлі другого бізнесу, втрачається робота з зарплатою %s</string>
+    <string name="need_sell_all_businesses_with_sum">Щоб купити бізнес вищого класу, потрібно продати всі наявні бізнеса. Сума продажу бізнесів: %s</string>
+    <string name="not_enough_cash_taken_from_deposit">Не вистачило готівки, тому було знято з депозиту: %s</string>
+    <string name="not_enough_cash_loan_taken">Не вистачило готівки, тому взято в кредит на суму: %s</string>
+    <string name="cash_received_amount">Вам прислали готівку: %s</string>
+    <string name="income_with_assets_and_loans">Дохід з урахуванням, активів, пасивів та кредитів: %s</string>
+    <string name="fired_lose_income_amount">При звільненні, втрачається дохід на сумму %s</string>
+    <string name="capitalization">Капіталізація</string>
+    <string name="amount">Сума</string>
+    <string name="fund_at">Фонд на</string>
+    <string name="withdraw_amount">Сума зняття</string>
+    <string name="save">Зберегти</string>
+    <string name="percent">Процент</string>
+    <string name="contribution">Вклад</string>
+    
+    <!-- Actions -->
+    <string name="receive_income">Отримати дохід</string>
+    <string name="sell_shares">Продати акції</string>
+    <string name="invest">Інвестувати</string>
+    <string name="purchases">Покупки</string>
+    <string name="get_loan">Взяти кредит</string>
 </resources>
 
