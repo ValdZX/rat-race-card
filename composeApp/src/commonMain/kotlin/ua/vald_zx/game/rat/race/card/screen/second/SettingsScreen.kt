@@ -1,32 +1,11 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
@@ -36,17 +15,19 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import com.russhwolf.settings.set
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.screen.ExportScreen
 import ua.vald_zx.game.rat.race.card.settings
-import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 class SettingsScreen : Screen {
@@ -198,12 +179,12 @@ class SettingsScreen : Screen {
                         inputLabel = "Виграшна ставка фонду"
                     )
                     NumberTextField(input = inputLoadRate, inputLabel = "Процент кредиту %")
-                    NumberTextField(input = inputBabyCost, inputLabel = "Витрати на дитину")
-                    NumberTextField(input = inputCarCost, inputLabel = "Витрати на автомобіль")
-                    NumberTextField(input = inputApartmentCost, inputLabel = "Витрати на квариру")
-                    NumberTextField(input = inputCottageCost, inputLabel = "Витрати на маєток")
-                    NumberTextField(input = inputYachtCost, inputLabel = "Витрати на яхту")
-                    NumberTextField(input = inputFlightCost, inputLabel = "Витрати на літак")
+                    NumberTextField(input = inputBabyCost, inputLabel = stringResource(Res.string.baby_cost))
+                    NumberTextField(input = inputCarCost, inputLabel = stringResource(Res.string.car_cost))
+                    NumberTextField(input = inputApartmentCost, inputLabel = stringResource(Res.string.apartment_cost))
+                    NumberTextField(input = inputCottageCost, inputLabel = stringResource(Res.string.cottage_cost))
+                    NumberTextField(input = inputYachtCost, inputLabel = stringResource(Res.string.yacht_cost))
+                    NumberTextField(input = inputFlightCost, inputLabel = stringResource(Res.string.flight_cost))
                     ElevatedButton(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             .widthIn(min = 200.dp),

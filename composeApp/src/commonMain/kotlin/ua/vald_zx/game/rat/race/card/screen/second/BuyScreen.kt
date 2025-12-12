@@ -3,6 +3,8 @@ package ua.vald_zx.game.rat.race.card.screen.second
 import androidx.compose.runtime.Composable
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
@@ -14,19 +16,19 @@ class BuyScreen() : Screen {
     override fun Content() {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         BottomSheetContainer {
-            Button("Купити авто") {
+            Button(stringResource(Res.string.buy_car)) {
                 bottomSheetNavigator.replace(BuyCarScreen())
             }
-            Button("Купити квартиру") {
+            Button(stringResource(Res.string.buy_apartment)) {
                 bottomSheetNavigator.replace(BuyApartmentScreen())
             }
-            Button("Купити будинок") {
+            Button(stringResource(Res.string.buy_house)) {
                 bottomSheetNavigator.replace(BuyCottageScreen())
             }
-            Button("Купити яхту") {
+            Button(stringResource(Res.string.buy_yacht)) {
                 bottomSheetNavigator.replace(BuyYachtScreen())
             }
-            Button("Купити літак") {
+            Button(stringResource(Res.string.buy_plane)) {
                 bottomSheetNavigator.replace(BuyFlightScreen())
             }
         }
@@ -38,7 +40,7 @@ class BuyCarScreen : Screen {
     override fun Content() {
         InputScreen(
             inputLabel = "Ціна авто",
-            buttonText = "Купити",
+            buttonText = stringResource(Res.string.buy),
             validation = { price -> price.isNotEmpty() },
             onClick = { price -> raceRate2store.dispatch(RatRace2CardAction.BuyCar(price = price.toLong())) },
             value = ""
@@ -51,7 +53,7 @@ class BuyApartmentScreen : Screen {
     override fun Content() {
         InputScreen(
             inputLabel = "Ціна квартири",
-            buttonText = "Купити",
+            buttonText = stringResource(Res.string.buy),
             validation = { price -> price.isNotEmpty() },
             onClick = { price -> raceRate2store.dispatch(RatRace2CardAction.BuyApartment(price = price.toLong())) },
             value = ""
@@ -64,7 +66,7 @@ class BuyCottageScreen : Screen {
     override fun Content() {
         InputScreen(
             inputLabel = "Ціна будинку",
-            buttonText = "Купити",
+            buttonText = stringResource(Res.string.buy),
             validation = { price -> price.isNotEmpty() },
             onClick = { price -> raceRate2store.dispatch(RatRace2CardAction.BuyCottage(price = price.toLong())) },
             value = ""
@@ -77,7 +79,7 @@ class BuyYachtScreen : Screen {
     override fun Content() {
         InputScreen(
             inputLabel = "Ціна яхти",
-            buttonText = "Купити",
+            buttonText = stringResource(Res.string.buy),
             validation = { price -> price.isNotEmpty() },
             onClick = { price -> raceRate2store.dispatch(RatRace2CardAction.BuyYacht(price = price.toLong())) },
             value = ""
@@ -90,7 +92,7 @@ class BuyFlightScreen : Screen {
     override fun Content() {
         InputScreen(
             inputLabel = "Ціна літака",
-            buttonText = "Купити",
+            buttonText = stringResource(Res.string.buy),
             validation = { price -> price.isNotEmpty() },
             onClick = { price -> raceRate2store.dispatch(RatRace2CardAction.BuyFlight(price = price.toLong())) },
             value = ""

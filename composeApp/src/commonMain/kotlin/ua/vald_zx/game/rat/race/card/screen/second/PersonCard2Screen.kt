@@ -1,29 +1,12 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -33,6 +16,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.raceRate2store
@@ -120,19 +105,19 @@ fun ProfessionCardForm(card: PlayerCard? = null, filled: (PlayerCard) -> Unit) {
     )
     NumberTextField(
         input = food,
-        inputLabel = "Витрати на харчування",
+        inputLabel = stringResource(Res.string.food_cost),
     )
     NumberTextField(
         input = cloth,
-        inputLabel = "Витрати на одяг",
+        inputLabel = stringResource(Res.string.cloth_cost),
     )
     NumberTextField(
         input = transport,
-        inputLabel = "Витрати на проїзд",
+        inputLabel = stringResource(Res.string.transport_cost),
     )
     NumberTextField(
         input = phone,
-        inputLabel = "Витрати на телефонні переговори",
+        inputLabel = stringResource(Res.string.phone_cost),
     )
     ElevatedButton(
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)

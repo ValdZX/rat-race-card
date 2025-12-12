@@ -5,4 +5,90 @@
     <string name="run">Run</string>
     <string name="stop">Stop</string>
     <string name="theme">Theme</string>
+
+    <!-- UI Labels -->
+    <string name="card_code">Код картки</string>
+    <string name="send">Відправити</string>
+    <string name="copy">Копіювати</string>
+    <string name="new_table">Новий стіл</string>
+    <string name="table_name">Назва столу</string>
+    <string name="cancel">Відміна</string>
+    <string name="create_table">Створити стіл</string>
+    <string name="connection_failed">Невдалося підключитися до сервера</string>
+
+    <!-- Cash Flow Fields -->
+    <string name="active_profit">Активний прибуток</string>
+    <string name="passive_profit">Пасивний прибуток</string>
+    <string name="total_profit">Загальний прибуток</string>
+    <string name="credit_expenses">Витрати по кредиту</string>
+    <string name="total_expenses">Загальні витрати</string>
+    <string name="cash">Готівка</string>
+    <string name="deposit">Депозит</string>
+    <string name="loan">Кредит</string>
+
+    <!-- Asset Names -->
+    <string name="work">Робота</string>
+    <string name="marriage">Шлюб</string>
+    <string name="kids">Діти</string>
+    <string name="car">Авто</string>
+    <string name="apartment">Квартира</string>
+    <string name="estate">Маєток</string>
+    <string name="yacht">Яхта</string>
+    <string name="plane">Літак</string>
+
+    <!-- Card Types -->
+    <string name="big_business">Великий бізнес</string>
+    <string name="chance">Шанс!</string>
+    <string name="deputies">Депутати</string>
+    <string name="market">Ринок</string>
+    <string name="expenses">Витрати</string>
+    <string name="medium_business">Середній бізнес</string>
+    <string name="shopping">Покупки</string>
+    <string name="small_business">Малий бізнес</string>
+
+    <!-- Board Actions -->
+    <string name="pass">Пас</string>
+    <string name="buy">Купити</string>
+    <string name="pay">Заплатити</string>
+    <string name="buy_car">Купити авто</string>
+    <string name="buy_apartment">Купити квартиру</string>
+    <string name="buy_house">Купити будинок</string>
+    <string name="buy_yacht">Купити яхту</string>
+    <string name="buy_plane">Купити літак</string>
+    <string name="buy_business">Купити бізнес</string>
+    <string name="buy_shares">Купити акції</string>
+
+    <!-- Expenses Labels -->
+    <string name="baby_cost">Витрати на дитину</string>
+    <string name="car_cost">Витрати на автомобіль</string>
+    <string name="apartment_cost">Витрати на квариру</string>
+    <string name="cottage_cost">Витрати на маєток</string>
+    <string name="yacht_cost">Витрати на яхту</string>
+    <string name="flight_cost">Витрати на літак</string>
+    <string name="food_cost">Витрати на харчування</string>
+    <string name="cloth_cost">Витрати на одяг</string>
+    <string name="transport_cost">Витрати на проїзд</string>
+    <string name="phone_cost">Витрати на телефонні переговори</string>
+    <string name="food">Витрати на їжу</string>
+    <string name="cloth">Витрати на одяг</string>
+    <string name="transport">Витрати на проїзд</string>
+    <string name="phone">Витрати на телефонні переговори</string>
+
+    <!-- Board Places -->
+    <string name="salary">Прибуток</string>
+    <string name="store">Ринок</string>
+    <string name="business">Бізнес</string>
+    <string name="deputy">Депутат</string>
+    <string name="rest">Відпустка</string>
+    <string name="desire">Мрія</string>
+    <string name="start">Старт</string>
+    <string name="exaltation">Звільнення</string>
+    <string name="divorce">Розлучення</string>
+    <string name="bankruptcy">Банкрутство</string>
+
+    <!-- Additional UI -->
+    <string name="funds">Фонди</string>
+    <string name="offline_mode">Офлайн картка</string>
+    <string name="online_mode">Онлайн версія</string>
+    <string name="retry_connection">Спробувати підключития ще раз</string>
 </resources>

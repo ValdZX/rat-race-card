@@ -1,20 +1,9 @@
 package ua.vald_zx.game.rat.race.card.screen.second.page
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +18,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.DetailsField
 import ua.vald_zx.game.rat.race.card.components.GoldBackground
@@ -37,21 +28,8 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Baby
-import ua.vald_zx.game.rat.race.card.resource.images.Car
-import ua.vald_zx.game.rat.race.card.resource.images.Estate
-import ua.vald_zx.game.rat.race.card.resource.images.Flat
-import ua.vald_zx.game.rat.race.card.resource.images.Fly
-import ua.vald_zx.game.rat.race.card.resource.images.Mariage
-import ua.vald_zx.game.rat.race.card.resource.images.Work
-import ua.vald_zx.game.rat.race.card.resource.images.Yacht
-import ua.vald_zx.game.rat.race.card.screen.second.BabyScreen
-import ua.vald_zx.game.rat.race.card.screen.second.BuyApartmentScreen
-import ua.vald_zx.game.rat.race.card.screen.second.BuyCarScreen
-import ua.vald_zx.game.rat.race.card.screen.second.BuyCottageScreen
-import ua.vald_zx.game.rat.race.card.screen.second.BuyFlightScreen
-import ua.vald_zx.game.rat.race.card.screen.second.BuyYachtScreen
-import ua.vald_zx.game.rat.race.card.screen.second.MarriageScreen
+import ua.vald_zx.game.rat.race.card.resource.images.*
+import ua.vald_zx.game.rat.race.card.screen.second.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
@@ -67,7 +45,7 @@ fun StatePage(state: RatRace2CardState) {
         ) {
             val hasWork = state.business.any { it.type == BusinessType.WORK }
             StateItem(
-                name = "Робота",
+                name = stringResource(Res.string.work),
                 imageVector = Images.Work,
                 isPositivePrice = true,
                 price = state.playerCard.salary,
@@ -78,14 +56,14 @@ fun StatePage(state: RatRace2CardState) {
                 }
             }
             StateItem(
-                name = "Шлюб",
+                name = stringResource(Res.string.marriage),
                 imageVector = Images.Mariage,
                 enabled = state.isMarried
             ) {
                 bottomSheetNavigator.show(MarriageScreen())
             }
             StateItem(
-                name = "Діти",
+                name = stringResource(Res.string.kids),
                 imageVector = Images.Baby,
                 enabled = state.babies > 0,
                 count = state.babies,
@@ -99,7 +77,7 @@ fun StatePage(state: RatRace2CardState) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StateItem(
-                name = "Авто",
+                name = stringResource(Res.string.car),
                 imageVector = Images.Car,
                 enabled = state.cars > 0,
                 count = state.cars,
@@ -108,7 +86,7 @@ fun StatePage(state: RatRace2CardState) {
                 bottomSheetNavigator.show(BuyCarScreen())
             }
             StateItem(
-                name = "Квартира",
+                name = stringResource(Res.string.apartment),
                 imageVector = Images.Flat,
                 enabled = state.apartment > 0,
                 count = state.apartment,
@@ -122,7 +100,7 @@ fun StatePage(state: RatRace2CardState) {
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             StateItem(
-                name = "Маєток",
+                name = stringResource(Res.string.estate),
                 imageVector = Images.Estate,
                 enabled = state.cottage > 0,
                 count = state.cottage,
@@ -131,7 +109,7 @@ fun StatePage(state: RatRace2CardState) {
                 bottomSheetNavigator.show(BuyCottageScreen())
             }
             StateItem(
-                name = "Яхта",
+                name = stringResource(Res.string.yacht),
                 imageVector = Images.Yacht,
                 enabled = state.yacht > 0,
                 count = state.yacht,
@@ -140,7 +118,7 @@ fun StatePage(state: RatRace2CardState) {
                 bottomSheetNavigator.show(BuyYachtScreen())
             }
             StateItem(
-                name = "Літак",
+                name = stringResource(Res.string.plane),
                 imageVector = Images.Fly,
                 enabled = state.flight > 0,
                 count = state.flight,
@@ -150,27 +128,27 @@ fun StatePage(state: RatRace2CardState) {
             }
         }
         DetailsField(
-            "Активний прибуток",
+            stringResource(Res.string.active_profit),
             state.activeProfit().toString(),
             MaterialTheme.colorScheme.primary
         )
         DetailsField(
-            "Пасивний прибуток",
+            stringResource(Res.string.passive_profit),
             state.passiveProfit().toString(),
             MaterialTheme.colorScheme.primary
         )
         DetailsField(
-            "Загальний прибуток",
+            stringResource(Res.string.total_profit),
             state.totalProfit().toString(),
             MaterialTheme.colorScheme.primary
         )
         DetailsField(
-            "Витрати по кредиту",
+            stringResource(Res.string.credit_expenses),
             state.creditExpenses().toString(),
             MaterialTheme.colorScheme.tertiary
         )
         DetailsField(
-            "Загальні витрати",
+            stringResource(Res.string.total_expenses),
             state.totalExpenses().toString(),
             MaterialTheme.colorScheme.tertiary
         )

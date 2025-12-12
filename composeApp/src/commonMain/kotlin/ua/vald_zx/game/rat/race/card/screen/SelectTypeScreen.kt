@@ -9,6 +9,10 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.offline_mode
+import rat_race_card.composeapp.generated.resources.online_mode
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
@@ -33,7 +37,7 @@ class SelectTypeScreen : Screen {
             ) {
                 var kStoreLoaded by remember { mutableStateOf(false) }
                 if (kStoreLoaded) {
-                    Button("Офлайн картка") {
+                    Button(stringResource(Res.string.offline_mode)) {
                         coroutineScope.launch {
                             val ratRace2CardState = raceRate2store.observeState().value
                             runCatching { raceRate2KStore.get() }.onSuccess {
@@ -56,7 +60,7 @@ class SelectTypeScreen : Screen {
                         kStoreLoaded = true
                     }
                 }
-                Button("Онлайн версія") {
+                Button(stringResource(Res.string.online_mode)) {
                     navigator.push(LoadOnlineScreen())
                 }
             }

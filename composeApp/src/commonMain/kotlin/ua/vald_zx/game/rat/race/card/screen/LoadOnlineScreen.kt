@@ -13,7 +13,11 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.connection_failed
+import rat_race_card.composeapp.generated.resources.retry_connection
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.screen.board.BoardScreen
@@ -58,8 +62,8 @@ class LoadOnlineScreen : Screen {
             val invalidServer by invalidServerState
             if (invalidServer) {
                 Column(modifier = Modifier.align(Alignment.Center)) {
-                    Text("Невдалося підключитися до сервера")
-                    Button("Спробувати підключития ще раз") {
+                    Text(stringResource(Res.string.connection_failed))
+                    Button(stringResource(Res.string.retry_connection)) {
                         connectToService()
                         invalidServerState.value = false
                     }

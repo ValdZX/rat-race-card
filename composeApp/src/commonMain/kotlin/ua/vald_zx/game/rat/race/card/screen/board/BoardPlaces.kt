@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import dev.lennartegb.shadows.boxShadow
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.OutlinedText
 import ua.vald_zx.game.rat.race.card.components.Rotation
@@ -45,26 +46,26 @@ import ua.vald_zx.game.rat.race.card.shared.moveTo
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 
-private val PlaceType.text: String
-    get() {
-        return when (this) {
-            PlaceType.Salary -> "Прибуток"
-            PlaceType.Chance -> "Шанс!"
-            PlaceType.Store -> "Ринок"
-            PlaceType.Business -> "Бізнес"
-            PlaceType.BigBusiness -> "Бізнес"
-            PlaceType.Deputy -> "Депутат"
-            PlaceType.Expenses -> "Витрати"
-            PlaceType.Shopping -> "Покупки"
-            PlaceType.Rest -> "Відпустка"
-            PlaceType.Desire -> "Мрія"
-            PlaceType.Start -> "Старт"
-            PlaceType.Exaltation -> "Звільнення"
-            PlaceType.Divorce -> "Розлучення"
-            PlaceType.Bankruptcy -> "Банкрутство"
-            else -> name
-        }
+@Composable
+private fun PlaceType.text(): String {
+    return when (this) {
+        PlaceType.Salary -> stringResource(Res.string.salary)
+        PlaceType.Chance -> stringResource(Res.string.chance)
+        PlaceType.Store -> stringResource(Res.string.store)
+        PlaceType.Business -> stringResource(Res.string.business)
+        PlaceType.BigBusiness -> stringResource(Res.string.business)
+        PlaceType.Deputy -> stringResource(Res.string.deputy)
+        PlaceType.Expenses -> stringResource(Res.string.expenses)
+        PlaceType.Shopping -> stringResource(Res.string.shopping)
+        PlaceType.Rest -> stringResource(Res.string.rest)
+        PlaceType.Desire -> stringResource(Res.string.desire)
+        PlaceType.Start -> stringResource(Res.string.start)
+        PlaceType.Exaltation -> stringResource(Res.string.exaltation)
+        PlaceType.Divorce -> stringResource(Res.string.divorce)
+        PlaceType.Bankruptcy -> stringResource(Res.string.bankruptcy)
+        else -> name
     }
+}
 
 @Composable
 private fun PlaceType.color(): Color {
@@ -234,7 +235,7 @@ fun BoxScope.PlaceContent(
                 )
             ) {
                 OutlinedText(
-                    text = place.type.text,
+                    text = place.type.text(),
                     autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
                     fontFamily = FontFamily(
                         Font(
@@ -266,7 +267,7 @@ fun BoxScope.PlaceContent(
                 )
             }) {
                 OutlinedText(
-                    text = place.type.text,
+                    text = place.type.text(),
                     autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
                     fontFamily = FontFamily(
                         Font(

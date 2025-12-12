@@ -14,7 +14,9 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.DetailsField
 import ua.vald_zx.game.rat.race.card.shared.Board
@@ -43,7 +45,7 @@ class ProfessionScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Робота",
+                text = stringResource(Res.string.work),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -53,7 +55,7 @@ class ProfessionScreen(
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = "Витрати",
+                text = stringResource(Res.string.expenses),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.tertiary
             )
@@ -62,19 +64,19 @@ class ProfessionScreen(
                 color = MaterialTheme.colorScheme.tertiary
             )
             DetailsField(
-                "Витрати на їжу", card.food.toString(),
+                stringResource(Res.string.food), card.food.toString(),
                 color = MaterialTheme.colorScheme.tertiary
             )
             DetailsField(
-                "Витрати на одяг", card.cloth.toString(),
+                stringResource(Res.string.cloth), card.cloth.toString(),
                 color = MaterialTheme.colorScheme.tertiary
             )
             DetailsField(
-                "Витрати на проїзд", card.transport.toString(),
+                stringResource(Res.string.transport), card.transport.toString(),
                 color = MaterialTheme.colorScheme.tertiary
             )
             DetailsField(
-                "Витрати на телефонні переговори", card.phone.toString(),
+                stringResource(Res.string.phone), card.phone.toString(),
                 color = MaterialTheme.colorScheme.tertiary
             )
             Button("Далі") {

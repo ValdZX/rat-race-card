@@ -26,8 +26,8 @@ import androidx.compose.ui.unit.sp
 import dev.lennartegb.shadows.boxShadow
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.Font
-import rat_race_card.composeapp.generated.resources.Bubbleboddy
-import rat_race_card.composeapp.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.OutlinedText
 import ua.vald_zx.game.rat.race.card.components.Rotation
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
@@ -129,14 +129,14 @@ fun BoxScope.BoardCardText(card: BoardCardType, size: DpSize, isVertical: Boolea
     val min = min(size.width, size.height)
     OutlinedText(
         text = when (card) {
-            BoardCardType.BigBusiness -> "Великий бізнес"
-            BoardCardType.Chance -> "Шанс!"
-            BoardCardType.Deputy -> "Депутати"
-            BoardCardType.EventStore -> "Ринок"
-            BoardCardType.Expenses -> "Витрати"
-            BoardCardType.MediumBusiness -> "Середній бізнес"
-            BoardCardType.Shopping -> "Покупки"
-            BoardCardType.SmallBusiness -> "Малий бізнес"
+            BoardCardType.BigBusiness -> stringResource(Res.string.big_business)
+            BoardCardType.Chance -> stringResource(Res.string.chance)
+            BoardCardType.Deputy -> stringResource(Res.string.deputies)
+            BoardCardType.EventStore -> stringResource(Res.string.market)
+            BoardCardType.Expenses -> stringResource(Res.string.expenses)
+            BoardCardType.MediumBusiness -> stringResource(Res.string.medium_business)
+            BoardCardType.Shopping -> stringResource(Res.string.shopping)
+            BoardCardType.SmallBusiness -> stringResource(Res.string.small_business)
         },
         autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
         fontFamily = FontFamily(

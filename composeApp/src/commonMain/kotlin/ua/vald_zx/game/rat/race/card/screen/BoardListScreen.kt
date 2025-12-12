@@ -23,7 +23,9 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.datetime.format
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.TextButton
 import ua.vald_zx.game.rat.race.card.dateFullDotsFormat
@@ -55,7 +57,7 @@ class BoardListScreen : Screen {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Button("Новий стіл") {
+            Button(stringResource(Res.string.new_table)) {
                 newBoardDialog = true
             }
             LazyColumn(
@@ -95,16 +97,16 @@ class BoardListScreen : Screen {
                     OutlinedTextField(
                         value = boardName,
                         singleLine = true,
-                        label = { Text("Назва столу") },
+                        label = { Text(stringResource(Res.string.table_name)) },
                         onValueChange = { boardName = it })
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        TextButton("Відміна") {
+                        TextButton(stringResource(Res.string.cancel)) {
                             newBoardDialog = false
                         }
-                        TextButton("Створити стіл", enabled = boardName.isNotEmpty()) {
+                        TextButton(stringResource(Res.string.create_table), enabled = boardName.isNotEmpty()) {
                             coroutineScope.launch {
                                 val board = service.createBoard(
                                     name = boardName,

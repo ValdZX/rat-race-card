@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import com.composables.core.BottomSheetState
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.FundsField
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
@@ -94,22 +96,22 @@ fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState
                         Text("${player.cashFlow()}")
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Готівка", color = AppTheme.colors.cash)
+                        Text(stringResource(Res.string.cash), color = AppTheme.colors.cash)
                         Text("${player.cash} $")
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Депозит", color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(Res.string.deposit), color = MaterialTheme.colorScheme.primary)
                         Text("${player.deposit} $")
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Кредит", color = MaterialTheme.colorScheme.tertiary)
+                        Text(stringResource(Res.string.loan), color = MaterialTheme.colorScheme.tertiary)
                         Text("${player.loan} $")
                     }
                 }
             }
             if (player.config.hasFunds) {
                 FundsField(
-                    name = "Фонди",
+                    name = stringResource(Res.string.funds),
                     value = "${player.fundAmount()} $"
                 ) {
                     bottomSheetNavigator.show(BuyFundScreen())

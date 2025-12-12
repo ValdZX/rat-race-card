@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.DetailsField
 import ua.vald_zx.game.rat.race.card.components.GoldBackground
 import ua.vald_zx.game.rat.race.card.components.SilverBackground
@@ -37,19 +39,19 @@ fun StatePage(player: Player) {
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             StateItem(
-                name = "Робота",
+                name = stringResource(Res.string.work),
                 imageVector = Images.Work,
                 isPositivePrice = true,
                 price = player.card.salary,
                 enabled = player.businesses.any { it.type == BusinessType.WORK }
             )
             StateItem(
-                name = "Шлюб",
+                name = stringResource(Res.string.marriage),
                 imageVector = Images.Mariage,
                 enabled = player.isMarried
             )
             StateItem(
-                name = "Діти",
+                name = stringResource(Res.string.kids),
                 imageVector = Images.Baby,
                 enabled = player.babies > 0,
                 count = player.babies,
@@ -61,14 +63,14 @@ fun StatePage(player: Player) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StateItem(
-                name = "Авто",
+                name = stringResource(Res.string.car),
                 imageVector = Images.Car,
                 enabled = player.cars > 0,
                 count = player.cars,
                 price = player.cars * player.config.carCost
             )
             StateItem(
-                name = "Квартира",
+                name = stringResource(Res.string.apartment),
                 imageVector = Images.Flat,
                 enabled = player.apartment > 0,
                 count = player.apartment,
@@ -80,21 +82,21 @@ fun StatePage(player: Player) {
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             StateItem(
-                name = "Маєток",
+                name = stringResource(Res.string.estate),
                 imageVector = Images.Estate,
                 enabled = player.cottage > 0,
                 count = player.cottage,
                 price = player.cottage * player.config.cottageCost
             )
             StateItem(
-                name = "Яхта",
+                name = stringResource(Res.string.yacht),
                 imageVector = Images.Yacht,
                 enabled = player.yacht > 0,
                 count = player.yacht,
                 price = player.yacht * player.config.yachtCost
             )
             StateItem(
-                name = "Літак",
+                name = stringResource(Res.string.plane),
                 imageVector = Images.Fly,
                 enabled = player.flight > 0,
                 count = player.flight,
@@ -102,27 +104,27 @@ fun StatePage(player: Player) {
             )
         }
         DetailsField(
-            "Активний прибуток",
+            stringResource(Res.string.active_profit),
             player.activeProfit().toString(),
             MaterialTheme.colorScheme.primary
         )
         DetailsField(
-            "Пасивний прибуток",
+            stringResource(Res.string.passive_profit),
             player.passiveProfit().toString(),
             MaterialTheme.colorScheme.primary
         )
         DetailsField(
-            "Загальний прибуток",
+            stringResource(Res.string.total_profit),
             player.totalProfit().toString(),
             MaterialTheme.colorScheme.primary
         )
         DetailsField(
-            "Витрати по кредиту",
+            stringResource(Res.string.credit_expenses),
             player.creditExpenses().toString(),
             MaterialTheme.colorScheme.tertiary
         )
         DetailsField(
-            "Загальні витрати",
+            stringResource(Res.string.total_expenses),
             player.totalExpenses().toString(),
             MaterialTheme.colorScheme.tertiary
         )

@@ -21,6 +21,11 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.buy
+import rat_race_card.composeapp.generated.resources.pass
+import rat_race_card.composeapp.generated.resources.pay
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.cards.*
@@ -190,7 +195,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                         modifier = Modifier,
                         onClick = { vm.pass() },
                         content = {
-                            Text("Пас", fontSize = unitTS * 14)
+                            Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
                         },
                     )
                     ElevatedButton(
@@ -206,7 +211,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                             )
                         },
                         content = {
-                            Text("Купити", fontSize = unitTS * 14)
+                            Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
                         },
                     )
                 }
@@ -300,7 +305,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                         modifier = Modifier,
                         onClick = { vm.pass() },
                         content = {
-                            Text("Пас", fontSize = unitTS * 14)
+                            Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
                         },
                     )
                     ElevatedButton(
@@ -316,7 +321,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                             )
                         },
                         content = {
-                            Text("Купити", fontSize = unitTS * 14)
+                            Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
                         },
                     )
                 }
@@ -410,7 +415,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                         modifier = Modifier,
                         onClick = { vm.pass() },
                         content = {
-                            Text("Пас", fontSize = unitTS * 14)
+                            Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
                         },
                     )
                     ElevatedButton(
@@ -426,7 +431,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                             )
                         },
                         content = {
-                            Text("Купити", fontSize = unitTS * 14)
+                            Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
                         },
                     )
                 }
@@ -498,7 +503,7 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
                             vm.sideExpenses(card.price)
                         },
                         content = {
-                            Text("Заплатити", fontSize = unitTS * 14)
+                            Text(stringResource(Res.string.pay), fontSize = unitTS * 14)
                         },
                     )
                 }
