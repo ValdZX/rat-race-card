@@ -46,9 +46,11 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.great
 import rat_race_card.composeapp.generated.resources.logo
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
@@ -331,7 +333,7 @@ class BoardScreen(
                         onClick = {
                             receivedCashDialog = 0
                         }
-                    ) { Text("Чудово") }
+                    ) { Text(stringResource(Res.string.great)) }
                 },
             )
         }

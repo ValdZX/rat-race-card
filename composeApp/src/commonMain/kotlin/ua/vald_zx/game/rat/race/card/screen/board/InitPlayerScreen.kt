@@ -18,6 +18,9 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.player_name_label
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
@@ -47,7 +50,7 @@ class InitPlayerScreen(private val board: Board) : Screen {
             var playerName by remember { mutableStateOf("") }
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Імʼя гравця") },
+                label = { Text(stringResource(Res.string.player_name_label)) },
                 value = playerName,
                 onValueChange = { playerName = it },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),

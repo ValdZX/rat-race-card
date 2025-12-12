@@ -1,40 +1,24 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import io.ktor.util.decodeBase64String
+import io.ktor.util.*
 import kotlinx.serialization.json.Json
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
+import ua.vald_zx.game.rat.race.card.raceRate2store
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
-import ua.vald_zx.game.rat.race.card.raceRate2store
 
 class ImportScreen : Screen {
     @Composable
@@ -64,7 +48,7 @@ class ImportScreen : Screen {
                 var base64Card by remember { mutableStateOf("") }
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Код картки") },
+                    label = { Text(stringResource(Res.string.card_code)) },
                     value = base64Card,
                     onValueChange = { base64Card = it }
                 )
@@ -82,20 +66,20 @@ class ImportScreen : Screen {
                         }
                     },
                     enabled = base64Card.isNotEmpty(),
-                    content = { Text("Імпортувати") }
+                    content = { Text(stringResource(Res.string.import_card_label)) }
                 )
             }
         }
 
         if (invalidData) {
             AlertDialog(
-                title = { Text(text = "Імпорт") },
+                title = { Text(text = stringResource(Res.string.import_data)) },
                 text = {
-                    Text(text = "Некоректні данні для імпорту")
+                    Text(text = stringResource(Res.string.wrong_import_data))
                 },
                 onDismissRequest = { invalidData = false },
                 confirmButton = {
-                    TextButton(onClick = { invalidData = false }) { Text("Гаразд") }
+                    TextButton(onClick = { invalidData = false }) { Text(stringResource(Res.string.ok)) }
                 }
             )
         }

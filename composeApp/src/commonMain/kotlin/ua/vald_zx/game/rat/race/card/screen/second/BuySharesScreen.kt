@@ -12,6 +12,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
@@ -45,16 +47,16 @@ class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0))
                 }
             }
             Text(
-                "Сумарно: ${((count.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).splitDecimal()}",
+                stringResource(Res.string.total) + ": ${((count.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).splitDecimal()}",
                 style = MaterialTheme.typography.titleSmall
             )
             NumberTextField(
                 input = inputPrice,
-                inputLabel = "Ціна покупки",
+                inputLabel = stringResource(Res.string.purchase_price),
             )
             NumberTextField(
                 input = inputCount,
-                inputLabel = "Кількість",
+                inputLabel = stringResource(Res.string.quantity),
             )
             ElevatedButton(
                 modifier = Modifier
@@ -74,7 +76,7 @@ class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0))
                 },
                 enabled = count.isNotEmpty() && price.isNotEmpty(),
                 content = {
-                    Text("Купити")
+                    Text(stringResource(Res.string.buy))
                 }
             )
         }

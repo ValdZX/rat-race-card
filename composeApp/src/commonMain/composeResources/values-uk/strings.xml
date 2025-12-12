@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cashflow: Rat Race Edition</string>
+    <string name="cyclone">Cyclone</string>
+    <string name="open_github">Open github</string>
+    <string name="run">Run</string>
+    <string name="stop">Stop</string>
+    <string name="theme">Theme</string>
+
+    <!-- UI Labels -->
+    <string name="card_code">Код картки</string>
+    <string name="send">Відправити</string>
+    <string name="copy">Копіювати</string>
+    <string name="new_table">Новий стіл</string>
+    <string name="table_name">Назва столу</string>
+    <string name="cancel">Відміна</string>
+    <string name="create_table">Створити стіл</string>
+    <string name="connection_failed">Невдалося підключитися до сервера</string>
+
+    <!-- Cash Flow Fields -->
+    <string name="active_profit">Активний прибуток</string>
+    <string name="passive_profit">Пасивний прибуток</string>
+    <string name="total_profit">Загальний прибуток</string>
+    <string name="credit_expenses">Витрати по кредиту</string>
+    <string name="total_expenses">Загальні витрати</string>
+    <string name="cash">Готівка</string>
+    <string name="deposit">Депозит</string>
+    <string name="loan">Кредит</string>
+
+    <!-- Asset Names -->
+    <string name="work">Робота</string>
+    <string name="marriage">Шлюб</string>
+    <string name="kids">Діти</string>
+    <string name="car">Авто</string>
+    <string name="apartment">Квартира</string>
+    <string name="estate">Маєток</string>
+    <string name="yacht">Яхта</string>
+    <string name="plane">Літак</string>
+
+    <!-- Card Types -->
+    <string name="big_business">Великий бізнес</string>
+    <string name="chance">Шанс!</string>
+    <string name="deputies">Депутати</string>
+    <string name="market">Ринок</string>
+    <string name="expenses">Витрати</string>
+    <string name="medium_business">Середній бізнес</string>
+    <string name="shopping">Покупки</string>
+    <string name="small_business">Малий бізнес</string>
+
+    <!-- Board Actions -->
+    <string name="pass">Пас</string>
+    <string name="buy">Купити</string>
+    <string name="pay">Заплатити</string>
+    <string name="buy_car">Купити авто</string>
+    <string name="buy_apartment">Купити квартиру</string>
+    <string name="buy_house">Купити будинок</string>
+    <string name="buy_yacht">Купити яхту</string>
+    <string name="buy_plane">Купити літак</string>
+    <string name="buy_business">Купити бізнес</string>
+    <string name="buy_shares">Купити акції</string>
+
+    <!-- Expenses Labels -->
+    <string name="baby_cost">Витрати на дитину</string>
+    <string name="car_cost">Витрати на автомобіль</string>
+    <string name="apartment_cost">Витрати на квариру</string>
+    <string name="cottage_cost">Витрати на маєток</string>
+    <string name="yacht_cost">Витрати на яхту</string>
+    <string name="flight_cost">Витрати на літак</string>
+    <string name="food_cost">Витрати на харчування</string>
+    <string name="cloth_cost">Витрати на одяг</string>
+    <string name="transport_cost">Витрати на проїзд</string>
+    <string name="phone_cost">Витрати на телефонні переговори</string>
+    <string name="food">Витрати на їжу</string>
+    <string name="cloth">Витрати на одяг</string>
+    <string name="transport">Витрати на проїзд</string>
+    <string name="phone">Витрати на телефонні переговори</string>
+
+    <!-- Board Places -->
+    <string name="salary">Прибуток</string>
+    <string name="store">Ринок</string>
+    <string name="business">Бізнес</string>
+    <string name="deputy">Депутат</string>
+    <string name="rest">Відпустка</string>
+    <string name="desire">Мрія</string>
+    <string name="start">Старт</string>
+    <string name="exaltation">Звільнення</string>
+    <string name="divorce">Розлучення</string>
+    <string name="bankruptcy">Банкрутство</string>
+
+    <!-- Additional UI -->
+    <string name="funds">Фонди</string>
+    <string name="offline_mode">Офлайн картка</string>
+    <string name="online_mode">Онлайн версія</string>
+    <string name="retry_connection">Спробувати підключития ще раз</string>
+
+    <!-- UI Actions and Labels -->
+    <string name="player_name">Імʼя гравця</string>
+    <string name="player_name_label">Імʼя гравця</string>
+    <string name="undo_actions">Відміна дій</string>
+    <string name="export_card">Експорт картки</string>
+    <string name="import_card">Імпорт картки</string>
+    <string name="edit_profession_card">Редагувати картку професії</string>
+    <string name="new_game">Нова гра</string>
+    <string name="confirm_reset">Точно?</string>
+    <string name="reset_data_warning">Всі данні буде затерто.</string>
+    <string name="yes">Точно</string>
+    <string name="no">Ні</string>
+    <string name="ok">Гаразд</string>
+    <string name="great">Чудово</string>
+    <string name="give">Віддати</string>
+    <string name="withdraw">Зняти</string>
+    <string name="profit">Дохід</string>
+    <string name="receive">Отримати</string>
+    <string name="profession">Професія</string>
+    <string name="business_name">Назва бізнеса</string>
+    <string name="price">Ціна</string>
+    <string name="quantity">Кількість</string>
+    <string name="total">Сумарно</string>
+    <string name="purchase_price">Ціна покупки</string>
+    <string name="sell">Продати</string>
+    <string name="expand">Розширити</string>
+    <string name="marriage_proposal">Укласти шлюб</string>
+    <string name="divorce_proposal">Розірвати шлюб</string>
+    <string name="add_baby">Додати дитину</string>
+    <string name="income_amount">Сума доходу</string>
+    <string name="expense_amount">Сума витрат</string>
+    <string name="total_assets">Загальні статки</string>
+    <string name="import_data">Імпорт</string>
+    <string name="import_card_label">Імпортувати</string>
+    <string name="buy_shares_label">Купити</string>
+    <string name="sell_shares_label">Продати акції</string>
+    <string name="capitalize">Капіталізувати</string>
+    <string name="base_fund_rate">Базова ставка фонду</string>
+    <string name="winning_fund_rate">Виграшна ставка фонду</string>
+    <string name="deposit_amount">Сума вкладу</string>
+    <string name="deposit_rate">Ставка депозиту %</string>
+    <string name="loan_amount">Сума кредиту</string>
+    <string name="loan_rate">Процент кредиту %</string>
+    <string name="repay_loan">Погасити кредит</string>
+    <string name="withdraw_deposit">Зняти з депозиту</string>
+    <string name="deposit_to_deposit">Покласти на депозит</string>
+    <string name="third_party_expense">Сторонні витрати</string>
+    <string name="third_party_income">Сторонній дохід</string>
+    <string name="sale_price">Ціна продажу</string>
+    <string name="expansion_amount">Сума розширення</string>
+    <string name="marital_status">Сімейний стан</string>
+    <string name="wrong_import_data">Некоректні данні для імпорту</string>
+    <string name="fire_from_job">Звільнення з роботи</string>
+    <string name="corruption_business">Корупційний бізнес</string>
+    <string name="large_business">Крупний бізнес</string>
+    <string name="salary_count">Кількість зарплат: %s</string>
+    <string name="capitalization_amount">Сума капіталізації(%s%%): %s</string>
+    <string name="capitalization_total">Сума капіталізації: %s</string>
+</resources>
+

@@ -12,6 +12,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.expense_amount
+import rat_race_card.composeapp.generated.resources.give
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
@@ -26,7 +30,7 @@ class SideExpensesScreen : Screen {
             val amount = inputAmount.value.text
             NumberTextField(
                 input = inputAmount,
-                inputLabel = "Сума витрат",
+                inputLabel = stringResource(Res.string.expense_amount),
             )
             ElevatedButton(
                 modifier = Modifier
@@ -38,7 +42,7 @@ class SideExpensesScreen : Screen {
                 },
                 enabled = amount.isNotEmpty(),
                 content = {
-                    Text("Віддати")
+                    Text(stringResource(Res.string.give))
                 }
             )
         }

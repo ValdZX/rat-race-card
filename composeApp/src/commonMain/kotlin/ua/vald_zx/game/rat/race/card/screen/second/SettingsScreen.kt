@@ -80,7 +80,7 @@ class SettingsScreen : Screen {
                             onClick = {
                                 bottomSheetNavigator.show(BackLogScreen())
                             },
-                            content = { Text("Відміна дій") }
+                            content = { Text(stringResource(Res.string.undo_actions)) }
                         )
                     }
                     ElevatedButton(
@@ -89,7 +89,7 @@ class SettingsScreen : Screen {
                         onClick = {
                             navigator?.push(ExportScreen())
                         },
-                        content = { Text("Експорт картки") }
+                        content = { Text(stringResource(Res.string.export_card)) }
                     )
                     ElevatedButton(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -97,19 +97,19 @@ class SettingsScreen : Screen {
                         onClick = {
                             navigator?.push(ImportScreen())
                         },
-                        content = { Text("Імпорт картки") }
+                        content = { Text(stringResource(Res.string.import_card)) }
                     )
-                    Button("Редагувати картку професії") {
+                    Button(stringResource(Res.string.edit_profession_card)) {
                         navigator?.push(EditPersonCardScreen())
                     }
                     var resetDialog by remember { mutableStateOf(false) }
-                    Button("Нова гра") {
+                    Button(stringResource(Res.string.new_game)) {
                         resetDialog = true
                     }
                     if (resetDialog) {
                         AlertDialog(
-                            title = { Text(text = "Точно?") },
-                            text = { Text(text = "Всі данні буде затерто.") },
+                            title = { Text(text = stringResource(Res.string.confirm_reset)) },
+                            text = { Text(text = stringResource(Res.string.reset_data_warning)) },
                             onDismissRequest = { resetDialog = false },
                             confirmButton = {
                                 TextButton(
@@ -117,10 +117,10 @@ class SettingsScreen : Screen {
                                         navigator?.replaceAll(PersonCard2Screen())
                                         resetDialog = false
                                     }
-                                ) { Text("Точно") }
+                                ) { Text(stringResource(Res.string.yes)) }
                             },
                             dismissButton = {
-                                TextButton(onClick = { resetDialog = false }) { Text("Відміна") }
+                                TextButton(onClick = { resetDialog = false }) { Text(stringResource(Res.string.cancel)) }
                             }
                         )
                     }
@@ -129,7 +129,7 @@ class SettingsScreen : Screen {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Фонди")
+                        Text(stringResource(Res.string.funds))
                         Switch(state.config.hasFunds, onCheckedChange = {
                             raceRate2store.dispatch(
                                 RatRace2CardAction.UpdateConfig(
@@ -172,13 +172,13 @@ class SettingsScreen : Screen {
                         remember { mutableStateOf(TextFieldValue(state.config.fundBaseRate.toString())) }
                     val inputFundStartRate =
                         remember { mutableStateOf(TextFieldValue(state.config.fundStartRate.toString())) }
-                    NumberTextField(input = inputDepositRate, inputLabel = "Ставка депозиту %")
-                    NumberTextField(input = inputFundBaseRate, inputLabel = "Базова ставка фонду")
+                    NumberTextField(input = inputDepositRate, inputLabel = stringResource(Res.string.deposit_rate))
+                    NumberTextField(input = inputFundBaseRate, inputLabel = stringResource(Res.string.base_fund_rate))
                     NumberTextField(
                         input = inputFundStartRate,
-                        inputLabel = "Виграшна ставка фонду"
+                        inputLabel = stringResource(Res.string.winning_fund_rate)
                     )
-                    NumberTextField(input = inputLoadRate, inputLabel = "Процент кредиту %")
+                    NumberTextField(input = inputLoadRate, inputLabel = stringResource(Res.string.loan_rate))
                     NumberTextField(input = inputBabyCost, inputLabel = stringResource(Res.string.baby_cost))
                     NumberTextField(input = inputCarCost, inputLabel = stringResource(Res.string.car_cost))
                     NumberTextField(input = inputApartmentCost, inputLabel = stringResource(Res.string.apartment_cost))

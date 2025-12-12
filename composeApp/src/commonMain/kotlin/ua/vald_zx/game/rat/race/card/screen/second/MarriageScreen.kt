@@ -1,27 +1,20 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.getDigits
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
@@ -54,7 +47,7 @@ class MarriageScreen : Screen {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        "Віддати дітей",
+                        stringResource(Res.string.give),
                         modifier = Modifier.weight(1f)
                     )
                     Switch(babyBye, onCheckedChange = { babyBye = it })
@@ -74,14 +67,14 @@ class MarriageScreen : Screen {
                         )
                     },
                     content = {
-                        Text("Розірвати шлюб")
+                        Text(stringResource(Res.string.divorce_proposal))
                     }
                 )
             } else {
                 var marriageCost by remember { mutableStateOf("0") }
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Ціна") },
+                    label = { Text(stringResource(Res.string.price)) },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     value = marriageCost,
                     onValueChange = { marriageCost = it.getDigits() }
@@ -100,7 +93,7 @@ class MarriageScreen : Screen {
                         )
                     },
                     content = {
-                        Text("Укласти шлюб")
+                        Text(stringResource(Res.string.marriage_proposal))
                     }
                 )
             }

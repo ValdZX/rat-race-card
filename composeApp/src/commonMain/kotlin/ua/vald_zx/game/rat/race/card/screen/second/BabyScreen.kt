@@ -9,6 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.add_baby
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.raceRate2store
@@ -27,7 +30,7 @@ class BabyScreen : Screen {
                     bottomSheetNavigator.hide()
                     raceRate2store.dispatch(RatRace2CardAction.AddBaby)
                 },
-                content = { Text("Додати дитину") }
+                content = { Text(stringResource(Res.string.add_baby)) }
             )
         }
     }
