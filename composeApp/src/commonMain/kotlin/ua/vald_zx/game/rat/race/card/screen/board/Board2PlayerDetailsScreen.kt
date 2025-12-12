@@ -118,9 +118,9 @@ fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState
                 }
             }
             val coroutineScope = rememberCoroutineScope()
-            val titles = mutableListOf("Стан", "Бізнес", "Акції")
+            val titles = mutableListOf(stringResource(Res.string.status), stringResource(Res.string.business), stringResource(Res.string.shares))
             if (player.config.hasFunds) {
-                titles += "Фонди"
+                titles += stringResource(Res.string.funds)
             }
             val pagerState = rememberPagerState(pageCount = { titles.size })
             PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {

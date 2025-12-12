@@ -22,10 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import org.jetbrains.compose.resources.stringResource
-import rat_race_card.composeapp.generated.resources.Res
-import rat_race_card.composeapp.generated.resources.buy
-import rat_race_card.composeapp.generated.resources.pass
-import rat_race_card.composeapp.generated.resources.pay
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.cards.*
@@ -104,7 +101,7 @@ fun BoxScope.ChanceCardFront(
     vm: BoardViewModel,
 ) {
     if (isActive) {
-        Button("Pass") {
+        Button(stringResource(Res.string.pass)) {
             vm.pass()
         }
     }
@@ -557,7 +554,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "ВП",
+                        text = stringResource(Res.string.vp_short),
                         color = Color.White,
                         fontSize = unitTS * 20,
                         fontWeight = FontWeight.Bold,
@@ -571,7 +568,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                 lineHeight = unitTS * 10,
             )
             Text(
-                "Повна вартість",
+                stringResource(Res.string.full_price),
                 fontSize = unitTS * 10,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.align(Alignment.CenterHorizontally)

@@ -14,6 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.amount
+import rat_race_card.composeapp.generated.resources.fund_at
+import rat_race_card.composeapp.generated.resources.withdraw
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
 import ua.vald_zx.game.rat.race.card.screen.board.SellFundScreen
 import ua.vald_zx.game.rat.race.card.shared.Player
@@ -30,17 +35,17 @@ fun FundsPage(player: Player) {
                 Column(modifier = Modifier.padding(top = 8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         SDetailsField(
-                            name = "Фонд на",
+                            name = stringResource(Res.string.fund_at),
                             value = "${fund.rate}%",
                             modifier = Modifier.weight(1f)
                         )
                         SDetailsField(
-                            name = "Сума",
+                            name = stringResource(Res.string.amount),
                             value = fund.amount.toString(),
                             modifier = Modifier.weight(1f)
                         )
                         TextButton(onClick = { bottomSheetNavigator.show(SellFundScreen(fund)) }) {
-                            Text("Зняти")
+                            Text(stringResource(Res.string.withdraw))
                         }
                     }
                     HorizontalDivider()

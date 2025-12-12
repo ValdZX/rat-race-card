@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
 import ua.vald_zx.game.rat.race.card.screen.board.SellBusinessScreen
 import ua.vald_zx.game.rat.race.card.shared.BusinessType
@@ -39,10 +41,10 @@ fun BusinessListPage(state: Player) {
                 ) {
                     val title = when (business.type) {
                         BusinessType.WORK -> ""
-                        BusinessType.SMALL -> "Малий бізнес"
-                        BusinessType.MEDIUM -> "Середній бізнес"
-                        BusinessType.LARGE -> "Крупний бізнес"
-                        BusinessType.CORRUPTION -> "Корупційний бізнес"
+                        BusinessType.SMALL -> stringResource(Res.string.small_business)
+                        BusinessType.MEDIUM -> stringResource(Res.string.medium_business)
+                        BusinessType.LARGE -> stringResource(Res.string.large_business)
+                        BusinessType.CORRUPTION -> stringResource(Res.string.corruption_business)
                     }
                     Text(
                         "${index + 1}) $title - ${business.name}",
@@ -55,12 +57,12 @@ fun BusinessListPage(state: Player) {
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         SDetailsField(
-                            name = "Ціна",
+                            name = stringResource(Res.string.price),
                             value = business.price.toString(),
                             modifier = Modifier.weight(1f)
                         )
                         SDetailsField(
-                            name = "Прибуток",
+                            name = stringResource(Res.string.salary),
                             value = business.profit.toString(),
                             additionalValue = business.extentions.map { it.toString() },
                             modifier = Modifier.weight(1f)
@@ -68,7 +70,7 @@ fun BusinessListPage(state: Player) {
                         Column {
                             TextButton(onClick = {
                                 bottomSheetNavigator.show(SellBusinessScreen(business))
-                            }) { Text("Продати") }
+                            }) { Text(stringResource(Res.string.sell)) }
                         }
                     }
                     HorizontalDivider()

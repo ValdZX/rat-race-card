@@ -57,6 +57,7 @@
     <string name="buy_plane">Buy Plane</string>
     <string name="buy_business">Buy Business</string>
     <string name="buy_shares">Buy Shares</string>
+    <string name="shares">Shares</string>
 
     <!-- Expenses Labels -->
     <string name="baby_cost">Baby Expenses</string>
@@ -85,6 +86,7 @@
     <string name="exaltation">Layoff</string>
     <string name="divorce">Divorce</string>
     <string name="bankruptcy">Bankruptcy</string>
+    <string name="status">Status</string>
 
     <!-- Additional UI -->
     <string name="funds">Funds</string>
@@ -150,6 +152,9 @@
     <string name="salary_count">Salary Count: %s</string>
     <string name="capitalization_amount">Capitalization (%s%%): %s</string>
     <string name="capitalization_total">Total Capitalization: %s</string>
+    <string name="cash_flow">Cash Flow</string>
+    <string name="undo_action">Undo action</string>
+    <string name="redo_action">Redo</string>
     
     <!-- Dialogs/Titles/Messages -->
     <string name="attention">Attention</string>
@@ -176,4 +181,9 @@
     <string name="sell_shares">Sell Shares</string>
     <string name="invest">Invest</string>
     <string name="purchases">Purchases</string>
+    <string name="vp_short">VP</string>
+    <string name="full_price">Full price</string>
+    <string name="rent">Rental housing</string>
+    <string name="sell_amount">Sales amount</string>
+    <string name="done">Done</string>
 </resources>

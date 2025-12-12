@@ -18,6 +18,8 @@ import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.extensions.format
 import ir.ehsannarmani.compose_charts.models.*
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.*
 import ua.vald_zx.game.rat.race.card.logic.total
 import ua.vald_zx.game.rat.race.card.raceRate2store
@@ -30,7 +32,7 @@ class StatisticsScreen : Screen {
         val statistics = raceRate2store.statistics ?: return
         BottomSheetContainer {
             Column(modifier = Modifier.statusBarsPadding()) {
-                Text("Кількість зарплат: ${statistics.salaryCount}")
+                Text(stringResource(Res.string.salary_count, statistics.salaryCount.toString()))
                 var needTotal by remember { mutableStateOf(true) }
                 var needCashFlow by remember { mutableStateOf(true) }
                 var needCash by remember { mutableStateOf(true) }
@@ -39,6 +41,12 @@ class StatisticsScreen : Screen {
                 val primary = MaterialTheme.colorScheme.primary
                 val tertiary = MaterialTheme.colorScheme.tertiary
                 val cashColor = AppTheme.colors.cash
+                // Localized labels
+                val totalAssetsText = stringResource(Res.string.total_assets)
+                val cashFlowText = stringResource(Res.string.cash_flow)
+                val cashText = stringResource(Res.string.cash)
+                val depositText = stringResource(Res.string.deposit)
+                val loanText = stringResource(Res.string.loan)
                 Card(
                     modifier = Modifier.height(270.dp).fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent)
@@ -59,7 +67,7 @@ class StatisticsScreen : Screen {
                                 if (needTotal) {
                                     lines.add(
                                         Line(
-                                            label = "Загальні статки",
+                                            label = totalAssetsText,
                                             values = statistics.log.map {
                                                 it.total().toDouble()
                                             },
@@ -82,7 +90,7 @@ class StatisticsScreen : Screen {
                                 if (needCashFlow) {
                                     lines.add(
                                         Line(
-                                            label = "CashFlow",
+                                            label = cashFlowText,
                                             values = statistics.log.map {
                                                 it.cashFlow().toDouble()
                                             },
@@ -103,7 +111,7 @@ class StatisticsScreen : Screen {
                                 if (needCash) {
                                     lines.add(
                                         Line(
-                                            label = "Готівка",
+                                            label = cashText,
                                             values = statistics.log.map { it.cash.toDouble() },
                                             color = SolidColor(cashColor),
                                             firstGradientFillColor = cashColor.copy(alpha = .5f),
@@ -122,7 +130,7 @@ class StatisticsScreen : Screen {
                                 if (needDeposit) {
                                     lines.add(
                                         Line(
-                                            label = "Депозит",
+                                            label = depositText,
                                             values = statistics.log.map { it.deposit.toDouble() },
                                             color = SolidColor(primary),
                                             firstGradientFillColor = primary.copy(alpha = .4f),
@@ -141,7 +149,7 @@ class StatisticsScreen : Screen {
                                 if (needLoan) {
                                     lines.add(
                                         Line(
-                                            label = "Кредит",
+                                            label = loanText,
                                             values = statistics.log.map { it.loan.toDouble() },
                                             color = SolidColor(tertiary),
                                             firstGradientFillColor = tertiary.copy(alpha = .5f),
@@ -194,7 +202,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SmoothRainbowText("Загальні статки", rainbow = GoldRainbow)
+                    SmoothRainbowText(totalAssetsText, rainbow = GoldRainbow)
                     Switch(needTotal, onCheckedChange = { needTotal = it })
                 }
                 Row(
@@ -202,7 +210,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SmoothRainbowText("CashFlow", rainbow = SkittlesRainbow)
+                    SmoothRainbowText(cashFlowText, rainbow = SkittlesRainbow)
                     Switch(needCashFlow, onCheckedChange = { needCashFlow = it })
                 }
                 Row(
@@ -210,7 +218,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Готівка", color = AppTheme.colors.cash)
+                    Text(cashText, color = AppTheme.colors.cash)
                     Switch(needCash, onCheckedChange = { needCash = it })
                 }
                 Row(
@@ -218,7 +226,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Депозит", color = primary)
+                    Text(depositText, color = primary)
                     Switch(needDeposit, onCheckedChange = { needDeposit = it })
                 }
                 Row(
@@ -226,7 +234,7 @@ class StatisticsScreen : Screen {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Кредит", color = tertiary)
+                    Text(loanText, color = tertiary)
                     Switch(needLoan, onCheckedChange = { needLoan = it })
                 }
             }

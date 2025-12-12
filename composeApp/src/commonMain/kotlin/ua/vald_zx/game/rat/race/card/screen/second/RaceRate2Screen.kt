@@ -104,20 +104,20 @@ class RaceRate2Screen : Screen {
                         onClick = { raceRate2store.dispatch(RatRace2CardAction.GetSalary) },
                         salary = { raceRate2store.dispatch(RatRace2CardAction.GetSalary) })
                     BalanceField(
-                        name = "Готівка",
+                        name = stringResource(Res.string.cash),
                         value = "${state.cash} $",
                         add = { bottomSheetNavigator.show(SideProfitScreen()) },
                         sub = { bottomSheetNavigator.show(SideExpensesScreen()) },
                         onClick = { bottomSheetNavigator.show(CashActionsScreen()) },
                     )
                     PositiveField(
-                        name = "Депозит",
+                        name = stringResource(Res.string.deposit),
                         value = "${state.deposit} $",
                         onClick = { bottomSheetNavigator.show(DepositActionsScreen()) },
                         deposit = { bottomSheetNavigator.show(ToDepositScreen()) },
                     )
                     NegativeField(
-                        name = "Кредит",
+                        name = stringResource(Res.string.loan),
                         value = "${state.loan} $",
                         onClick = { bottomSheetNavigator.show(LoanActionsScreen()) },
                         repay = {
@@ -128,16 +128,16 @@ class RaceRate2Screen : Screen {
                     )
                     if (state.config.hasFunds) {
                         FundsField(
-                            name = "Фонди",
+                            name = stringResource(Res.string.funds),
                             value = "${state.fundAmount()} $"
                         ) {
                             bottomSheetNavigator.show(BuyFundScreen())
                         }
                     }
                     val coroutineScope = rememberCoroutineScope()
-                    val titles = mutableListOf("Стан", "Бізнес", "Акції")
+                    val titles = mutableListOf(stringResource(Res.string.status), stringResource(Res.string.business), stringResource(Res.string.shares))
                     if (state.config.hasFunds) {
-                        titles += "Фонди"
+                        titles += stringResource(Res.string.funds)
                     }
                     val pagerState = rememberPagerState(pageCount = { titles.size })
                     PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {

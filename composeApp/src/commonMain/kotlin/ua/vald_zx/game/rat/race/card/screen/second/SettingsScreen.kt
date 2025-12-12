@@ -215,7 +215,7 @@ class SettingsScreen : Screen {
                                 && inputCottageCost.value.text.isNotEmpty()
                                 && inputYachtCost.value.text.isNotEmpty()
                                 && inputFlightCost.value.text.isNotEmpty(),
-                        content = { Text("Зберегти") }
+                        content = { Text(stringResource(Res.string.save)) }
                     )
                 }
             }

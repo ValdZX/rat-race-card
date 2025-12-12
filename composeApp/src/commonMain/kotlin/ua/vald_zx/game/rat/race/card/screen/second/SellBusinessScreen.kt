@@ -14,6 +14,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
@@ -31,27 +33,27 @@ class SellBusinessScreen(private val businessToSell: Business) : Screen {
             val amount = inputAmount.value.text
             val title = when (businessToSell.type) {
                 BusinessType.WORK -> ""
-                BusinessType.SMALL -> "Малий бізнес"
-                BusinessType.MEDIUM -> "Середній бізнес"
-                BusinessType.LARGE -> "Крупний бізнес"
-                BusinessType.CORRUPTION -> "Корупційний бізнес"
+                BusinessType.SMALL -> stringResource(Res.string.small_business)
+                BusinessType.MEDIUM -> stringResource(Res.string.medium_business)
+                BusinessType.LARGE -> stringResource(Res.string.large_business)
+                BusinessType.CORRUPTION -> stringResource(Res.string.corruption_business)
             }
             Text("$title: ${businessToSell.name}", style = MaterialTheme.typography.titleSmall)
             Row {
                 SDetailsField(
-                    name = "Ціна",
+                    name = stringResource(Res.string.price),
                     value = businessToSell.price.toString(),
                     modifier = Modifier.weight(1f)
                 )
                 SDetailsField(
-                    name = "Прибуток",
+                    name =  stringResource(Res.string.salary),
                     value = businessToSell.profit.toString(),
                     modifier = Modifier.weight(1f)
                 )
             }
             NumberTextField(
                 input = inputAmount,
-                inputLabel = "Сума продажу",
+                inputLabel = stringResource(Res.string.sell_amount),
             )
             ElevatedButton(
                 modifier = Modifier
@@ -63,7 +65,7 @@ class SellBusinessScreen(private val businessToSell: Business) : Screen {
                 },
                 enabled = amount.isNotEmpty(),
                 content = {
-                    Text("Продати")
+                    Text(stringResource(Res.string.sell))
                 }
             )
         }

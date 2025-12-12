@@ -87,7 +87,7 @@ fun ProfessionCardForm(card: PlayerCard? = null, filled: (PlayerCard) -> Unit) {
     val focusManager = LocalFocusManager.current
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
-        label = { Text("Професія") },
+        label = { Text(stringResource(Res.string.profession)) },
         value = profession,
         onValueChange = { profession = it },
         keyboardOptions = KeyboardOptions( imeAction = ImeAction.Next ),
@@ -97,11 +97,11 @@ fun ProfessionCardForm(card: PlayerCard? = null, filled: (PlayerCard) -> Unit) {
     )
     NumberTextField(
         input = salary,
-        inputLabel = "Зарплата",
+        inputLabel = stringResource(Res.string.salary),
     )
     NumberTextField(
         input = rent,
-        inputLabel = "Оренда житла",
+        inputLabel = stringResource(Res.string.rent),
     )
     NumberTextField(
         input = food,
@@ -143,7 +143,7 @@ fun ProfessionCardForm(card: PlayerCard? = null, filled: (PlayerCard) -> Unit) {
                 && transport.value.text.isNotEmpty()
                 && phone.value.text.isNotEmpty(),
         content = {
-            Text("Готово")
+            Text(stringResource(Res.string.done))
         }
     )
 }

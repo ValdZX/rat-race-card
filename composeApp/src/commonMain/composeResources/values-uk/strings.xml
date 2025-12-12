@@ -79,6 +79,7 @@
     <string name="salary">Прибуток</string>
     <string name="store">Ринок</string>
     <string name="business">Бізнес</string>
+    <string name="shares">Акції</string>
     <string name="deputy">Депутат</string>
     <string name="rest">Відпустка</string>
     <string name="desire">Мрія</string>
@@ -86,6 +87,7 @@
     <string name="exaltation">Звільнення</string>
     <string name="divorce">Розлучення</string>
     <string name="bankruptcy">Банкрутство</string>
+    <string name="status">Стан</string>
 
     <!-- Additional UI -->
     <string name="funds">Фонди</string>
@@ -151,6 +153,9 @@
     <string name="salary_count">Кількість зарплат: %s</string>
     <string name="capitalization_amount">Сума капіталізації(%s%%): %s</string>
     <string name="capitalization_total">Сума капіталізації: %s</string>
+    <string name="cash_flow">CashFlow</string>
+    <string name="undo_action">Відмінити дію</string>
+    <string name="redo_action">Повернути</string>
     
     <!-- Dialogs/Titles/Messages -->
     <string name="attention">Увага</string>
@@ -177,5 +182,10 @@
     <string name="invest">Інвестувати</string>
     <string name="purchases">Покупки</string>
     <string name="get_loan">Взяти кредит</string>
+    <string name="vp_short">ВП</string>
+    <string name="full_price">Повна вартість</string>
+    <string name="rent">Оренда житла</string>
+    <string name="sell_amount">Сума продажу</string>
+    <string name="done">Готово</string>
 </resources>
 

@@ -60,7 +60,7 @@ class ProfessionScreen(
                 color = MaterialTheme.colorScheme.tertiary
             )
             DetailsField(
-                "Оренда житла", card.rent.toString(),
+                stringResource(Res.string.rent), card.rent.toString(),
                 color = MaterialTheme.colorScheme.tertiary
             )
             DetailsField(
