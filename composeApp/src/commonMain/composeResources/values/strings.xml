@@ -186,4 +186,5 @@
     <string name="rent">Rental housing</string>
     <string name="sell_amount">Sales amount</string>
     <string name="done">Done</string>
+    <string name="not_for_me">Not for me</string>
 </resources>

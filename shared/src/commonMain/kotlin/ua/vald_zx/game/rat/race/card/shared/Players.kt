@@ -23,6 +23,7 @@ data class Player(
     val cottage: Long = 0,
     val yacht: Long = 0,
     val flight: Long = 0,
+    val animal: Long = 0,
     val sharesList: List<Shares> = emptyList(),
     val funds: List<Fund> = emptyList(),
     val config: Config = Config(),

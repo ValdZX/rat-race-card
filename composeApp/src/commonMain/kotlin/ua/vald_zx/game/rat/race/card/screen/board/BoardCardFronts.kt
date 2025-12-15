@@ -490,17 +490,24 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
                 lineHeight = unitTS * 10,
             )
             if (isActive) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().weight(1f).padding(top = smallPadding),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
+                if (vm.uiState.value.player.needPayExpenses(card)) {
                     ElevatedButton(
-                        modifier = Modifier.align(Alignment.CenterVertically),
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
                         onClick = {
                             vm.sideExpenses(card.price)
                         },
                         content = {
                             Text(stringResource(Res.string.pay), fontSize = unitTS * 14)
+                        },
+                    )
+                } else {
+                    ElevatedButton(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        onClick = {
+                            vm.pass()
+                        },
+                        content = {
+                            Text(stringResource(Res.string.not_for_me), fontSize = unitTS * 14)
                         },
                     )
                 }

@@ -187,5 +187,6 @@
     <string name="rent">Оренда житла</string>
     <string name="sell_amount">Сума продажу</string>
     <string name="done">Готово</string>
+    <string name="not_for_me">Not for me</string>
 </resources>
 
