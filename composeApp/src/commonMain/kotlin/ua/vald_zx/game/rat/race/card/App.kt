@@ -22,13 +22,11 @@ import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 import org.koin.compose.KoinApplication
 import rat_race_card.composeapp.generated.resources.Res
 import ua.vald_zx.game.rat.race.card.di.baseModule
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.screen.SelectTypeScreen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 
-val raceRate2store by lazy { RatRace2CardStore() }
 val settings: Settings = Settings()
 
 var currentPlayerId: String

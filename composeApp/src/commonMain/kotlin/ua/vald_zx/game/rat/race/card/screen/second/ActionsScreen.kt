@@ -14,17 +14,19 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.RainbowButton
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
-import ua.vald_zx.game.rat.race.card.raceRate2store
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 class AllActionsScreen() : Screen {
     @Composable
     override fun Content() = ActionsScreen {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         RainbowButton(stringResource(Res.string.receive_income)) {
@@ -108,6 +110,7 @@ class DepositActionsScreen() : Screen {
 class LoanActionsScreen() : Screen {
     @Composable
     override fun Content() = ActionsScreen {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         if (state.loan > 0) {

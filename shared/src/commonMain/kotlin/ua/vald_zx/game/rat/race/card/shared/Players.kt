@@ -6,6 +6,22 @@ import kotlinx.serialization.Serializable
 enum class Gender { MALE, FEMALE }
 
 @Serializable
+data class OfflinePlayer(
+    val id: String,
+    val name: String,
+    val cashFlow: Long,
+    val total: Long,
+    val room: String,
+)
+
+@Serializable
+data class SendMoneyPack(
+    val payerId: String,
+    val receiverId: String,
+    val receiverName: String,
+    val amount: Long,
+)
+@Serializable
 data class Player(
     val id: String,
     val boardId: String,

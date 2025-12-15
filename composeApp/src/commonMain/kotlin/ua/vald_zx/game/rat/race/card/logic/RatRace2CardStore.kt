@@ -4,19 +4,20 @@ package ua.vald_zx.game.rat.race.card.logic
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import ua.vald_zx.game.rat.race.card.beans.*
+import ua.vald_zx.game.rat.race.card.beans.Business
+import ua.vald_zx.game.rat.race.card.beans.BusinessType
+import ua.vald_zx.game.rat.race.card.beans.Config
+import ua.vald_zx.game.rat.race.card.beans.Fund
+import ua.vald_zx.game.rat.race.card.beans.Shares
+import ua.vald_zx.game.rat.race.card.beans.SharesType
+import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.*
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect.*
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
-import ua.vald_zx.game.rat.race.card.shared.PlayerCard
-import ua.vald_zx.game.rat.race.card.shared.remove
-import ua.vald_zx.game.rat.race.card.shared.replace
+import ua.vald_zx.game.rat.race.card.screen.second.offlinePlayers
+import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.statistics2KStore
 import kotlin.math.absoluteValue
 
@@ -43,6 +44,7 @@ data class RatRace2CardState(
     val sharesList: List<Shares> = emptyList(),
     val funds: List<Fund> = emptyList(),
     val config: Config = Config(),
+    val connected: Boolean = false,
 ) : State {
 
     fun balance(): Long {
@@ -130,6 +132,7 @@ sealed class RatRace2CardAction : Action {
     data object CapitalizeStarsFunds : RatRace2CardAction()
     data object RandomBusiness : RatRace2CardAction()
     data object HideAlarm : RatRace2CardAction()
+    data object Connected : RatRace2CardAction()
     data class BuyBusiness(val business: Business) : RatRace2CardAction()
     data class SellBusiness(val business: Business, val amount: Long) : RatRace2CardAction()
     data class DismissalConfirmed(val business: Business) : RatRace2CardAction()
@@ -152,7 +155,6 @@ sealed class RatRace2CardAction : Action {
     data class BackToState(val state: RatRace2CardState, val backCount: Int) : RatRace2CardAction()
     data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) :
         RatRace2CardAction()
-
     data class UpdateFamily(
         val isMarried: Boolean,
         val halfCash: Boolean = false,
@@ -161,6 +163,8 @@ sealed class RatRace2CardAction : Action {
     ) : RatRace2CardAction()
 
     data object AddBaby : RatRace2CardAction()
+
+    data class Connect(val room: String) : RatRace2CardAction()
 }
 
 sealed class RatRace2CardSideEffect : Effect {
@@ -175,14 +179,45 @@ sealed class RatRace2CardSideEffect : Effect {
     data object ShowSalaryApprove : RatRace2CardSideEffect()
 }
 
-class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2CardSideEffect>,
+class RatRace2CardStore(private val service: RaceRatCardService) :
+    Store<RatRace2CardState, RatRace2CardAction, RatRace2CardSideEffect>,
     CoroutineScope by CoroutineScope(Dispatchers.Main) {
 
     private val state = MutableStateFlow(RatRace2CardState())
     private val sideEffect = MutableSharedFlow<RatRace2CardSideEffect>()
     var statistics: Statistics? = null
-        private set
 
+    fun connect(room: String) {
+        launch {
+            service.playersObserve().collect { player ->
+                offlinePlayers.update { list ->
+                    list.find { it.id == player.id }?.let { oldPlayer ->
+                        list.replace(oldPlayer, player)
+                    } ?: list
+                }
+            }
+        }
+
+        launch {
+            service.sendMoneyObserve().collect {
+                dispatch(ReceivedCash(it.payerId, it.amount))
+            }
+        }
+        launch {
+            currentPlayerId =
+                service.hello(
+                    OfflinePlayer(
+                        currentPlayerId,
+                        state.value.playerCard.name.ifEmpty { state.value.playerCard.profession },
+                        state.value.cashFlow(),
+                        state.value.total(),
+                        room
+                    )
+                )
+            dispatch(Connected)
+        }
+
+    }
 
     override fun observeState(): StateFlow<RatRace2CardState> = state
 
@@ -213,7 +248,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
                 oldState.copy(playerCard = action.playerCard)
             }
 
-            is RatRace2CardAction.ReceivedCash -> {
+            is ReceivedCash -> {
                 launch {
                     sideEffect.emit(
                         RatRace2CardSideEffect.ReceivedCash(
@@ -250,13 +285,13 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
                     && currentBusiness.any { it.type == BusinessType.WORK }
                     && currentBusiness.count { it.type == BusinessType.SMALL } == 1
                 ) {
-                    launch { sideEffect.emit(ConfirmDismissal(action.business)) }
+                    launch { sideEffect.emit(RatRace2CardSideEffect.ConfirmDismissal(action.business)) }
                     oldState
                 } else if (currentBusiness.isNotEmpty()
                     && currentBusiness.first().type.klass != action.business.type.klass
                     && !currentBusiness.any { it.type == BusinessType.WORK }
                 ) {
-                    launch { sideEffect.emit(ConfirmSellingAllBusiness(action.business)) }
+                    launch { sideEffect.emit(RatRace2CardSideEffect.ConfirmSellingAllBusiness(action.business)) }
                     oldState
                 } else oldState.copy(business = currentBusiness + action.business)
                     .minusCash(action.business.price)
@@ -292,7 +327,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             GetSalary -> {
-                launch { sideEffect.emit(ShowSalaryApprove) }
+                launch { sideEffect.emit(RatRace2CardSideEffect.ShowSalaryApprove) }
                 oldState
             }
 
@@ -443,7 +478,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             }
 
             Fired -> {
-                launch { sideEffect.emit(ConfirmFired) }
+                launch { sideEffect.emit(RatRace2CardSideEffect.ConfirmFired) }
                 oldState
             }
 
@@ -454,6 +489,15 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
             is BackToState -> {
                 repeat(action.backCount) { statistics?.log?.removeLastOrNull() }
                 action.state
+            }
+
+            Connected -> {
+                oldState.copy(connected = true)
+            }
+
+            is Connect -> {
+                connect(action.room)
+                oldState
             }
         }
         if (newState != oldState) {
@@ -474,7 +518,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
     }
 
     private fun RatRace2CardState.plusCash(value: Long): RatRace2CardState {
-        launch { sideEffect.emit(AddCash(value)) }
+        launch { sideEffect.emit(RatRace2CardSideEffect.AddCash(value)) }
         return copy(cash = cash + value)
     }
 
@@ -483,11 +527,11 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
         isFundBuy: Boolean = false
     ): RatRace2CardState {
         if (value == 0L) return this
-        launch { sideEffect.emit(SubCash(value)) }
+        launch { sideEffect.emit(RatRace2CardSideEffect.SubCash(value)) }
         return if (cash > value) {
             copy(cash = cash - value)
         } else if ((cash + deposit) > value) {
-            launch { sideEffect.emit(DepositWithdraw(value - cash)) }
+            launch { sideEffect.emit(RatRace2CardSideEffect.DepositWithdraw(value - cash)) }
             copy(cash = 0, deposit = (deposit + cash) - value)
         } else if (!isFundBuy && config.hasFunds && funds.isNotEmpty()) {
             var stub = cash + deposit
@@ -508,7 +552,7 @@ class RatRace2CardStore : Store<RatRace2CardState, RatRace2CardAction, RatRace2C
                 copy(cash = 0, deposit = 0, funds = newFunds)
             }
         } else {
-            launch { sideEffect.emit(LoanAdded(value - (cash + deposit))) }
+            launch { sideEffect.emit(RatRace2CardSideEffect.LoanAdded(value - (cash + deposit))) }
             copy(cash = 0, deposit = 0, loan = loan + (value - (deposit + cash)))
         }
     }

@@ -17,10 +17,11 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
-import ua.vald_zx.game.rat.race.card.raceRate2store
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.shared.PlayerCard
@@ -28,6 +29,7 @@ import ua.vald_zx.game.rat.race.card.shared.PlayerCard
 class PersonCard2Screen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         val navigator = LocalNavigator.current
         Column(
             modifier = Modifier
@@ -49,6 +51,7 @@ class PersonCard2Screen : Screen {
 class EditPersonCardScreen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
         val navigator = LocalNavigator.current
         Column(

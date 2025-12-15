@@ -19,10 +19,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.rpc.krpc.ktor.server.Krpc
 import kotlinx.rpc.krpc.ktor.server.rpc
 import kotlinx.rpc.krpc.serialization.json.json
-import ua.vald_zx.game.rat.race.card.shared.Board
-import ua.vald_zx.game.rat.race.card.shared.GlobalEvent
-import ua.vald_zx.game.rat.race.card.shared.Player
-import ua.vald_zx.game.rat.race.card.shared.RaceRatService
+import ua.vald_zx.game.rat.race.card.shared.*
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -69,6 +66,9 @@ fun Application.module() {
             }
             registerService<RaceRatService> {
                 RaceRatServiceImpl(uuid)
+            }
+            registerService<RaceRatCardService> {
+                RaceRatCardServiceImpl(uuid)
             }
             closeReason.invokeOnCompletion {
                 launch {

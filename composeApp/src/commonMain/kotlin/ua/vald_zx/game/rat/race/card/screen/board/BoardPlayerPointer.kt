@@ -146,7 +146,7 @@ fun PlayerPoint(
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
             TooltipBox(
                 modifier = Modifier,
-                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above, 4.dp),
                 tooltip = {
                     if (pointerState.isCurrentPlayer) {
                         CurrentPlayerTooltip(
@@ -157,7 +157,13 @@ fun PlayerPoint(
                         )
                     } else {
                         PlayerTooltip(pointerState, tooltipState, coroutineScope) {
-                            bottomSheetNavigator.show(SendScreen(pointerState.player, vm))
+                            bottomSheetNavigator.show(
+                                SendScreen(
+                                    pointerState.player.id,
+                                    pointerState.player.card.name
+                                ) { id, price ->
+                                    vm.sendMoney(id, price)
+                                })
                         }
                     }
                 },

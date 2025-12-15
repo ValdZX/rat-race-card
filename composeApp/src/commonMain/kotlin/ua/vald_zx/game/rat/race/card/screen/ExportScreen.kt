@@ -15,11 +15,12 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import io.ktor.util.*
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.card_code
 import rat_race_card.composeapp.generated.resources.copy
 import rat_race_card.composeapp.generated.resources.send
-import ua.vald_zx.game.rat.race.card.raceRate2store
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.share
@@ -27,6 +28,7 @@ import ua.vald_zx.game.rat.race.card.share
 class ExportScreen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
         val navigator = LocalNavigator.current
         Box(

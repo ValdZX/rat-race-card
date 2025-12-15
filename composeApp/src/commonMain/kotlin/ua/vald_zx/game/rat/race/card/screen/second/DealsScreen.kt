@@ -4,14 +4,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import cafe.adriel.voyager.core.screen.Screen
+import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.screen.InputScreen
-import ua.vald_zx.game.rat.race.card.raceRate2store
 import kotlin.math.min
 
 class ToDepositScreen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
         InputScreen(
             inputLabel = "Сума вкладу",
@@ -26,6 +28,7 @@ class ToDepositScreen : Screen {
 class FromDepositScreen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
         InputScreen(
             inputLabel = "Сума зняття з депозиту",
@@ -40,6 +43,7 @@ class FromDepositScreen : Screen {
 class RepayCreditScreen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
         InputScreen(
             inputLabel = "Сума погашення",
@@ -54,6 +58,7 @@ class RepayCreditScreen : Screen {
 class GetLoanScreen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         InputScreen(
             inputLabel = "Сума кредиту",
             buttonText = "Взяти",

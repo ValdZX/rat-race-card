@@ -23,20 +23,26 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
-import ua.vald_zx.game.rat.race.card.*
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.components.*
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.logic.total
+import ua.vald_zx.game.rat.race.card.playCoin
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Menu
+import ua.vald_zx.game.rat.race.card.resource.images.Rat
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
 import ua.vald_zx.game.rat.race.card.screen.second.page.BusinessListPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.FundsPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.SharesPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.StatePage
+import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.tts
+import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
 
 class RaceRate2Screen : Screen {
@@ -47,6 +53,7 @@ class RaceRate2Screen : Screen {
     )
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
         val navigator = LocalNavigator.current
         BottomSheetNavigator {
@@ -84,6 +91,12 @@ class RaceRate2Screen : Screen {
                             maxLines = 2,
                             style = MaterialTheme.typography.titleLarge,
                             overflow = TextOverflow.Ellipsis,
+                        )
+                        IconButton(
+                            onClick = { bottomSheetNavigator.show(PlayersScreen()) },
+                            content = {
+                                Icon(Images.Rat, contentDescription = null)
+                            }
                         )
                     }
                     SmoothRainbowText(
