@@ -12,13 +12,14 @@ data class OfflinePlayer(
     val cashFlow: Long,
     val total: Long,
     val room: String,
+    val removed: Boolean = false,
 )
 
 @Serializable
 data class SendMoneyPack(
+    val payerName: String,
     val payerId: String,
     val receiverId: String,
-    val receiverName: String,
     val amount: Long,
 )
 @Serializable

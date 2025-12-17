@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.DetailsField
@@ -26,7 +27,7 @@ import ua.vald_zx.game.rat.race.card.components.GoldBackground
 import ua.vald_zx.game.rat.race.card.components.SilverBackground
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
-import ua.vald_zx.game.rat.race.card.raceRate2store
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.*
 import ua.vald_zx.game.rat.race.card.screen.second.*
@@ -37,6 +38,7 @@ val greyScaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturat
 
 @Composable
 fun StatePage(state: RatRace2CardState) {
+    val raceRate2store = koinInject<RatRace2CardStore>()
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     Column(modifier = Modifier.fillMaxSize().verticalScroll(state = rememberScrollState())) {
         Row(

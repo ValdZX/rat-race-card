@@ -10,35 +10,41 @@ import ua.vald_zx.game.rat.race.card.shared.OfflinePlayer
 import ua.vald_zx.game.rat.race.card.shared.RaceRatCardService
 import ua.vald_zx.game.rat.race.card.shared.SendMoneyPack
 
-val offlinePlayers: Map<String, Map<String, OfflinePlayer>> = emptyMap()
+var offlinePlayers: Map<String, Map<String, OfflinePlayer>> = emptyMap()
 val playerFlow = MutableSharedFlow<OfflinePlayer>()
 val sendMoneyFlow = MutableSharedFlow<SendMoneyPack>()
+
 class RaceRatCardServiceImpl(
     private val uuid: String,
 ) : RaceRatCardService, CoroutineScope by CoroutineScope(Dispatchers.Default) {
     private var room = ""
     private val localPlayerFlow = MutableSharedFlow<OfflinePlayer>()
     private val localSendMoneyFlow = MutableSharedFlow<SendMoneyPack>()
+
     init {
         sendMoneyFlow.onEach {
-            if(it.receiverId == uuid) {
+            if (it.receiverId == uuid) {
                 localSendMoneyFlow.emit(it)
             }
         }.launchIn(this)
         playerFlow.onEach {
-            if(it.room == room) {
+            if (it.room == room) {
                 localPlayerFlow.emit(it)
             }
         }.launchIn(this)
     }
+
     override suspend fun hello(player: OfflinePlayer): String {
         room = player.room
-        offlinePlayers.toMutableMap().apply {
+        offlinePlayers = offlinePlayers.toMutableMap().apply {
             this[player.room] = this.getOrPut(player.room, { emptyMap() }).toMutableMap().apply {
                 if (player.id.isNotEmpty()) {
                     this.remove(player.id)
+                    playerFlow.emit(player.copy(removed = true))
                 }
-                this[uuid] = player.copy(id = uuid)
+                val updatedPlayer = player.copy(id = uuid)
+                this[uuid] = updatedPlayer
+                playerFlow.emit(player)
             }
         }
         return uuid

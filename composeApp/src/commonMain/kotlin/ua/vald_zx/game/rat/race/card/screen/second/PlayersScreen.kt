@@ -21,6 +21,7 @@ import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.Rat
 import ua.vald_zx.game.rat.race.card.resource.images.Send
 import ua.vald_zx.game.rat.race.card.screen.board.SendScreen
@@ -35,9 +36,15 @@ class PlayersScreen : Screen {
 
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         BottomSheetContainer {
-            val raceRate2store = koinInject<RatRace2CardStore>()
-            val state by raceRate2store.observeState().collectAsState()
+            val store = koinInject<RatRace2CardStore>()
+            val state by store.observeState().collectAsState()
             if (state.connected) {
+                IconButton(
+                    onClick = { store.dispatch(RatRace2CardAction.Disconnect) },
+                    content = {
+                        Icon(Images.Back, contentDescription = null)
+                    }
+                )
                 val players by offlinePlayers.collectAsState()
                 players.filter { it.id != currentPlayerId }.forEach { player ->
                     Card {
@@ -64,7 +71,7 @@ class PlayersScreen : Screen {
                             IconButton(
                                 onClick = {
                                     bottomSheetNavigator.replace(SendScreen(player.id, player.name) { id, money ->
-                                        //
+                                        store.dispatch(RatRace2CardAction.SendMoney(id, money))
                                     })
                                 },
                                 content = {
@@ -75,18 +82,18 @@ class PlayersScreen : Screen {
                     }
                 }
             } else {
-                var room by mutableStateOf("")
+                var room by remember { mutableStateOf("") }
                 OutlinedTextField(
                     value = room,
                     onValueChange = {
                         room = it
                     },
-                    label = { Text("IP") }
+                    label = { Text("ROOM") }
                 )
                 Button(
                     text = "Connect",
                     onClick = {
-                        raceRate2store.dispatch(RatRace2CardAction.Connect(room))
+                        store.dispatch(RatRace2CardAction.Connect(room))
                     })
             }
 

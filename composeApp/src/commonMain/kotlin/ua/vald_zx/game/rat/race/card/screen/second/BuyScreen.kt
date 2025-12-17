@@ -4,16 +4,18 @@ import androidx.compose.runtime.Composable
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
-import ua.vald_zx.game.rat.race.card.raceRate2store
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.screen.InputScreen
 
 class BuyScreen() : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         BottomSheetContainer {
             Button(stringResource(Res.string.buy_car)) {
@@ -38,6 +40,7 @@ class BuyScreen() : Screen {
 class BuyCarScreen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         InputScreen(
             inputLabel = "Ціна авто",
             buttonText = stringResource(Res.string.buy),
@@ -51,6 +54,7 @@ class BuyCarScreen : Screen {
 class BuyApartmentScreen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         InputScreen(
             inputLabel = "Ціна квартири",
             buttonText = stringResource(Res.string.buy),
@@ -64,6 +68,7 @@ class BuyApartmentScreen : Screen {
 class BuyCottageScreen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         InputScreen(
             inputLabel = "Ціна будинку",
             buttonText = stringResource(Res.string.buy),
@@ -77,6 +82,7 @@ class BuyCottageScreen : Screen {
 class BuyYachtScreen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         InputScreen(
             inputLabel = "Ціна яхти",
             buttonText = stringResource(Res.string.buy),
@@ -90,6 +96,7 @@ class BuyYachtScreen : Screen {
 class BuyFlightScreen : Screen {
     @Composable
     override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
         InputScreen(
             inputLabel = "Ціна літака",
             buttonText = stringResource(Res.string.buy),

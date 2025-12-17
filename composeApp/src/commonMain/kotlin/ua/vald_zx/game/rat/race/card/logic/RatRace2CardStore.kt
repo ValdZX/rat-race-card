@@ -155,6 +155,7 @@ sealed class RatRace2CardAction : Action {
     data class BackToState(val state: RatRace2CardState, val backCount: Int) : RatRace2CardAction()
     data class SellShares(val type: SharesType, val count: Long, val sellPrice: Long) :
         RatRace2CardAction()
+
     data class UpdateFamily(
         val isMarried: Boolean,
         val halfCash: Boolean = false,
@@ -163,8 +164,10 @@ sealed class RatRace2CardAction : Action {
     ) : RatRace2CardAction()
 
     data object AddBaby : RatRace2CardAction()
+    data object Disconnect : RatRace2CardAction()
 
     data class Connect(val room: String) : RatRace2CardAction()
+    data class SendMoney(val receiverId: String, val amount: Long) : RatRace2CardAction()
 }
 
 sealed class RatRace2CardSideEffect : Effect {
@@ -187,33 +190,43 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
     private val sideEffect = MutableSharedFlow<RatRace2CardSideEffect>()
     var statistics: Statistics? = null
 
-    fun connect(room: String) {
+    init {
         launch {
             service.playersObserve().collect { player ->
-                offlinePlayers.update { list ->
-                    list.find { it.id == player.id }?.let { oldPlayer ->
-                        list.replace(oldPlayer, player)
-                    } ?: list
+                if (player.removed) {
+                    offlinePlayers.value = service.getPlayers()
+                } else if (offlinePlayers.value.find { it.id == player.id } != null) {
+                    offlinePlayers.update { list ->
+                        list.find { it.id == player.id }?.let { oldPlayer ->
+                            list.replace(oldPlayer, player)
+                        } ?: (list + player)
+                    }
+                } else {
+                    offlinePlayers.value = service.getPlayers()
                 }
             }
         }
 
         launch {
             service.sendMoneyObserve().collect {
-                dispatch(ReceivedCash(it.payerId, it.amount))
+                dispatch(RatRace2CardAction.ReceivedCash(it.payerId, it.amount))
             }
         }
+    }
+
+    fun connect(room: String) {
         launch {
             currentPlayerId =
                 service.hello(
                     OfflinePlayer(
-                        currentPlayerId,
-                        state.value.playerCard.name.ifEmpty { state.value.playerCard.profession },
-                        state.value.cashFlow(),
-                        state.value.total(),
-                        room
+                        id = currentPlayerId,
+                        name = state.value.playerCard.name.ifEmpty { state.value.playerCard.profession },
+                        cashFlow = state.value.cashFlow(),
+                        total = state.value.total(),
+                        room = room
                     )
                 )
+            offlinePlayers.value = service.getPlayers()
             dispatch(Connected)
         }
 
@@ -499,10 +512,28 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
                 connect(action.room)
                 oldState
             }
+
+            is Disconnect -> {
+                oldState.copy(connected = false)
+            }
+
+            is SendMoney -> {
+                launch {
+                    service.sendMoney(
+                        SendMoneyPack(
+                            payerName = oldState.playerCard.name,
+                            payerId = currentPlayerId,
+                            receiverId = action.receiverId,
+                            amount = action.amount
+                        )
+                    )
+                }
+                oldState.minusCash(action.amount)
+            }
         }
         if (newState != oldState) {
             state.value = newState
-            saveState(newState)
+//            saveState(newState)
         }
     }
 
