@@ -180,6 +180,7 @@ sealed class RatRace2CardSideEffect : Effect {
     data object ConfirmFired : RatRace2CardSideEffect()
     data class AddCash(val amount: Long) : RatRace2CardSideEffect()
     data class SubCash(val amount: Long) : RatRace2CardSideEffect()
+    data class Capitalized(val amount: Long) : RatRace2CardSideEffect()
     data class ReceivedCash(val payerId: String, val amount: Long) : RatRace2CardSideEffect()
     data object ShowSalaryApprove : RatRace2CardSideEffect()
 }
@@ -498,14 +499,18 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
             }
 
             CapitalizeFunds -> {
-                val amount = oldState.funds.sumOf { it.amount } + oldState.capitalization()
+                val capitalization = oldState.capitalization()
+                val amount = oldState.funds.sumOf { it.amount } + capitalization
                 val funds = listOf(Fund(rate = oldState.config.fundBaseRate, amount))
+                launch { sideEffect.emit(RatRace2CardSideEffect.Capitalized(capitalization)) }
                 oldState.copy(funds = funds)
             }
 
             CapitalizeStarsFunds -> {
-                val amount = oldState.funds.sumOf { it.amount } + oldState.capitalizationStart()
+                val capitalization = oldState.capitalizationStart()
+                val amount = oldState.funds.sumOf { it.amount } + capitalization
                 val funds = listOf(Fund(rate = oldState.config.fundBaseRate, amount))
+                launch { sideEffect.emit(RatRace2CardSideEffect.Capitalized(capitalization)) }
                 oldState.copy(funds = funds)
             }
 

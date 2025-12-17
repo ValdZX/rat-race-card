@@ -248,6 +248,18 @@ class RaceRate2Screen : Screen {
                             }
                         }
 
+                        is RatRace2CardSideEffect.Capitalized -> {
+                            if (state.config.tts) {
+                                if (ttsIsUkraineSupported()) {
+                                    tts("Капіталізовано ${effect.amount}")
+                                } else {
+                                    tts("Capitalized ${effect.amount}")
+                                }
+                            } else {
+                                playCoin()
+                            }
+                        }
+
                         RatRace2CardSideEffect.ConfirmFired -> {
                             confirmFiredDialog = true
                         }
