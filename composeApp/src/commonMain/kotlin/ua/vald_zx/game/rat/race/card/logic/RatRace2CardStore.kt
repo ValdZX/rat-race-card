@@ -136,6 +136,7 @@ sealed class RatRace2CardAction : Action {
     data class BuyBusiness(val business: Business) : RatRace2CardAction()
     data class SellBusiness(val business: Business, val amount: Long) : RatRace2CardAction()
     data class DismissalConfirmed(val business: Business) : RatRace2CardAction()
+    data class DismissalConfirmedOnExtention(val extention: ExtendBusiness) : RatRace2CardAction()
     data class SellingAllBusinessConfirmed(val business: Business) : RatRace2CardAction()
     data class ExtendBusiness(val amount: Long, val business: Business) : RatRace2CardAction()
     data class SideProfit(val amount: Long) : RatRace2CardAction()
@@ -172,6 +173,7 @@ sealed class RatRace2CardAction : Action {
 
 sealed class RatRace2CardSideEffect : Effect {
     data class ConfirmDismissal(val business: Business) : RatRace2CardSideEffect()
+    data class ConfirmDismissalOnExtention(val extention: ExtendBusiness) : RatRace2CardSideEffect()
     data class ConfirmSellingAllBusiness(val business: Business) : RatRace2CardSideEffect()
     data class DepositWithdraw(val balance: Long) : RatRace2CardSideEffect()
     data class LoanAdded(val balance: Long) : RatRace2CardSideEffect()
@@ -317,15 +319,32 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
             }
 
             is ExtendBusiness -> {
+                val currentBusiness = oldState.business
                 val business = action.business
                 val extended = business.copy(extentions = business.extentions + action.amount)
-                oldState.copy(business = oldState.business.replace(business, extended))
+                if (action.business.type == BusinessType.SMALL
+                    && currentBusiness.any { it.type == BusinessType.WORK }
+                    && currentBusiness.count { it.type == BusinessType.SMALL } == 1
+                ) {
+                    launch { sideEffect.emit(RatRace2CardSideEffect.ConfirmDismissalOnExtention(action)) }
+                    oldState
+                } else {
+                    oldState.copy(business = oldState.business.replace(business, extended))
+                }
             }
 
             is DismissalConfirmed -> {
                 val business =
                     oldState.business.filter { it.type != BusinessType.WORK } + action.business
                 oldState.copy(business = business).minusCash(action.business.price)
+            }
+
+            is DismissalConfirmedOnExtention -> {
+                val businessList =
+                    oldState.business.filter { it.type != BusinessType.WORK }
+                val business = action.extention.business
+                val extended = business.copy(extentions = business.extentions + action.extention.amount)
+                oldState.copy(business = businessList.replace(action.extention.business, extended))
             }
 
             is SellingAllBusinessConfirmed -> {
@@ -417,7 +436,7 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
             }
 
             AddBaby -> {
-                oldState.copy(babies = oldState.babies + 1)
+                oldState.copy(babies = oldState.babies + 1).plusCash(1000)
             }
 
             is BuyApartment -> {

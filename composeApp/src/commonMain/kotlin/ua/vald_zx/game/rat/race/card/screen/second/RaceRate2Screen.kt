@@ -28,6 +28,7 @@ import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.components.*
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.ExtendBusiness
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.logic.total
@@ -189,6 +190,7 @@ class RaceRate2Screen : Screen {
             var salaryApproveDialog by remember { mutableStateOf(false) }
             var confirmFiredDialog by remember { mutableStateOf(false) }
             var confirmDismissalDialog: Business? by remember { mutableStateOf(null) }
+            var confirmDismissalOnExtentionDialog: ExtendBusiness? by remember { mutableStateOf(null) }
             var confirmSellingAllBusinessDialog: Business? by remember { mutableStateOf(null) }
             LaunchedEffect(Unit) {
                 raceRate2store.observeSideEffect().onEach { effect ->
@@ -199,6 +201,11 @@ class RaceRate2Screen : Screen {
 
                         is RatRace2CardSideEffect.ConfirmDismissal -> {
                             confirmDismissalDialog = effect.business
+                        }
+
+
+                        is RatRace2CardSideEffect.ConfirmDismissalOnExtention -> {
+                            confirmDismissalOnExtentionDialog = effect.extention
                         }
 
                         is RatRace2CardSideEffect.ConfirmSellingAllBusiness -> {
@@ -298,6 +305,35 @@ class RaceRate2Screen : Screen {
                     },
                     dismissButton = {
                         TextButton(onClick = { confirmDismissalDialog = null }) { Text(stringResource(Res.string.cancel)) }
+                    }
+                )
+            }
+            if (confirmDismissalOnExtentionDialog != null) {
+                AlertDialog(
+                    title = { Text(text = stringResource(Res.string.fire_from_job)) },
+                    text = {
+                        Text(
+                            text = stringResource(
+                                Res.string.lose_job_on_second_business_with_salary,
+                                state.playerCard.salary.toString()
+                            )
+                        )
+                    },
+                    onDismissRequest = { confirmDismissalOnExtentionDialog = null },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                raceRate2store.dispatch(
+                                    RatRace2CardAction.DismissalConfirmedOnExtention(
+                                        confirmDismissalOnExtentionDialog!!
+                                    )
+                                )
+                                confirmDismissalOnExtentionDialog = null
+                            }
+                        ) { Text(stringResource(Res.string.resign)) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { confirmDismissalOnExtentionDialog = null }) { Text(stringResource(Res.string.cancel)) }
                     }
                 )
             }
