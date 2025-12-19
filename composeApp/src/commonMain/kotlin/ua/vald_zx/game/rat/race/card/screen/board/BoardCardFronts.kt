@@ -131,16 +131,25 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                     lineHeight = unitTS * 12,
                     fontWeight = FontWeight.Bold,
                 )
-                Box(
+                Column(
                     modifier = Modifier
                         .background(Color.Black)
                         .size(unitDp * 40),
-                    contentAlignment = Alignment.Center
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "MБ",
+                        text = "#${cardLink.id}",
+                        color = Color.White,
+                        fontSize = unitTS * 10,
+                        lineHeight = unitTS * 7,
+                        modifier = Modifier.align(Alignment.End)
+                    )
+                    Text(
+                        text = "МБ",
                         color = Color.White,
                         fontSize = unitTS * 20,
+                        lineHeight = unitTS * 17,
                         fontWeight = FontWeight.Bold,
                     )
                 }
