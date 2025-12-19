@@ -43,14 +43,6 @@ fun BoxWithConstraintsScope.CardDialog(
             targetValue = targetProgress,
             animationSpec = tween(durationMillis = cardMoveAnimationDuration)
         )
-//        var progress by remember { mutableStateOf(0f) }
-//        Slider(
-//            value = progress,
-//            onValueChange = { progress = it },
-//            valueRange = 0f..6f,
-//            steps = 120,
-//            modifier = Modifier.padding(30.dp)
-//        )
         val deckCoordinatesState = remember(card) {
             deckCoordinatesMap[card.type]
         }

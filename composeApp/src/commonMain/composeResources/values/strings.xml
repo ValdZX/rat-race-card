@@ -155,13 +155,17 @@
     <string name="cash_flow">Cash Flow</string>
     <string name="undo_action">Undo action</string>
     <string name="redo_action">Redo</string>
-    
+
     <!-- Dialogs/Titles/Messages -->
     <string name="attention">Attention</string>
     <string name="buy_business_title">Buy Business</string>
     <string name="resign">Resign</string>
-    <string name="lose_job_on_second_business_with_salary">When buying a second business, you lose your job with a salary of %1$s</string>
-    <string name="need_sell_all_businesses_with_sum">To buy a higher-class business, you need to sell all existing businesses. Total sale amount: %1$s</string>
+    <string name="lose_job_on_second_business_with_salary">When buying a second business, you lose your job with a
+        salary of %1$s
+    </string>
+    <string name="need_sell_all_businesses_with_sum">To buy a higher-class business, you need to sell all existing
+        businesses. Total sale amount: %1$s
+    </string>
     <string name="not_enough_cash_taken_from_deposit">Not enough cash, taken from deposit: %1$s</string>
     <string name="not_enough_cash_loan_taken">Not enough cash, loan taken: %1$s</string>
     <string name="cash_received_amount">You received cash: %1$s</string>
@@ -174,7 +178,7 @@
     <string name="save">Save</string>
     <string name="percent">Percent</string>
     <string name="contribution">Contribution</string>
-    
+
     <!-- Actions -->
     <string name="receive_income">Receive Income</string>
     <string name="get_loan">Get Loan</string>
@@ -187,4 +191,13 @@
     <string name="sell_amount">Sales amount</string>
     <string name="done">Done</string>
     <string name="not_for_me">Not for me</string>
+    <string name="business_bankruptcy">Your business ‘%1$s’ with an income of %2$s has gone bankrupt.</string>
+    <string name="сongratulations">Congratulations!</string>
+    <string name="congratulationsWithBaby">You have given birth to a child. You have been credited with $1,000.</string>
+    <string name="congratulationsWithMarriage">You got married</string>
+    <string name="youDivorced">You have dissolved your marriage</string>
+    <string name="playerDivorced">Player ‘%1$s’ has divorced</string>
+    <string name="playerHadBaby">Player ‘%1$s’ has had a %2$s child</string>
+    <string name="playerMarried">Player ‘%1$s’ has married</string>
+    <string name="resignation">You have been dismissed. Profit lost: %1$s$</string>
 </resources>

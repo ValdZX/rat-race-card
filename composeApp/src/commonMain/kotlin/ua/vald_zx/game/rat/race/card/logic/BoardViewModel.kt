@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import ua.vald_zx.game.rat.race.card.currentPlayerId
+import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
 import ua.vald_zx.game.rat.race.card.shared.*
 
 val players = MutableStateFlow(emptyList<Player>())
@@ -23,12 +24,20 @@ data class BoardState(
 
 sealed class BoardUiAction {
     data class ConfirmDismissal(val business: Business) : BoardUiAction()
+    data class BankruptBusiness(val business: Business) : BoardUiAction()
     data class ConfirmSellingAllBusiness(val business: Business) : BoardUiAction()
     data class DepositWithdraw(val balance: Long) : BoardUiAction()
     data class LoanAdded(val balance: Long) : BoardUiAction()
     data class ReceivedCash(val amount: Long) : BoardUiAction()
     data class AddCash(val amount: Long) : BoardUiAction()
     data class SubCash(val amount: Long) : BoardUiAction()
+    data class PlayerDivorced(val playerName: String) : BoardUiAction()
+    data class PlayerMarried(val playerName: String) : BoardUiAction()
+    data class PlayerHadBaby(val playerName: String, val babies: Long) : BoardUiAction()
+    data object YouDivorced : BoardUiAction()
+    data object CongratulationsWithBaby : BoardUiAction()
+    data object CongratulationsWithMarriage : BoardUiAction()
+    data class Resignation(val business: Business) : BoardUiAction()
 }
 
 class BoardViewModel(
@@ -51,7 +60,7 @@ class BoardViewModel(
             service.eventsObserve().collect { event ->
                 when (event) {
                     is Event.MoneyIncome -> {
-                        _actions.send(BoardUiAction.ReceivedCash(event.amount))
+                        _actions.send(ReceivedCash(event.amount))
                     }
 
                     is Event.PlayerChanged -> {
@@ -74,31 +83,65 @@ class BoardViewModel(
                     }
 
                     is Event.ConfirmDismissal -> {
-                        _actions.send(BoardUiAction.ConfirmDismissal(event.business))
+                        _actions.send(ConfirmDismissal(event.business))
                     }
 
                     is Event.ConfirmSellingAllBusiness -> {
-                        _actions.send(BoardUiAction.ConfirmSellingAllBusiness(event.business))
+                        _actions.send(ConfirmSellingAllBusiness(event.business))
                     }
 
                     is Event.DepositWithdraw -> {
-                        _actions.send(BoardUiAction.DepositWithdraw(event.balance))
+                        _actions.send(DepositWithdraw(event.balance))
                     }
 
                     is Event.LoanAdded -> {
-                        _actions.send(BoardUiAction.LoanAdded(event.balance))
+                        _actions.send(LoanAdded(event.balance))
                     }
 
                     is Event.AddCash -> {
-                        _actions.send(BoardUiAction.AddCash(event.amount))
+                        _actions.send(AddCash(event.amount))
                     }
 
                     is Event.SubCash -> {
-                        _actions.send(BoardUiAction.SubCash(event.amount))
+                        _actions.send(SubCash(event.amount))
                     }
 
                     is Event.BankruptBusiness -> {
-                        //todo
+                        _actions.send(BankruptBusiness(event.business))
+                    }
+
+                    is Event.PlayerDivorced -> {
+                        if (event.playerId == currentPlayerId) {
+                            _actions.send(YouDivorced)
+                        } else {
+                            players.value.find { it.id == event.playerId }?.let { player ->
+                                _actions.send(PlayerDivorced(player.card.name))
+                            }
+                        }
+                    }
+
+                    is Event.PlayerHadBaby -> {
+                        if (event.playerId == currentPlayerId) {
+                            _actions.send(CongratulationsWithBaby)
+                        } else {
+                            players.value.find { it.id == event.playerId }?.let { player ->
+                                _actions.send(PlayerHadBaby(player.card.name, event.babies))
+                            }
+                        }
+                    }
+
+                    is Event.PlayerMarried -> {
+                        if (event.playerId == currentPlayerId) {
+                            _actions.send(CongratulationsWithMarriage)
+                        } else {
+                            players.value.find { it.id == event.playerId }?.let { player ->
+                                _actions.send(PlayerMarried(player.card.name))
+                            }
+                        }
+                    }
+
+                    is Event.Resignation -> {
+                        _actions.send(Resignation(event.business))
                     }
                 }
             }
@@ -168,8 +211,10 @@ class BoardViewModel(
     }
 
     fun changePosition(position: Int) {
-        viewModelScope.launch {
-            service.changePosition(position)
+        if (uiState.value.currentPlayerIsActive) {
+            viewModelScope.launch {
+                service.changePosition(position)
+            }
         }
     }
 

@@ -188,5 +188,15 @@
     <string name="sell_amount">Сума продажу</string>
     <string name="done">Готово</string>
     <string name="not_for_me">Not for me</string>
+    <string name="business_bankruptcy">Ваш бізнес "%1$s" з доходом %2$s збанкрутів</string>
+    <string name="сongratulations">Вітаємо!</string>
+    <string name="congratulationsWithBaby">У вас народилася дитина. Вам нараховано 1000$</string>
+    <string name="congratulationsWithMarriage">Ви одружилися</string>
+    <string name="youDivorced">Ви розірвали шлюб</string>
+    <string name="playerDivorced">Гравець "%1$s" розірвав шлюб</string>
+    <string name="playerHadBaby">У гравця "%1$s" народилася %2$s дитина</string>
+    <string name="playerMarried">Гравець "%1$s" одружився</string>
+    <string name="resignation">Вас звільнено. Втрачено прибуток %1$s$</string>
+
 </resources>
 

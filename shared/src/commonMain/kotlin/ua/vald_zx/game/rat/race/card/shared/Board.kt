@@ -27,7 +27,6 @@ data class Board(
     val canRoll: Boolean = true,
     val dice: Int = 6,
     val diceRolling: Boolean = false,
-    val salaryPosition: Int? = null,
 )
 
 fun Board.toBoardId(): BoardId {

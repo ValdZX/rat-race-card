@@ -149,12 +149,12 @@ fun PlayerPoint(
                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above, 4.dp),
                 tooltip = {
                     if (pointerState.isCurrentPlayer) {
-                        CurrentPlayerTooltip(
-                            pointerState = pointerState,
-                            vm = vm,
-                            tooltipState = tooltipState,
-                            coroutineScope = coroutineScope
-                        )
+//                        CurrentPlayerTooltip(
+//                            pointerState = pointerState,
+//                            vm = vm,
+//                            tooltipState = tooltipState,
+//                            coroutineScope = coroutineScope
+//                        )
                     } else {
                         PlayerTooltip(pointerState, tooltipState, coroutineScope) {
                             bottomSheetNavigator.show(

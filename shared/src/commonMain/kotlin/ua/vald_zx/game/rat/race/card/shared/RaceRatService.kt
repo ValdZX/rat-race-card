@@ -8,17 +8,34 @@ import kotlinx.serialization.Serializable
 sealed class GlobalEvent {
 
     @Serializable
-    data class MoneyIncome(val playerId: String, val receiverId: String, val amount: Long) :
-        GlobalEvent()
+    data class MoneyIncome(val playerId: String, val receiverId: String, val amount: Long) : GlobalEvent()
 
     @Serializable
     data class PlayerChanged(val player: Player) : GlobalEvent()
+
+    @Serializable
+    data class PlayerHadBaby(val playerId: String, val babies: Long) : GlobalEvent()
+
+    @Serializable
+    data class PlayerMarried(val playerId: String) : GlobalEvent()
+
+    @Serializable
+    data class PlayerDivorced(val playerId: String) : GlobalEvent()
 }
 
 @Serializable
 sealed class Event {
     @Serializable
     data class MoneyIncome(val playerId: String, val amount: Long) : Event()
+
+    @Serializable
+    data class PlayerHadBaby(val playerId: String, val babies: Long) : Event()
+
+    @Serializable
+    data class PlayerMarried(val playerId: String) : Event()
+
+    @Serializable
+    data class PlayerDivorced(val playerId: String) : Event()
 
     @Serializable
     data class PlayerChanged(val player: Player) : Event()
@@ -46,6 +63,9 @@ sealed class Event {
 
     @Serializable
     data class BankruptBusiness(val business: Business) : Event()
+
+    @Serializable
+    data class Resignation(val business: Business) : Event()
 }
 
 @Serializable

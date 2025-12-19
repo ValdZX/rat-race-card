@@ -23,7 +23,7 @@ sealed class PlaceType(val name: String, val isBig: Boolean = false) {
     data object Desire : PlaceType("Desire")
     data object Deputy : PlaceType("Deputy")
     data object TaxInspection : PlaceType("TaxInspection", isBig = true)
-    data object Exaltation : PlaceType("Exaltation")
+    data object Resignation : PlaceType("Exaltation")
 }
 
 
@@ -99,7 +99,7 @@ val inPlaces = listOf(
     PlaceType.Store,
     PlaceType.Chance,
     PlaceType.Business,
-    PlaceType.Exaltation,
+    PlaceType.Resignation,
     PlaceType.Expenses,
     PlaceType.Chance,
     PlaceType.Shopping,

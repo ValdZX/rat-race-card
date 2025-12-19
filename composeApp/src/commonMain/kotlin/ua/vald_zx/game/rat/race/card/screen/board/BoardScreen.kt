@@ -36,7 +36,6 @@ import com.composables.core.SheetDetent
 import com.composables.core.rememberBottomSheetState
 import com.russhwolf.settings.set
 import dev.lennartegb.shadows.boxShadow
-import io.github.aakira.napier.Napier
 import io.github.alexzhirkevich.compottie.LottieCompositionSpec
 import io.github.alexzhirkevich.compottie.rememberLottieAnimatable
 import io.github.alexzhirkevich.compottie.rememberLottieComposition
@@ -154,7 +153,6 @@ class BoardScreen(
                 }
                 BottomSheet(state = scaffoldState) {
                     Box(Modifier.navigationBarsPadding().onSizeChanged { size ->
-                        Napier.v("Screen size changed to ${size.height}")
                         sheetContentSize.value = with(density) { size.height.toDp() }
                         scaffoldState.invalidateDetents()
                     }) {
@@ -194,6 +192,14 @@ class BoardScreen(
 
         var confirmDismissalDialog: Business? by remember { mutableStateOf(null) }
         var confirmSellingAllBusinessDialog: Business? by remember { mutableStateOf(null) }
+        var bankruptBusinessDialog: Business? by remember { mutableStateOf(null) }
+        var congratulationsWithBabyDialog by remember { mutableStateOf(false) }
+        var congratulationsWithMarriageDialog by remember { mutableStateOf(false) }
+        var playerDivorcedDialog: String? by remember { mutableStateOf(null) }
+        var playerHadBabyDialog: Pair<String, Long>? by remember { mutableStateOf(null) }
+        var playerMarriedDialog: String? by remember { mutableStateOf(null) }
+        var youDivorcedDialog by remember { mutableStateOf(false) }
+        var resignationDialog: Business? by remember { mutableStateOf(null) }
         var depositWithdrawDialog by remember { mutableStateOf(0L) }
         var loanAddedDialog by remember { mutableStateOf(0L) }
         var receivedCashDialog by remember { mutableStateOf(0L) }
@@ -227,6 +233,38 @@ class BoardScreen(
                     is BoardUiAction.SubCash -> {
                         playCoin()
                     }
+
+                    is BoardUiAction.BankruptBusiness -> {
+                        bankruptBusinessDialog = event.business
+                    }
+
+                    BoardUiAction.CongratulationsWithBaby -> {
+                        congratulationsWithBabyDialog = true
+                    }
+
+                    BoardUiAction.CongratulationsWithMarriage -> {
+                        congratulationsWithMarriageDialog = true
+                    }
+
+                    BoardUiAction.YouDivorced -> {
+                        youDivorcedDialog = true
+                    }
+
+                    is BoardUiAction.PlayerDivorced -> {
+                        playerDivorcedDialog = event.playerName
+                    }
+
+                    is BoardUiAction.PlayerHadBaby -> {
+                        playerHadBabyDialog = event.playerName to event.babies
+                    }
+
+                    is BoardUiAction.PlayerMarried -> {
+                        playerMarriedDialog = event.playerName
+                    }
+
+                    is BoardUiAction.Resignation -> {
+                        resignationDialog = event.business
+                    }
                 }
             }
         }
@@ -235,7 +273,10 @@ class BoardScreen(
                 title = { Text(text = stringResource(Res.string.fire_from_job)) },
                 text = {
                     Text(
-                        text = stringResource(Res.string.lose_job_on_second_business_with_salary, state.player.card.salary.toString())
+                        text = stringResource(
+                            Res.string.lose_job_on_second_business_with_salary,
+                            state.player.card.salary.toString()
+                        )
                     )
                 },
                 onDismissRequest = { confirmDismissalDialog = null },
@@ -290,7 +331,10 @@ class BoardScreen(
                 title = { Text(text = stringResource(Res.string.attention)) },
                 text = {
                     Text(
-                        text = stringResource(Res.string.not_enough_cash_taken_from_deposit, depositWithdrawDialog.toString())
+                        text = stringResource(
+                            Res.string.not_enough_cash_taken_from_deposit,
+                            depositWithdrawDialog.toString()
+                        )
                     )
                 },
                 onDismissRequest = { depositWithdrawDialog = 0 },
@@ -335,6 +379,132 @@ class BoardScreen(
                             receivedCashDialog = 0
                         }
                     ) { Text(stringResource(Res.string.great)) }
+                },
+            )
+        }
+        bankruptBusinessDialog?.let { business ->
+            AlertDialog(
+                text = {
+                    Text(
+                        text = stringResource(Res.string.business_bankruptcy, business.name, business.profit.toString())
+                    )
+                },
+                onDismissRequest = { bankruptBusinessDialog = null },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            bankruptBusinessDialog = null
+                        }
+                    ) { Text(stringResource(Res.string.ok)) }
+                },
+            )
+        }
+        if (congratulationsWithBabyDialog) {
+            AlertDialog(
+                title = { Text(text = stringResource(Res.string.сongratulations)) },
+                text = {
+                    Text(text = stringResource(Res.string.congratulationsWithBaby))
+                },
+                onDismissRequest = { congratulationsWithBabyDialog = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            congratulationsWithBabyDialog = false
+                        }
+                    ) { Text(stringResource(Res.string.great)) }
+                },
+            )
+        }
+        if (congratulationsWithMarriageDialog) {
+            AlertDialog(
+                title = { Text(text = stringResource(Res.string.сongratulations)) },
+                text = {
+                    Text(text = stringResource(Res.string.congratulationsWithMarriage))
+                },
+                onDismissRequest = { congratulationsWithMarriageDialog = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            congratulationsWithMarriageDialog = false
+                        }
+                    ) { Text(stringResource(Res.string.great)) }
+                },
+            )
+        }
+        if (youDivorcedDialog) {
+            AlertDialog(
+                text = {
+                    Text(text = stringResource(Res.string.youDivorced))
+                },
+                onDismissRequest = { youDivorcedDialog = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            youDivorcedDialog = false
+                        }
+                    ) { Text(stringResource(Res.string.ok)) }
+                },
+            )
+        }
+        playerDivorcedDialog?.let { playerName ->
+            AlertDialog(
+                text = {
+                    Text(stringResource(Res.string.playerDivorced, playerName))
+                },
+                onDismissRequest = { playerDivorcedDialog = null },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            playerDivorcedDialog = null
+                        }
+                    ) { Text(stringResource(Res.string.ok)) }
+                },
+            )
+        }
+        playerHadBabyDialog?.let { (playerName, babies) ->
+            AlertDialog(
+                title = { Text(text = stringResource(Res.string.kids)) },
+                text = {
+                    Text(stringResource(Res.string.playerHadBaby, playerName, babies))
+                },
+                onDismissRequest = { playerHadBabyDialog = null },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            playerHadBabyDialog = null
+                        }
+                    ) { Text(stringResource(Res.string.ok)) }
+                },
+            )
+        }
+        playerMarriedDialog?.let { playerName ->
+            AlertDialog(
+                title = { Text(text = stringResource(Res.string.marriage)) },
+                text = {
+                    Text(stringResource(Res.string.playerMarried, playerName))
+                },
+                onDismissRequest = { playerMarriedDialog = null },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            playerMarriedDialog = null
+                        }
+                    ) { Text(stringResource(Res.string.ok)) }
+                },
+            )
+        }
+        resignationDialog?.let { business ->
+            AlertDialog(
+                text = {
+                    Text(stringResource(Res.string.resignation, business.profit))
+                },
+                onDismissRequest = { resignationDialog = null },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            resignationDialog = null
+                        }
+                    ) { Text(stringResource(Res.string.ok)) }
                 },
             )
         }

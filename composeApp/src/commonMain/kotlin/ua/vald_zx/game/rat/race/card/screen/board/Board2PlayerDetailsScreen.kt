@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -63,6 +66,26 @@ fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState
             }
             .padding(horizontal = 16.dp),
     ) {
+        IconButton(
+            modifier = Modifier.align(Alignment.TopEnd),
+            onClick = {
+                coroutineScope.launch {
+                    if (scaffoldState.currentDetent == HalfExpanded) {
+                        scaffoldState.animateTo(ContentExpanded)
+                    } else {
+                        scaffoldState.animateTo(HalfExpanded)
+                    }
+                }
+            }
+        ) {
+            Icon(
+                if (scaffoldState.currentDetent == HalfExpanded) {
+                    Icons.Default.KeyboardArrowUp
+                } else {
+                    Icons.Default.KeyboardArrowDown
+                }, contentDescription = null
+            )
+        }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Column(
                 modifier = Modifier.height(littleDetailsHeight),
@@ -118,7 +141,11 @@ fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState
                 }
             }
             val coroutineScope = rememberCoroutineScope()
-            val titles = mutableListOf(stringResource(Res.string.status), stringResource(Res.string.business), stringResource(Res.string.shares))
+            val titles = mutableListOf(
+                stringResource(Res.string.status),
+                stringResource(Res.string.business),
+                stringResource(Res.string.shares)
+            )
             if (player.config.hasFunds) {
                 titles += stringResource(Res.string.funds)
             }

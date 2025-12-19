@@ -8,8 +8,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import ua.vald_zx.game.rat.race.card.shared.*
-import ua.vald_zx.game.rat.race.card.shared.Event.MoneyIncome
-import ua.vald_zx.game.rat.race.card.shared.Event.PlayerChanged
 import kotlin.math.absoluteValue
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -55,12 +53,24 @@ class RaceRatServiceImpl(
                         when (event) {
                             is GlobalEvent.MoneyIncome -> {
                                 if (event.receiverId == uuid) {
-                                    eventBus.emit(MoneyIncome(event.playerId, event.amount))
+                                    eventBus.emit(Event.MoneyIncome(event.playerId, event.amount))
                                 }
                             }
 
                             is GlobalEvent.PlayerChanged -> {
-                                eventBus.emit(PlayerChanged(event.player))
+                                eventBus.emit(Event.PlayerChanged(event.player))
+                            }
+
+                            is GlobalEvent.PlayerHadBaby -> {
+                                eventBus.emit(Event.PlayerHadBaby(event.playerId, event.babies))
+                            }
+
+                            is GlobalEvent.PlayerMarried -> {
+                                eventBus.emit(Event.PlayerMarried(event.playerId))
+                            }
+
+                            is GlobalEvent.PlayerDivorced -> {
+                                eventBus.emit(Event.PlayerDivorced(event.playerId))
                             }
                         }
                     }
@@ -155,7 +165,7 @@ class RaceRatServiceImpl(
                     price = 0,
                     profit = card.salary
                 )
-            )//TODO profession card
+            )
         )
         players.value = players.value.toMutableMap().apply {
             this[uuid] = MutableStateFlow(newPlayer)
@@ -261,20 +271,27 @@ class RaceRatServiceImpl(
         if (activePlayers.isEmpty()) return
         val playerIds = activePlayers.map { it.id }
         val activePlayerIndex = playerIds.indexOf(board.activePlayer)
-        val nextPlayer = if (activePlayerIndex + 1 == playerIds.size) {
+        val nextPlayerId = if (activePlayerIndex + 1 == playerIds.size) {
             playerIds.first()
         } else {
             playerIds[activePlayerIndex + 1]
         }
         changeBoard {
             discardPileB().copy(
-                activePlayer = nextPlayer,
+                activePlayer = nextPlayerId,
                 moveCount = moveCount + 1,
                 canRoll = true,
                 diceRolling = false,
                 takenCard = null,
                 canTakeCard = null
             )
+        }
+        val nextPlayer = activePlayers.find { it.id == nextPlayerId }
+        if ((nextPlayer?.inRest ?: 0) > 0) {
+            players.value[nextPlayerId]?.update {
+                it.copy(inRest = it.inRest - 1)
+            }
+            nextPlayer()
         }
     }
 
@@ -291,16 +308,13 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun takeSalary() {
-        changeBoard {
-            copy(salaryPosition = null)
-        }
         changePlayer {
             val cashFlow = cashFlow()
             if (cashFlow >= 0) {
                 plusCash(cashFlow)
             } else {
                 minusCash(cashFlow.absoluteValue)
-            }
+            }.copy(salaryPosition = null)
         }
     }
 
@@ -359,9 +373,9 @@ class RaceRatServiceImpl(
             layer.places.subList(currentPosition + 1, newPosition + 1)
         }
         val salaryPosition = if (list.contains(PlaceType.Salary)) {
-            if(player.cashFlow() > 0) {
+            if (player.cashFlow() > 0) {
                 var salaryPosition =
-                    currentPosition + list.indexOf(PlaceType.Salary) + 1
+                    currentPosition + list.indexOfLast { it == PlaceType.Salary } + 1
                 val placeCount = layer.places.size
                 if (salaryPosition >= placeCount) {
                     salaryPosition -= placeCount
@@ -373,13 +387,10 @@ class RaceRatServiceImpl(
             }
         } else null
         changeBoard {
-            copy(
-                moveCount = moveCount + 1,
-                salaryPosition = salaryPosition,
-            )
+            copy(moveCount = moveCount + 1)
         }
         changePlayer {
-            copy(location = location.copy(position = newPosition))
+            copy(location = location.copy(position = newPosition), salaryPosition = salaryPosition)
         }
         val place = layer.places[newPosition]
         when (place) {
@@ -437,26 +448,53 @@ class RaceRatServiceImpl(
             }
 
             PlaceType.Child -> {
-                nextPlayer()
-            }
-
-            PlaceType.Desire -> {
+                changePlayer {
+                    val totalBabies = babies + 1
+                    copy(babies = totalBabies).plusCash(1000).apply {
+                        globalEventBus.emit(GlobalEvent.PlayerHadBaby(uuid, totalBabies))
+                    }
+                }
                 nextPlayer()
             }
 
             PlaceType.Divorce -> {
+                if (player.isMarried) {
+                    changePlayer {
+                        copy(isMarried = false).apply {
+                            globalEventBus.emit(GlobalEvent.PlayerDivorced(uuid))
+                        }
+                    }
+                }
                 nextPlayer()
             }
 
-            PlaceType.Exaltation -> {
+            PlaceType.Resignation -> {
+                val business = player.businesses.find { it.type == BusinessType.WORK }
+                if (business != null) {
+                    changePlayer {
+                        copy(businesses = businesses - business).apply {
+                            eventBus.emit(Event.Resignation(business))
+                        }
+                    }
+                }
                 nextPlayer()
             }
 
             PlaceType.Love -> {
+                if (!player.isMarried) {
+                    changePlayer {
+                        copy(isMarried = true).apply {
+                            globalEventBus.emit(GlobalEvent.PlayerMarried(uuid))
+                        }
+                    }
+                }
                 nextPlayer()
             }
 
             PlaceType.Rest -> {
+                changePlayer {
+                    copy(inRest = 2)
+                }
                 nextPlayer()
             }
 
@@ -469,6 +507,10 @@ class RaceRatServiceImpl(
             }
 
             PlaceType.TaxInspection -> {
+                nextPlayer()
+            }
+
+            PlaceType.Desire -> {
                 nextPlayer()
             }
         }

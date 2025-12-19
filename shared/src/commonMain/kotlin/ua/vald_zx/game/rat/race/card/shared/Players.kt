@@ -41,10 +41,12 @@ data class Player(
     val yacht: Long = 0,
     val flight: Long = 0,
     val animal: Long = 0,
+    val inRest: Long = 0,
     val sharesList: List<Shares> = emptyList(),
     val funds: List<Fund> = emptyList(),
     val config: Config = Config(),
     val isInactive: Boolean = false,
+    val salaryPosition: Int? = null,
 )
 
 @Serializable
