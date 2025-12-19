@@ -10,6 +10,7 @@ string|baby_cost|QmFieSBFeHBlbnNlcw==
 string|bankruptcy|QmFua3J1cHRjeQ==
 string|base_fund_rate|QmFzZSBGdW5kIFJhdGU=
 string|big_business|QmlnIEJ1c2luZXNz
+string|business_bankruptcy|WW91ciBidXNpbmVzcyDigJglMSRz4oCZIHdpdGggYW4gaW5jb21lIG9mICUyJHMgaGFzIGdvbmUgYmFua3J1cHQu
 string|business_name|QnVzaW5lc3MgTmFtZQ==
 string|business|QnVzaW5lc3M=
 string|buy_apartment|QnV5IEFwYXJ0bWVudA==
@@ -37,6 +38,8 @@ string|chance|Q2hhbmNlIQ==
 string|cloth_cost|Q2xvdGhlcyBFeHBlbnNlcw==
 string|cloth|Q2xvdGhlcyBFeHBlbnNlcw==
 string|confirm_reset|QXJlIHlvdSBzdXJlPw==
+string|congratulationsWithBaby|WW91IGhhdmUgZ2l2ZW4gYmlydGggdG8gYSBjaGlsZC4gWW91IGhhdmUgYmVlbiBjcmVkaXRlZCB3aXRoICQxLDAwMC4=
+string|congratulationsWithMarriage|WW91IGdvdCBtYXJyaWVk
 string|connection_failed|RmFpbGVkIHRvIGNvbm5lY3QgdG8gc2VydmVy
 string|contribution|Q29udHJpYnV0aW9u
 string|copy|Q29weQ==
@@ -85,13 +88,13 @@ string|large_business|TGFyZ2UgQnVzaW5lc3M=
 string|loan_amount|TG9hbiBBbW91bnQ=
 string|loan_rate|TG9hbiBSYXRlICU=
 string|loan|TG9hbg==
-string|lose_job_on_second_business_with_salary|V2hlbiBidXlpbmcgYSBzZWNvbmQgYnVzaW5lc3MsIHlvdSBsb3NlIHlvdXIgam9iIHdpdGggYSBzYWxhcnkgb2YgJTEkcw==
+string|lose_job_on_second_business_with_salary|V2hlbiBidXlpbmcgYSBzZWNvbmQgYnVzaW5lc3MsIHlvdSBsb3NlIHlvdXIgam9iIHdpdGggYQogICAgICAgIHNhbGFyeSBvZiAlMSRzCiAgICA=
 string|marital_status|TWFyaXRhbCBTdGF0dXM=
 string|market|TWFya2V0
 string|marriage_proposal|R2V0IE1hcnJpZWQ=
 string|marriage|TWFycmlhZ2U=
 string|medium_business|TWVkaXVtIEJ1c2luZXNz
-string|need_sell_all_businesses_with_sum|VG8gYnV5IGEgaGlnaGVyLWNsYXNzIGJ1c2luZXNzLCB5b3UgbmVlZCB0byBzZWxsIGFsbCBleGlzdGluZyBidXNpbmVzc2VzLiBUb3RhbCBzYWxlIGFtb3VudDogJTEkcw==
+string|need_sell_all_businesses_with_sum|VG8gYnV5IGEgaGlnaGVyLWNsYXNzIGJ1c2luZXNzLCB5b3UgbmVlZCB0byBzZWxsIGFsbCBleGlzdGluZwogICAgICAgIGJ1c2luZXNzZXMuIFRvdGFsIHNhbGUgYW1vdW50OiAlMSRzCiAgICA=
 string|new_game|TmV3IEdhbWU=
 string|new_table|TmV3IFRhYmxl
 string|not_enough_cash_loan_taken|Tm90IGVub3VnaCBjYXNoLCBsb2FuIHRha2VuOiAlMSRz
@@ -109,6 +112,9 @@ string|percent|UGVyY2VudA==
 string|phone_cost|UGhvbmUgRXhwZW5zZXM=
 string|phone|UGhvbmUgRXhwZW5zZXM=
 string|plane|UGxhbmU=
+string|playerDivorced|UGxheWVyIOKAmCUxJHPigJkgaGFzIGRpdm9yY2Vk
+string|playerHadBaby|UGxheWVyIOKAmCUxJHPigJkgaGFzIGhhZCBhICUyJHMgY2hpbGQ=
+string|playerMarried|UGxheWVyIOKAmCUxJHPigJkgaGFzIG1hcnJpZWQ=
 string|player_name_label|UGxheWVyIE5hbWU=
 string|player_name|UGxheWVyIE5hbWU=
 string|price|UHJpY2U=
@@ -123,6 +129,7 @@ string|redo_action|UmVkbw==
 string|rent|UmVudGFsIGhvdXNpbmc=
 string|repay_loan|UmVwYXkgTG9hbg==
 string|reset_data_warning|QWxsIGRhdGEgd2lsbCBiZSBlcmFzZWQu
+string|resignation|WW91IGhhdmUgYmVlbiBkaXNtaXNzZWQuIFByb2ZpdCBsb3N0OiAlMSRzJA==
 string|resign|UmVzaWdu
 string|rest|VmFjYXRpb24=
 string|retry_connection|UmV0cnkgQ29ubmVjdGlvbg==
@@ -165,3 +172,5 @@ string|wrong_import_data|SW52YWxpZCBpbXBvcnQgZGF0YQ==
 string|yacht_cost|WWFjaHQgRXhwZW5zZXM=
 string|yacht|WWFjaHQ=
 string|yes|WWVz
+string|youDivorced|WW91IGhhdmUgZGlzc29sdmVkIHlvdXIgbWFycmlhZ2U=
+string|сongratulations|Q29uZ3JhdHVsYXRpb25zIQ==
