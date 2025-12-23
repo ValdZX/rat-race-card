@@ -5,16 +5,16 @@ android-minSdk = "26"
 android-targetSdk = "36"
 appdirs = "1.5.0"
 commonsCodec = "1.20.0"
-firebaseBom = "34.6.0"
-kotlin = "2.2.21"
+firebaseBom = "34.7.0"
+kotlin = "2.3.0"
 compose = "1.9.3"
 compose-hot-reload = "1.0.0"
 agp = "8.12.3"
-androidx-activityCompose = "1.12.0"
+androidx-activityCompose = "1.12.2"
 multiplatformSettings = "1.3.0"
 voyager = "1.1.0-beta03"
 napier = "2.7.1"
-buildConfig = "6.0.6"
+buildConfig = "6.0.7"
 kotlinx-coroutines = "1.10.2"
 ktor = "3.3.3"
 kotlinx-serialization = "1.9.0"
@@ -26,8 +26,7 @@ charts = "0.2.0"
 app-update = "2.1.0"
 fragment = "1.8.9"
 kotlinx-rpc = "0.10.1"
-logback = "1.5.21"
-zoomable = "2.9.0"
+logback = "1.5.22"
 compottie = "2.0.2"
 uiAndroid = "1.10.0"
 koin-bom = "4.1.1"
@@ -36,7 +35,7 @@ androidx-lifecycle = "2.9.6"
 [libraries]
 
 commons-codec = { module = "commons-codec:commons-codec", version.ref = "commonsCodec" }
-google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.33.4" }
+google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.34.0" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version = "0.7.1" }
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
@@ -86,7 +85,6 @@ kotlinx-rpc-krpc-ktor-server = { module = "org.jetbrains.kotlinx:kotlinx-rpc-krp
 kotlinx-rpc-krpc-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-rpc-krpc-serialization-json", version.ref = "kotlinx-rpc" }
 # other
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-zoomable = { module = "net.engawapg.lib:zoomable", version.ref = "zoomable" }
 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kstore = { module = "io.github.xxfast:kstore", version.ref = "kstore" }
@@ -98,11 +96,9 @@ charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "char
 fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
 lexilabs-basic-sound = { module = "app.lexilabs.basic:basic-sound", version.ref = "lexilabs-sound" }
 lexilabs-basic-haptic = { module = "app.lexilabs.basic:basic-haptic", version.ref = "lexilabs-haptic"}
-kottie = { module = "io.github.ismai117:kottie", version = "2.2.0" }
 compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "compottie" }
 compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources", version.ref = "compottie" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
-sceneview = { module = "io.github.sceneview:sceneview", version = "2.3.1" }
 constraintlayout = { module = "tech.annexflow.compose:constraintlayout-compose-multiplatform", version = "0.6.1" }
 composables-core = { module = "com.composables:core", version = "1.49.3" }
 

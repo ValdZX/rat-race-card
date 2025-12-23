@@ -2,10 +2,11 @@ package ua.vald_zx.game.rat.race.card
 
 import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
+import io.github.xxfast.kstore.file.storeOf
 import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import io.github.xxfast.kstore.file.storeOf
 import net.harawata.appdirs.AppDirsFactory
 import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
@@ -22,9 +23,13 @@ internal actual fun openUrl(url: String?) {
     Desktop.getDesktop().browse(uri)
 }
 
-val storageDir: String
-    get() = AppDirsFactory.getInstance()
-        .getUserDataDir("ua.vald_zx.game.rat.race.card", "1.0", "VALD_ZX")
+val storageDir: String by lazy {
+    AppDirsFactory.getInstance()
+        .getUserDataDir("ua.vald_zx.game.rat.race.card", "1.0", "VALD_ZX").apply {
+            val path = Path(this)
+            with(SystemFileSystem) { if (!exists(path)) createDirectories(path) }
+        }
+}
 
 internal actual fun share(data: String?) {
 }

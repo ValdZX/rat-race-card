@@ -557,12 +557,12 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
         }
         if (newState != oldState) {
             state.value = newState
-//            saveState(newState)
+            saveState(newState)
         }
     }
 
     private fun saveState(newState: RatRace2CardState) {
-        launch {
+        launch(Dispatchers.Default) {
             raceRate2KStore.set(newState)
             val storedStatistics =
                 statistics ?: runCatching { statistics2KStore.get() }.getOrNull() ?: Statistics()
