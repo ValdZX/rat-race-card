@@ -26,6 +26,7 @@ import ua.vald_zx.game.rat.race.card.screen.SelectTypeScreen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
+var lottieDiceAnimations: Map<Int, LottieComposition> = emptyMap()
 
 val settings: Settings = Settings()
 
@@ -49,12 +50,12 @@ internal fun App() {
         }
         val lottieCache = LocalLottieCache.current
         LaunchedEffect(Unit) {
-            (1..6).forEach { side ->
+            lottieDiceAnimations = (1..6).associate { side ->
                 withContext(Compottie.ioDispatcher()) {
                     val specInstance = LottieCompositionSpec.JsonString(
                         Res.readBytes("files/cube_$side.json").decodeToString()
                     )
-                    lottieCache.getOrPut(specInstance.key, specInstance::load)
+                    side to lottieCache.getOrPut(specInstance.key, specInstance::load)
                 }
             }
         }

@@ -36,9 +36,7 @@ import com.composables.core.SheetDetent
 import com.composables.core.rememberBottomSheetState
 import com.russhwolf.settings.set
 import dev.lennartegb.shadows.boxShadow
-import io.github.alexzhirkevich.compottie.LottieCompositionSpec
 import io.github.alexzhirkevich.compottie.rememberLottieAnimatable
-import io.github.alexzhirkevich.compottie.rememberLottieComposition
 import io.github.alexzhirkevich.compottie.rememberLottiePainter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -56,6 +54,7 @@ import ua.vald_zx.game.rat.race.card.logic.BoardState
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
+import ua.vald_zx.game.rat.race.card.lottieDiceAnimations
 import ua.vald_zx.game.rat.race.card.playCoin
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
@@ -606,46 +605,7 @@ fun BoxWithConstraintsScope.Dice(
     state: BoardState,
     vm: BoardViewModel,
 ) {
-    val cube1 by rememberLottieComposition {
-        LottieCompositionSpec.JsonString(
-            Res.readBytes("files/cube_1.json").decodeToString()
-        )
-    }
-    val cube2 by rememberLottieComposition {
-        LottieCompositionSpec.JsonString(
-            Res.readBytes("files/cube_2.json").decodeToString()
-        )
-    }
-    val cube3 by rememberLottieComposition {
-        LottieCompositionSpec.JsonString(
-            Res.readBytes("files/cube_3.json").decodeToString()
-        )
-    }
-    val cube4 by rememberLottieComposition {
-        LottieCompositionSpec.JsonString(
-            Res.readBytes("files/cube_4.json").decodeToString()
-        )
-    }
-    val cube5 by rememberLottieComposition {
-        LottieCompositionSpec.JsonString(
-            Res.readBytes("files/cube_5.json").decodeToString()
-        )
-    }
-    val cube6 by rememberLottieComposition {
-        LottieCompositionSpec.JsonString(
-            Res.readBytes("files/cube_6.json").decodeToString()
-        )
-    }
-
-    val composition = when (state.board.dice) {
-        1 -> cube1
-        2 -> cube2
-        3 -> cube3
-        4 -> cube4
-        5 -> cube5
-        else -> cube6
-    }
-
+    val composition = lottieDiceAnimations[state.board.dice]
     val animatable = rememberLottieAnimatable()
     LaunchedEffect(Unit) {
         animatable.snapTo(composition, progress = 1f)
