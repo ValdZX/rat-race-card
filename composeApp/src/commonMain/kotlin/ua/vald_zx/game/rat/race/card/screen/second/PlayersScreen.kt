@@ -16,6 +16,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.empty_room
+import rat_race_card.composeapp.generated.resources.room
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
