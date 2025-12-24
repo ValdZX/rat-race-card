@@ -44,7 +44,9 @@ data class RatRace2CardState(
     val sharesList: List<Shares> = emptyList(),
     val funds: List<Fund> = emptyList(),
     val config: Config = Config(),
-    val connected: Boolean = false,
+    val lastTotals: List<Long> = emptyList(),
+    val lastCashFlows: List<Long> = emptyList(),
+    val room: String = "",
 ) : State {
 
     fun balance(): Long {
@@ -132,7 +134,7 @@ sealed class RatRace2CardAction : Action {
     data object CapitalizeStarsFunds : RatRace2CardAction()
     data object RandomBusiness : RatRace2CardAction()
     data object HideAlarm : RatRace2CardAction()
-    data object Connected : RatRace2CardAction()
+    data class Connected(val room: String) : RatRace2CardAction()
     data class BuyBusiness(val business: Business) : RatRace2CardAction()
     data class SellBusiness(val business: Business, val amount: Long) : RatRace2CardAction()
     data class DismissalConfirmed(val business: Business) : RatRace2CardAction()
@@ -217,22 +219,21 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
         }
     }
 
-    fun connect(room: String) {
-        launch {
-            currentPlayerId =
-                service.hello(
-                    OfflinePlayer(
-                        id = currentPlayerId,
-                        name = state.value.playerCard.name.ifEmpty { state.value.playerCard.profession },
-                        cashFlow = state.value.cashFlow(),
-                        total = state.value.total(),
-                        room = room
-                    )
+    suspend fun connect(room: String) {
+        currentPlayerId =
+            service.hello(
+                OfflinePlayer(
+                    id = currentPlayerId,
+                    name = state.value.playerCard.name.ifEmpty { state.value.playerCard.profession },
+                    cashFlow = state.value.cashFlow(),
+                    total = state.value.total(),
+                    room = room,
+                    lastTotals = state.value.lastTotals,
+                    lastCashFlows = state.value.lastCashFlows,
                 )
-            offlinePlayers.value = service.getPlayers()
-            dispatch(Connected)
-        }
-
+            )
+        offlinePlayers.value = service.getPlayers()
+        dispatch(Connected(room))
     }
 
     override fun observeState(): StateFlow<RatRace2CardState> = state
@@ -243,7 +244,9 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
         val oldState = state.value
         val newState = when (action) {
             is LoadState -> {
-                action.state
+                action.state.apply {
+                    launch { if (room.isNotEmpty()) connect(room) }
+                }
             }
 
             is FillProfessionCardRat -> {
@@ -528,17 +531,17 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
                 action.state
             }
 
-            Connected -> {
-                oldState.copy(connected = true)
+            is Connected -> {
+                oldState.copy(room = action.room)
             }
 
             is Connect -> {
-                connect(action.room)
+                launch { connect(action.room) }
                 oldState
             }
 
             is Disconnect -> {
-                oldState.copy(connected = false)
+                oldState.copy(room = "")
             }
 
             is SendMoney -> {
@@ -554,11 +557,29 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
                 }
                 oldState.minusCash(action.amount)
             }
-        }
+        }.updateLasts()
         if (newState != oldState) {
             state.value = newState
             saveState(newState)
         }
+    }
+
+    private fun RatRace2CardState.updateLasts(): RatRace2CardState {
+        val previous = statistics?.log?.lastOrNull() ?: return this
+        val currentTotal = total()
+        val previousTotal = previous.total()
+        val currentCashFlow = cashFlow()
+        val previousCashFlow = previous.cashFlow()
+        val newLastTotals = if (currentTotal != previousTotal) {
+            lastTotals + (currentTotal - previousTotal)
+        } else lastTotals
+        val newLastCashFlows = if (currentCashFlow != previousCashFlow) {
+            lastCashFlows + (currentCashFlow - previousCashFlow)
+        } else lastCashFlows
+        return copy(
+            lastTotals = newLastTotals.takeLast(3),
+            lastCashFlows = newLastCashFlows.takeLast(3)
+        )
     }
 
     private fun saveState(newState: RatRace2CardState) {
@@ -569,6 +590,15 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
             storedStatistics.log += newState
             statistics2KStore.set(storedStatistics)
             statistics = storedStatistics
+            offlinePlayers.value.find { it.id == currentPlayerId }?.let { player ->
+                val offlinePlayer = player.copy(
+                    cashFlow = newState.cashFlow(),
+                    total = newState.total(),
+                    lastTotals = newState.lastTotals,
+                    lastCashFlows = newState.lastCashFlows,
+                )
+                service.updatePlayer(offlinePlayer)
+            }
         }
     }
 

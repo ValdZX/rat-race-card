@@ -20,7 +20,7 @@ fun FieldPreview() {
     Column {
         PositiveField(stringResource(Res.string.active_profit), "123123123")
         NegativeField(stringResource(Res.string.total_expenses), "123123123")
-        CashFlowField("Cash Flow", "123123123")
+        CashFlowField("Cash Flow", emptyList(),"123123123")
         BalanceField(stringResource(Res.string.cash), "123123123")
     }
 }

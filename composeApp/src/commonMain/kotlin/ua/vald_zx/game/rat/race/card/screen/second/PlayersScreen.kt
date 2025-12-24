@@ -12,7 +12,10 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.empty_room
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
@@ -38,14 +41,18 @@ class PlayersScreen : Screen {
         BottomSheetContainer {
             val store = koinInject<RatRace2CardStore>()
             val state by store.observeState().collectAsState()
-            if (state.connected) {
+            if (state.room.isNotEmpty()) {
                 IconButton(
+                    modifier = Modifier.align(Alignment.Start),
                     onClick = { store.dispatch(RatRace2CardAction.Disconnect) },
                     content = {
                         Icon(Images.Back, contentDescription = null)
                     }
                 )
                 val players by offlinePlayers.collectAsState()
+                if (players.isEmpty()) {
+                    Text(text = stringResource(Res.string.empty_room))
+                }
                 players.filter { it.id != currentPlayerId }.forEach { player ->
                     Card {
                         Row(
@@ -57,12 +64,14 @@ class PlayersScreen : Screen {
                                 Text(player.name)
                                 CashFlowField(
                                     name = "Статки",
+                                    lastCashFlows = player.lastTotals,
                                     rainbow = GoldRainbow,
                                     value = player.total.splitDecimal(),
                                     fontSize = 12.sp
                                 )
                                 CashFlowField(
                                     name = "Cash Flow",
+                                    lastCashFlows = player.lastCashFlows,
                                     value = player.cashFlow.splitDecimal(),
                                     fontSize = 12.sp
                                 )
@@ -88,7 +97,7 @@ class PlayersScreen : Screen {
                     onValueChange = {
                         room = it
                     },
-                    label = { Text("ROOM") }
+                    label = { Text(stringResource(Res.string.room)) }
                 )
                 Button(
                     text = "Connect",

@@ -200,4 +200,7 @@
     <string name="playerHadBaby">Player ‘%1$s’ has had a %2$s child</string>
     <string name="playerMarried">Player ‘%1$s’ has married</string>
     <string name="resignation">You have been dismissed. Profit lost: %1$s$</string>
+    <string name="room">Room</string>
+    <string name="empty_room">You are the only player in the room</string>
+    <string name="language">Language</string>
 </resources>

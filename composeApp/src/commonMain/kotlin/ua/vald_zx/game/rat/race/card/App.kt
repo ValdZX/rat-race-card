@@ -10,6 +10,7 @@ import app.lexilabs.basic.sound.ExperimentalBasicSound
 import app.lexilabs.basic.sound.SoundBoard
 import app.lexilabs.basic.sound.SoundByte
 import app.lexilabs.basic.sound.play
+import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.Navigator
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
@@ -45,9 +46,6 @@ internal fun App() {
             val systemIsDark = settings["theme", isDarkTheme]
             isDarkTheme = systemIsDark
         }
-        AppTheme {
-            Navigator(SelectTypeScreen())
-        }
         val lottieCache = LocalLottieCache.current
         LaunchedEffect(Unit) {
             lottieDiceAnimations = (1..6).associate { side ->
@@ -56,6 +54,13 @@ internal fun App() {
                         Res.readBytes("files/cube_$side.json").decodeToString()
                     )
                     side to lottieCache.getOrPut(specInstance.key, specInstance::load)
+                }
+            }
+        }
+        Navigator(SelectTypeScreen()) { navigator ->
+            AppEnvironment {
+                AppTheme {
+                    CurrentScreen()
                 }
             }
         }

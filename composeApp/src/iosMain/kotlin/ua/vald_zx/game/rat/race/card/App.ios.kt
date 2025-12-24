@@ -1,5 +1,9 @@
 package ua.vald_zx.game.rat.race.card
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ProvidedValue
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.InternalComposeUiApi
 import app.lexilabs.basic.haptic.DependsOnAndroidVibratePermission
 import app.lexilabs.basic.haptic.Haptic
 import io.github.aakira.napier.Napier
@@ -12,10 +16,7 @@ import kotlinx.serialization.json.Json
 import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
-import platform.Foundation.NSDocumentDirectory
-import platform.Foundation.NSFileManager
-import platform.Foundation.NSURL
-import platform.Foundation.NSUserDomainMask
+import platform.Foundation.*
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 
@@ -81,4 +82,24 @@ val haptic by lazy {
 actual fun vibrateClick() {
     @OptIn(DependsOnAndroidVibratePermission::class)
     haptic.vibrate(Haptic.DEFAULTS.CLICK)
+}
+
+@OptIn(InternalComposeUiApi::class)
+actual object LocalAppLocale {
+    private const val LANG_KEY = "AppleLanguages"
+    private val default = NSLocale.preferredLanguages.first() as String
+    private val LocalAppLocale = staticCompositionLocalOf { default }
+    actual val current: String
+        @Composable get() = LocalAppLocale.current
+
+    @Composable
+    actual infix fun provides(value: String?): ProvidedValue<*> {
+        val new = value ?: default
+        if (value == null) {
+            NSUserDefaults.standardUserDefaults.removeObjectForKey(LANG_KEY)
+        } else {
+            NSUserDefaults.standardUserDefaults.setObject(arrayListOf(new), LANG_KEY)
+        }
+        return LocalAppLocale.provides(new)
+    }
 }

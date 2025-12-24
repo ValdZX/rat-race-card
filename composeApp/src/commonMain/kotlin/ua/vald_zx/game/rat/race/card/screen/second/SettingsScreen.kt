@@ -18,9 +18,11 @@ import com.russhwolf.settings.set
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
+import ua.vald_zx.game.rat.race.card.LocalAppLocale
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.customAppLocale
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
@@ -122,9 +124,28 @@ class SettingsScreen : Screen {
                                 ) { Text(stringResource(Res.string.yes)) }
                             },
                             dismissButton = {
-                                TextButton(onClick = { resetDialog = false }) { Text(stringResource(Res.string.cancel)) }
+                                TextButton(onClick = {
+                                    resetDialog = false
+                                }) { Text(stringResource(Res.string.cancel)) }
                             }
                         )
+                    }
+                    val locale = LocalAppLocale.current
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(Res.string.language))
+                        Button(
+                            onClick = {
+                                customAppLocale = if (locale.contains("uk", ignoreCase = true)) {
+                                    "en"
+                                } else {
+                                    "uk"
+                                }
+                            }
+                        ) { Text(if (locale == "uk") "Українська" else "English") }
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

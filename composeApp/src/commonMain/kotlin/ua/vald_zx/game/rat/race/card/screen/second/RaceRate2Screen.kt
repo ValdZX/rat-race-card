@@ -42,6 +42,7 @@ import ua.vald_zx.game.rat.race.card.screen.second.page.FundsPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.SharesPage
 import ua.vald_zx.game.rat.race.card.screen.second.page.StatePage
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.tts
 import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
@@ -100,20 +101,44 @@ class RaceRate2Screen : Screen {
                             }
                         )
                     }
-                    SmoothRainbowText(
-                        state.total().splitDecimal(),
-                        rainbow = GoldRainbow,
-                        style = LocalTextStyle.current.copy(fontSize = 30.sp),
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                            .clickable {
+                    Row(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SmoothRainbowText(
+                            state.total().splitDecimal(),
+                            rainbow = GoldRainbow,
+                            style = LocalTextStyle.current.copy(fontSize = 30.sp),
+                            modifier = Modifier.clickable {
                                 if (raceRate2store.statistics != null) {
                                     bottomSheetNavigator.show(StatisticsScreen())
                                 }
                             },
-                        duration = 4000
-                    )
+                            duration = 4000
+                        )
+                        Column(modifier = Modifier.padding(start = 16.dp)) {
+                            state.lastTotals.forEach { totalDiff ->
+                                val total = if (totalDiff > 0) {
+                                    "+${totalDiff}"
+                                } else {
+                                    totalDiff.toString()
+                                }
+                                Text(
+                                    text = total,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (totalDiff > 0) {
+                                        AppTheme.colors.cash
+                                    } else {
+                                        MaterialTheme.colorScheme.error
+                                    },
+                                    lineHeight = 11.sp
+                                )
+                            }
+                        }
+                    }
                     CashFlowField(
                         name = "Cash Flow",
+                        lastCashFlows = state.lastCashFlows,
                         value = "${state.cashFlow()}",
                         onClick = { raceRate2store.dispatch(RatRace2CardAction.GetSalary) },
                         salary = { raceRate2store.dispatch(RatRace2CardAction.GetSalary) })
@@ -149,7 +174,11 @@ class RaceRate2Screen : Screen {
                         }
                     }
                     val coroutineScope = rememberCoroutineScope()
-                    val titles = mutableListOf(stringResource(Res.string.status), stringResource(Res.string.business), stringResource(Res.string.shares))
+                    val titles = mutableListOf(
+                        stringResource(Res.string.status),
+                        stringResource(Res.string.business),
+                        stringResource(Res.string.shares)
+                    )
                     if (state.config.hasFunds) {
                         titles += stringResource(Res.string.funds)
                     }
@@ -287,7 +316,9 @@ class RaceRate2Screen : Screen {
                         ) { Text(stringResource(Res.string.receive)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { salaryApproveDialog = false }) { Text(stringResource(Res.string.cancel)) }
+                        TextButton(onClick = {
+                            salaryApproveDialog = false
+                        }) { Text(stringResource(Res.string.cancel)) }
                     }
                 )
             }
@@ -316,7 +347,9 @@ class RaceRate2Screen : Screen {
                         ) { Text(stringResource(Res.string.resign)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { confirmDismissalDialog = null }) { Text(stringResource(Res.string.cancel)) }
+                        TextButton(onClick = {
+                            confirmDismissalDialog = null
+                        }) { Text(stringResource(Res.string.cancel)) }
                     }
                 )
             }
@@ -345,7 +378,9 @@ class RaceRate2Screen : Screen {
                         ) { Text(stringResource(Res.string.resign)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { confirmDismissalOnExtentionDialog = null }) { Text(stringResource(Res.string.cancel)) }
+                        TextButton(onClick = {
+                            confirmDismissalOnExtentionDialog = null
+                        }) { Text(stringResource(Res.string.cancel)) }
                     }
                 )
             }
@@ -354,7 +389,10 @@ class RaceRate2Screen : Screen {
                     title = { Text(text = stringResource(Res.string.fire_from_job)) },
                     text = {
                         Text(
-                            text = stringResource(Res.string.fired_lose_income_amount, state.playerCard.salary.toString())
+                            text = stringResource(
+                                Res.string.fired_lose_income_amount,
+                                state.playerCard.salary.toString()
+                            )
                         )
                     },
                     onDismissRequest = { confirmFiredDialog = false },
@@ -407,7 +445,10 @@ class RaceRate2Screen : Screen {
                     title = { Text(text = stringResource(Res.string.attention)) },
                     text = {
                         Text(
-                            text = stringResource(Res.string.not_enough_cash_taken_from_deposit, depositWithdrawDialog.toString())
+                            text = stringResource(
+                                Res.string.not_enough_cash_taken_from_deposit,
+                                depositWithdrawDialog.toString()
+                            )
                         )
                     },
                     onDismissRequest = { depositWithdrawDialog = 0 },

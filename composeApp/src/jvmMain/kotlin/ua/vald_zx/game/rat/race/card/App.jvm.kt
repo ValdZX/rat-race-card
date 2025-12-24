@@ -1,5 +1,8 @@
 package ua.vald_zx.game.rat.race.card
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ProvidedValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import io.github.aakira.napier.Napier
 import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.file.storeOf
@@ -14,6 +17,7 @@ import nl.marc_apps.tts.experimental.ExperimentalDesktopTarget
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 import java.awt.Desktop
 import java.net.URI
+import java.util.*
 
 internal actual val platformContext: Any
     get() = Unit
@@ -55,4 +59,24 @@ actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore
 
 actual val noIme: Boolean = false
 actual fun vibrateClick() {
+}
+
+actual object LocalAppLocale {
+    private var default: Locale? = null
+    private val LocalAppLocale = staticCompositionLocalOf { Locale.getDefault().toString() }
+    actual val current: String
+        @Composable get() = LocalAppLocale.current
+
+    @Composable
+    actual infix fun provides(value: String?): ProvidedValue<*> {
+        if (default == null) {
+            default = Locale.getDefault()
+        }
+        val new = when(value) {
+            null -> default!!
+            else -> Locale(value)
+        }
+        Locale.setDefault(new)
+        return LocalAppLocale.provides(new.toString())
+    }
 }

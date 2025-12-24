@@ -13,6 +13,8 @@ data class OfflinePlayer(
     val total: Long,
     val room: String,
     val removed: Boolean = false,
+    val lastTotals: List<Long> = emptyList(),
+    val lastCashFlows: List<Long> = emptyList(),
 )
 
 @Serializable
@@ -22,6 +24,7 @@ data class SendMoneyPack(
     val receiverId: String,
     val amount: Long,
 )
+
 @Serializable
 data class Player(
     val id: String,

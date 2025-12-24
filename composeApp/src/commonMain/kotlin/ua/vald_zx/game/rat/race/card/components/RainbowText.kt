@@ -34,16 +34,16 @@ val SkittlesRainbow = listOf(
 )
 
 val GoldRainbow = listOf(
-    Color(0xFFFFD700),
-    Color(0xFFFFFCE0),
-    Color(0xFFFFDB58),
-    Color(0xFFFFF8DB),
-    Color(0xFFFFF4C7),
-    Color(0xFFFFDF00),
-    Color(0xFFFFF0B2),
-    Color(0xFFFFE44D),
-    Color(0xFFFFEC9E),
-    Color(0xFFFFE87D),
+    Color(0xFFE6C200),
+    Color(0xFFFF9900),
+    Color(0xFFE6C54A),
+    Color(0xFFFF6F00),
+    Color(0xFFF6CF24),
+    Color(0xFFE6C200),
+    Color(0xFFEFB746),
+    Color(0xFFE6B340),
+    Color(0xFFFFBA00),
+    Color(0xFFEE5E10),
 )
 
 @Composable

@@ -12,9 +12,9 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import app.lexilabs.basic.haptic.DependsOnAndroidVibratePermission
 import app.lexilabs.basic.haptic.Haptic
@@ -32,6 +32,7 @@ import nl.marc_apps.tts.TextToSpeechEngine
 import nl.marc_apps.tts.TextToSpeechFactory
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
+import java.util.*
 
 class AndroidApp : Application() {
     companion object {
@@ -156,4 +157,30 @@ val haptic by lazy {
 actual fun vibrateClick() {
     @OptIn(DependsOnAndroidVibratePermission::class)
     haptic.vibrate(Haptic.DEFAULTS.CLICK)
+}
+
+actual object LocalAppLocale {
+    private var default: Locale? = null
+    actual val current: String
+        @Composable get() = Locale.getDefault().toString()
+
+    @Composable
+    actual infix fun provides(value: String?): ProvidedValue<*> {
+        val configuration = LocalConfiguration.current
+
+        if (default == null) {
+            default = Locale.getDefault()
+        }
+
+        val new = when(value) {
+            null -> default!!
+            else -> Locale(value)
+        }
+        Locale.setDefault(new)
+        configuration.setLocale(new)
+        val resources = LocalContext.current.resources
+
+        resources.updateConfiguration(configuration, resources.displayMetrics)
+        return LocalConfiguration.provides(configuration)
+    }
 }
