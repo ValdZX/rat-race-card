@@ -97,7 +97,11 @@ class RaceRate2Screen : Screen {
                         IconButton(
                             onClick = { bottomSheetNavigator.show(PlayersScreen()) },
                             content = {
-                                Icon(Images.Rat, contentDescription = null)
+                                Icon(
+                                    Images.Rat,
+                                    contentDescription = null,
+                                    tint = if (state.room.isNotEmpty()) AppTheme.colors.cash else MaterialTheme.colorScheme.error
+                                )
                             }
                         )
                     }

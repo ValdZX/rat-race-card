@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.compose.hot.reload).apply(false)
     alias(libs.plugins.kotlinJvm) apply false
     alias(libs.plugins.android.application).apply(false)
-    alias(libs.plugins.androidLibrary) apply false
     alias(libs.plugins.buildConfig).apply(false)
     alias(libs.plugins.kotlinx.serialization).apply(false)
     alias(libs.plugins.google.services).apply(false)

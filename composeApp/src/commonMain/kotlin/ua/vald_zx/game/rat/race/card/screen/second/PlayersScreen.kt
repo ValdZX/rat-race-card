@@ -51,7 +51,7 @@ class PlayersScreen : Screen {
                     }
                 )
                 val players by offlinePlayers.collectAsState()
-                if (players.isEmpty()) {
+                if (players.size < 2) {
                     Text(text = stringResource(Res.string.empty_room))
                 }
                 players.filter { it.id != currentPlayerId }.forEach { player ->

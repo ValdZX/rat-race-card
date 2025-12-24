@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.androidLibrary
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
@@ -21,7 +23,14 @@ kotlin {
         }
     }
 
-    androidTarget()
+    androidLibrary {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+        namespace = "ua.vald_zx.game.rat.race.card.shared"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+    }
 
     iosX64()
     iosArm64()
@@ -39,13 +48,5 @@ kotlin {
                 implementation(libs.kotlinx.serialization.json)
             }
         }
-    }
-}
-
-android {
-    namespace = "ua.vald_zx.game.rat.race.card.shared"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
     }
 }
