@@ -179,9 +179,9 @@ fun DiscardPile(
             }
     ) {
         val trueHeight = min(size.width, size.height)
-        var count by remember { mutableStateOf(state.board?.discard[card].orEmpty().size) }
-        LaunchedEffect(state.board?.discard) {
-            val discardCardCount = state.board?.discard[card].orEmpty().size
+        var count by remember { mutableStateOf(state.board.discard[card].orEmpty().size) }
+        LaunchedEffect(state.board.discard) {
+            val discardCardCount = state.board.discard[card].orEmpty().size
             delay(cardMoveAnimationDuration.toLong())
             count = discardCardCount
         }

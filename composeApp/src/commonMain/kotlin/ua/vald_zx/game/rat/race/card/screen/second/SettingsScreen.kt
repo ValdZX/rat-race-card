@@ -9,20 +9,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import com.russhwolf.settings.set
+import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
-import ua.vald_zx.game.rat.race.card.LocalAppLocale
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
-import ua.vald_zx.game.rat.race.card.customAppLocale
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
@@ -130,20 +130,20 @@ class SettingsScreen : Screen {
                             }
                         )
                     }
-                    val locale = LocalAppLocale.current
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(Res.string.language))
+                        val locale = Locale.current.language
                         Button(
                             onClick = {
-                                customAppLocale = if (locale.contains("uk", ignoreCase = true)) {
+                                LocaleUpdater.updateLocale(if (locale.contains("uk", ignoreCase = true)) {
                                     "en"
                                 } else {
                                     "uk"
-                                }
+                                })
                             }
                         ) { Text(if (locale == "uk") "Українська" else "English") }
                     }
