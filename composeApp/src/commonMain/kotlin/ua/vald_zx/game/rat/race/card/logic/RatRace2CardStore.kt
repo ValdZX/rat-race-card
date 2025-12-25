@@ -250,6 +250,7 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
             }
 
             is FillProfessionCardRat -> {
+                statistics = Statistics()
                 RatRace2CardState(
                     playerCard = action.playerCard,
                     business = listOf(
