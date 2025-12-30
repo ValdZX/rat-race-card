@@ -22,16 +22,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.Button
+import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.cards.*
 import ua.vald_zx.game.rat.race.card.screen.board.visualize.color
 import ua.vald_zx.game.rat.race.card.screen.board.visualize.getLocal
-import ua.vald_zx.game.rat.race.card.shared.BoardCardType
-import ua.vald_zx.game.rat.race.card.shared.Business
-import ua.vald_zx.game.rat.race.card.shared.BusinessType
-import ua.vald_zx.game.rat.race.card.shared.CardLink
+import ua.vald_zx.game.rat.race.card.shared.*
 
 
 @Composable
@@ -96,15 +95,53 @@ fun BoxWithConstraintsScope.BoardCardFront(
 
 @Composable
 fun BoxScope.ChanceCardFront(
-    card: CardLink,
+    cardLink: CardLink,
     isActive: Boolean,
     vm: BoardViewModel,
 ) {
+    remember(cardLink.id) {
+        chanceCards[cardLink.id]
+    }?.let { chanceCard ->
+        when (chanceCard) {
+            is BoardCard.Chance.Estate -> {
+                EstateCardFront(chanceCard, isActive, vm)
+            }
+            is BoardCard.Chance.Land -> {
+                LandCardFront(chanceCard, isActive, vm)
+            }
+            is BoardCard.Chance.RandomJob -> {
+                RandomJobCardFront(chanceCard, isActive, vm)
+            }
+            is BoardCard.Chance.Shares -> {
+                SharesCardFront(chanceCard, isActive, vm)
+            }
+        }
+    }
     if (isActive) {
         Button(stringResource(Res.string.pass)) {
             vm.pass()
         }
     }
+}
+
+@Composable
+fun EstateCardFront(card: BoardCard.Chance.Estate, isActive: Boolean, vm: BoardViewModel) {
+    TODO("Not yet implemented")
+}
+
+@Composable
+fun LandCardFront(card: BoardCard.Chance.Land, isActive: Boolean, vm: BoardViewModel) {
+    TODO("Not yet implemented")
+}
+
+@Composable
+fun RandomJobCardFront(card: BoardCard.Chance.RandomJob, isActive: Boolean, vm: BoardViewModel) {
+    TODO("Not yet implemented")
+}
+
+@Composable
+fun SharesCardFront(card: BoardCard.Chance.Shares, isActive: Boolean, vm: BoardViewModel) {
+    TODO("Not yet implemented")
 }
 
 @Composable
@@ -643,88 +680,88 @@ fun BoxWithConstraintsScope.DeputyCardFront(
         }
     }
 }
-//
-//@Preview
-//@Composable
-//fun CardSmallFrontPreview() {
-//    AppTheme {
-//        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
-//            BoxWithConstraints(
-//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-//                    .background(MaterialTheme.colorScheme.background)
-//            ) {
-//                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 1), isActive = false) {}
-//            }
-//            BoxWithConstraints(
-//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-//                    .background(MaterialTheme.colorScheme.background)
-//            ) {
-//                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 2), isActive = true) {}
-//            }
-//        }
-//    }
-//}
-//
-//
-//@Preview
-//@Composable
-//fun CardMediumFrontPreview() {
-//    AppTheme {
-//        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
-//            BoxWithConstraints(
-//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-//                    .background(MaterialTheme.colorScheme.background)
-//            ) {
-//                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 1), isActive = false) {}
-//            }
-//            BoxWithConstraints(
-//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-//                    .background(MaterialTheme.colorScheme.background)
-//            ) {
-//                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 2), isActive = true) {}
-//            }
-//        }
-//    }
-//}
-//
-//@Preview
-//@Composable
-//fun CardShoppingFrontPreview() {
-//    AppTheme {
-//        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
-//            BoxWithConstraints(
-//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-//                    .background(MaterialTheme.colorScheme.background)
-//            ) {
-//                ShoppingCardFront(CardLink(BoardCardType.Shopping, 1), isActive = false) {}
-//            }
-//            BoxWithConstraints(
-//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-//                    .background(MaterialTheme.colorScheme.background)
-//            ) {
-//                ShoppingCardFront(CardLink(BoardCardType.Shopping, 2), isActive = true) {}
-//            }
-//        }
-//    }
-//}
-//
-//@Preview
-//@Composable
-//fun CardExpensesFrontPreview() {
-//    AppTheme {
-//        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
-//            BoxWithConstraints(
-//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-//                    .background(MaterialTheme.colorScheme.background)
-//            ) {
-//                ExpensesCardFront(CardLink(BoardCardType.Expenses, 1), isActive = false) {}
-//            }
-//            BoxWithConstraints(
-//                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
-//                    .background(MaterialTheme.colorScheme.background)
-//            ) {
-//                ExpensesCardFront(CardLink(BoardCardType.Expenses, 2), isActive = true) {}
-//            }
-//        }
-//    }
-//}
+
+@Preview
+@Composable
+fun CardSmallFrontPreview() {
+    InitPreviewWithVm { vm ->
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+            BoxWithConstraints(
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 1), isActive = false, vm)
+            }
+            BoxWithConstraints(
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 2), isActive = true, vm)
+            }
+        }
+    }
+}
+
+
+@Preview
+@Composable
+fun CardMediumFrontPreview() {
+    InitPreviewWithVm { vm ->
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+            BoxWithConstraints(
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 1), isActive = false, vm)
+            }
+            BoxWithConstraints(
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 2), isActive = true, vm)
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun CardShoppingFrontPreview() {
+    InitPreviewWithVm { vm ->
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+            BoxWithConstraints(
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                ShoppingCardFront(CardLink(BoardCardType.Shopping, 1), isActive = false, vm)
+            }
+            BoxWithConstraints(
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                ShoppingCardFront(CardLink(BoardCardType.Shopping, 2), isActive = true, vm)
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun CardExpensesFrontPreview() {
+    InitPreviewWithVm { vm ->
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+            BoxWithConstraints(
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                ExpensesCardFront(CardLink(BoardCardType.Expenses, 1), isActive = false, vm)
+            }
+            BoxWithConstraints(
+                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                ExpensesCardFront(CardLink(BoardCardType.Expenses, 2), isActive = true, vm)
+            }
+        }
+    }
+}

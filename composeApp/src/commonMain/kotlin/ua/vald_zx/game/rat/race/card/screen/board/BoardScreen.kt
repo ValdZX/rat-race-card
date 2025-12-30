@@ -203,6 +203,7 @@ class BoardScreen(
         var loanAddedDialog by remember { mutableStateOf(0L) }
         var receivedCashDialog by remember { mutableStateOf(0L) }
         LaunchedEffect(Unit) {
+            vm.init()
             vm.actions.collect { event ->
                 when (event) {
                     is BoardUiAction.ConfirmDismissal -> {

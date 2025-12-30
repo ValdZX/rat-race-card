@@ -99,7 +99,7 @@ enum class SharesType {
     GS,
     ShchHP,
     TO,
-    SCT
+    CST
 }
 
 

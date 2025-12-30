@@ -17,9 +17,8 @@ data class BoardState(
 ) {
     val layer: BoardLayer = player.location.level.toLayer()
     val color: Long = player.attrs.color
-    val currentPlayerIsActive: Boolean = currentPlayerId == board.activePlayer
-    val canRoll: Boolean = board.canRoll &&
-            currentPlayerIsActive
+    val currentPlayerIsActive: Boolean by lazy { currentPlayerId == board.activePlayer }
+    val canRoll: Boolean by lazy { board.canRoll && currentPlayerIsActive }
 }
 
 sealed class BoardUiAction {
@@ -53,7 +52,7 @@ class BoardViewModel(
     private val _actions = Channel<BoardUiAction>()
     val actions = _actions.receiveAsFlow()
 
-    init {
+    fun init() {
         viewModelScope.launch {
             players.value = service.getPlayers()
             _uiState.update { it.copy(board = service.getBoard()) }
