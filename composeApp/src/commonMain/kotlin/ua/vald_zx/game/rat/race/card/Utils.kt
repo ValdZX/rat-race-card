@@ -13,6 +13,10 @@ fun Long.splitDecimal(step: Int = 3, divider: String = " "): String {
     return toString().splitDecimal(step, divider)
 }
 
+fun Long.formatAmount(): String {
+    return "$${this.splitDecimal()}"
+}
+
 fun String.splitDecimal(step: Int = 3, divider: String = " "): String {
     if (this.toLongOrNull() == null) return this
     var current = 0

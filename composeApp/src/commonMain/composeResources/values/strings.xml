@@ -203,4 +203,6 @@
     <string name="room">Room</string>
     <string name="empty_room">You are the only player in the room</string>
     <string name="language">Language</string>
+    <string name="realEstate">Real estate</string>
+    <string name="land">Land</string>
 </resources>

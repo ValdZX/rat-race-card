@@ -27,45 +27,43 @@ fun InitPreview(
                 player = parameters.get<Player>(),
                 service = object : RaceRatService {
                     override suspend fun hello(helloUuid: String): Instance {
-                        TODO("Not yet implemented")
+                        error("Not for preview")
                     }
 
                     override suspend fun closeSession() {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
-                    override suspend fun getBoards(): List<BoardId> {
-                        TODO("Not yet implemented")
-                    }
+                    override suspend fun getBoards(): List<BoardId> = emptyList()
 
                     override fun observeBoards(): Flow<List<BoardId>> {
-                        TODO("Not yet implemented")
+                        error("Not for preview")
                     }
 
                     override suspend fun createBoard(
                         name: String,
                         decks: Map<BoardCardType, Int>
                     ): Board {
-                        TODO("Not yet implemented")
+                        error("Not for preview")
                     }
 
                     override suspend fun selectBoard(boardId: String): Board {
-                        TODO("Not yet implemented")
+                        error("Not for preview")
                     }
 
                     override suspend fun updateAttributes(attrs: PlayerAttributes) {
-                        TODO("Not yet implemented")
+                        error("Not for preview")
                     }
 
                     override suspend fun getPlayer(): Player {
-                        TODO("Not yet implemented")
+                        error("Not for preview")
                     }
 
                     override suspend fun makePlayer(
                         color: Long,
                         card: PlayerCard
                     ): Player {
-                        TODO("Not yet implemented")
+                        error("Not for preview")
                     }
 
                     override fun eventsObserve(): Flow<Event> = MutableSharedFlow()
@@ -73,55 +71,74 @@ fun InitPreview(
                     override suspend fun getPlayers(): List<Player> = emptyList()
 
                     override suspend fun getBoard(): Board {
-                        TODO("Not yet implemented")
+                        error("Not for preview")
                     }
 
                     override suspend fun sendMoney(receiverId: String, amount: Long) {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
                     override suspend fun rollDice() {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
                     override suspend fun move() {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
                     override suspend fun next() {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
                     override suspend fun takeCard(cardType: BoardCardType) {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
                     override suspend fun takeSalary() {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
                     override suspend fun buyBusiness(business: Business) {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
                     override suspend fun dismissalConfirmed(business: Business) {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
                     override suspend fun sellingAllBusinessConfirmed(business: Business) {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
                     override suspend fun minusCash(price: Long) {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
                     override suspend fun buyThing(card: BoardCard.Shopping) {
-                        TODO("Not yet implemented")
+                        //NOP
                     }
 
                     override suspend fun changePosition(position: Int) {
-                        TODO("Not yet implemented")
+                        //NOP
+                    }
+
+                    override suspend fun buyEstate(card: BoardCard.Chance.Estate) {
+                        //NOP
+                    }
+
+                    override suspend fun buyLand(card: BoardCard.Chance.Land) {
+                        //NOP
+                    }
+
+                    override suspend fun randomJob(card: BoardCard.Chance.RandomJob) {
+                        //NOP
+                    }
+
+                    override suspend fun buyShares(
+                        card: BoardCard.Chance.Shares,
+                        count: Long
+                    ) {
+                        //NOP
                     }
                 }
             )

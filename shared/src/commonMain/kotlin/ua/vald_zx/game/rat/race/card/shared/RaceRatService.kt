@@ -94,7 +94,6 @@ interface RaceRatService {
 
     suspend fun rollDice()
     suspend fun move()
-
     suspend fun next()
     suspend fun takeCard(cardType: BoardCardType)
     suspend fun takeSalary()
@@ -105,4 +104,8 @@ interface RaceRatService {
     suspend fun minusCash(price: Long)
     suspend fun buyThing(card: BoardCard.Shopping)
     suspend fun changePosition(position: Int)
+    suspend fun buyEstate(card: BoardCard.Chance.Estate)
+    suspend fun buyLand(card: BoardCard.Chance.Land)
+    suspend fun randomJob(card: BoardCard.Chance.RandomJob)
+    suspend fun buyShares(card: BoardCard.Chance.Shares, count: Long)
 }

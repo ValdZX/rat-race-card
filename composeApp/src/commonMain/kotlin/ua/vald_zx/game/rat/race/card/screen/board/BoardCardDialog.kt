@@ -116,7 +116,7 @@ fun BoxWithConstraintsScope.CardDialog(
                             visibility = Visibility.Visible
                             centerTo(parent)
                             width = Dimension.value(dialogSize.width)
-                            height = Dimension.value(dialogSize.height)
+                            height = Dimension.wrapContent
                             scaleX = onBoardScaleToLow
                             scaleY = onBoardScaleToLow
                             pivotX = 0.5f
@@ -137,7 +137,7 @@ fun BoxWithConstraintsScope.CardDialog(
                             visibility = Visibility.Visible
                             centerTo(parent)
                             width = Dimension.value(dialogSize.width)
-                            height = Dimension.value(dialogSize.height)
+                            height = Dimension.wrapContent
                             rotationY = 0f
                             scaleX = 1f
                             scaleY = 1f

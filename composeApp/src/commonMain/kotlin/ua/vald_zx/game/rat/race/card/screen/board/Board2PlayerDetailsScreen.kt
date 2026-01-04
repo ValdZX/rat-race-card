@@ -30,10 +30,7 @@ import ua.vald_zx.game.rat.race.card.components.GoldRainbow
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
 import ua.vald_zx.game.rat.race.card.logic.BoardState
-import ua.vald_zx.game.rat.race.card.screen.board.page.BusinessListPage
-import ua.vald_zx.game.rat.race.card.screen.board.page.FundsPage
-import ua.vald_zx.game.rat.race.card.screen.board.page.SharesPage
-import ua.vald_zx.game.rat.race.card.screen.board.page.StatePage
+import ua.vald_zx.game.rat.race.card.screen.board.page.*
 import ua.vald_zx.game.rat.race.card.screen.second.BuyFundScreen
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
@@ -144,7 +141,9 @@ fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState
             val titles = mutableListOf(
                 stringResource(Res.string.status),
                 stringResource(Res.string.business),
-                stringResource(Res.string.shares)
+                stringResource(Res.string.shares),
+                stringResource(Res.string.land),
+                stringResource(Res.string.realEstate),
             )
             if (player.config.hasFunds) {
                 titles += stringResource(Res.string.funds)
@@ -175,7 +174,9 @@ fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState
                     0 -> StatePage(player)
                     1 -> BusinessListPage(player)
                     2 -> SharesPage(player)
-                    3 -> FundsPage(player)
+                    3 -> LandPage(player)
+                    4 -> EstatePage(player)
+                    5 -> FundsPage(player)
                 }
             }
         }

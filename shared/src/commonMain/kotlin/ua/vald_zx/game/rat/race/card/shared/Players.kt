@@ -46,6 +46,8 @@ data class Player(
     val animal: Long = 0,
     val inRest: Long = 0,
     val sharesList: List<Shares> = emptyList(),
+    val estateList: List<Estate> = emptyList(),
+    val landList: List<Land> = emptyList(),
     val funds: List<Fund> = emptyList(),
     val config: Config = Config(),
     val isInactive: Boolean = false,
@@ -112,6 +114,20 @@ data class Shares(
     val price: Long
         get() = count * buyPrice
 }
+
+
+@Serializable
+data class Estate(
+    val name: String,
+    val buyPrice: Long,
+)
+
+@Serializable
+data class Land(
+    val name: String,
+    val area: Long,
+    val price: Long,
+)
 
 @Serializable
 data class Fund(

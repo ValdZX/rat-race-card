@@ -204,5 +204,7 @@
     <string name="empty_room">Ви єдиний гравець в кімнаті</string>
     <string name="room">Кімната</string>
     <string name="language">Мова</string>
+    <string name="realEstate">Нерухомість</string>
+    <string name="land">Земля</string>
 </resources>
 

@@ -613,4 +613,32 @@ class RaceRatServiceImpl(
     override suspend fun changePosition(position: Int) {
         processNewPosition(position)
     }
+
+    override suspend fun buyEstate(card: BoardCard.Chance.Estate) {
+        changePlayer {
+            copy(estateList = estateList + Estate(name = card.name, card.price))
+        }
+        nextPlayer()
+    }
+
+    override suspend fun buyLand(card: BoardCard.Chance.Land) {
+        changePlayer {
+            copy(landList = landList + Land(name = card.name, card.area, card.price))
+        }
+        nextPlayer()
+    }
+
+    override suspend fun randomJob(card: BoardCard.Chance.RandomJob) {
+        changePlayer {
+            plusCash(card.profit)
+        }
+        nextPlayer()
+    }
+
+    override suspend fun buyShares(card: BoardCard.Chance.Shares, count: Long) {
+        changePlayer {
+            copy(sharesList = sharesList + Shares(card.sharesType, count, card.price)).minusCash(count * card.price)
+        }
+        nextPlayer()
+    }
 }

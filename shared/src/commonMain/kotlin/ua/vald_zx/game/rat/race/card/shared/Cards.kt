@@ -63,27 +63,27 @@ sealed class BoardCard(val type: BoardCardType) {
         @Serializable
         data class RandomJob(
             val description: String,
-            val cost: Int
+            val profit: Long
         ) : Chance()
         @Serializable
         data class Land(
+            val name: String,
             val description: String,
-            val price: Int,
-            val area: Int,
-            val profit: Int,
-            val probability: Int
+            val price: Long,
+            val area: Long,
         ) : Chance()
         @Serializable
         data class Shares(
             val description: String,
-            val price: Int,
-            val maxShares: Int,
+            val price: Long,
+            val maxCount: Int,
             val sharesType: SharesType
         ) : Chance()
         @Serializable
         data class Estate(
+            val name: String,
             val description: String,
-            val price: Int
+            val price: Long
         ) : Chance()
     }
 

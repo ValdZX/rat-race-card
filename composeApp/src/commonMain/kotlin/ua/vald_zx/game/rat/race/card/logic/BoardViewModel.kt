@@ -191,6 +191,18 @@ class BoardViewModel(
         }
     }
 
+    fun buy(card: BoardCard.Chance.Estate) {
+        viewModelScope.launch {
+            service.buyEstate(card)
+        }
+    }
+
+    fun buy(card: BoardCard.Chance.Land) {
+        viewModelScope.launch {
+            service.buyLand(card)
+        }
+    }
+
     fun changePlayerColor(value: Long) {
         viewModelScope.launch {
             service.updateAttributes(uiState.value.player.attrs.copy(color = value))
@@ -232,6 +244,18 @@ class BoardViewModel(
     fun sendMoney(playerId: String, amount: Long) {
         viewModelScope.launch {
             service.sendMoney(playerId, amount)
+        }
+    }
+
+    fun randomJob(card: BoardCard.Chance.RandomJob) {
+        viewModelScope.launch {
+            service.randomJob(card)
+        }
+    }
+
+    fun buyShares(card: BoardCard.Chance.Shares, count: Long) {
+        viewModelScope.launch {
+            service.buyShares(card, count)
         }
     }
 }
