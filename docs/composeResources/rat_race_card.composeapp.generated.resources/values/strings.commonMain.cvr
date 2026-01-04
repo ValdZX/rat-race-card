@@ -85,6 +85,7 @@ string|income_amount|SW5jb21lIEFtb3VudA==
 string|income_with_assets_and_loans|SW5jb21lIGNvbnNpZGVyaW5nIGFzc2V0cywgbGlhYmlsaXRpZXMgYW5kIGxvYW5zOiAlMSRz
 string|invest|SW52ZXN0
 string|kids|S2lkcw==
+string|land|TGFuZA==
 string|language|TGFuZ3VhZ2U=
 string|large_business|TGFyZ2UgQnVzaW5lc3M=
 string|loan_amount|TG9hbiBBbW91bnQ=
@@ -125,6 +126,7 @@ string|profit|UHJvZml0
 string|purchase_price|UHVyY2hhc2UgUHJpY2U=
 string|purchases|UHVyY2hhc2Vz
 string|quantity|UXVhbnRpdHk=
+string|realEstate|UmVhbCBlc3RhdGU=
 string|receive_income|UmVjZWl2ZSBJbmNvbWU=
 string|receive|UmVjZWl2ZQ==
 string|redo_action|UmVkbw==

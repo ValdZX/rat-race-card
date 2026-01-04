@@ -85,6 +85,7 @@ string|income_amount|0KHRg9C80LAg0LTQvtGF0L7QtNGD
 string|income_with_assets_and_loans|0JTQvtGF0ZbQtCDQtyDRg9GA0LDRhdGD0LLQsNC90L3Rj9C8LCDQsNC60YLQuNCy0ZbQsiwg0L/QsNGB0LjQstGW0LIg0YLQsCDQutGA0LXQtNC40YLRltCyOiAlMSRz
 string|invest|0IbQvdCy0LXRgdGC0YPQstCw0YLQuA==
 string|kids|0JTRltGC0Lg=
+string|land|0JfQtdC80LvRjw==
 string|language|0JzQvtCy0LA=
 string|large_business|0JrRgNGD0L/QvdC40Lkg0LHRltC30L3QtdGB
 string|loan_amount|0KHRg9C80LAg0LrRgNC10LTQuNGC0YM=
@@ -125,6 +126,7 @@ string|profit|0JTQvtGF0ZbQtA==
 string|purchase_price|0KbRltC90LAg0L/QvtC60YPQv9C60Lg=
 string|purchases|0J/QvtC60YPQv9C60Lg=
 string|quantity|0JrRltC70YzQutGW0YHRgtGM
+string|realEstate|0J3QtdGA0YPRhdC+0LzRltGB0YLRjA==
 string|receive_income|0J7RgtGA0LjQvNCw0YLQuCDQtNC+0YXRltC0
 string|receive|0J7RgtGA0LjQvNCw0YLQuA==
 string|redo_action|0J/QvtCy0LXRgNC90YPRgtC4
