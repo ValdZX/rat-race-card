@@ -6,19 +6,19 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.DetailsField
+import ua.vald_zx.game.rat.race.card.launchWithHandler
+import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.PlayerCard
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
@@ -34,7 +34,6 @@ class ProfessionScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val coroutineScope = rememberCoroutineScope()
         val service = koinInject<RaceRatService>()
         Column(
             modifier = Modifier
@@ -80,7 +79,7 @@ class ProfessionScreen(
                 color = MaterialTheme.colorScheme.tertiary
             )
             Button("Далі") {
-                coroutineScope.launch {
+                launchWithHandler({ navigator.replaceAll(LoadOnlineScreen()) }) {
                     val player = service.makePlayer(
                         color = color,
                         card = PlayerCard(

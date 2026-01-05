@@ -30,7 +30,9 @@ import androidx.compose.ui.unit.*
 import androidx.constraintlayout.compose.ExperimentalMotionApi
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.composables.core.BottomSheet
 import com.composables.core.SheetDetent
 import com.composables.core.rememberBottomSheetState
@@ -57,6 +59,7 @@ import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.lottieDiceAnimations
 import ua.vald_zx.game.rat.race.card.playCoin
 import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.settings
@@ -145,6 +148,7 @@ class BoardScreen(
             detents = listOf(HalfExpanded, ContentExpanded)
         )
         val density = LocalDensity.current
+        val navigator = LocalNavigator.currentOrThrow
         Box {
             BottomSheetNavigator {
                 Box(modifier = Modifier.padding(bottom = littleDetailsHeight)) {
@@ -187,6 +191,13 @@ class BoardScreen(
             }) {
                 Box(modifier = Modifier.statusBarsPadding())
             }
+            IconButton(
+                modifier = Modifier.align(Alignment.TopStart),
+                onClick = { navigator.pop() },
+                content = {
+                    Icon(Images.Back, contentDescription = null)
+                }
+            )
         }
 
         var confirmDismissalDialog: Business? by remember { mutableStateOf(null) }

@@ -3,7 +3,10 @@ package ua.vald_zx.game.rat.race.card.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -11,8 +14,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.github.aakira.napier.Napier
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.Res
@@ -27,15 +29,14 @@ class LoadOnlineScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val invalidServerState = mutableStateOf(false)
+        val invalidServerState = remember { mutableStateOf(false) }
         val service = koinInject<RaceRatService>()
-        val coroutineScope = rememberCoroutineScope()
         fun connectToService() {
             val handler = CoroutineExceptionHandler { _, t ->
                 Napier.e("Invalid server", t)
                 invalidServerState.value = true
             }
-            coroutineScope.launch(handler) {
+            CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
                 val instance = service.hello(currentPlayerId)
                 currentPlayerId = instance.playerId
                 val board = instance.board
@@ -47,11 +48,8 @@ class LoadOnlineScreen : Screen {
                 }
             }
         }
-        DisposableEffect(Unit) {
+        LaunchedEffect(Unit) {
             connectToService()
-            onDispose {
-                coroutineScope.launch { service.closeSession() }
-            }
         }
         Box(
             modifier = Modifier
@@ -59,8 +57,7 @@ class LoadOnlineScreen : Screen {
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(16.dp),
         ) {
-            val invalidServer by invalidServerState
-            if (invalidServer) {
+            if (invalidServerState.value) {
                 Column(modifier = Modifier.align(Alignment.Center)) {
                     Text(stringResource(Res.string.connection_failed))
                     Button(stringResource(Res.string.retry_connection)) {

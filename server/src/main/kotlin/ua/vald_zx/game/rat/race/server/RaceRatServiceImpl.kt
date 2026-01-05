@@ -616,14 +616,14 @@ class RaceRatServiceImpl(
 
     override suspend fun buyEstate(card: BoardCard.Chance.Estate) {
         changePlayer {
-            copy(estateList = estateList + Estate(name = card.name, card.price))
+            copy(estateList = estateList + Estate(name = card.name, card.price)).minusCash(card.price)
         }
         nextPlayer()
     }
 
     override suspend fun buyLand(card: BoardCard.Chance.Land) {
         changePlayer {
-            copy(landList = landList + Land(name = card.name, card.area, card.price))
+            copy(landList = landList + Land(name = card.name, card.area, card.price)).minusCash(card.price)
         }
         nextPlayer()
     }
