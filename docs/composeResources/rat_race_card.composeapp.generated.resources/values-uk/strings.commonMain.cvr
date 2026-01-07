@@ -5,6 +5,7 @@ string|amount|0KHRg9C80LA=
 string|apartment_cost|0JLQuNGC0YDQsNGC0Lgg0L3QsCDQutCy0LDRgNC40YDRgw==
 string|apartment|0JrQstCw0YDRgtC40YDQsA==
 string|app_name|Q2FzaGZsb3c6IFJhdCBSYWNlIEVkaXRpb24=
+string|area|0J/Qu9C+0YnQsA==
 string|attention|0KPQstCw0LPQsA==
 string|baby_cost|0JLQuNGC0YDQsNGC0Lgg0L3QsCDQtNC40YLQuNC90YM=
 string|bankruptcy|0JHQsNC90LrRgNGD0YLRgdGC0LLQvg==
@@ -62,6 +63,7 @@ string|edit_profession_card|0KDQtdC00LDQs9GD0LLQsNGC0Lgg0LrQsNGA0YLQutGDINC/0YDQ
 string|empty_room|0JLQuCDRlNC00LjQvdC40Lkg0LPRgNCw0LLQtdGG0Ywg0LIg0LrRltC80L3QsNGC0ZY=
 string|estate|0JzQsNGU0YLQvtC6
 string|exaltation|0JfQstGW0LvRjNC90LXQvdC90Y8=
+string|exit|0JLQuNC50YLQuA==
 string|expand|0KDQvtC30YjQuNGA0LjRgtC4
 string|expansion_amount|0KHRg9C80LAg0YDQvtC30YjQuNGA0LXQvdC90Y8=
 string|expense_amount|0KHRg9C80LAg0LLQuNGC0YDQsNGC
@@ -85,6 +87,7 @@ string|income_amount|0KHRg9C80LAg0LTQvtGF0L7QtNGD
 string|income_with_assets_and_loans|0JTQvtGF0ZbQtCDQtyDRg9GA0LDRhdGD0LLQsNC90L3Rj9C8LCDQsNC60YLQuNCy0ZbQsiwg0L/QsNGB0LjQstGW0LIg0YLQsCDQutGA0LXQtNC40YLRltCyOiAlMSRz
 string|invest|0IbQvdCy0LXRgdGC0YPQstCw0YLQuA==
 string|kids|0JTRltGC0Lg=
+string|land_name|0J3QsNC30LLQsCDQt9C10LzQtdC70YzQvdC+0LPQviDRg9GH0LDRgdGC0LrRgw==
 string|land|0JfQtdC80LvRjw==
 string|language|0JzQvtCy0LA=
 string|large_business|0JrRgNGD0L/QvdC40Lkg0LHRltC30L3QtdGB
@@ -120,6 +123,7 @@ string|playerHadBaby|0KMg0LPRgNCw0LLRhtGPICIlMSRzIiDQvdCw0YDQvtC00LjQu9Cw0YHRjyA
 string|playerMarried|0JPRgNCw0LLQtdGG0YwgIiUxJHMiINC+0LTRgNGD0LbQuNCy0YHRjw==
 string|player_name_label|0IbQvMq80Y8g0LPRgNCw0LLRhtGP
 string|player_name|0IbQvMq80Y8g0LPRgNCw0LLRhtGP
+string|priceOfUnit|0KbRltC90LAg0LfQsCDRgdC+0YLQutGD
 string|price|0KbRltC90LA=
 string|profession|0J/RgNC+0YTQtdGB0ZbRjw==
 string|profit|0JTQvtGF0ZbQtA==
