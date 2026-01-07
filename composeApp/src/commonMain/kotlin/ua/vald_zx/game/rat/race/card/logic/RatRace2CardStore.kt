@@ -2,15 +2,15 @@
 
 package ua.vald_zx.game.rat.race.card.logic
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import io.github.aakira.napier.Napier
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.beans.Fund
+import ua.vald_zx.game.rat.race.card.beans.Land
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
 import ua.vald_zx.game.rat.race.card.currentPlayerId
@@ -34,6 +34,7 @@ data class RatRace2CardState(
     val deposit: Long = 0,
     val loan: Long = 0,
     val business: List<Business> = emptyList(),
+    val lands: List<Land> = emptyList(),
     val isMarried: Boolean = false,
     val babies: Long = 0,
     val cars: Long = 0,
@@ -135,6 +136,8 @@ sealed class RatRace2CardAction : Action {
     data object RandomBusiness : RatRace2CardAction()
     data object HideAlarm : RatRace2CardAction()
     data class Connected(val room: String) : RatRace2CardAction()
+    data class BuyLand(val land: Land) : RatRace2CardAction()
+    data class SellLand(val priceOfUnit: Long, val area: Long) : RatRace2CardAction()
     data class BuyBusiness(val business: Business) : RatRace2CardAction()
     data class SellBusiness(val business: Business, val amount: Long) : RatRace2CardAction()
     data class DismissalConfirmed(val business: Business) : RatRace2CardAction()
@@ -195,8 +198,12 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
     private val sideEffect = MutableSharedFlow<RatRace2CardSideEffect>()
     var statistics: Statistics? = null
 
-    init {
-        launch {
+    suspend fun connect(room: String) {
+        val handler = CoroutineExceptionHandler { _, t ->
+            Napier.e("Invalid server", t)
+            dispatch(RatRace2CardAction.Disconnect)
+        }
+        CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
             service.playersObserve().collect { player ->
                 if (player.removed) {
                     offlinePlayers.value = service.getPlayers()
@@ -211,29 +218,27 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
                 }
             }
         }
-
-        launch {
+        CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
             service.sendMoneyObserve().collect {
                 dispatch(RatRace2CardAction.ReceivedCash(it.payerId, it.amount))
             }
         }
-    }
-
-    suspend fun connect(room: String) {
-        currentPlayerId =
-            service.hello(
-                OfflinePlayer(
-                    id = currentPlayerId,
-                    name = state.value.playerCard.name.ifEmpty { state.value.playerCard.profession },
-                    cashFlow = state.value.cashFlow(),
-                    total = state.value.total(),
-                    room = room,
-                    lastTotals = state.value.lastTotals,
-                    lastCashFlows = state.value.lastCashFlows,
+        CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
+            currentPlayerId =
+                service.hello(
+                    OfflinePlayer(
+                        id = currentPlayerId,
+                        name = state.value.playerCard.name.ifEmpty { state.value.playerCard.profession },
+                        cashFlow = state.value.cashFlow(),
+                        total = state.value.total(),
+                        room = room,
+                        lastTotals = state.value.lastTotals,
+                        lastCashFlows = state.value.lastCashFlows,
+                    )
                 )
-            )
-        offlinePlayers.value = service.getPlayers()
-        dispatch(Connected(room))
+            offlinePlayers.value = service.getPlayers()
+            dispatch(Connected(room))
+        }
     }
 
     override fun observeState(): StateFlow<RatRace2CardState> = state
@@ -321,6 +326,38 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
                 val business = oldState.business.toMutableList()
                 business.remove(action.business)
                 oldState.copy(business = business).plusCash(action.amount)
+            }
+
+            is BuyLand -> {
+                oldState.copy(lands = oldState.lands + action.land)
+                    .minusCash(action.land.priceOfUnit * action.land.area)
+            }
+
+            is SellLand -> {
+                val lands = oldState.lands.toMutableList()
+                val totalArea = lands.sumOf { it.area }
+                if (totalArea >= action.area) {
+                    val updatedLands = if (totalArea == action.area) {
+                        emptyList()
+                    } else {
+                        var remainder = action.area
+                        val newLands = lands.toMutableList()
+                        lands.forEach { land ->
+                            if (remainder == 0L) return@forEach
+                            newLands -= land
+                            if (land.area <= remainder) {
+                                remainder -= land.area
+                            } else {
+                                newLands += land.copy(area = land.area - remainder)
+                                remainder = 0
+                            }
+                        }
+                        newLands
+                    }
+                    oldState.copy(lands = updatedLands).plusCash(action.area * action.priceOfUnit)
+                } else {
+                    oldState
+                }
             }
 
             is ExtendBusiness -> {
@@ -649,6 +686,7 @@ fun RatRace2CardState.total(): Long {
             deposit +
             funds.sumOf { it.amount } +
             sharesList.sumOf { it.price } +
+            lands.sumOf { it.price } +
             business.sumOf { it.price } -
             loan
 }

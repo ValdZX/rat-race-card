@@ -37,10 +37,7 @@ import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Menu
 import ua.vald_zx.game.rat.race.card.resource.images.Rat
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
-import ua.vald_zx.game.rat.race.card.screen.second.page.BusinessListPage
-import ua.vald_zx.game.rat.race.card.screen.second.page.FundsPage
-import ua.vald_zx.game.rat.race.card.screen.second.page.SharesPage
-import ua.vald_zx.game.rat.race.card.screen.second.page.StatePage
+import ua.vald_zx.game.rat.race.card.screen.second.page.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.tts
@@ -181,13 +178,18 @@ class RaceRate2Screen : Screen {
                     val titles = mutableListOf(
                         stringResource(Res.string.status),
                         stringResource(Res.string.business),
-                        stringResource(Res.string.shares)
+                        stringResource(Res.string.shares),
+                        stringResource(Res.string.land)
                     )
                     if (state.config.hasFunds) {
                         titles += stringResource(Res.string.funds)
                     }
                     val pagerState = rememberPagerState(pageCount = { titles.size })
-                    PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
+                    PrimaryScrollableTabRow(
+                        selectedTabIndex = pagerState.currentPage,
+                        edgePadding = 0.dp,
+                        minTabWidth = 0.dp
+                    ) {
                         titles.forEachIndexed { index, title ->
                             Tab(
                                 selected = pagerState.currentPage == index,
@@ -212,7 +214,8 @@ class RaceRate2Screen : Screen {
                             0 -> StatePage(state)
                             1 -> BusinessListPage(state)
                             2 -> SharesPage(state)
-                            3 -> FundsPage(state)
+                            3 -> LandListPage(state)
+                            4 -> FundsPage(state)
                         }
                     }
                 }

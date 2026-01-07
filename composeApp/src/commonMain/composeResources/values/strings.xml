@@ -205,4 +205,8 @@
     <string name="language">Language</string>
     <string name="realEstate">Real estate</string>
     <string name="land">Land</string>
+    <string name="exit">Exit</string>
+    <string name="land_name">Name of land</string>
+    <string name="area">Area</string>
+    <string name="priceOfUnit">Price per square meter</string>
 </resources>

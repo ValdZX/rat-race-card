@@ -12,7 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
@@ -28,6 +30,7 @@ class AllActionsScreen() : Screen {
     override fun Content() = ActionsScreen {
         val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
+        val navigator = LocalNavigator.currentOrThrow
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         RainbowButton(stringResource(Res.string.receive_income)) {
             bottomSheetNavigator.hide()
@@ -77,6 +80,9 @@ class AllActionsScreen() : Screen {
         }
         Button(stringResource(Res.string.marital_status), AppTheme.colors.family) {
             bottomSheetNavigator.replace(MarriageScreen())
+        }
+        Button(stringResource(Res.string.exit), AppTheme.colors.negative) {
+            navigator.parent?.pop()
         }
     }
 }

@@ -5,12 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 
 
 private val lightScheme = lightColorScheme(
@@ -101,15 +96,16 @@ internal fun AppTheme(
     val colors = if (darkTheme) DarkIfobsColors else LightIfobsColors
     val colorPalette = remember { colors.copy() }
     colorPalette.update(colors)
+    val typography = montserratTypography()
     CompositionLocalProvider(
         LocalThemeIsDark provides isDarkState,
         LocalAppColors provides colorPalette
     ) {
         SystemAppearance(!darkTheme)
-
         MaterialTheme(
             colorScheme = if (darkTheme) darkScheme else lightScheme,
-            content = { Surface(content = content) }
+            content = { Surface(content = content) },
+            typography = typography,
         )
     }
 }

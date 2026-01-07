@@ -149,7 +149,7 @@ fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState
                 titles += stringResource(Res.string.funds)
             }
             val pagerState = rememberPagerState(pageCount = { titles.size })
-            PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
+            PrimaryScrollableTabRow(selectedTabIndex = pagerState.currentPage, edgePadding = 0.dp) {
                 titles.forEachIndexed { index, title ->
                     Tab(
                         selected = pagerState.currentPage == index,

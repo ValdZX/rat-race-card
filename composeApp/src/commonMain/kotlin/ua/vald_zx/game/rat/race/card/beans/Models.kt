@@ -20,6 +20,15 @@ data class Business(
     val alarmed: Boolean = false,
 )
 
+@Serializable
+data class Land(
+    val name: String,
+    val area: Long,
+    val priceOfUnit: Long,
+) {
+    val price: Long = priceOfUnit * area
+}
+
 enum class SharesType {
     GS,
     ЩГП,
