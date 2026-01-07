@@ -98,7 +98,7 @@ enum class BusinessType(val klass: Int) {
 }
 
 enum class SharesType {
-    GS,
+    GC,
     ShchHP,
     TO,
     CST

@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen.board
+package ua.vald_zx.game.rat.race.card.screen.board.deck
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,6 +35,8 @@ import ua.vald_zx.game.rat.race.card.components.rotateLayout
 import ua.vald_zx.game.rat.race.card.isVertical
 import ua.vald_zx.game.rat.race.card.logic.BoardState
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.screen.board.deckCoordinatesMap
+import ua.vald_zx.game.rat.race.card.screen.board.discardPilesCoordinatesMap
 import ua.vald_zx.game.rat.race.card.screen.board.visualize.color
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
@@ -43,8 +45,6 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 fun CardDeck(
     cardType: BoardCardType,
     size: DpSize,
-    highlightedCardType: BoardCardType?,
-    state: BoardState,
     vm: BoardViewModel,
 ) {
     val rounding = min(size.width, size.height) / 10
@@ -52,6 +52,7 @@ fun CardDeck(
     val spreadRadius = min(size.width, size.height) / 20
 
     val density = LocalDensity.current
+    val state by vm.uiState.collectAsState()
     Box(
         modifier = Modifier
             .size(size.width, size.height)
@@ -65,7 +66,7 @@ fun CardDeck(
                     mutableStateOf(coordinates)
                 }.value = coordinates
             }
-            .optionalModifier(cardType == highlightedCardType && state.currentPlayerIsActive) {
+            .optionalModifier(cardType == state.board.canTakeCard && state.currentPlayerIsActive) {
                 boxShadow(
                     blurRadius = blurRadius,
                     spreadRadius = spreadRadius,

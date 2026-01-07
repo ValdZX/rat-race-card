@@ -31,7 +31,6 @@ import kotlinx.coroutines.launch
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
-import ua.vald_zx.game.rat.race.card.logic.BoardState
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Bow
@@ -59,7 +58,6 @@ data class PlayerPointState(
 fun PlayerPoint(
     places: Map<Int, Place>,
     pointerState: PlayerPointState,
-    state: BoardState,
     vm: BoardViewModel,
     spotSize: DpSize,
     index: Int,

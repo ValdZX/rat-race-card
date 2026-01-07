@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.card.screen.board
+package ua.vald_zx.game.rat.race.card.screen.board.deck
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -15,19 +15,20 @@ import androidx.compose.ui.unit.min
 import androidx.constraintlayout.compose.*
 import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.isVertical
-import ua.vald_zx.game.rat.race.card.logic.BoardState
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.max
+import ua.vald_zx.game.rat.race.card.screen.board.INNER_LAYER_SCALE
+import ua.vald_zx.game.rat.race.card.screen.board.deck.front.BoardCardFront
+import ua.vald_zx.game.rat.race.card.screen.board.deckCoordinatesMap
+import ua.vald_zx.game.rat.race.card.screen.board.discardPilesCoordinatesMap
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 
 const val cardMoveAnimationDuration = 2000
 
 @OptIn(ExperimentalMotionApi::class)
 @Composable
-fun BoxWithConstraintsScope.CardDialog(
-    state: BoardState,
-    vm: BoardViewModel,
-) {
+fun BoxWithConstraintsScope.CardDialog(vm: BoardViewModel) {
+    val state by vm.uiState.collectAsState()
     val takenCard = state.board.takenCard
     var showDialog by remember { mutableStateOf(false) }
     LaunchedEffect(takenCard) {

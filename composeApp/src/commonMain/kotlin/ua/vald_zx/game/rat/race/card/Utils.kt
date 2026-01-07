@@ -19,7 +19,7 @@ fun Long.splitDecimal(step: Int = 3, divider: String = " "): String {
 }
 
 fun Long.formatAmount(): String {
-    return "$${this.splitDecimal()}"
+    return "${this.splitDecimal()} $"
 }
 
 fun String.splitDecimal(step: Int = 3, divider: String = " "): String {

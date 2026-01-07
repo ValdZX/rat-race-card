@@ -62,6 +62,9 @@ import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
+import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDeck
+import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDialog
+import ua.vald_zx.game.rat.race.card.screen.board.deck.DiscardPile
 import ua.vald_zx.game.rat.race.card.settings
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
@@ -152,7 +155,7 @@ class BoardScreen(
         Box {
             BottomSheetNavigator {
                 Box(modifier = Modifier.padding(bottom = littleDetailsHeight)) {
-                    BoardScreenContent(state, vm)
+                    BoardScreenContent(vm)
                 }
                 BottomSheet(state = scaffoldState) {
                     Box(Modifier.navigationBarsPadding().onSizeChanged { size ->
@@ -524,24 +527,18 @@ class BoardScreen(
 
 @OptIn(ExperimentalMotionApi::class, ExperimentalMaterialApi::class)
 @Composable
-fun BoardScreenContent(
-    state: BoardState,
-    vm: BoardViewModel
-) {
+fun BoardScreenContent(vm: BoardViewModel) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        BoardFragment(state, vm)
+        BoardFragment(vm)
         Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
             Controls()
         }
-        CardDialog(state, vm)
+        CardDialog(vm)
     }
 }
 
 @Composable
-fun BoardFragment(
-    state: BoardState,
-    vm: BoardViewModel,
-) {
+fun BoardFragment(vm: BoardViewModel) {
     val rotX = remember { Animatable(0f) }
     val rotY = remember { Animatable(0f) }
     BoxWithConstraints(
@@ -549,6 +546,7 @@ fun BoardFragment(
             .fillMaxSize()
             .rotateOnDrag(rotX, rotY)
     ) {
+        val state by vm.uiState.collectAsState()
         val outRoute = boardLayers.layers[BoardLayer.OUTER] ?: error("Fix board")
         val horizontalRatio =
             outRoute.horizontalCells.toFloat() / outRoute.verticalCells.toFloat()
@@ -584,11 +582,11 @@ fun BoardFragment(
                     scaleY = scale
                 }
         ) {
-            BoardPanel(state, isVertical, vm)
+            BoardPanel(isVertical, vm)
             if (isFlipped(rotY, rotX)) {
                 BackSide()
             }
-            Dice(state, vm)
+            Dice(vm)
         }
     }
 }
@@ -613,10 +611,8 @@ fun BoxScope.Controls() {
 }
 
 @Composable
-fun BoxWithConstraintsScope.Dice(
-    state: BoardState,
-    vm: BoardViewModel,
-) {
+fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
+    val state by vm.uiState.collectAsState()
     val composition = lottieDiceAnimations[state.board.dice]
     val animatable = rememberLottieAnimatable()
     LaunchedEffect(Unit) {
@@ -697,7 +693,6 @@ fun BackSide() {
 
 @Composable
 fun BoxWithConstraintsScope.BoardPanel(
-    state: BoardState,
     isVertical: Boolean,
     vm: BoardViewModel,
 ) {
@@ -737,7 +732,6 @@ fun BoxWithConstraintsScope.BoardPanel(
             if (isVertical) outRoute.rotate() else outRoute
         }
         Places(
-            state = state,
             layer = BoardLayer.OUTER,
             size = DpSize(maxWidth, maxHeight),
             route = actualOutRoute,
@@ -754,7 +748,6 @@ fun BoxWithConstraintsScope.BoardPanel(
         val inBoardHeight =
             (maxHeight - outSpotSize * 4 - inPadding * 2)
         Places(
-            state = state,
             layer = BoardLayer.INNER,
             size = DpSize(inBoardWidth, inBoardHeight),
             route = actualInRoute,
@@ -768,9 +761,7 @@ fun BoxWithConstraintsScope.BoardPanel(
         val cardsHeight =
             (inBoardHeight - inSpotSize * 4 - cardsPadding * 2)
         CardDecks(
-            state = state,
             size = DpSize(cardsWidth, cardsHeight),
-            highlightedDeck = state.board.canTakeCard,
             vm = vm,
         )
     }
@@ -779,9 +770,7 @@ fun BoxWithConstraintsScope.BoardPanel(
 @Composable
 fun BoxScope.CardDecks(
     size: DpSize,
-    highlightedDeck: BoardCardType?,
     vm: BoardViewModel,
-    state: BoardState
 ) {
     Box(
         modifier = Modifier
@@ -800,12 +789,13 @@ fun BoxScope.CardDecks(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    LeftCardDecks(highlightedDeck, cardSize, vm = vm, state = state)
+                    LeftCardDecks(cardSize, vm = vm)
                 }
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    val state by vm.uiState.collectAsState()
                     LeftDiscardPiles(cardSize, state = state)
                 }
             }
@@ -817,13 +807,14 @@ fun BoxScope.CardDecks(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    val state by vm.uiState.collectAsState()
                     RightDiscardPiles(cardSize, state = state)
                 }
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    RightCardDecks(highlightedDeck, cardSize, vm = vm, state = state)
+                    RightCardDecks(cardSize, vm = vm)
                 }
             }
         } else {
@@ -838,12 +829,13 @@ fun BoxScope.CardDecks(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxHeight()
                 ) {
-                    LeftCardDecks(highlightedDeck, cardSize, vm = vm, state = state)
+                    LeftCardDecks(cardSize, vm = vm)
                 }
                 Column(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxHeight()
                 ) {
+                    val state by vm.uiState.collectAsState()
                     LeftDiscardPiles(
                         size = cardSize,
                         state = state,
@@ -858,13 +850,14 @@ fun BoxScope.CardDecks(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxHeight()
                 ) {
+                    val state by vm.uiState.collectAsState()
                     RightDiscardPiles(cardSize, state = state)
                 }
                 Column(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxHeight()
                 ) {
-                    RightCardDecks(highlightedDeck, cardSize, vm = vm, state = state)
+                    RightCardDecks(cardSize, vm = vm)
                 }
             }
         }
@@ -873,28 +866,24 @@ fun BoxScope.CardDecks(
 
 @Composable
 fun LeftCardDecks(
-    highlightedCard: BoardCardType?,
     size: DpSize,
-    vm: BoardViewModel,
-    state: BoardState
+    vm: BoardViewModel
 ) {
-    CardDeck(BoardCardType.Chance, size, highlightedCard, state, vm)
-    CardDeck(BoardCardType.BigBusiness, size, highlightedCard, state, vm)
-    CardDeck(BoardCardType.MediumBusiness, size, highlightedCard, state, vm)
-    CardDeck(BoardCardType.SmallBusiness, size, highlightedCard, state, vm)
+    CardDeck(BoardCardType.Chance, size, vm)
+    CardDeck(BoardCardType.BigBusiness, size, vm)
+    CardDeck(BoardCardType.MediumBusiness, size, vm)
+    CardDeck(BoardCardType.SmallBusiness, size, vm)
 }
 
 @Composable
 fun RightCardDecks(
-    highlightedCard: BoardCardType?,
     size: DpSize,
-    vm: BoardViewModel,
-    state: BoardState
+    vm: BoardViewModel
 ) {
-    CardDeck(BoardCardType.Expenses, size, highlightedCard, state, vm)
-    CardDeck(BoardCardType.Deputy, size, highlightedCard, state, vm)
-    CardDeck(BoardCardType.EventStore, size, highlightedCard, state, vm)
-    CardDeck(BoardCardType.Shopping, size, highlightedCard, state, vm)
+    CardDeck(BoardCardType.Expenses, size, vm)
+    CardDeck(BoardCardType.Deputy, size, vm)
+    CardDeck(BoardCardType.EventStore, size, vm)
+    CardDeck(BoardCardType.Shopping, size, vm)
 }
 
 @Composable

@@ -49,9 +49,29 @@ sealed class BoardCard(val type: BoardCardType) {
     ) : BoardCard(BoardCardType.Shopping)
 
     @Serializable
-    data class EventStore(
-        val description: String,
-    ) : BoardCard(BoardCardType.EventStore)
+    sealed class EventStore : BoardCard(BoardCardType.EventStore) {
+        @Serializable
+        data class Shares(
+            val sharesType: SharesType,
+            val description: String,
+            val price: Long
+        ) : EventStore()
+        @Serializable
+        data class Land(
+            val description: String,
+            val price: Long
+        ) : EventStore()
+        @Serializable
+        data class Estate(
+            val description: String,
+            val price: Long
+        ) : EventStore()
+        @Serializable
+        data class BusinessExtending(
+            val description: String,
+            val profit: Long
+        ) : EventStore()
+    }
 
     @Serializable
     data class Deputy(

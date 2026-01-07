@@ -35,7 +35,6 @@ import ua.vald_zx.game.rat.race.card.components.Rotation
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.components.rotateLayout
 import ua.vald_zx.game.rat.race.card.currentPlayerId
-import ua.vald_zx.game.rat.race.card.logic.BoardState
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.resource.Images
@@ -95,7 +94,6 @@ private fun PlaceType.color(): Color {
 fun BoxScope.PlaceContent(
     place: Place,
     vm: BoardViewModel,
-    state: BoardState,
     layer: BoardLayer,
     index: Int,
     route: BoardRoute,
@@ -103,6 +101,7 @@ fun BoxScope.PlaceContent(
     val minSide = min(place.size.height, place.size.width)
     val maxSide = max(place.size.height, place.size.width)
     val density = LocalDensity.current
+    val state by vm.uiState.collectAsState()
     when (place.type) {
         PlaceType.Salary -> {
             val blurRadius = min(place.size.width, place.size.height) / 5
@@ -366,7 +365,6 @@ fun BoxScope.PlaceContent(
 
 @Composable
 fun BoxScope.Places(
-    state: BoardState,
     vm: BoardViewModel,
     layer: BoardLayer,
     size: DpSize,
@@ -391,6 +389,7 @@ fun BoxScope.Places(
             index to Place(type, location, cellOffset, cellSize)
         }.sortedBy { (_, place) -> place.type == PlaceType.Salary }
     }
+    val state by vm.uiState.collectAsState()
     val alpha by animateFloatAsState(if (state.layer == layer) 1f else 0.7f)
     Box(
         modifier = Modifier.align(Alignment.Center).size(size).alpha(alpha)
@@ -404,7 +403,6 @@ fun BoxScope.Places(
                 PlaceContent(
                     index = index,
                     place = place,
-                    state = state,
                     route = route,
                     layer = layer,
                     vm = vm,
@@ -430,7 +428,6 @@ fun BoxScope.Places(
                 PlayerPoint(
                     places = places.toMap(),
                     pointerState = pointerState,
-                    state = state,
                     vm = vm,
                     spotSize = DpSize(spotWidth, spotHeight),
                     index = index,

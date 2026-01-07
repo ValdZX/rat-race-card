@@ -42,5 +42,5 @@ fun SharesPage(state: Player) {
 }
 
 fun SharesType.label(): String {
-    return name.replace("SCT", "CST").replace("GS", "GC")
+    return name.replace("ShchHP", "ЩГП")
 }

@@ -258,4 +258,12 @@ class BoardViewModel(
             service.buyShares(card, count)
         }
     }
+
+    fun extendBusiness(randomSmallBusiness: Business, card: BoardCard.EventStore.BusinessExtending) {
+        TODO("Not yet implemented")
+    }
+
+    fun sellShares(card: BoardCard.EventStore.Shares, count: Long) {
+        TODO("Not yet implemented")
+    }
 }
