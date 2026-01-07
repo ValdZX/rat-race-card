@@ -127,7 +127,7 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.androidx.ui.android)
 }
-version = "3.2"
+version = "3.3"
 android {
     namespace = "ua.vald_zx.game.rat.race.card"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -182,7 +182,7 @@ android {
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.txt")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }
