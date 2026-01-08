@@ -25,13 +25,11 @@ import com.composables.core.BottomSheetState
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import rat_race_card.composeapp.generated.resources.*
-import ua.vald_zx.game.rat.race.card.components.FundsField
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
 import ua.vald_zx.game.rat.race.card.logic.BoardState
 import ua.vald_zx.game.rat.race.card.screen.board.page.*
-import ua.vald_zx.game.rat.race.card.screen.second.BuyFundScreen
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -129,14 +127,6 @@ fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState
                     }
                 }
             }
-            if (player.config.hasFunds) {
-                FundsField(
-                    name = stringResource(Res.string.funds),
-                    value = "${player.fundAmount()} $"
-                ) {
-                    bottomSheetNavigator.show(BuyFundScreen())
-                }
-            }
             val coroutineScope = rememberCoroutineScope()
             val titles = mutableListOf(
                 stringResource(Res.string.status),
@@ -145,11 +135,16 @@ fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState
                 stringResource(Res.string.land),
                 stringResource(Res.string.realEstate),
             )
-            if (player.config.hasFunds) {
-                titles += stringResource(Res.string.funds)
-            }
+//            if (player.config.hasFunds) {
+//                titles += stringResource(Res.string.funds)
+//            }
             val pagerState = rememberPagerState(pageCount = { titles.size })
-            PrimaryScrollableTabRow(selectedTabIndex = pagerState.currentPage, edgePadding = 0.dp) {
+            PrimaryScrollableTabRow(
+                selectedTabIndex = pagerState.currentPage,
+                edgePadding = 0.dp,
+                minTabWidth = 0.dp,
+                modifier = Modifier.align(Alignment.CenterHorizontally).wrapContentWidth(),
+            ) {
                 titles.forEachIndexed { index, title ->
                     Tab(
                         selected = pagerState.currentPage == index,
@@ -166,6 +161,7 @@ fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState
                     )
                 }
             }
+
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxWidth().weight(1f),

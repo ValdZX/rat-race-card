@@ -123,24 +123,13 @@ fun BoxScope.PlaceContent(
                         boxShadow(
                             blurRadius = blurRadius,
                             spreadRadius = spreadRadius,
-                            color = MaterialTheme.colorScheme.background,
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                     .background(place.type.color())
                     .optionalModifier(canTakeSalary) {
                         clickable {
                             vm.takeSalary()
-                        }
-                    }
-                    .optionalModifier(!canTakeSalary) {
-                        clickable {
-                            vm.changePosition(
-                                moveTo(
-                                    position = index,
-                                    cellCount = layer.cellCount,
-                                    toMove = -route.offset
-                                )
-                            )
                         }
                     }
             ) {
@@ -152,15 +141,6 @@ fun BoxScope.PlaceContent(
             Box(
                 Modifier.fillMaxSize()
                     .background(place.type.color())
-                    .clickable {
-                        vm.changePosition(
-                            moveTo(
-                                position = index,
-                                cellCount = layer.cellCount,
-                                toMove = -route.offset
-                            )
-                        )
-                    }
             ) {
                 Image(
                     painterResource(Res.drawable.child),
@@ -171,15 +151,7 @@ fun BoxScope.PlaceContent(
         }
 
         PlaceType.Bankruptcy -> {
-            Box(Modifier.fillMaxSize().background(place.type.color()).clickable {
-                vm.changePosition(
-                    moveTo(
-                        position = index,
-                        cellCount = layer.cellCount,
-                        toMove = -route.offset
-                    )
-                )
-            }) {
+            Box(Modifier.fillMaxSize().background(place.type.color())) {
                 Image(
                     painterResource(Res.drawable.business_failure),
                     contentDescription = null,
@@ -189,15 +161,7 @@ fun BoxScope.PlaceContent(
         }
 
         PlaceType.TaxInspection -> {
-            Box(Modifier.fillMaxSize().background(place.type.color()).clickable {
-                vm.changePosition(
-                    moveTo(
-                        position = index,
-                        cellCount = layer.cellCount,
-                        toMove = -route.offset
-                    )
-                )
-            }) {
+            Box(Modifier.fillMaxSize().background(place.type.color())) {
                 Image(
                     painterResource(Res.drawable.detective),
                     contentDescription = null,
@@ -215,15 +179,7 @@ fun BoxScope.PlaceContent(
                         radius = with(density) { maxSide.toPx() },
                         tileMode = TileMode.Repeated
                     )
-                ).clickable {
-                    vm.changePosition(
-                        moveTo(
-                            position = index,
-                            cellCount = layer.cellCount,
-                            toMove = -route.offset
-                        )
-                    )
-                }
+                )
             ) {
                 Image(
                     painterResource(Res.drawable.love),
@@ -242,15 +198,7 @@ fun BoxScope.PlaceContent(
                         radius = with(density) { maxSide.toPx() },
                         tileMode = TileMode.Repeated
                     )
-                ).clickable {
-                    vm.changePosition(
-                        moveTo(
-                            position = index,
-                            cellCount = layer.cellCount,
-                            toMove = -route.offset
-                        )
-                    )
-                }
+                )
             ) {
                 Image(
                     painterResource(Res.drawable.divorce),
@@ -269,15 +217,7 @@ fun BoxScope.PlaceContent(
                         radius = with(density) { maxSide.toPx() },
                         tileMode = TileMode.Repeated
                     )
-                ).clickable {
-                    vm.changePosition(
-                        moveTo(
-                            position = index,
-                            cellCount = layer.cellCount,
-                            toMove = -route.offset
-                        )
-                    )
-                }
+                )
             ) {
                 Image(
                     painterResource(Res.drawable.vacation),
@@ -296,15 +236,7 @@ fun BoxScope.PlaceContent(
                         radius = with(density) { maxSide.toPx() },
                         tileMode = TileMode.Repeated
                     )
-                ).clickable {
-                    vm.changePosition(
-                        moveTo(
-                            position = index,
-                            cellCount = layer.cellCount,
-                            toMove = -route.offset
-                        )
-                    )
-                }
+                )
             ) {
                 OutlinedText(
                     text = place.type.text(),
@@ -329,15 +261,7 @@ fun BoxScope.PlaceContent(
         }
 
         else -> {
-            Box(Modifier.fillMaxSize().background(place.type.color()).clickable {
-                vm.changePosition(
-                    moveTo(
-                        position = index,
-                        cellCount = layer.cellCount,
-                        toMove = -route.offset
-                    )
-                )
-            }) {
+            Box(Modifier.fillMaxSize().background(place.type.color())) {
                 OutlinedText(
                     text = place.type.text(),
                     autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),

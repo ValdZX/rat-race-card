@@ -99,7 +99,7 @@ fun PlayerPoint(
                         blurRadius = blurRadius,
                         spreadRadius = spreadRadius,
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.background,
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                 }
                 .clip(CircleShape)

@@ -13,6 +13,7 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.buy
+import rat_race_card.composeapp.generated.resources.purchase_price
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
 import ua.vald_zx.game.rat.race.card.label
@@ -36,7 +37,7 @@ fun SharesPage(state: RatRace2CardState) {
                             modifier = Modifier.weight(1f)
                         )
                         SDetailsField(
-                            name = "Ціна покупки",
+                            name = stringResource(Res.string.purchase_price),
                             value = shares.buyPrice.toString(),
                             modifier = Modifier.weight(1f)
                         )

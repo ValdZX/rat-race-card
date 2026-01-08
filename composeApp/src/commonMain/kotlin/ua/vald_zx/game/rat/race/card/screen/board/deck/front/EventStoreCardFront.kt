@@ -21,12 +21,15 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.screen.board.EstateSelectScreen
+import ua.vald_zx.game.rat.race.card.screen.board.SellLandScreen
 import ua.vald_zx.game.rat.race.card.screen.board.cards.eventStoreCards
 import ua.vald_zx.game.rat.race.card.screen.board.page.label
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
@@ -77,6 +80,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
     val unitDp = cardWidth / 300
     val padding = unitDp * 10
     val smallPadding = unitDp * 6
+    val bottomSheetNavigator = LocalBottomSheetNavigator.current
     Column(modifier = Modifier.padding(padding)) {
         Row {
             Text(
@@ -137,14 +141,15 @@ private fun BoxWithConstraintsScope.EstateCardFront(
             )
         }
         val state by vm.uiState.collectAsState()
-        if (state.player.estateList.isNotEmpty()) {
+        val currentPlayerNotProcessed = !state.board.processedPlayerIds.contains(state.player.id)
+        if (state.player.estateList.isNotEmpty() && currentPlayerNotProcessed) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 ElevatedButton(
                     modifier = Modifier,
-                    onClick = { vm.pass() },
+                    onClick = { vm.passEstate() },
                     content = {
                         Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
                     },
@@ -152,13 +157,21 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                 ElevatedButton(
                     modifier = Modifier,
                     onClick = {
-                        //TODO SelectEstateToSell
+                        bottomSheetNavigator.show(EstateSelectScreen(vm, card.price))
                     },
                     content = {
                         Text(stringResource(Res.string.sell), fontSize = unitTS * 14)
                     },
                 )
             }
+        } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
+            ElevatedButton(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                onClick = { vm.passEstate() },
+                content = {
+                    Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
+                },
+            )
         }
     }
 }
@@ -228,14 +241,16 @@ private fun BoxWithConstraintsScope.LandCardFront(
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         val state by vm.uiState.collectAsState()
-        if (state.player.landList.isNotEmpty()) {
+        val bottomSheetNavigator = LocalBottomSheetNavigator.current
+        val currentPlayerNotProcessed = !state.board.processedPlayerIds.contains(state.player.id)
+        if (state.player.landList.isNotEmpty() && currentPlayerNotProcessed) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 ElevatedButton(
                     modifier = Modifier,
-                    onClick = { vm.pass() },
+                    onClick = { vm.passLand() },
                     content = {
                         Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
                     },
@@ -243,13 +258,21 @@ private fun BoxWithConstraintsScope.LandCardFront(
                 ElevatedButton(
                     modifier = Modifier,
                     onClick = {
-                        //TODO Select Land to sell
+                        bottomSheetNavigator.show(SellLandScreen(vm, card.price))
                     },
                     content = {
                         Text(stringResource(Res.string.sell), fontSize = unitTS * 14)
                     },
                 )
             }
+        } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
+            ElevatedButton(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                onClick = { vm.passEstate() },
+                content = {
+                    Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
+                },
+            )
         }
     }
 }
@@ -319,7 +342,8 @@ private fun BoxWithConstraintsScope.SharesCardFront(
             fontWeight = FontWeight.Bold
         )
         val state by vm.uiState.collectAsState()
-        if (state.player.sharesList.any { it.type == card.sharesType }) {
+        val currentPlayerNotProcessed = !state.board.processedPlayerIds.contains(state.player.id)
+        if (state.player.sharesList.any { it.type == card.sharesType } && currentPlayerNotProcessed) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround,
@@ -327,35 +351,44 @@ private fun BoxWithConstraintsScope.SharesCardFront(
             ) {
                 ElevatedButton(
                     modifier = Modifier,
-                    onClick = { vm.pass() },
+                    onClick = { vm.passShares(card.sharesType) },
                     content = {
                         Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
                     },
                 )
                 var count by remember { mutableStateOf(0L) }
-                val value = if (count <= 0) "" else count.toString()
-                val maxCount = state.player.sharesList.filter { it.type == card.sharesType }.sumOf { it.count }
-                BasicTextField(
-                    value = value,
-                    onValueChange = {
-                        val tapedCount = it.toLongOrNull() ?: 0
-                        if (tapedCount <= maxCount) {
-                            count = tapedCount
-                        }
-                    },
-                    modifier = Modifier.padding(start = padding).weight(1f),
-                    singleLine = true,
-                ) { innerTextField ->
-                    OutlinedTextFieldDefaults.DecorationBox(
-                        value = value,
-                        innerTextField = innerTextField,
-                        enabled = true,
-                        singleLine = true,
-                        visualTransformation = VisualTransformation.None,
-                        interactionSource = remember { MutableInteractionSource() },
-                        contentPadding = contentPadding(top = unitDp * 4, bottom = unitDp * 4),
-                        label = { Text(stringResource(Res.string.quantity), fontSize = unitTS * 14) },
+                Column(
+                    modifier = Modifier.padding(horizontal = padding).weight(1f),
+                    horizontalAlignment = Alignment.End,
+                ) {
+                    val maxCount = state.player.sharesList.filter { it.type == card.sharesType }.sumOf { it.count }
+                    Text(
+                        "В наявності: $maxCount",
+                        fontSize = unitTS * 12,
                     )
+                    val value = if (count <= 0) "" else count.toString()
+                    BasicTextField(
+                        modifier = Modifier.padding(top = smallPadding),
+                        value = value,
+                        onValueChange = {
+                            val tapedCount = it.toLongOrNull() ?: 0
+                            if (tapedCount <= maxCount) {
+                                count = tapedCount
+                            }
+                        },
+                        singleLine = true,
+                    ) { innerTextField ->
+                        OutlinedTextFieldDefaults.DecorationBox(
+                            value = value,
+                            innerTextField = innerTextField,
+                            enabled = true,
+                            singleLine = true,
+                            visualTransformation = VisualTransformation.None,
+                            interactionSource = remember { MutableInteractionSource() },
+                            contentPadding = contentPadding(top = unitDp * 4, bottom = unitDp * 4),
+                            label = { Text(stringResource(Res.string.quantity), fontSize = unitTS * 12) },
+                        )
+                    }
                 }
                 ElevatedButton(
                     modifier = Modifier,
@@ -367,6 +400,14 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                     },
                 )
             }
+        } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
+            ElevatedButton(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                onClick = { vm.passEstate() },
+                content = {
+                    Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
+                },
+            )
         }
     }
 }
@@ -456,7 +497,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
                 ElevatedButton(
                     modifier = Modifier,
                     onClick = {
-                       vm.extendBusiness(randomSmallBusiness, card)
+                        vm.extendBusiness(randomSmallBusiness, card)
                     },
                     content = {
                         Text("Чудово!", fontSize = unitTS * 14)

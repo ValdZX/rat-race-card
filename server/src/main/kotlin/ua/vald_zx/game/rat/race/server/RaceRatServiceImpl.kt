@@ -215,14 +215,25 @@ class RaceRatServiceImpl(
 
     override suspend fun takeCard(cardType: BoardCardType) {
         val card = board.cards[cardType]?.random() ?: return
+        selectCard(card, cardType)
+    }
+
+    private suspend fun selectCard(cardId: Int, cardType: BoardCardType) {
         changeBoard {
             copy(
                 cards = cards.apply {
-                    this[cardType]?.remove(card)
+                    this[cardType]?.remove(cardId)
                 },
-                takenCard = CardLink(cardType, card),
+                takenCard = CardLink(cardType, cardId),
                 canTakeCard = null,
+                processedPlayerIds = emptySet(),
             )
+        }
+    }
+
+    override suspend fun selectCardByNo(cardId: Int) {
+        board.canTakeCard?.let { cardType ->
+            selectCard(cardId, cardType)
         }
     }
 
@@ -640,5 +651,119 @@ class RaceRatServiceImpl(
             copy(sharesList = sharesList + Shares(card.sharesType, count, card.price)).minusCash(count * card.price)
         }
         nextPlayer()
+    }
+
+    override suspend fun extendBusiness(
+        business: Business,
+        card: BoardCard.EventStore.BusinessExtending
+    ) {
+        changePlayer {
+            val extendedBusiness = business.copy(extentions = business.extentions + card.profit)
+            val updatedBusiness = businesses.replace(business, extendedBusiness)
+            copy(businesses = updatedBusiness)
+        }
+        nextPlayer()
+    }
+
+    override suspend fun sellLands(area: Long, priceOfUnit: Long) {
+        changePlayer {
+            val lands = landList.toMutableList()
+            val totalArea = lands.sumOf { it.area }
+            if (totalArea >= area) {
+                val updatedLands = if (totalArea == area) {
+                    emptyList()
+                } else {
+                    var remainder = area
+                    val newLands = lands.toMutableList()
+                    lands.forEach { land ->
+                        if (remainder == 0L) return@forEach
+                        newLands -= land
+                        if (land.area <= remainder) {
+                            remainder -= land.area
+                        } else {
+                            newLands += land.copy(area = land.area - remainder)
+                            remainder = 0
+                        }
+                    }
+                    newLands
+                }
+                copy(landList = updatedLands).plusCash(area * priceOfUnit)
+            } else {
+                this
+            }
+        }
+        changeBoard {
+            copy(processedPlayerIds = processedPlayerIds + uuid)
+        }
+        passLand()
+    }
+
+    override suspend fun sellShares(
+        card: BoardCard.EventStore.Shares,
+        count: Long
+    ) {
+        changePlayer {
+            var resultList = sharesList.toMutableList()
+            val sharesByType = resultList.filter { it.type == card.sharesType }
+            var needToSell = count
+            var index = 0
+            while (needToSell != 0L && index < sharesByType.size) {
+                val shares = sharesByType[index]
+                if (needToSell < shares.count) {
+                    resultList = resultList.replace(
+                        shares,
+                        shares.copy(count = shares.count - needToSell)
+                    ).toMutableList()
+                    break
+                } else if (needToSell == shares.count) {
+                    resultList.remove(shares)
+                    break
+                } else {
+                    resultList.remove(shares)
+                    needToSell -= shares.count
+                    index += 1
+                }
+            }
+            copy(sharesList = resultList).plusCash(count * card.price)
+        }
+        changeBoard {
+            copy(processedPlayerIds = processedPlayerIds + uuid)
+        }
+        passShares(card.sharesType)
+    }
+
+    override suspend fun sellEstate(
+        card: List<Estate>,
+        price: Long
+    ) {
+        changePlayer {
+            copy(estateList = estateList - card).plusCash(card.size * price)
+        }
+        changeBoard {
+            copy(processedPlayerIds = processedPlayerIds + uuid)
+        }
+        passEstate()
+    }
+
+    override suspend fun passLand() {
+        val playersWithLands = board.players().filter { it.landList.isNotEmpty() }.map { it.id }.toSet()
+        if (playersWithLands.isEmpty() || playersWithLands == board.processedPlayerIds) {
+            nextPlayer()
+        }
+    }
+
+    override suspend fun passShares(sharesType: SharesType) {
+        val playersWithShares =
+            board.players().filter { it.sharesList.any { it.type == sharesType } }.map { it.id }.toSet()
+        if (playersWithShares.isEmpty() || playersWithShares == board.processedPlayerIds) {
+            nextPlayer()
+        }
+    }
+
+    override suspend fun passEstate() {
+        val playersWithEstate = board.players().filter { it.estateList.isNotEmpty() }.map { it.id }.toSet()
+        if (playersWithEstate.isEmpty() || playersWithEstate == board.processedPlayerIds) {
+            nextPlayer()
+        }
     }
 }

@@ -11,6 +11,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.purchase_price
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.SharesType
@@ -29,7 +32,7 @@ fun SharesPage(state: Player) {
                             modifier = Modifier.weight(1f)
                         )
                         SDetailsField(
-                            name = "Ціна покупки",
+                            name = stringResource(Res.string.purchase_price),
                             value = shares.buyPrice.toString(),
                             modifier = Modifier.weight(1f)
                         )

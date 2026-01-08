@@ -188,7 +188,8 @@ class RaceRate2Screen : Screen {
                     PrimaryScrollableTabRow(
                         selectedTabIndex = pagerState.currentPage,
                         edgePadding = 0.dp,
-                        minTabWidth = 0.dp
+                        minTabWidth = 0.dp,
+                        modifier = Modifier.align(Alignment.CenterHorizontally).wrapContentWidth(),
                     ) {
                         titles.forEachIndexed { index, title ->
                             Tab(

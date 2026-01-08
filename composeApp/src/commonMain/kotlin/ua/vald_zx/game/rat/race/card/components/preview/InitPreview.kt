@@ -140,6 +140,47 @@ fun InitPreview(
                     ) {
                         //NOP
                     }
+
+                    override suspend fun selectCardByNo(cardId: Int) {
+                        //NOP
+                    }
+
+                    override suspend fun extendBusiness(
+                        business: Business,
+                        card: BoardCard.EventStore.BusinessExtending
+                    ) {
+                        //NOP
+                    }
+
+                    override suspend fun sellLands(area: Long, priceOfUnit: Long) {
+                        //NOP
+                    }
+
+                    override suspend fun sellShares(
+                        card: BoardCard.EventStore.Shares,
+                        count: Long
+                    ) {
+                        //NOP
+                    }
+
+                    override suspend fun sellEstate(
+                        card: List<Estate>,
+                        price: Long
+                    ) {
+                        //NOP
+                    }
+
+                    override suspend fun passLand() {
+                        //NOP
+                    }
+
+                    override suspend fun passShares(sharesType: SharesType) {
+                        //NOP
+                    }
+
+                    override suspend fun passEstate() {
+                        //NOP
+                    }
                 }
             )
         }

@@ -27,7 +27,7 @@ charts = "0.2.0"
 app-update = "2.1.0"
 fragment = "1.8.9"
 kotlinx-rpc = "0.10.1"
-logback = "1.5.22"
+logback = "1.5.24"
 compottie = "2.0.2"
 uiAndroid = "1.10.0"
 koin-bom = "4.1.1"
@@ -102,7 +102,7 @@ compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "comp
 compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources", version.ref = "compottie" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 constraintlayout = { module = "tech.annexflow.compose:constraintlayout-compose-multiplatform", version = "0.6.1" }
-composables-core = { module = "com.composables:core", version = "1.49.3" }
+composables-core = { module = "com.composables:core", version = "1.49.5" }
 
 
 [plugins]

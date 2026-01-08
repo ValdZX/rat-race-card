@@ -160,6 +160,24 @@ class BoardViewModel(
         }
     }
 
+    fun passLand() {
+        viewModelScope.launch {
+            service.passLand()
+        }
+    }
+
+    fun passEstate() {
+        viewModelScope.launch {
+            service.passEstate()
+        }
+    }
+
+    fun passShares(sharesType: SharesType) {
+        viewModelScope.launch {
+            service.passShares(sharesType)
+        }
+    }
+
     fun rollDice() {
         viewModelScope.launch {
             service.rollDice()
@@ -259,11 +277,33 @@ class BoardViewModel(
         }
     }
 
-    fun extendBusiness(randomSmallBusiness: Business, card: BoardCard.EventStore.BusinessExtending) {
-        TODO("Not yet implemented")
+    fun extendBusiness(business: Business, card: BoardCard.EventStore.BusinessExtending) {
+        viewModelScope.launch {
+            service.extendBusiness(business, card)
+        }
     }
 
     fun sellShares(card: BoardCard.EventStore.Shares, count: Long) {
-        TODO("Not yet implemented")
+        viewModelScope.launch {
+            service.sellShares(card, count)
+        }
+    }
+
+    fun sellEstates(estateList: List<Estate>, price: Long) {
+        viewModelScope.launch {
+            service.sellEstate(estateList, price)
+        }
+    }
+
+    fun sellLands(area: Long, price: Long) {
+        viewModelScope.launch {
+            service.sellLands(area, price)
+        }
+    }
+
+    fun selectCardByNo(cardNo: Int) {
+        viewModelScope.launch {
+            service.selectCardByNo(cardNo)
+        }
     }
 }

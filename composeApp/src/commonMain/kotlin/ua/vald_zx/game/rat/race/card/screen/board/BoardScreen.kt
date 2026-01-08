@@ -32,6 +32,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
+import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.composables.core.BottomSheet
 import com.composables.core.SheetDetent
@@ -531,7 +532,7 @@ fun BoardScreenContent(vm: BoardViewModel) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         BoardFragment(vm)
         Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-            Controls()
+            Controls(vm)
         }
         CardDialog(vm)
     }
@@ -592,22 +593,30 @@ fun BoardFragment(vm: BoardViewModel) {
 }
 
 @Composable
-fun BoxScope.Controls() {
-    var isDark by LocalThemeIsDark.current
-    val icon = remember(isDark) {
-        if (isDark) Images.IcLightMode
-        else Images.IcDarkMode
-    }
-    IconButton(
-        modifier = Modifier.align(Alignment.TopEnd),
-        onClick = {
-            isDark = !isDark
-            settings["theme"] = isDark
-        },
-        content = {
-            Icon(icon, contentDescription = null)
+fun BoxScope.Controls(vm: BoardViewModel) {
+    val bottomSheetNavigator = LocalBottomSheetNavigator.current
+    val state by vm.uiState.collectAsState()
+    Row(modifier = Modifier.align(Alignment.TopEnd)) {
+        var isDark by LocalThemeIsDark.current
+        val icon = remember(isDark) {
+            if (isDark) Images.IcLightMode
+            else Images.IcDarkMode
         }
-    )
+        IconButton(
+            onClick = {
+                isDark = !isDark
+                settings["theme"] = isDark
+            },
+            content = {
+                Icon(icon, contentDescription = null)
+            }
+        )
+        if (state.currentPlayerIsActive) {
+            TextButton(onClick = {
+                bottomSheetNavigator.show(DebugScreen(vm))
+            }) { Text("Debug") }
+        }
+    }
 }
 
 @Composable
@@ -635,7 +644,7 @@ fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
     val infiniteTransition = rememberInfiniteTransition(label = "InfiniteTransition")
     val spreadRadius by infiniteTransition.animateValue(
         initialValue = 0.dp,
-        targetValue = size * 0.6f,
+        targetValue = size * 0.3f,
         animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
         label = "FloatAnimation",
         typeConverter = TwoWayConverter({ AnimationVector(it.value) }, { it.value.dp })
@@ -647,10 +656,10 @@ fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
                     .size(size * 0.2f)
                     .padding(top = size * 0.3f)
                     .boxShadow(
-                        blurRadius = size * 0.6f,
+                        blurRadius = size * 0.3f,
                         spreadRadius = spreadRadius,
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.background,
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
             )
         }
@@ -707,10 +716,10 @@ fun BoxWithConstraintsScope.BoardPanel(
             .background(
                 if (isDark) {
                     Brush.radialGradient(
-                        0.0f to Color(0xFFE6C85B), // м’яке золото
-                        0.4f to Color(0xFFD9A848), // глибше золото
-                        0.6f to Color(0xFFB3752E), // мідь
-                        1.0f to Color(0x66000000), // напівпрозорий чорний (тінь/глибина)
+                        0.0f to Color(0xFF31250E),
+                        0.4f to Color(0xFF282215),
+                        0.6f to Color(0xFF2F200C),
+                        1.0f to Color(0xFF320202),
                         radius = with(density) { min(maxWidth, maxHeight).toPx() },
                         tileMode = TileMode.Repeated
                     )
