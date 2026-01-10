@@ -148,6 +148,7 @@ data class Config(
     val flightCost: Long = 5000,
     val fundBaseRate: Long = 20,
     val fundStartRate: Long = 30,
+    val marriageCost: Long = 5000,
     val hasFunds: Boolean = true,
     val tts: Boolean = false,
 )

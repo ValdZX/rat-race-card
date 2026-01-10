@@ -1,13 +1,10 @@
 package ua.vald_zx.game.rat.race.card.screen.board.deck.front
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.OutlinedTextFieldDefaults.contentPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -17,7 +14,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
@@ -25,6 +21,7 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import rat_race_card.composeapp.generated.resources.*
+import ua.vald_zx.game.rat.race.card.components.OutlinedBasicTextField
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
@@ -169,7 +166,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 onClick = { vm.passEstate() },
                 content = {
-                    Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
+                    Text(stringResource(Res.string.close), fontSize = unitTS * 14)
                 },
             )
         }
@@ -270,7 +267,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 onClick = { vm.passEstate() },
                 content = {
-                    Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
+                    Text(stringResource(Res.string.close), fontSize = unitTS * 14)
                 },
             )
         }
@@ -367,7 +364,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                         fontSize = unitTS * 12,
                     )
                     val value = if (count <= 0) "" else count.toString()
-                    BasicTextField(
+                    OutlinedBasicTextField(
                         modifier = Modifier.padding(top = smallPadding),
                         value = value,
                         onValueChange = {
@@ -376,19 +373,17 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                                 count = tapedCount
                             }
                         },
-                        singleLine = true,
-                    ) { innerTextField ->
-                        OutlinedTextFieldDefaults.DecorationBox(
-                            value = value,
-                            innerTextField = innerTextField,
-                            enabled = true,
-                            singleLine = true,
-                            visualTransformation = VisualTransformation.None,
-                            interactionSource = remember { MutableInteractionSource() },
-                            contentPadding = contentPadding(top = unitDp * 4, bottom = unitDp * 4),
-                            label = { Text(stringResource(Res.string.quantity), fontSize = unitTS * 12) },
-                        )
-                    }
+                        label = {
+                            Text(
+                                stringResource(Res.string.quantity),
+                                fontSize = unitTS * 11
+                            )
+                        },
+                        contentPadding = contentPadding(
+                            top = unitDp * 4,
+                            bottom = unitDp * 4
+                        ),
+                    )
                 }
                 ElevatedButton(
                     modifier = Modifier,
@@ -405,7 +400,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 onClick = { vm.passEstate() },
                 content = {
-                    Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
+                    Text(stringResource(Res.string.close), fontSize = unitTS * 14)
                 },
             )
         }
@@ -504,6 +499,15 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
                     },
                 )
             }
+        } else if (isActive) {
+            Text("Поки що немає бізнесів!", fontSize = unitTS * 14, modifier = Modifier.padding(smallPadding))
+            ElevatedButton(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                onClick = { vm.passEstate() },
+                content = {
+                    Text(stringResource(Res.string.close), fontSize = unitTS * 14)
+                },
+            )
         }
     }
 }

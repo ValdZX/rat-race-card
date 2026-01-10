@@ -184,12 +184,6 @@ class BoardViewModel(
         }
     }
 
-    fun move() {
-        viewModelScope.launch {
-            service.move()
-        }
-    }
-
     fun buyBusiness(business: Business) {
         viewModelScope.launch {
             service.buyBusiness(business)
@@ -304,6 +298,18 @@ class BoardViewModel(
     fun selectCardByNo(cardNo: Int) {
         viewModelScope.launch {
             service.selectCardByNo(cardNo)
+        }
+    }
+
+    fun toDeposit(amount: Long) {
+        viewModelScope.launch {
+            service.toDeposit(amount)
+        }
+    }
+
+    fun repayLoan(amount: Long) {
+        viewModelScope.launch {
+            service.repayLoan(amount)
         }
     }
 }

@@ -163,7 +163,7 @@ class BoardScreen(
                         sheetContentSize.value = with(density) { size.height.toDp() }
                         scaffoldState.invalidateDetents()
                     }) {
-                        Board2PlayerDetailsScreen(state, scaffoldState)
+                        Board2PlayerDetailsScreen(vm, scaffoldState)
                     }
                 }
             }
@@ -197,7 +197,7 @@ class BoardScreen(
             }
             IconButton(
                 modifier = Modifier.align(Alignment.TopStart),
-                onClick = { navigator.pop() },
+                onClick = { navigator.popUntilRoot() },
                 content = {
                     Icon(Images.Back, contentDescription = null)
                 }
@@ -633,11 +633,6 @@ fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
             coroutineScope.launch {
                 animatable.animate(composition, iterations = 1, initialProgress = 0f)
             }
-        }
-    }
-    LaunchedEffect(animatable.isAtEnd) {
-        if (animatable.isAtEnd && currentPlayerId == state.board.activePlayer) {
-            vm.move()
         }
     }
     val size = min(maxWidth, maxHeight) / 6

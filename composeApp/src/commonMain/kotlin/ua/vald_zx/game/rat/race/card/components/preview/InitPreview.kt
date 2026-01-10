@@ -82,10 +82,6 @@ fun InitPreview(
                         //NOP
                     }
 
-                    override suspend fun move() {
-                        //NOP
-                    }
-
                     override suspend fun next() {
                         //NOP
                     }
@@ -179,6 +175,14 @@ fun InitPreview(
                     }
 
                     override suspend fun passEstate() {
+                        //NOP
+                    }
+
+                    override suspend fun toDeposit(amount: Long) {
+                        //NOP
+                    }
+
+                    override suspend fun repayLoan(amount: Long) {
                         //NOP
                     }
                 }

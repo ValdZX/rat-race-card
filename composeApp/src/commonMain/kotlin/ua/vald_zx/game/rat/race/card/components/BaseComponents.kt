@@ -12,10 +12,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.*
 import androidx.compose.material.ripple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -725,6 +723,39 @@ fun SilverBackground(modifier: Modifier) {
                         radius = farthestRadius
                     )
                 )
+        )
+    }
+}
+
+@Composable
+fun OutlinedBasicTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(12.dp),
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        modifier = modifier,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(
+            color = MaterialTheme.colorScheme.onSurface
+        ),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+    ) { innerTextField ->
+        OutlinedTextFieldDefaults.DecorationBox(
+            value = value,
+            innerTextField = innerTextField,
+            enabled = true,
+            singleLine = true,
+            interactionSource = interactionSource,
+            visualTransformation = VisualTransformation.None,
+            contentPadding = contentPadding,
+            label = label
         )
     }
 }

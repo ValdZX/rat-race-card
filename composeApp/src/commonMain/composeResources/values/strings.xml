@@ -209,4 +209,5 @@
     <string name="land_name">Name of land</string>
     <string name="area">Area</string>
     <string name="priceOfUnit">Price per square meter</string>
+    <string name="close">Close</string>
 </resources>

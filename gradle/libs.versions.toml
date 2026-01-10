@@ -32,6 +32,8 @@ compottie = "2.0.2"
 uiAndroid = "1.10.0"
 koin-bom = "4.1.1"
 androidx-lifecycle = "2.9.6"
+materialKolor = "4.0.5"
+
 
 [libraries]
 
@@ -103,6 +105,7 @@ compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources",
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 constraintlayout = { module = "tech.annexflow.compose:constraintlayout-compose-multiplatform", version = "0.6.1" }
 composables-core = { module = "com.composables:core", version = "1.49.5" }
+materialKolor = "com.materialkolor:material-kolor:4.0.5"
 
 
 [plugins]

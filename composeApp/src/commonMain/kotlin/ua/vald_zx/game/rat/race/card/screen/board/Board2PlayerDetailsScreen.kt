@@ -11,9 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -28,7 +26,10 @@ import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
-import ua.vald_zx.game.rat.race.card.logic.BoardState
+import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Deposit
+import ua.vald_zx.game.rat.race.card.resource.images.Repay
 import ua.vald_zx.game.rat.race.card.screen.board.page.*
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
@@ -40,7 +41,8 @@ import ua.vald_zx.game.rat.race.card.theme.AppTheme
     ExperimentalMaterial3Api::class,
 )
 @Composable
-fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState) {
+fun Board2PlayerDetailsScreen(vm: BoardViewModel, scaffoldState: BottomSheetState) {
+    val state by vm.uiState.collectAsState()
     val player = state.player
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     val coroutineScope = rememberCoroutineScope()
@@ -117,13 +119,29 @@ fun Board2PlayerDetailsScreen(state: BoardState, scaffoldState: BottomSheetState
                         Text(stringResource(Res.string.cash), color = AppTheme.colors.cash)
                         Text("${player.cash} $")
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(stringResource(Res.string.deposit), color = MaterialTheme.colorScheme.primary)
-                        Text("${player.deposit} $")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(stringResource(Res.string.deposit), color = MaterialTheme.colorScheme.primary)
+                            Text("${player.deposit} $")
+                        }
+                        IconButton(
+                            onClick = { bottomSheetNavigator.show(ToDepositScreen(vm)) },
+                            content = {
+                                Icon(Images.Deposit, contentDescription = null)
+                            }
+                        )
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(stringResource(Res.string.loan), color = MaterialTheme.colorScheme.tertiary)
-                        Text("${player.loan} $")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(stringResource(Res.string.loan), color = MaterialTheme.colorScheme.tertiary)
+                            Text("${player.loan} $")
+                        }
+                        IconButton(
+                            onClick = { bottomSheetNavigator.show(RepayCreditScreen(vm)) },
+                            content = {
+                                Icon(Images.Repay, contentDescription = null)
+                            }
+                        )
                     }
                 }
             }

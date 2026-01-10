@@ -93,7 +93,6 @@ interface RaceRatService {
     suspend fun sendMoney(receiverId: String, amount: Long)
 
     suspend fun rollDice()
-    suspend fun move()
     suspend fun next()
     suspend fun takeCard(cardType: BoardCardType)
     suspend fun takeSalary()
@@ -116,4 +115,6 @@ interface RaceRatService {
     suspend fun passLand()
     suspend fun passShares(sharesType: SharesType)
     suspend fun passEstate()
+    suspend fun toDeposit(amount: Long)
+    suspend fun repayLoan(amount: Long)
 }

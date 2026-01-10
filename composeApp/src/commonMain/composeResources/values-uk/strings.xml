@@ -210,5 +210,6 @@
     <string name="land_name">Назва земельного участку</string>
     <string name="area">Площа</string>
     <string name="priceOfUnit">Ціна за сотку</string>
+    <string name="close">Закрити</string>
 </resources>
 

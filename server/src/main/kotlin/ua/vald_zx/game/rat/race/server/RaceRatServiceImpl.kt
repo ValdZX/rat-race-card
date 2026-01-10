@@ -207,10 +207,11 @@ class RaceRatServiceImpl(
             val dice = (1..6).random()
             copy(dice = dice, canRoll = false, diceRolling = true)
         }
-        delay(5000)
+        delay(4000)
         changeBoard {
             copy(diceRolling = false)
         }
+        move()
     }
 
     override suspend fun takeCard(cardType: BoardCardType) {
@@ -367,7 +368,7 @@ class RaceRatServiceImpl(
         nextPlayer()
     }
 
-    override suspend fun move() {
+    private suspend fun move() {
         val layer = player.location.level.toLayer()
         val cellCount = layer.cellCount
         val currentPosition = player.location.position
@@ -398,7 +399,7 @@ class RaceRatServiceImpl(
             }
         } else null
         changeBoard {
-            copy(moveCount = moveCount + 1)
+            copy(moveCount = moveCount + 1, canRoll = false)
         }
         changePlayer {
             copy(location = location.copy(position = newPosition), salaryPosition = salaryPosition)
@@ -471,7 +472,11 @@ class RaceRatServiceImpl(
             PlaceType.Divorce -> {
                 if (player.isMarried) {
                     changePlayer {
-                        copy(isMarried = false).apply {
+                        if (player.card.gender == Gender.MALE) {
+                            copy(isMarried = false, babies = 0, cash = cash / 2, deposit = deposit / 2)
+                        } else {
+                            copy(isMarried = false)
+                        }.apply {
                             globalEventBus.emit(GlobalEvent.PlayerDivorced(uuid))
                         }
                     }
@@ -496,6 +501,11 @@ class RaceRatServiceImpl(
                     changePlayer {
                         copy(isMarried = true).apply {
                             globalEventBus.emit(GlobalEvent.PlayerMarried(uuid))
+                        }
+                    }
+                    if (player.card.gender == Gender.MALE) {
+                        changePlayer {
+                            this.minusCash(player.config.marriageCost)
                         }
                     }
                 }
@@ -764,6 +774,18 @@ class RaceRatServiceImpl(
         val playersWithEstate = board.players().filter { it.estateList.isNotEmpty() }.map { it.id }.toSet()
         if (playersWithEstate.isEmpty() || playersWithEstate == board.processedPlayerIds) {
             nextPlayer()
+        }
+    }
+
+    override suspend fun toDeposit(amount: Long) {
+        changePlayer {
+            copy(deposit = deposit + amount).minusCash(amount)
+        }
+    }
+
+    override suspend fun repayLoan(amount: Long) {
+        changePlayer {
+            copy(loan = loan - amount).minusCash(amount)
         }
     }
 }
