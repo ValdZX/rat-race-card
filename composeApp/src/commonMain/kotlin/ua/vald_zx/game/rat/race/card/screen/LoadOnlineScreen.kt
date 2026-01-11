@@ -20,8 +20,8 @@ import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.connection_failed
 import rat_race_card.composeapp.generated.resources.retry_connection
+import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.Button
-import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.screen.board.BoardScreen
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 
@@ -37,8 +37,8 @@ class LoadOnlineScreen : Screen {
                 invalidServerState.value = true
             }
             CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
-                val instance = service.hello(currentPlayerId)
-                currentPlayerId = instance.playerId
+                val instance = service.hello(appKStore.get()?.onlinePlayerId.orEmpty())
+                appKStore.update { it?.copy(onlinePlayerId = instance.playerId) }
                 val board = instance.board
                 val player = instance.player
                 if (board == null || player == null) {

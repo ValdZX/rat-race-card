@@ -102,18 +102,58 @@ fun Board2PlayerDetailsScreen(vm: BoardViewModel, scaffoldState: BottomSheetStat
                         modifier = Modifier.padding(start = 16.dp),
                         duration = 4000
                     )
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                        player.lastTotals.forEach { totalDiff ->
+                            val total = if (totalDiff > 0) {
+                                "+${totalDiff}"
+                            } else {
+                                totalDiff.toString()
+                            }
+                            Text(
+                                text = total,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (totalDiff > 0) {
+                                    AppTheme.colors.cash
+                                } else {
+                                    MaterialTheme.colorScheme.error
+                                },
+                                lineHeight = 11.sp
+                            )
+                        }
+                    }
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        SmoothRainbowText(
-                            text = "Cash Flow",
-                            rainbow = SkittlesRainbow,
-                            style = LocalTextStyle.current.copy(fontSize = 16.sp),
-                        )
-                        Text("${player.cashFlow()}")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            SmoothRainbowText(
+                                text = "Cash Flow",
+                                rainbow = SkittlesRainbow,
+                                style = LocalTextStyle.current.copy(fontSize = 16.sp),
+                            )
+                            Text("${player.cashFlow()}")
+                        }
+                        Column(modifier = Modifier.padding(start = 16.dp)) {
+                            player.lastCashFlows.forEach { diffs ->
+                                val total = if (diffs > 0) {
+                                    "+${diffs}"
+                                } else {
+                                    diffs.toString()
+                                }
+                                Text(
+                                    text = total,
+                                    style = LocalTextStyle.current.copy(fontSize = 10.sp),
+                                    color = if (diffs > 0) {
+                                        AppTheme.colors.cash
+                                    } else {
+                                        MaterialTheme.colorScheme.error
+                                    },
+                                    lineHeight = 10.sp
+                                )
+                            }
+                        }
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(stringResource(Res.string.cash), color = AppTheme.colors.cash)
@@ -124,14 +164,16 @@ fun Board2PlayerDetailsScreen(vm: BoardViewModel, scaffoldState: BottomSheetStat
                             Text(stringResource(Res.string.deposit), color = MaterialTheme.colorScheme.primary)
                             Text("${player.deposit} $")
                         }
-                        IconButton(
-                            onClick = { bottomSheetNavigator.show(ToDepositScreen(vm)) },
-                            content = {
-                                Icon(Images.Deposit, contentDescription = null)
-                            }
-                        )
+                        if (player.cash > 0) {
+                            IconButton(
+                                onClick = { bottomSheetNavigator.show(ToDepositScreen(vm)) },
+                                content = {
+                                    Icon(Images.Deposit, contentDescription = null)
+                                }
+                            )
+                        }
                     }
-                    if(player.loan > 0) {
+                    if (player.loan > 0) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(stringResource(Res.string.loan), color = MaterialTheme.colorScheme.tertiary)

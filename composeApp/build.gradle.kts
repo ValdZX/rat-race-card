@@ -62,7 +62,6 @@ kotlin {
             implementation(libs.kotlinx.rpc.krpc.client)
             implementation(libs.kotlinx.rpc.krpc.serialization.json)
             implementation(libs.kotlinx.rpc.krpc.ktor.client)
-            implementation(libs.multiplatform.settings.no.arg)
             implementation(libs.lexilabs.basic.sound)
             implementation(libs.charts)
             implementation(libs.tts)

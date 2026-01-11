@@ -37,7 +37,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.composables.core.BottomSheet
 import com.composables.core.SheetDetent
 import com.composables.core.rememberBottomSheetState
-import com.russhwolf.settings.set
 import dev.lennartegb.shadows.boxShadow
 import io.github.alexzhirkevich.compottie.rememberLottieAnimatable
 import io.github.alexzhirkevich.compottie.rememberLottiePainter
@@ -50,9 +49,9 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import rat_race_card.composeapp.generated.resources.*
+import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
-import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.logic.BoardState
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
@@ -66,7 +65,6 @@ import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDeck
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDialog
 import ua.vald_zx.game.rat.race.card.screen.board.deck.DiscardPile
-import ua.vald_zx.game.rat.race.card.settings
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 import kotlin.math.absoluteValue
@@ -602,6 +600,7 @@ fun BoardFragment(vm: BoardViewModel) {
 fun BoxScope.Controls(vm: BoardViewModel) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     val state by vm.uiState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
     Row(modifier = Modifier.align(Alignment.TopEnd)) {
         var isDark by LocalThemeIsDark.current
         val icon = remember(isDark) {
@@ -611,7 +610,9 @@ fun BoxScope.Controls(vm: BoardViewModel) {
         IconButton(
             onClick = {
                 isDark = !isDark
-                settings["theme"] = isDark
+                coroutineScope.launch {
+                    appKStore.update { it?.copy(theme = isDark) }
+                }
             },
             content = {
                 Icon(icon, contentDescription = null)
@@ -924,8 +925,7 @@ fun BoxScope.ColorsSelector(
 ) {
     val players by players.collectAsState()
     FlowRow(modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 64.dp)) {
-        val colors = pointerColors - players.filter { !it.isCurrentPlayer }
-            .map { it.attrs.color }.toSet()
+        val colors = pointerColors
         LaunchedEffect(colors) {
             if (!colors.contains(colorState.value)) {
                 colorState.value = colors.first()
@@ -943,9 +943,6 @@ fun BoxScope.ColorsSelector(
         }
     }
 }
-
-val Player.isCurrentPlayer: Boolean
-    get() = id == currentPlayerId
 
 fun PlaceType.getDpSize(
     location: Location,

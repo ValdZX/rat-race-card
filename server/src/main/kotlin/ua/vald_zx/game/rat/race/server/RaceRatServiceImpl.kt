@@ -558,7 +558,21 @@ class RaceRatServiceImpl(
     private suspend fun changePlayer(todo: suspend Player.() -> Player) {
         players.value[uuid]?.let { playerState ->
             val player = playerState.value.todo()
-            playerState.value = player
+            playerState.value = player.let {
+                val newTotal = player.total()
+                val previous = playerState.value.total()
+                if(newTotal != previous) {
+                    val delta = newTotal - previous
+                    it.copy(lastTotals = (it.lastTotals + delta).takeLast(3))
+                } else it
+            }.let {
+                val newCashFlow = player.cashFlow()
+                val previews = playerState.value.cashFlow()
+                if(newCashFlow != previews) {
+                    val delta = newCashFlow - previews
+                    it.copy(lastCashFlows = (it.lastCashFlows + delta).takeLast(3))
+                } else it
+            }
             globalEventBus.emit(GlobalEvent.PlayerChanged(player))
         }
     }

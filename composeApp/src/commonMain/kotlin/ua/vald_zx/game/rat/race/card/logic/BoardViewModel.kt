@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
 import ua.vald_zx.game.rat.race.card.shared.*
 
@@ -17,7 +16,7 @@ data class BoardState(
 ) {
     val layer: BoardLayer = player.location.level.toLayer()
     val color: Long = player.attrs.color
-    val currentPlayerIsActive: Boolean by lazy { currentPlayerId == board.activePlayer }
+    val currentPlayerIsActive: Boolean by lazy { player.id == board.activePlayer }
     val canRoll: Boolean by lazy { board.canRoll && currentPlayerIsActive }
 }
 
@@ -59,7 +58,7 @@ class BoardViewModel(
             service.eventsObserve().collect { event ->
                 when (event) {
                     is Event.MoneyIncome -> {
-                        _actions.send(ReceivedCash(event.playerId,event.amount))
+                        _actions.send(ReceivedCash(event.playerId, event.amount))
                     }
 
                     is Event.PlayerChanged -> {
@@ -71,7 +70,7 @@ class BoardViewModel(
                         } else {
                             players.value += event.player
                         }
-                        if (changedPlayer.id == currentPlayerId) {
+                        if (changedPlayer.id == _uiState.value.player.id) {
                             _uiState.update { it.copy(player = changedPlayer) }
                         }
                     }
@@ -110,7 +109,7 @@ class BoardViewModel(
                     }
 
                     is Event.PlayerDivorced -> {
-                        if (event.playerId == currentPlayerId) {
+                        if (event.playerId == _uiState.value.player.id) {
                             _actions.send(YouDivorced)
                         } else {
                             players.value.find { it.id == event.playerId }?.let { player ->
@@ -120,7 +119,7 @@ class BoardViewModel(
                     }
 
                     is Event.PlayerHadBaby -> {
-                        if (event.playerId == currentPlayerId) {
+                        if (event.playerId == _uiState.value.player.id) {
                             _actions.send(CongratulationsWithBaby)
                         } else {
                             players.value.find { it.id == event.playerId }?.let { player ->
@@ -130,7 +129,7 @@ class BoardViewModel(
                     }
 
                     is Event.PlayerMarried -> {
-                        if (event.playerId == currentPlayerId) {
+                        if (event.playerId == _uiState.value.player.id) {
                             _actions.send(CongratulationsWithMarriage)
                         } else {
                             players.value.find { it.id == event.playerId }?.let { player ->

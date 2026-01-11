@@ -52,6 +52,8 @@ data class Player(
     val config: Config = Config(),
     val isInactive: Boolean = false,
     val salaryPosition: Int? = null,
+    val lastTotals: List<Long> = emptyList(),
+    val lastCashFlows: List<Long> = emptyList(),
 )
 
 @Serializable

@@ -21,7 +21,6 @@ import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
-import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
@@ -54,7 +53,7 @@ class PlayersScreen : Screen {
                 if (players.size < 2) {
                     Text(text = stringResource(Res.string.empty_room))
                 }
-                players.filter { it.id != currentPlayerId }.forEach { player ->
+                players.filter { it.id != state.playerId }.forEach { player ->
                     Card {
                         Row(
                             modifier = Modifier.padding(16.dp),

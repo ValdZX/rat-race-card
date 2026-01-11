@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.constraintlayout.compose.*
-import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.isVertical
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.max
@@ -211,7 +210,7 @@ fun BoxWithConstraintsScope.CardDialog(vm: BoardViewModel) {
                     )
                 }
                 BoxWithConstraints(modifier = Modifier.layoutId("front")) {
-                    val isActive = remember(card) { currentPlayerId == state.board.activePlayer }
+                    val isActive = remember(card) { state.player.id == state.board.activePlayer }
                     BoardCardFront(
                         card = card,
                         isActive = isActive,

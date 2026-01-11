@@ -15,11 +15,12 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
-import com.russhwolf.settings.set
 import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
+import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
@@ -30,7 +31,6 @@ import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.screen.ExportScreen
-import ua.vald_zx.game.rat.race.card.settings
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 class SettingsScreen : Screen {
@@ -60,11 +60,14 @@ class SettingsScreen : Screen {
                     if (isDark) Images.IcLightMode
                     else Images.IcDarkMode
                 }
+                val coroutineScope = rememberCoroutineScope()
                 IconButton(
                     modifier = Modifier.align(Alignment.TopEnd),
                     onClick = {
                         isDark = !isDark
-                        settings["theme"] = isDark
+                        coroutineScope.launch {
+                            appKStore.update { it?.copy(theme = isDark) }
+                        }
                     },
                     content = {
                         Icon(icon, contentDescription = null)

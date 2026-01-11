@@ -13,7 +13,6 @@ import ua.vald_zx.game.rat.race.card.beans.Fund
 import ua.vald_zx.game.rat.race.card.beans.Land
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
-import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.*
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
 import ua.vald_zx.game.rat.race.card.screen.second.offlinePlayers
@@ -29,6 +28,7 @@ data class Statistics(
 
 @Serializable
 data class RatRace2CardState(
+    val playerId: String = "",
     val playerCard: PlayerCard = PlayerCard(),
     val cash: Long = 0,
     val deposit: Long = 0,
@@ -135,7 +135,7 @@ sealed class RatRace2CardAction : Action {
     data object CapitalizeStarsFunds : RatRace2CardAction()
     data object RandomBusiness : RatRace2CardAction()
     data object HideAlarm : RatRace2CardAction()
-    data class Connected(val room: String) : RatRace2CardAction()
+    data class Connected(val playerId: String, val room: String) : RatRace2CardAction()
     data class BuyLand(val land: Land) : RatRace2CardAction()
     data class SellLand(val priceOfUnit: Long, val area: Long) : RatRace2CardAction()
     data class BuyBusiness(val business: Business) : RatRace2CardAction()
@@ -224,20 +224,19 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
             }
         }
         CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
-            currentPlayerId =
-                service.hello(
-                    OfflinePlayer(
-                        id = currentPlayerId,
-                        name = state.value.playerCard.name.ifEmpty { state.value.playerCard.profession },
-                        cashFlow = state.value.cashFlow(),
-                        total = state.value.total(),
-                        room = room,
-                        lastTotals = state.value.lastTotals,
-                        lastCashFlows = state.value.lastCashFlows,
-                    )
+            val playerId = service.hello(
+                OfflinePlayer(
+                    id = state.value.playerId,
+                    name = state.value.playerCard.name.ifEmpty { state.value.playerCard.profession },
+                    cashFlow = state.value.cashFlow(),
+                    total = state.value.total(),
+                    room = room,
+                    lastTotals = state.value.lastTotals,
+                    lastCashFlows = state.value.lastCashFlows,
                 )
+            )
             offlinePlayers.value = service.getPlayers()
-            dispatch(Connected(room))
+            dispatch(Connected(playerId, room))
         }
     }
 
@@ -570,7 +569,7 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
             }
 
             is Connected -> {
-                oldState.copy(room = action.room)
+                oldState.copy(playerId = action.playerId, room = action.room)
             }
 
             is Connect -> {
@@ -587,7 +586,7 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
                     service.sendMoney(
                         SendMoneyPack(
                             payerName = oldState.playerCard.name,
-                            payerId = currentPlayerId,
+                            payerId = oldState.playerId,
                             receiverId = action.receiverId,
                             amount = action.amount
                         )
@@ -628,7 +627,7 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
             storedStatistics.log += newState
             statistics2KStore.set(storedStatistics)
             statistics = storedStatistics
-            offlinePlayers.value.find { it.id == currentPlayerId }?.let { player ->
+            offlinePlayers.value.find { it.id == newState.playerId }?.let { player ->
                 val offlinePlayer = player.copy(
                     cashFlow = newState.cashFlow(),
                     total = newState.total(),

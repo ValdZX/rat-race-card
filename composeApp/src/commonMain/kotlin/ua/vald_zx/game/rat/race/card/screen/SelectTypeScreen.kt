@@ -14,6 +14,7 @@ import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.offline_mode
 import rat_race_card.composeapp.generated.resources.online_mode
+import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
@@ -42,7 +43,7 @@ class SelectTypeScreen : Screen {
                     Button(stringResource(Res.string.offline_mode)) {
                         coroutineScope.launch {
                             val ratRace2CardState = raceRate2store.observeState().value
-                            runCatching { raceRate2KStore.get() }.onSuccess {
+                            runCatching { appKStore.get() }.onSuccess {
                                 if (ratRace2CardState.playerCard.profession.isNotEmpty()) {
                                     navigator.push(RaceRate2Screen())
                                 } else {

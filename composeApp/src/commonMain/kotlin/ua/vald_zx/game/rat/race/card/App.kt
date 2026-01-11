@@ -2,42 +2,42 @@
 
 package ua.vald_zx.game.rat.race.card
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import app.lexilabs.basic.sound.ExperimentalBasicSound
 import app.lexilabs.basic.sound.SoundBoard
 import app.lexilabs.basic.sound.SoundByte
 import app.lexilabs.basic.sound.play
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.Navigator
-import com.russhwolf.settings.Settings
-import com.russhwolf.settings.get
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.github.alexzhirkevich.compottie.*
 import io.github.sudarshanmhasrup.localina.api.LocalinaApp
+import io.github.xxfast.kstore.KStore
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.experimental.ExperimentalVoiceApi
 import org.koin.compose.KoinApplication
-import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.Res
 import ua.vald_zx.game.rat.race.card.di.baseModule
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
-import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
-import ua.vald_zx.game.rat.race.card.screen.second.RaceRate2Screen
+import ua.vald_zx.game.rat.race.card.screen.SelectTypeScreen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 var lottieDiceAnimations: Map<Int, LottieComposition> = emptyMap()
 
-val settings: Settings = Settings()
+@Serializable
+data class AppDataStorageBean(
+    val onlinePlayerId: String,
+    val theme: Boolean,
+)
 
-var currentPlayerId: String
-    get() = settings["currentPlayerId", ""]
-    set(value) {
-        settings.putString("currentPlayerId", value)
-    }
+val appKStore: KStore<AppDataStorageBean>
+    get() = getStore("appData.json", π)
 
 @Composable
 internal fun App() {
@@ -45,7 +45,8 @@ internal fun App() {
         var isDarkTheme by LocalThemeIsDark.current
         LaunchedEffect(Unit) {
             Napier.base(DebugAntilog())
-            val systemIsDark = settings["theme", isDarkTheme]
+            val get = appKStore.get()
+            val systemIsDark = get?.theme ?: isDarkTheme
             isDarkTheme = systemIsDark
         }
         val lottieCache = LocalLottieCache.current

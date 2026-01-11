@@ -34,7 +34,6 @@ import ua.vald_zx.game.rat.race.card.components.OutlinedText
 import ua.vald_zx.game.rat.race.card.components.Rotation
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.components.rotateLayout
-import ua.vald_zx.game.rat.race.card.currentPlayerId
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.resource.Images
@@ -342,7 +341,7 @@ fun BoxScope.Places(
                     level = it.location.level,
                     name = it.card.profession,
                     player = it,
-                    isCurrentPlayer = it.id == currentPlayerId,
+                    isCurrentPlayer = it.id == state.player.id,
                     isActivePlayer = it.id == state.board.activePlayer,
                 )
             }
