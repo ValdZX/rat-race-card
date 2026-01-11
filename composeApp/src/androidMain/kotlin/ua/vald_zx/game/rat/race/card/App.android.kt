@@ -117,8 +117,8 @@ internal actual fun openUrl(url: String?) {
 internal val storageDir: String
     get() = AndroidApp.INSTANCE.filesDir.path
 
-internal actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
-    return storeOf(file = Path("$storageDir/$name"), json = Json { ignoreUnknownKeys = true })
+internal actual inline fun <reified T : @Serializable Any> getStore(name: String, default: T?): KStore<T> {
+    return storeOf(file = Path("$storageDir/$name"), json = Json { ignoreUnknownKeys = true }, default = default)
 }
 
 internal actual fun share(data: String?) {

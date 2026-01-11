@@ -39,9 +39,9 @@ val documentsUrl: NSURL = fileManager.URLForDirectory(
     error = null
 )!!
 
-internal actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
+internal actual inline fun <reified T : @Serializable Any> getStore(name: String, default: T?): KStore<T> {
     val files = Path(documentsUrl.path.orEmpty())
-    return storeOf(file = Path(files, name), json = Json { ignoreUnknownKeys = true })
+    return storeOf(file = Path(files, name), json = Json { ignoreUnknownKeys = true }, default = default)
 }
 
 internal actual fun share(data: String?) {

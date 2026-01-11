@@ -18,8 +18,8 @@ internal actual fun openUrl(url: String?) {
     url?.let { window.open(it) }
 }
 
-actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
-    return storeOf(name, format = Json { ignoreUnknownKeys = true })
+actual inline fun <reified T : @Serializable Any> getStore(name: String, default: T?): KStore<T> {
+    return storeOf(name, format = Json { ignoreUnknownKeys = true }, default = default)
 }
 
 actual fun share(data: String?) {

@@ -33,22 +33,15 @@ var lottieDiceAnimations: Map<Int, LottieComposition> = emptyMap()
 @Serializable
 data class AppDataStorageBean(
     val onlinePlayerId: String,
-    val theme: Boolean,
+    val theme: Boolean?,
 )
 
 val appKStore: KStore<AppDataStorageBean>
-    get() = getStore("appData.json", π)
+    get() = getStore("appData.json", AppDataStorageBean("", null))
 
 @Composable
 internal fun App() {
     KoinApplication(application = { modules(baseModule) }) {
-        var isDarkTheme by LocalThemeIsDark.current
-        LaunchedEffect(Unit) {
-            Napier.base(DebugAntilog())
-            val get = appKStore.get()
-            val systemIsDark = get?.theme ?: isDarkTheme
-            isDarkTheme = systemIsDark
-        }
         val lottieCache = LocalLottieCache.current
         LaunchedEffect(Unit) {
             lottieDiceAnimations = (1..6).associate { side ->

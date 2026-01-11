@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.logic.Statistics
 
-internal expect inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T>
+internal expect inline fun <reified T : @Serializable Any> getStore(name: String, default: T? = null): KStore<T>
 val raceRate2KStore: KStore<RatRace2CardState>
     get() = getStore("raceRate2.json")
 val statistics2KStore: KStore<Statistics>

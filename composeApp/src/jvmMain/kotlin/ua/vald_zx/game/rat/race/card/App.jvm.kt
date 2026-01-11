@@ -49,8 +49,8 @@ actual suspend fun getTts(): TextToSpeechInstance? {
     return tts
 }
 
-actual inline fun <reified T : @Serializable Any> getStore(name: String): KStore<T> {
-    return storeOf(file = Path("$storageDir/$name"), json = Json { ignoreUnknownKeys = true })
+actual inline fun <reified T : @Serializable Any> getStore(name: String, default: T?): KStore<T> {
+    return storeOf(file = Path("$storageDir/$name"), json = Json { ignoreUnknownKeys = true }, default = default)
 }
 
 actual val noIme: Boolean = false
