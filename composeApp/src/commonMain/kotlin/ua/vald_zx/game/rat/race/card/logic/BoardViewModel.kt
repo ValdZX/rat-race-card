@@ -27,7 +27,7 @@ sealed class BoardUiAction {
     data class ConfirmSellingAllBusiness(val business: Business) : BoardUiAction()
     data class DepositWithdraw(val balance: Long) : BoardUiAction()
     data class LoanAdded(val balance: Long) : BoardUiAction()
-    data class ReceivedCash(val amount: Long) : BoardUiAction()
+    data class ReceivedCash(val receiverId: String, val amount: Long) : BoardUiAction()
     data class AddCash(val amount: Long) : BoardUiAction()
     data class SubCash(val amount: Long) : BoardUiAction()
     data class PlayerDivorced(val playerName: String) : BoardUiAction()
@@ -59,7 +59,7 @@ class BoardViewModel(
             service.eventsObserve().collect { event ->
                 when (event) {
                     is Event.MoneyIncome -> {
-                        _actions.send(ReceivedCash(event.amount))
+                        _actions.send(ReceivedCash(event.playerId,event.amount))
                     }
 
                     is Event.PlayerChanged -> {

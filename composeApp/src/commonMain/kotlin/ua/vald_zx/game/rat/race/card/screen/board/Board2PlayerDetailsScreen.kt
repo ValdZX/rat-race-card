@@ -131,17 +131,19 @@ fun Board2PlayerDetailsScreen(vm: BoardViewModel, scaffoldState: BottomSheetStat
                             }
                         )
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(stringResource(Res.string.loan), color = MaterialTheme.colorScheme.tertiary)
-                            Text("${player.loan} $")
-                        }
-                        IconButton(
-                            onClick = { bottomSheetNavigator.show(RepayCreditScreen(vm)) },
-                            content = {
-                                Icon(Images.Repay, contentDescription = null)
+                    if(player.loan > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(stringResource(Res.string.loan), color = MaterialTheme.colorScheme.tertiary)
+                                Text("${player.loan} $")
                             }
-                        )
+                            IconButton(
+                                onClick = { bottomSheetNavigator.show(RepayCreditScreen(vm)) },
+                                content = {
+                                    Icon(Images.Repay, contentDescription = null)
+                                }
+                            )
+                        }
                     }
                 }
             }

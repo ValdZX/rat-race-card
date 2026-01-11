@@ -216,7 +216,7 @@ class BoardScreen(
         var resignationDialog: Business? by remember { mutableStateOf(null) }
         var depositWithdrawDialog by remember { mutableStateOf(0L) }
         var loanAddedDialog by remember { mutableStateOf(0L) }
-        var receivedCashDialog by remember { mutableStateOf(0L) }
+        var receivedCashDialog by remember { mutableStateOf<BoardUiAction.ReceivedCash?>(null) }
         LaunchedEffect(Unit) {
             vm.init()
             vm.actions.collect { event ->
@@ -238,7 +238,7 @@ class BoardScreen(
                     }
 
                     is BoardUiAction.ReceivedCash -> {
-                        receivedCashDialog = event.amount
+                        receivedCashDialog = event
                     }
 
                     is BoardUiAction.AddCash -> {
@@ -380,18 +380,24 @@ class BoardScreen(
                 },
             )
         }
-        if (receivedCashDialog != 0L) {
+        val receivedCash = receivedCashDialog
+        if (receivedCash != null) {
+            val player = players.collectAsState().value.find { it.id == receivedCash.receiverId }
             AlertDialog(
                 text = {
                     Text(
-                        text = stringResource(Res.string.cash_received_amount, receivedCashDialog.toString())
+                        text = stringResource(
+                            Res.string.cash_received_amount,
+                            player?.card?.name ?: "Incognito",
+                            receivedCash.amount
+                        )
                     )
                 },
-                onDismissRequest = { receivedCashDialog = 0 },
+                onDismissRequest = { receivedCashDialog = null },
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            receivedCashDialog = 0
+                            receivedCashDialog = null
                         }
                     ) { Text(stringResource(Res.string.great)) }
                 },

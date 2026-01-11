@@ -51,9 +51,12 @@ class RaceRatServiceImpl(
                 boardGlobalEventsJob = launch {
                     globalEventBus.collect { event ->
                         when (event) {
-                            is GlobalEvent.MoneyIncome -> {
+                            is GlobalEvent.SendMoney -> {
                                 if (event.receiverId == uuid) {
                                     eventBus.emit(Event.MoneyIncome(event.playerId, event.amount))
+                                    changePlayer {
+                                        this.plusCash(event.amount)
+                                    }
                                 }
                             }
 
@@ -199,7 +202,10 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun sendMoney(receiverId: String, amount: Long) {
-        globalEventBus.emit(GlobalEvent.MoneyIncome(uuid, receiverId, amount))
+        globalEventBus.emit(GlobalEvent.SendMoney(uuid, receiverId, amount))
+        changePlayer {
+            this.minusCash(amount)
+        }
     }
 
     override suspend fun rollDice() {

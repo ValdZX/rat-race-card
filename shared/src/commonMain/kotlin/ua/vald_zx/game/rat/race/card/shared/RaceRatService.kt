@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 sealed class GlobalEvent {
 
     @Serializable
-    data class MoneyIncome(val playerId: String, val receiverId: String, val amount: Long) : GlobalEvent()
+    data class SendMoney(val playerId: String, val receiverId: String, val amount: Long) : GlobalEvent()
 
     @Serializable
     data class PlayerChanged(val player: Player) : GlobalEvent()

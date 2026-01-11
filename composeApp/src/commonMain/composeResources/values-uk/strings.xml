@@ -169,7 +169,7 @@
     </string>
     <string name="not_enough_cash_taken_from_deposit">Не вистачило готівки, тому було знято з депозиту: %1$s</string>
     <string name="not_enough_cash_loan_taken">Не вистачило готівки, тому взято в кредит на суму: %1$s</string>
-    <string name="cash_received_amount">Вам прислали готівку: %1$s</string>
+    <string name="cash_received_amount">Гравець %1$s прислав Вам готівку: %2$s</string>
     <string name="income_with_assets_and_loans">Дохід з урахуванням, активів, пасивів та кредитів: %1$s</string>
     <string name="fired_lose_income_amount">При звільненні, втрачається дохід на сумму %1$s</string>
     <string name="capitalization">Капіталізація</string>
@@ -191,7 +191,7 @@
     <string name="rent">Оренда житла</string>
     <string name="sell_amount">Сума продажу</string>
     <string name="done">Готово</string>
-    <string name="not_for_me">Not for me</string>
+    <string name="not_for_me">Не для мене</string>
     <string name="business_bankruptcy">Ваш бізнес "%1$s" з доходом %2$s збанкрутів</string>
     <string name="сongratulations">Вітаємо!</string>
     <string name="congratulationsWithBaby">У вас народилася дитина. Вам нараховано 1000$</string>

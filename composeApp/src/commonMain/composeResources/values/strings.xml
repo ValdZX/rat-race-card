@@ -168,7 +168,7 @@
     </string>
     <string name="not_enough_cash_taken_from_deposit">Not enough cash, taken from deposit: %1$s</string>
     <string name="not_enough_cash_loan_taken">Not enough cash, loan taken: %1$s</string>
-    <string name="cash_received_amount">You received cash: %1$s</string>
+    <string name="cash_received_amount">Player %1$s has sent you cash: %2$s</string>
     <string name="income_with_assets_and_loans">Income considering assets, liabilities and loans: %1$s</string>
     <string name="fired_lose_income_amount">When fired, you lose income in the amount of %1$s</string>
     <string name="capitalization">Capitalization</string>
