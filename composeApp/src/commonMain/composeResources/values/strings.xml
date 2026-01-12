@@ -210,4 +210,7 @@
     <string name="area">Area</string>
     <string name="priceOfUnit">Price per square meter</string>
     <string name="close">Close</string>
+    <string name="loanLimit">Loan limit</string>
+    <string name="businessLimit">Maximum number of businesses</string>
+    <string name="limitOverload">Credit limit exceeded by %1$s$. You have been declared bankrupt. Start over?</string>
 </resources>

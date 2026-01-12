@@ -66,6 +66,9 @@ sealed class Event {
 
     @Serializable
     data class Resignation(val business: Business) : Event()
+
+    @Serializable
+    data object LoanOverlimited : Event()
 }
 
 @Serializable
@@ -77,7 +80,13 @@ interface RaceRatService {
     suspend fun closeSession()
     suspend fun getBoards(): List<BoardId>
     fun observeBoards(): Flow<List<BoardId>>
-    suspend fun createBoard(name: String, decks: Map<BoardCardType, Int>): Board
+    suspend fun createBoard(
+        name: String,
+        loanLimit: Long,
+        businessLimit: Long,
+        decks: Map<BoardCardType, Int>
+    ): Board
+
     suspend fun selectBoard(boardId: String): Board
     suspend fun updateAttributes(attrs: PlayerAttributes)
     suspend fun getPlayer(): Player

@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import cafe.adriel.voyager.core.screen.Screen
@@ -23,6 +24,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.Button
+import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.components.TextButton
 import ua.vald_zx.game.rat.race.card.dateFullDotsFormat
 import ua.vald_zx.game.rat.race.card.launchWithHandler
@@ -106,6 +108,16 @@ class BoardListScreen : Screen {
                         singleLine = true,
                         label = { Text(stringResource(Res.string.table_name)) },
                         onValueChange = { boardName = it })
+                    val loanLimit = remember { mutableStateOf(TextFieldValue("10000")) }
+                    NumberTextField(
+                        input = loanLimit,
+                        inputLabel = stringResource(Res.string.loanLimit),
+                    )
+                    val businessLimit = remember { mutableStateOf(TextFieldValue("10")) }
+                    NumberTextField(
+                        input = businessLimit,
+                        inputLabel = stringResource(Res.string.businessLimit),
+                    )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
@@ -113,10 +125,17 @@ class BoardListScreen : Screen {
                         TextButton(stringResource(Res.string.cancel)) {
                             newBoardDialog = false
                         }
-                        TextButton(stringResource(Res.string.create_table), enabled = boardName.isNotEmpty()) {
+                        TextButton(
+                            stringResource(Res.string.create_table),
+                            enabled = boardName.isNotEmpty()
+                                    && loanLimit.value.text.isNotEmpty()
+                                    && businessLimit.value.text.isNotEmpty()
+                        ) {
                             launchWithHandler({ navigator.replaceAll(LoadOnlineScreen()) }) {
                                 val board = service.createBoard(
                                     name = boardName,
+                                    loanLimit = loanLimit.value.text.toLong(),
+                                    businessLimit = businessLimit.value.text.toLong(),
                                     decks = decks.map { (type, map) ->
                                         type to map.size
                                     }.toMap()

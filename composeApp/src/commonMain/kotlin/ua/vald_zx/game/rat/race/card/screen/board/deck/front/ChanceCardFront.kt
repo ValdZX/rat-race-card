@@ -132,6 +132,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                 fontWeight = FontWeight.Bold
             )
         }
+        val state by vm.uiState.collectAsState()
         if (isActive) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
@@ -146,6 +147,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                 )
                 ElevatedButton(
                     modifier = Modifier,
+                    enabled = state.canPay(card.price),
                     onClick = {
                         vm.buy(card)
                     },
@@ -256,6 +258,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
                 fontWeight = FontWeight.Bold
             )
         }
+        val state by vm.uiState.collectAsState()
         if (isActive) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
@@ -270,6 +273,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
                 )
                 ElevatedButton(
                     modifier = Modifier,
+                    enabled = state.canPay(card.price),
                     onClick = {
                         vm.buy(card)
                     },
@@ -440,6 +444,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 fontWeight = FontWeight.Bold
             )
         }
+        val state by vm.uiState.collectAsState()
         if (isActive) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
@@ -480,7 +485,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                     onClick = {
                         vm.buyShares(card, count)
                     },
-                    enabled = count > 0,
+                    enabled = count > 0 && state.canPay(card.price * count),
                     content = {
                         Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
                     },

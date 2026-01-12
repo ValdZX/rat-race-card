@@ -131,9 +131,16 @@ class RaceRatServiceImpl(
         }
     }
 
-    override suspend fun createBoard(name: String, decks: Map<BoardCardType, Int>): Board {
+    override suspend fun createBoard(
+        name: String,
+        loanLimit: Long,
+        businessLimit: Long,
+        decks: Map<BoardCardType, Int>
+    ): Board {
         val board = Board(
             name = name,
+            loanLimit = loanLimit,
+            businessLimit = businessLimit,
             createDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
             id = Uuid.random().toString(),
             cards = decks.map { (type, size) ->
@@ -606,13 +613,21 @@ class RaceRatServiceImpl(
                 }
             }
             if (newFunds.isEmpty() && stub < value) {
-                copy(cash = 0, deposit = 0, funds = emptyList(), loan = loan + (value - stub))
+                val newLoan = loan + (value - stub)
+                if(newLoan > board.loanLimit) {
+                    launch { eventBus.emit(Event.LoanOverlimited) }
+                }
+                copy(cash = 0, deposit = 0, funds = emptyList(), loan = newLoan)
             } else {
                 copy(cash = 0, deposit = 0, funds = newFunds)
             }
         } else {
             launch { eventBus.emit(Event.LoanAdded(value - (cash + deposit))) }
-            copy(cash = 0, deposit = 0, loan = loan + (value - (deposit + cash)))
+            val newLoan = loan + (value - (deposit + cash))
+            if(newLoan > board.loanLimit) {
+                launch { eventBus.emit(Event.LoanOverlimited) }
+            }
+            copy(cash = 0, deposit = 0, loan = newLoan)
         }
     }
 

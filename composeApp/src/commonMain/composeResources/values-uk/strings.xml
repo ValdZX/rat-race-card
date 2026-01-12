@@ -211,5 +211,8 @@
     <string name="area">Площа</string>
     <string name="priceOfUnit">Ціна за сотку</string>
     <string name="close">Закрити</string>
+    <string name="loanLimit">Кредитний ліміт</string>
+    <string name="businessLimit">Максимальна кількість бізнесів</string>
+    <string name="limitOverload">Перевищено кредитний ліміт в %1$s$. Вас обʼявлено банкрутом. Почати заново?</string>
 </resources>
 

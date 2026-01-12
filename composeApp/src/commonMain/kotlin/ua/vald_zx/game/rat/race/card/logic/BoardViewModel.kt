@@ -18,6 +18,14 @@ data class BoardState(
     val color: Long = player.attrs.color
     val currentPlayerIsActive: Boolean by lazy { player.id == board.activePlayer }
     val canRoll: Boolean by lazy { board.canRoll && currentPlayerIsActive }
+
+    fun canPay(price: Long): Boolean {
+        return (board.loanLimit + player.balance() - player.loan - price) > 0
+    }
+
+    fun canBuyBusiness(): Boolean {
+        return player.businesses.size <= board.businessLimit
+    }
 }
 
 sealed class BoardUiAction {
@@ -35,6 +43,7 @@ sealed class BoardUiAction {
     data object YouDivorced : BoardUiAction()
     data object CongratulationsWithBaby : BoardUiAction()
     data object CongratulationsWithMarriage : BoardUiAction()
+    data object LoanOverlimited : BoardUiAction()
     data class Resignation(val business: Business) : BoardUiAction()
 }
 
@@ -140,6 +149,10 @@ class BoardViewModel(
 
                     is Event.Resignation -> {
                         _actions.send(Resignation(event.business))
+                    }
+
+                    Event.LoanOverlimited -> {
+                        _actions.send(LoanOverlimited)
                     }
                 }
             }

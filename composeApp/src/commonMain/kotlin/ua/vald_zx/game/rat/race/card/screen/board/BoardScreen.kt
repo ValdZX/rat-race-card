@@ -40,10 +40,7 @@ import com.composables.core.rememberBottomSheetState
 import dev.lennartegb.shadows.boxShadow
 import io.github.alexzhirkevich.compottie.rememberLottieAnimatable
 import io.github.alexzhirkevich.compottie.rememberLottiePainter
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -62,6 +59,7 @@ import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
+import ua.vald_zx.game.rat.race.card.screen.BoardListScreen
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDeck
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDialog
 import ua.vald_zx.game.rat.race.card.screen.board.deck.DiscardPile
@@ -214,6 +212,7 @@ class BoardScreen(
         var resignationDialog: Business? by remember { mutableStateOf(null) }
         var depositWithdrawDialog by remember { mutableStateOf(0L) }
         var loanAddedDialog by remember { mutableStateOf(0L) }
+        var loanOverlimitedDialog by remember { mutableStateOf(false) }
         var receivedCashDialog by remember { mutableStateOf<BoardUiAction.ReceivedCash?>(null) }
         LaunchedEffect(Unit) {
             vm.init()
@@ -277,6 +276,10 @@ class BoardScreen(
 
                     is BoardUiAction.Resignation -> {
                         resignationDialog = event.business
+                    }
+
+                    BoardUiAction.LoanOverlimited -> {
+                        loanOverlimitedDialog = true
                     }
                 }
             }
@@ -376,6 +379,38 @@ class BoardScreen(
                         }
                     ) { Text(stringResource(Res.string.ok)) }
                 },
+            )
+        }
+        if (loanOverlimitedDialog) {
+            AlertDialog(
+                title = { Text(text = stringResource(Res.string.attention)) },
+                text = {
+                    Text(
+                        text = stringResource(Res.string.limitOverload, state.board.loanLimit)
+                    )
+                },
+                onDismissRequest = { loanOverlimitedDialog = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            navigator.popUntil { it is BoardListScreen }
+                            loanOverlimitedDialog = false
+                        }
+                    ) { Text(stringResource(Res.string.yes)) }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            navigator.popUntilRoot()
+                            MainScope().launch {
+                                appKStore.update {
+                                    it?.copy(onlinePlayerId = "")
+                                }
+                            }
+                            loanOverlimitedDialog = false
+                        }
+                    ) { Text(stringResource(Res.string.no)) }
+                }
             )
         }
         val receivedCash = receivedCashDialog

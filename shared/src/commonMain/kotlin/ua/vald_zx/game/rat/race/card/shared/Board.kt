@@ -14,6 +14,8 @@ data class BoardId(
 @Serializable
 data class Board(
     val name: String,
+    val loanLimit: Long,
+    val businessLimit: Long,
     val createDateTime: LocalDateTime,
     val lastCheckTime: LocalDateTime = createDateTime,
     val id: String,

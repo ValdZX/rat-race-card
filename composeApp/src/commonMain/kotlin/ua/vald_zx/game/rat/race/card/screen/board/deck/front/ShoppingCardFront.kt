@@ -7,6 +7,8 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,6 +95,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                 fontSize = unitTS * 12,
                 lineHeight = unitTS * 10,
             )
+            val state by vm.uiState.collectAsState()
             if (isActive) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
@@ -109,6 +112,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                     )
                     ElevatedButton(
                         modifier = Modifier,
+                        enabled = state.canPay(card.price),
                         onClick = {
                             vm.buy(card)
                         },

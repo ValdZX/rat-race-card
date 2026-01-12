@@ -7,6 +7,8 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +52,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
         val unitDp = cardWidth / 300
         val padding = unitDp * 10
         val smallPadding = unitDp * 6
+        val state by vm.uiState.collectAsState()
         Column(modifier = Modifier.padding(padding)) {
             Row {
                 Text(
@@ -134,6 +137,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                     )
                     ElevatedButton(
                         modifier = Modifier,
+                        enabled = state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {
                             vm.buyBusiness(
                                 Business(
@@ -230,6 +234,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                     fontWeight = FontWeight.Bold
                 )
             }
+            val state by vm.uiState.collectAsState()
             if (isActive) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
@@ -244,6 +249,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                     )
                     ElevatedButton(
                         modifier = Modifier,
+                        enabled = state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {
                             vm.buyBusiness(
                                 Business(
@@ -340,6 +346,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                     fontWeight = FontWeight.Bold
                 )
             }
+            val state by vm.uiState.collectAsState()
             if (isActive) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
@@ -354,6 +361,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                     )
                     ElevatedButton(
                         modifier = Modifier,
+                        enabled = state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {
                             vm.buyBusiness(
                                 Business(
