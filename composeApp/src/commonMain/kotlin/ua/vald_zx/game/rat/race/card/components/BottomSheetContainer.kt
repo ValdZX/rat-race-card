@@ -1,15 +1,8 @@
 package ua.vald_zx.game.rat.race.card.components
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -22,8 +15,10 @@ import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.noIme
 
 @Composable
-fun BottomSheetContainer(content: @Composable ColumnScope.() -> Unit) {
-    val scrollState = rememberScrollState()
+fun BottomSheetContainer(
+    verticalScrollState: ScrollState? = rememberScrollState(),
+    content: @Composable ColumnScope.() -> Unit
+) {
     if (noIme) {
         val density = LocalDensity.current
         val windowInfo = LocalWindowInfo.current
@@ -33,7 +28,9 @@ fun BottomSheetContainer(content: @Composable ColumnScope.() -> Unit) {
                 .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp)
                 .navigationBarsPadding()
-                .verticalScroll(scrollState)
+                .optionalModifier(verticalScrollState != null) {
+                    verticalScroll(verticalScrollState!!)
+                }
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -49,7 +46,9 @@ fun BottomSheetContainer(content: @Composable ColumnScope.() -> Unit) {
                 .padding(16.dp)
                 .navigationBarsPadding()
                 .imePadding()
-                .verticalScroll(scrollState)
+                .optionalModifier(verticalScrollState != null) {
+                    verticalScroll(verticalScrollState!!)
+                }
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),

@@ -35,7 +35,7 @@ fun EstateItem(estate: Estate) {
         Text(estate.name, style = MaterialTheme.typography.titleSmall)
         SDetailsField(
             name = stringResource(Res.string.purchase_price),
-            value = estate.buyPrice.formatAmount(),
+            value = estate.price.formatAmount(),
             modifier = Modifier.fillMaxWidth()
         )
         HorizontalDivider()

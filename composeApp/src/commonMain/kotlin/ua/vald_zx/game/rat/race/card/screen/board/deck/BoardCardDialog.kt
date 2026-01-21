@@ -210,10 +210,8 @@ fun BoxWithConstraintsScope.CardDialog(vm: BoardViewModel) {
                     )
                 }
                 BoxWithConstraints(modifier = Modifier.layoutId("front")) {
-                    val isActive = remember(card) { state.player.id == state.board.activePlayer }
                     BoardCardFront(
                         card = card,
-                        isActive = isActive,
                         size = dialogSize,
                         vm = vm
                     )

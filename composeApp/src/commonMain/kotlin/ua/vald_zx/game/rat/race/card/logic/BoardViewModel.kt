@@ -2,9 +2,10 @@ package ua.vald_zx.game.rat.race.card.logic
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.aakira.napier.Napier
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
 import ua.vald_zx.game.rat.race.card.shared.*
 
@@ -44,13 +45,18 @@ sealed class BoardUiAction {
     data object CongratulationsWithBaby : BoardUiAction()
     data object CongratulationsWithMarriage : BoardUiAction()
     data object LoanOverlimited : BoardUiAction()
+    data object BidBusinessAuctionSuccessBuy : BoardUiAction()
+    data object BidEstateAuctionSuccessBuy : BoardUiAction()
+    data object BidLandAuctionSuccessBuy : BoardUiAction()
+    data object BidSharesAuctionSuccessBuy : BoardUiAction()
+    data object ConnectionLost : BoardUiAction()
     data class Resignation(val business: Business) : BoardUiAction()
 }
 
 class BoardViewModel(
     board: Board,
     player: Player,
-    private val service: RaceRatService
+    private val serviceProvider: () -> RaceRatService
 ) : ViewModel() {
 
 
@@ -60,11 +66,21 @@ class BoardViewModel(
     private val _actions = Channel<BoardUiAction>()
     val actions = _actions.receiveAsFlow()
 
-    fun init() {
-        viewModelScope.launch {
-            players.value = service.getPlayers()
-            _uiState.update { it.copy(board = service.getBoard()) }
-            service.eventsObserve().collect { event ->
+    private fun safeLaunch(block: suspend RaceRatService.() -> Unit): Job {
+        return viewModelScope.launch(viewModelScope.coroutineContext + SupervisorJob() + CoroutineExceptionHandler { _, t ->
+            Napier.e("Invalid server", t)
+            viewModelScope.launch {
+                _actions.send(ConnectionLost)
+            }
+        }, block = { serviceProvider().block() })
+    }
+
+    fun init(player: Player) {
+        safeLaunch {
+            val actualPlayers = getPlayers()
+            players.value = actualPlayers
+            _uiState.update { it.copy(board = getBoard(), player = player) }
+            eventsObserve().collect { event ->
                 when (event) {
                     is Event.MoneyIncome -> {
                         _actions.send(ReceivedCash(event.playerId, event.amount))
@@ -154,174 +170,214 @@ class BoardViewModel(
                     Event.LoanOverlimited -> {
                         _actions.send(LoanOverlimited)
                     }
+
+                    Event.BidBusinessAuctionSuccessBuy -> {
+                        _actions.send(BidBusinessAuctionSuccessBuy)
+                    }
+
+                    Event.BidEstateAuctionSuccessBuy -> {
+                        _actions.send(BidEstateAuctionSuccessBuy)
+                    }
+
+                    Event.BidLandAuctionSuccessBuy -> {
+                        _actions.send(BidLandAuctionSuccessBuy)
+                    }
+
+                    Event.BidSharesAuctionSuccessBuy -> {
+                        _actions.send(BidSharesAuctionSuccessBuy)
+                    }
                 }
+            }
+        }
+        safeLaunch {
+            delay(5000)
+            ping()
+        }
+    }
+
+    private fun invalidatePlayers(playerIds: Set<String>) {
+        safeLaunch {
+            val localIds = players.value.map { player -> player.id }.toSet()
+            if (localIds != playerIds) {
+                players.value = getPlayers()
             }
         }
     }
 
-    private suspend fun invalidatePlayers(playerIds: Set<String>) {
-        val localIds = players.value.map { player -> player.id }.toSet()
-        if (localIds != playerIds) {
-            players.value = service.getPlayers()
-        }
-    }
-
     fun pass() {
-        viewModelScope.launch {
-            service.next()
+        safeLaunch {
+            next()
         }
     }
 
     fun passLand() {
-        viewModelScope.launch {
-            service.passLand()
+        safeLaunch {
+            passLand()
         }
     }
 
     fun passEstate() {
-        viewModelScope.launch {
-            service.passEstate()
+        safeLaunch {
+            passEstate()
         }
     }
 
     fun passShares(sharesType: SharesType) {
-        viewModelScope.launch {
-            service.passShares(sharesType)
+        safeLaunch {
+            passShares(sharesType)
         }
     }
 
     fun rollDice() {
-        viewModelScope.launch {
-            service.rollDice()
+        safeLaunch {
+            rollDice()
         }
     }
 
     fun buyBusiness(business: Business) {
-        viewModelScope.launch {
-            service.buyBusiness(business)
+        safeLaunch {
+            buyBusiness(business)
         }
     }
 
     fun sideExpenses(price: Long) {
-        viewModelScope.launch {
-            service.minusCash(price)
-            service.next()
+        safeLaunch {
+            minusCash(price)
+            next()
         }
     }
 
     fun buy(card: BoardCard.Shopping) {
-        viewModelScope.launch {
-            service.buyThing(card)
+        safeLaunch {
+            buyThing(card)
         }
     }
 
     fun buy(card: BoardCard.Chance.Estate) {
-        viewModelScope.launch {
-            service.buyEstate(card)
+        safeLaunch {
+            buyEstate(Estate(name = card.name, card.price))
         }
     }
 
     fun buy(card: BoardCard.Chance.Land) {
-        viewModelScope.launch {
-            service.buyLand(card)
+        safeLaunch {
+            buyLand(Land(name = card.name, card.area, card.price))
         }
     }
 
     fun changePlayerColor(value: Long) {
-        viewModelScope.launch {
-            service.updateAttributes(uiState.value.player.attrs.copy(color = value))
+        safeLaunch {
+            updateAttributes(uiState.value.player.attrs.copy(color = value))
         }
     }
 
     fun selectCard(cardType: BoardCardType) {
-        viewModelScope.launch {
-            service.takeCard(cardType)
+        safeLaunch {
+            takeCard(cardType)
         }
     }
 
     fun takeSalary() {
-        viewModelScope.launch {
-            service.takeSalary()
+        safeLaunch {
+            takeSalary()
         }
     }
 
     fun changePosition(position: Int) {
         if (uiState.value.currentPlayerIsActive) {
-            viewModelScope.launch {
-                service.changePosition(position)
+            safeLaunch {
+                changePosition(position)
             }
         }
     }
 
     fun dismissalConfirmed(business: Business) {
-        viewModelScope.launch {
-            service.dismissalConfirmed(business)
+        safeLaunch {
+            dismissalConfirmed(business)
         }
     }
 
     fun sellingAllBusinessConfirmed(business: Business) {
-        viewModelScope.launch {
-            service.sellingAllBusinessConfirmed(business)
+        safeLaunch {
+            sellingAllBusinessConfirmed(business)
         }
     }
 
     fun sendMoney(playerId: String, amount: Long) {
-        viewModelScope.launch {
-            service.sendMoney(playerId, amount)
+        safeLaunch {
+            sendMoney(playerId, amount)
         }
     }
 
     fun randomJob(card: BoardCard.Chance.RandomJob) {
-        viewModelScope.launch {
-            service.randomJob(card)
+        safeLaunch {
+            randomJob(card)
         }
     }
 
     fun buyShares(card: BoardCard.Chance.Shares, count: Long) {
-        viewModelScope.launch {
-            service.buyShares(card, count)
+        safeLaunch {
+            buyShares(Shares(card.sharesType, count, card.price))
         }
     }
 
     fun extendBusiness(business: Business, card: BoardCard.EventStore.BusinessExtending) {
-        viewModelScope.launch {
-            service.extendBusiness(business, card)
+        safeLaunch {
+            extendBusiness(business, card)
         }
     }
 
     fun sellShares(card: BoardCard.EventStore.Shares, count: Long) {
-        viewModelScope.launch {
-            service.sellShares(card, count)
+        safeLaunch {
+            sellShares(card, count)
         }
     }
 
     fun sellEstates(estateList: List<Estate>, price: Long) {
-        viewModelScope.launch {
-            service.sellEstate(estateList, price)
+        safeLaunch {
+            sellEstate(estateList, price)
         }
     }
 
     fun sellLands(area: Long, price: Long) {
-        viewModelScope.launch {
-            service.sellLands(area, price)
+        safeLaunch {
+            sellLands(area, price)
         }
     }
 
     fun selectCardByNo(cardNo: Int) {
-        viewModelScope.launch {
-            service.selectCardByNo(cardNo)
+        safeLaunch {
+            selectCardByNo(cardNo)
         }
     }
 
     fun toDeposit(amount: Long) {
-        viewModelScope.launch {
-            service.toDeposit(amount)
+        safeLaunch {
+            toDeposit(amount)
         }
     }
 
     fun repayLoan(amount: Long) {
-        viewModelScope.launch {
-            service.repayLoan(amount)
+        safeLaunch {
+            repayLoan(amount)
+        }
+    }
+
+    fun advertiseAuction(auction: Auction) {
+        safeLaunch {
+            advertiseAuction(auction)
+        }
+    }
+
+    fun sellBid(bid: Bid) {
+        safeLaunch {
+            sellBid(bid)
+        }
+    }
+
+    fun makeBid(price: Long, count: Long) {
+        safeLaunch {
+            makeBid(price, count)
         }
     }
 }

@@ -107,7 +107,9 @@ class BoardListScreen : Screen {
                         value = boardName,
                         singleLine = true,
                         label = { Text(stringResource(Res.string.table_name)) },
-                        onValueChange = { boardName = it })
+                        onValueChange = { boardName = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     val loanLimit = remember { mutableStateOf(TextFieldValue("10000")) }
                     NumberTextField(
                         input = loanLimit,

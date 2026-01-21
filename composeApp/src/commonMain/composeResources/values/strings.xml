@@ -213,4 +213,15 @@
     <string name="loanLimit">Loan limit</string>
     <string name="businessLimit">Maximum number of businesses</string>
     <string name="limitOverload">Credit limit exceeded by %1$s$. You have been declared bankrupt. Start over?</string>
+    <string name="auction">Auction</string>
+    <string name="firstBid">First bid</string>
+    <string name="bid">Bid</string>
+    <string name="advertiseAuction">Advertise an auction</string>
+    <string name="noBetsYet">No bets yet</string>
+    <string name="resell">Resell</string>
+    <string name="placeBet">Place a bet</string>
+    <string name="bidBusinessAuctionSuccessBuy">Business successfully purchased</string>
+    <string name="bidEstateAuctionSuccessBuy">Estate successfully purchased</string>
+    <string name="bidLandAuctionSuccessBuy">Land successfully purchased</string>
+    <string name="bidSharesAuctionSuccessBuy">Shares successfully purchased</string>
 </resources>

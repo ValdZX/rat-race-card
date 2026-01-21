@@ -17,10 +17,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
@@ -34,7 +34,6 @@ import ua.vald_zx.game.rat.race.card.shared.CardLink
 @Composable
 fun BoxWithConstraintsScope.ShoppingCardFront(
     card: CardLink,
-    isActive: Boolean,
     vm: BoardViewModel,
 ) {
 
@@ -96,7 +95,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                 lineHeight = unitTS * 10,
             )
             val state by vm.uiState.collectAsState()
-            if (isActive) {
+            if (state.currentPlayerIsActive) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                     horizontalArrangement = Arrangement.SpaceAround
@@ -136,13 +135,13 @@ fun CardShoppingFrontPreview() {
                 modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                ShoppingCardFront(CardLink(BoardCardType.Shopping, 1), isActive = false, vm)
+                ShoppingCardFront(CardLink(BoardCardType.Shopping, 1), vm)
             }
             BoxWithConstraints(
                 modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                ShoppingCardFront(CardLink(BoardCardType.Shopping, 2), isActive = true, vm)
+                ShoppingCardFront(CardLink(BoardCardType.Shopping, 2), vm)
             }
         }
     }

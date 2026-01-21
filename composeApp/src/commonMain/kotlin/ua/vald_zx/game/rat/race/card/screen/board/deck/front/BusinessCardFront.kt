@@ -17,30 +17,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.auction
 import rat_race_card.composeapp.generated.resources.buy
 import rat_race_card.composeapp.generated.resources.pass
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.screen.board.AuctionScreen
 import ua.vald_zx.game.rat.race.card.screen.board.cards.bigBusinessCards
 import ua.vald_zx.game.rat.race.card.screen.board.cards.mediumBusinessCards
 import ua.vald_zx.game.rat.race.card.screen.board.cards.smallBusinessCards
 import ua.vald_zx.game.rat.race.card.screen.board.cards.title
-import ua.vald_zx.game.rat.race.card.shared.BoardCardType
-import ua.vald_zx.game.rat.race.card.shared.Business
-import ua.vald_zx.game.rat.race.card.shared.BusinessType
-import ua.vald_zx.game.rat.race.card.shared.CardLink
+import ua.vald_zx.game.rat.race.card.shared.*
 
 
 @Composable
 fun BoxWithConstraintsScope.SmallBusinessCardFront(
     cardLink: CardLink,
-    isActive: Boolean,
     vm: BoardViewModel,
 ) {
     remember(cardLink.id) {
@@ -123,11 +122,13 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                     fontWeight = FontWeight.Bold
                 )
             }
-            if (isActive) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
+            val bottomSheetNavigator = LocalBottomSheetNavigator.current
+            val state by vm.uiState.collectAsState()
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                if (state.currentPlayerIsActive) {
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = { vm.pass() },
@@ -142,7 +143,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                             vm.buyBusiness(
                                 Business(
                                     type = BusinessType.SMALL,
-                                    name = cardLink.id.toString(),
+                                    name = card.name,
                                     price = card.price,
                                     profit = card.profit
                                 )
@@ -150,6 +151,28 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                         },
                         content = {
                             Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
+                        },
+                    )
+                }
+                if (state.currentPlayerIsActive || state.board.auction != null) {
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = {
+                            bottomSheetNavigator.show(
+                                AuctionScreen(
+                                    vm, Auction.BusinessAuction(
+                                        Business(
+                                            type = BusinessType.SMALL,
+                                            name = cardLink.id.toString(),
+                                            price = card.price,
+                                            profit = card.profit
+                                        ), card.price
+                                    )
+                                )
+                            )
+                        },
+                        content = {
+                            Text(stringResource(Res.string.auction), fontSize = unitTS * 14)
                         },
                     )
                 }
@@ -161,7 +184,6 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
 @Composable
 fun BoxWithConstraintsScope.MediumBusinessCardFront(
     cardLink: CardLink,
-    isActive: Boolean,
     vm: BoardViewModel,
 ) {
     remember(cardLink.id) {
@@ -235,11 +257,12 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                 )
             }
             val state by vm.uiState.collectAsState()
-            if (isActive) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
+            val bottomSheetNavigator = LocalBottomSheetNavigator.current
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                if (state.currentPlayerIsActive) {
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = { vm.pass() },
@@ -265,6 +288,28 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                         },
                     )
                 }
+                if (state.currentPlayerIsActive || state.board.auction != null) {
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = {
+                            bottomSheetNavigator.show(
+                                AuctionScreen(
+                                    vm, Auction.BusinessAuction(
+                                        Business(
+                                            type = BusinessType.MEDIUM,
+                                            name = cardLink.id.toString(),
+                                            price = card.price,
+                                            profit = card.profit
+                                        ), card.price
+                                    )
+                                )
+                            )
+                        },
+                        content = {
+                            Text(stringResource(Res.string.auction), fontSize = unitTS * 14)
+                        },
+                    )
+                }
             }
         }
     }
@@ -273,7 +318,6 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
 @Composable
 fun BoxWithConstraintsScope.BigBusinessCardFront(
     cardLink: CardLink,
-    isActive: Boolean,
     vm: BoardViewModel,
 ) {
     remember(cardLink.id) {
@@ -347,11 +391,12 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                 )
             }
             val state by vm.uiState.collectAsState()
-            if (isActive) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
+            val bottomSheetNavigator = LocalBottomSheetNavigator.current
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                if (state.currentPlayerIsActive) {
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = { vm.pass() },
@@ -377,6 +422,28 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                         },
                     )
                 }
+                if (state.currentPlayerIsActive || state.board.auction != null) {
+                    ElevatedButton(
+                        modifier = Modifier,
+                        onClick = {
+                            bottomSheetNavigator.show(
+                                AuctionScreen(
+                                    vm, Auction.BusinessAuction(
+                                        Business(
+                                            type = BusinessType.LARGE,
+                                            name = cardLink.id.toString(),
+                                            price = card.price,
+                                            profit = card.profit
+                                        ), card.price
+                                    )
+                                )
+                            )
+                        },
+                        content = {
+                            Text(stringResource(Res.string.auction), fontSize = unitTS * 14)
+                        },
+                    )
+                }
             }
         }
     }
@@ -387,18 +454,21 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
 @Composable
 fun CardSmallFrontPreview() {
     InitPreviewWithVm { vm ->
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.background(MaterialTheme.colorScheme.primary).padding(16.dp)
+        ) {
             BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                modifier = Modifier.width(300.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 1), isActive = false, vm)
+                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 1), vm)
             }
             BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                modifier = Modifier.width(300.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 2), isActive = true, vm)
+                SmallBusinessCardFront(CardLink(BoardCardType.SmallBusiness, 2), vm)
             }
         }
     }
@@ -409,18 +479,21 @@ fun CardSmallFrontPreview() {
 @Composable
 fun CardMediumFrontPreview() {
     InitPreviewWithVm { vm ->
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.background(MaterialTheme.colorScheme.primary).padding(16.dp)
+        ) {
             BoxWithConstraints(
                 modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 1), isActive = false, vm)
+                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 1), vm)
             }
             BoxWithConstraints(
                 modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 2), isActive = true, vm)
+                MediumBusinessCardFront(CardLink(BoardCardType.MediumBusiness, 2), vm)
             }
         }
     }

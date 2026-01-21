@@ -15,11 +15,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.OutlinedBasicTextField
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
@@ -38,7 +38,6 @@ import ua.vald_zx.game.rat.race.card.shared.CardLink
 @Composable
 fun BoxWithConstraintsScope.EventStoreCardFront(
     cardLink: CardLink,
-    isActive: Boolean,
     vm: BoardViewModel,
 ) {
     remember(cardLink.id) {
@@ -46,19 +45,19 @@ fun BoxWithConstraintsScope.EventStoreCardFront(
     }?.let { eventCard ->
         when (eventCard) {
             is BoardCard.EventStore.Estate -> {
-                EstateCardFront(cardLink, eventCard, isActive, vm)
+                EstateCardFront(cardLink, eventCard, vm)
             }
 
             is BoardCard.EventStore.Land -> {
-                LandCardFront(cardLink, eventCard, isActive, vm)
+                LandCardFront(cardLink, eventCard, vm)
             }
 
             is BoardCard.EventStore.Shares -> {
-                SharesCardFront(cardLink, eventCard, isActive, vm)
+                SharesCardFront(cardLink, eventCard, vm)
             }
 
             is BoardCard.EventStore.BusinessExtending -> {
-                BusinessExtendingCardFront(cardLink, eventCard, isActive, vm)
+                BusinessExtendingCardFront(cardLink, eventCard, vm)
             }
         }
     }
@@ -68,7 +67,6 @@ fun BoxWithConstraintsScope.EventStoreCardFront(
 private fun BoxWithConstraintsScope.EstateCardFront(
     cardLink: CardLink,
     card: BoardCard.EventStore.Estate,
-    isActive: Boolean,
     vm: BoardViewModel
 ) {
     val density = LocalDensity.current
@@ -177,7 +175,6 @@ private fun BoxWithConstraintsScope.EstateCardFront(
 private fun BoxWithConstraintsScope.LandCardFront(
     cardLink: CardLink,
     card: BoardCard.EventStore.Land,
-    isActive: Boolean,
     vm: BoardViewModel
 ) {
     val density = LocalDensity.current
@@ -278,7 +275,6 @@ private fun BoxWithConstraintsScope.LandCardFront(
 private fun BoxWithConstraintsScope.SharesCardFront(
     cardLink: CardLink,
     card: BoardCard.EventStore.Shares,
-    isActive: Boolean,
     vm: BoardViewModel
 ) {
     val density = LocalDensity.current
@@ -411,7 +407,6 @@ private fun BoxWithConstraintsScope.SharesCardFront(
 private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
     cardLink: CardLink,
     card: BoardCard.EventStore.BusinessExtending,
-    isActive: Boolean,
     vm: BoardViewModel
 ) {
     val density = LocalDensity.current
@@ -461,7 +456,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
         val state by vm.uiState.collectAsState()
         val randomSmallBusiness =
             remember { state.player.businesses.filter { it.type == BusinessType.SMALL }.randomOrNull() }
-        if (isActive && randomSmallBusiness != null) {
+        if (state.currentPlayerIsActive && randomSmallBusiness != null) {
             Text(
                 modifier = Modifier.padding(top = padding).align(Alignment.CenterHorizontally),
                 text = "Прибуток бізнесу ${randomSmallBusiness.name} виріс на:",
@@ -483,7 +478,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold
         )
-        if (isActive && randomSmallBusiness != null) {
+        if (state.currentPlayerIsActive && randomSmallBusiness != null) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround,
@@ -499,7 +494,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
                     },
                 )
             }
-        } else if (isActive) {
+        } else if (state.currentPlayerIsActive) {
             Text("Поки що немає бізнесів!", fontSize = unitTS * 14, modifier = Modifier.padding(smallPadding))
             ElevatedButton(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -521,13 +516,13 @@ fun EventEstateCardFrontPreview() {
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                EventStoreCardFront(CardLink(BoardCardType.EventStore, 27), isActive = false, vm)
+                EventStoreCardFront(CardLink(BoardCardType.EventStore, 27), vm)
             }
             BoxWithConstraints(
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                EventStoreCardFront(CardLink(BoardCardType.EventStore, 28), isActive = true, vm)
+                EventStoreCardFront(CardLink(BoardCardType.EventStore, 28), vm)
             }
         }
     }
@@ -542,13 +537,13 @@ fun EventLandCardFrontPreview() {
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                EventStoreCardFront(CardLink(BoardCardType.EventStore, 19), isActive = false, vm)
+                EventStoreCardFront(CardLink(BoardCardType.EventStore, 19), vm)
             }
             BoxWithConstraints(
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                EventStoreCardFront(CardLink(BoardCardType.EventStore, 20), isActive = true, vm)
+                EventStoreCardFront(CardLink(BoardCardType.EventStore, 20), vm)
             }
         }
     }
@@ -563,13 +558,13 @@ fun EventSharesCardFrontPreview() {
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                EventStoreCardFront(CardLink(BoardCardType.EventStore, 1), isActive = false, vm)
+                EventStoreCardFront(CardLink(BoardCardType.EventStore, 1), vm)
             }
             BoxWithConstraints(
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                EventStoreCardFront(CardLink(BoardCardType.EventStore, 2), isActive = true, vm)
+                EventStoreCardFront(CardLink(BoardCardType.EventStore, 2), vm)
             }
         }
     }
@@ -584,13 +579,13 @@ fun EventBusinessExtendingPreview() {
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                EventStoreCardFront(CardLink(BoardCardType.EventStore, 31), isActive = false, vm)
+                EventStoreCardFront(CardLink(BoardCardType.EventStore, 31), vm)
             }
             BoxWithConstraints(
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                EventStoreCardFront(CardLink(BoardCardType.EventStore, 32), isActive = true, vm)
+                EventStoreCardFront(CardLink(BoardCardType.EventStore, 32), vm)
             }
         }
     }

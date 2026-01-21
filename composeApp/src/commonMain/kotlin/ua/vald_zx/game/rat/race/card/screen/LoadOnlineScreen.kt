@@ -14,14 +14,16 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.github.aakira.napier.Napier
+import io.ktor.client.*
 import kotlinx.coroutines.*
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
+import org.koin.compose.getKoin
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.connection_failed
 import rat_race_card.composeapp.generated.resources.retry_connection
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.Button
+import ua.vald_zx.game.rat.race.card.di.getRaceRatService
 import ua.vald_zx.game.rat.race.card.screen.board.BoardScreen
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 
@@ -30,13 +32,16 @@ class LoadOnlineScreen : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val invalidServerState = remember { mutableStateOf(false) }
-        val service = koinInject<RaceRatService>()
+        val koin = getKoin()
         fun connectToService() {
             val handler = CoroutineExceptionHandler { _, t ->
                 Napier.e("Invalid server", t)
+                val service = koin.get<HttpClient>().getRaceRatService()
+                koin.declare(service, allowOverride = true)
                 invalidServerState.value = true
             }
             CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
+                val service = koin.get<RaceRatService>()
                 val instance = service.hello(appKStore.get()?.onlinePlayerId.orEmpty())
                 appKStore.update { it?.copy(onlinePlayerId = instance.playerId) }
                 val board = instance.board

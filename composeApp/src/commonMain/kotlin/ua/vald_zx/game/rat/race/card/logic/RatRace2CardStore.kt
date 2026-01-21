@@ -3,9 +3,11 @@
 package ua.vald_zx.game.rat.race.card.logic
 
 import io.github.aakira.napier.Napier
+import io.ktor.client.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.Serializable
+import org.koin.core.Koin
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.Config
@@ -13,6 +15,7 @@ import ua.vald_zx.game.rat.race.card.beans.Fund
 import ua.vald_zx.game.rat.race.card.beans.Land
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
+import ua.vald_zx.game.rat.race.card.di.getRaceRatCardService
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.*
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
 import ua.vald_zx.game.rat.race.card.screen.second.offlinePlayers
@@ -190,7 +193,7 @@ sealed class RatRace2CardSideEffect : Effect {
     data object ShowSalaryApprove : RatRace2CardSideEffect()
 }
 
-class RatRace2CardStore(private val service: RaceRatCardService) :
+class RatRace2CardStore(private val koin: Koin) :
     Store<RatRace2CardState, RatRace2CardAction, RatRace2CardSideEffect>,
     CoroutineScope by CoroutineScope(Dispatchers.Main) {
 
@@ -201,8 +204,11 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
     suspend fun connect(room: String) {
         val handler = CoroutineExceptionHandler { _, t ->
             Napier.e("Invalid server", t)
+            val service = koin.get<HttpClient>().getRaceRatCardService()
+            koin.declare(service, allowOverride = true)
             dispatch(RatRace2CardAction.Disconnect)
         }
+        val service = koin.get<RaceRatCardService>()
         CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
             service.playersObserve().collect { player ->
                 if (player.removed) {
@@ -583,6 +589,7 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
 
             is SendMoney -> {
                 launch {
+                    val service = koin.get<RaceRatCardService>()
                     service.sendMoney(
                         SendMoneyPack(
                             payerName = oldState.playerCard.name,
@@ -634,6 +641,7 @@ class RatRace2CardStore(private val service: RaceRatCardService) :
                     lastTotals = newState.lastTotals,
                     lastCashFlows = newState.lastCashFlows,
                 )
+                val service = koin.get<RaceRatCardService>()
                 service.updatePlayer(offlinePlayer)
             }
         }

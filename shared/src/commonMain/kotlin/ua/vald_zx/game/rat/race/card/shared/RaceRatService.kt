@@ -21,6 +21,9 @@ sealed class GlobalEvent {
 
     @Serializable
     data class PlayerDivorced(val playerId: String) : GlobalEvent()
+
+    @Serializable
+    data class BidSelled(val bid: Bid) : GlobalEvent()
 }
 
 @Serializable
@@ -69,6 +72,18 @@ sealed class Event {
 
     @Serializable
     data object LoanOverlimited : Event()
+
+    @Serializable
+    data object BidBusinessAuctionSuccessBuy : Event()
+
+    @Serializable
+    data object BidEstateAuctionSuccessBuy : Event()
+
+    @Serializable
+    data object BidLandAuctionSuccessBuy : Event()
+
+    @Serializable
+    data object BidSharesAuctionSuccessBuy : Event()
 }
 
 @Serializable
@@ -77,6 +92,8 @@ data class Instance(val playerId: String, val board: Board?, val player: Player?
 @Rpc
 interface RaceRatService {
     suspend fun hello(helloUuid: String = ""): Instance
+
+    suspend fun ping()
     suspend fun closeSession()
     suspend fun getBoards(): List<BoardId>
     fun observeBoards(): Flow<List<BoardId>>
@@ -112,10 +129,10 @@ interface RaceRatService {
     suspend fun minusCash(price: Long)
     suspend fun buyThing(card: BoardCard.Shopping)
     suspend fun changePosition(position: Int)
-    suspend fun buyEstate(card: BoardCard.Chance.Estate)
-    suspend fun buyLand(card: BoardCard.Chance.Land)
+    suspend fun buyEstate(estate: Estate)
+    suspend fun buyLand(land: Land)
     suspend fun randomJob(card: BoardCard.Chance.RandomJob)
-    suspend fun buyShares(card: BoardCard.Chance.Shares, count: Long)
+    suspend fun buyShares(shares: Shares)
     suspend fun selectCardByNo(cardId: Int)
     suspend fun extendBusiness(business: Business, card: BoardCard.EventStore.BusinessExtending)
     suspend fun sellLands(area: Long, priceOfUnit: Long)
@@ -126,4 +143,7 @@ interface RaceRatService {
     suspend fun passEstate()
     suspend fun toDeposit(amount: Long)
     suspend fun repayLoan(amount: Long)
+    suspend fun advertiseAuction(auction: Auction)
+    suspend fun sellBid(bid: Bid)
+    suspend fun makeBid(price: Long, count: Long)
 }

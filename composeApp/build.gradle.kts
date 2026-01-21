@@ -47,8 +47,8 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material)
             implementation(compose.material3)
+            implementation(compose.preview)
             implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
             implementation(compose.materialIconsExtended)
             implementation(libs.voyager.navigator)
             implementation(libs.voyager.bottom.sheet.navigator)
@@ -81,6 +81,7 @@ kotlin {
             implementation(libs.koin.compose.viewmodel.navigation)
             implementation(libs.localina)
             implementation(libs.materialKolor)
+            implementation(libs.jsontree)
         }
 
         commonTest.dependencies {

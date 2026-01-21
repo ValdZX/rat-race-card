@@ -60,6 +60,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.screen.BoardListScreen
+import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDeck
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDialog
 import ua.vald_zx.game.rat.race.card.screen.board.deck.DiscardPile
@@ -212,10 +213,11 @@ class BoardScreen(
         var resignationDialog: Business? by remember { mutableStateOf(null) }
         var depositWithdrawDialog by remember { mutableStateOf(0L) }
         var loanAddedDialog by remember { mutableStateOf(0L) }
+        var simpleDialog by remember { mutableStateOf(Res.string.app_name) }
         var loanOverlimitedDialog by remember { mutableStateOf(false) }
         var receivedCashDialog by remember { mutableStateOf<BoardUiAction.ReceivedCash?>(null) }
         LaunchedEffect(Unit) {
-            vm.init()
+            vm.init(player)
             vm.actions.collect { event ->
                 when (event) {
                     is BoardUiAction.ConfirmDismissal -> {
@@ -281,6 +283,26 @@ class BoardScreen(
                     BoardUiAction.LoanOverlimited -> {
                         loanOverlimitedDialog = true
                     }
+
+                    BoardUiAction.ConnectionLost -> {
+                        navigator.replace(LoadOnlineScreen())
+                    }
+
+                    BoardUiAction.BidBusinessAuctionSuccessBuy -> {
+                        simpleDialog = Res.string.bidBusinessAuctionSuccessBuy
+                    }
+
+                    BoardUiAction.BidEstateAuctionSuccessBuy -> {
+                        simpleDialog = Res.string.bidEstateAuctionSuccessBuy
+                    }
+
+                    BoardUiAction.BidLandAuctionSuccessBuy -> {
+                        simpleDialog = Res.string.bidLandAuctionSuccessBuy
+                    }
+
+                    BoardUiAction.BidSharesAuctionSuccessBuy -> {
+                        simpleDialog = Res.string.bidSharesAuctionSuccessBuy
+                    }
                 }
             }
         }
@@ -342,6 +364,17 @@ class BoardScreen(
         }
 
 
+        if (simpleDialog != Res.string.app_name) {
+            AlertDialog(
+                text = { Text(text = stringResource(simpleDialog)) },
+                onDismissRequest = { simpleDialog = Res.string.app_name },
+                confirmButton = {
+                    TextButton(onClick = { simpleDialog = Res.string.app_name }) {
+                        Text(stringResource(Res.string.ok))
+                    }
+                },
+            )
+        }
         if (depositWithdrawDialog != 0L) {
             AlertDialog(
                 title = { Text(text = stringResource(Res.string.attention)) },

@@ -7,6 +7,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import com.sebastianneubauer.jsontree.JsonTree
+import kotlinx.serialization.json.Json
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
@@ -17,6 +19,14 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
         val state by vm.uiState.collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         BottomSheetContainer {
+            val boardText = remember(state.board) {
+                val prettyJson = Json { prettyPrint = true }
+                prettyJson.encodeToString(state.board)
+            }
+            JsonTree(
+                json = boardText,
+                onLoading = { Text(text = "Loading...") }
+            )
             var position by remember { mutableStateOf(state.player.location.position.toString()) }
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),

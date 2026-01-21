@@ -121,7 +121,7 @@ data class Shares(
 @Serializable
 data class Estate(
     val name: String,
-    val buyPrice: Long,
+    val price: Long,
 )
 
 @Serializable

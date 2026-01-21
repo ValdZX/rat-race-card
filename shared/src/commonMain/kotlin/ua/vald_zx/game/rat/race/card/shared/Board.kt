@@ -30,6 +30,8 @@ data class Board(
     val dice: Int = 6,
     val diceRolling: Boolean = false,
     val processedPlayerIds: Set<String> = emptySet(),
+    val auction: Auction? = null,
+    val bidList: List<Bid> = emptyList(),
 )
 
 fun Board.toBoardId(): BoardId {

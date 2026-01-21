@@ -16,6 +16,9 @@ import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.RaceRatCardService
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 
+
+private val apiUrl = "wss://race-rat-online-1033277102369.us-central1.run.app/api"
+//private val apiUrl = "ws://192.168.0.159:8080/api"
 val baseModule = module {
     single {
         HttpClient {
@@ -23,29 +26,31 @@ val baseModule = module {
         }
     }
     single {
-        get<HttpClient>().rpc {
-//            url("ws://192.168.0.159:8080/api")
-            url("wss://race-rat-online-1033277102369.us-central1.run.app/api")
-            rpcConfig { serialization { json() } }
-        }.withService<RaceRatService>()
+        get<HttpClient>().getRaceRatService()
     }
     single {
-        get<HttpClient>().rpc {
-//            url("ws://192.168.0.159:8080/api")
-            url("wss://race-rat-online-1033277102369.us-central1.run.app/api")
-            rpcConfig { serialization { json() } }
-        }.withService<RaceRatCardService>()
+        get<HttpClient>().getRaceRatCardService()
     }
 
     single {
-        RatRace2CardStore(get())
+        RatRace2CardStore(getKoin())
     }
 
     viewModel { parameters ->
         BoardViewModel(
             board = parameters.get<Board>(),
             player = parameters.get<Player>(),
-            service = get()
+            serviceProvider = { get() }
         )
     }
 }
+
+fun HttpClient.getRaceRatService() = this.rpc {
+    url(apiUrl)
+    rpcConfig { serialization { json() } }
+}.withService<RaceRatService>()
+
+fun HttpClient.getRaceRatCardService() = this.rpc {
+    url(apiUrl)
+    rpcConfig { serialization { json() } }
+}.withService<RaceRatCardService>()

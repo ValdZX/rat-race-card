@@ -4,10 +4,15 @@ package ua.vald_zx.game.rat.race.server
 
 import io.ktor.util.logging.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import ua.vald_zx.game.rat.race.card.shared.*
+import ua.vald_zx.game.rat.race.server.utils.removeFromStorage
+import ua.vald_zx.game.rat.race.server.utils.savedMutableStateFlow
 import kotlin.math.absoluteValue
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -34,7 +39,7 @@ class RaceRatServiceImpl(
     private var boardGlobalEventsJob: Job? = null
 
     private val player: Player
-        get() = players.value[uuid]?.value ?: error("No player found for $uuid")
+        get() = getPlayerState(uuid)?.value ?: error("No player found for $uuid")
     private val board: Board
         get() = boardState?.value ?: error("No board found")
     private var boardState: MutableStateFlow<Board>? = null
@@ -75,29 +80,31 @@ class RaceRatServiceImpl(
                             is GlobalEvent.PlayerDivorced -> {
                                 eventBus.emit(Event.PlayerDivorced(event.playerId))
                             }
+
+                            is GlobalEvent.BidSelled -> {
+                                val auction = board.auction
+                                if (event.bid.playerId == uuid && auction != null) {
+                                    buyLot(auction, event.bid)
+                                }
+                            }
                         }
                     }
                 }
             }
         }
 
-    private fun Board.players(): List<Player> {
-        return playerIds.map { playerId ->
-            players[playerId]
-        }
-    }
-
     override suspend fun hello(helloUuid: String): Instance {
-        boards.value.forEach { boardState ->
-            if (boardState.value.playerIds.contains(helloUuid)) {
+        boards.value.forEach { boardId ->
+            val boardState = getBoardState(boardId)
+            if (boardState?.value?.playerIds?.contains(helloUuid) == true) {
                 this@RaceRatServiceImpl.boardState = boardState
-                val playerState = players.value[helloUuid] ?: error("No player found for $helloUuid")
-                playerState.update { player ->
-                    player.copy(id = uuid, isInactive = false)
-                }
-                players.value = players.value.toMutableMap().apply {
+                val oldPlayerState = getPlayerState(helloUuid) ?: error("No player found for $helloUuid")
+                val player = oldPlayerState.value.copy(id = uuid, isInactive = false)
+                val playerState = savedMutableStateFlow({ player }, uuid)
+                players.value = players.value.toMutableList().apply {
                     this.remove(helloUuid)
-                    this[uuid] = playerState
+                    removeFromStorage(helloUuid)
+                    this.add(uuid)
                 }
                 changeBoard {
                     copy(
@@ -118,8 +125,13 @@ class RaceRatServiceImpl(
         return Instance(uuid, null, null)
     }
 
+    override suspend fun ping() {
+        LOGGER.info("Pong $uuid")
+    }
+
     override suspend fun getBoards(): List<BoardId> {
-        return boards.value.map { boardState ->
+        return boards.value.mapNotNull { boardId ->
+            val boardState = getBoardState(boardId) ?: return@mapNotNull null
             val board = boardState.value
             BoardId(board.id, board.name, board.createDateTime)
         }
@@ -127,7 +139,8 @@ class RaceRatServiceImpl(
 
     override fun observeBoards(): Flow<List<BoardId>> = boards.mapNotNull { list ->
         list.map { board ->
-            board.value.toBoardId()
+            val boardState = getBoardState(board) ?: error("No board found for $board")
+            boardState.value.toBoardId()
         }
     }
 
@@ -147,16 +160,16 @@ class RaceRatServiceImpl(
                 type to (1..size).toMutableList()
             }.toMap()
         )
-        val boardFlow = MutableStateFlow(board)
-        boards.value = boards.value.toMutableList().apply { add(boardFlow) }
+        val boardFlow = savedMutableStateFlow({ board }, board.id)
+        boards.value = boards.value.toMutableList().apply { add(board.id) }
+        boardMap[board.id] = boardFlow
         boardState = boardFlow
         return board
     }
 
     override suspend fun selectBoard(boardId: String): Board {
-        return boards.value.find { it.value.id == boardId }
-            ?.apply { boardState = this }
-            ?.value ?: error("No board found for $boardId")
+        boardState = getBoardState(boardId)
+        return boardState?.value ?: error("No board found for $boardId")
     }
 
     override suspend fun makePlayer(
@@ -177,15 +190,16 @@ class RaceRatServiceImpl(
                 )
             )
         )
-        players.value = players.value.toMutableMap().apply {
-            this[uuid] = MutableStateFlow(newPlayer)
+        players.value = players.value.toMutableList().apply {
+            add(uuid)
+            playerMap[uuid] = savedMutableStateFlow({ newPlayer }, uuid)
         }
         changeBoard {
             copy(playerIds = playerIds + uuid)
         }
         takeSalary()
         invalidateNextPlayer(boardState?.value?.activePlayer.orEmpty())
-        return players.value[uuid]?.value ?: error("No player found for $uuid")
+        return player
     }
 
     override suspend fun getPlayer(): Player {
@@ -200,7 +214,7 @@ class RaceRatServiceImpl(
 
     override suspend fun getPlayers(): List<Player> {
         return boardState?.value?.playerIds?.map { playerId ->
-            players.value[playerId]?.value ?: error("No player found for $playerId")
+            getPlayerState(playerId)?.value ?: error("No player found for $playerId")
         }?.toList().orEmpty()
     }
 
@@ -255,69 +269,15 @@ class RaceRatServiceImpl(
         nextPlayer()
     }
 
-    private fun Board.discardPileB(): Board {
-        val card = takenCard
-        return if (card != null) {
-            val discard = discard.toMutableMap()
-            discard[card.type] = discard[card.type].orEmpty() + card.id
-            val cards = cards.toMutableMap()
-            cards[card.type] = cards[card.type].orEmpty() - card.id
-            copy(
-                discard = discard,
-                cards = cards,
-                takenCard = null,
-            ).invalidateDecks()
-        } else this
-    }
-
-
-    private fun Board.invalidateDecks(): Board {
-        val discard = discard.toMutableMap()
-        val cards = cards.map { (type, list) ->
-            type to list.ifEmpty {
-                val cards = discard[type]
-                discard[type] = emptyList()
-                cards
-            }.orEmpty()
-        }.toMap()
-        return copy(cards = cards, discard = discard)
-    }
-
     private suspend fun invalidateNextPlayer(activePlayer: String) {
         val playerIds = boardState?.value?.playerIds.orEmpty()
-        if (activePlayer.isEmpty() || !playerIds.contains(activePlayer) || players[activePlayer].isInactive) {
+        if (activePlayer.isEmpty() || !playerIds.contains(activePlayer) || getPlayerState(activePlayer)?.value?.isInactive.let { it == null || it }) {
             nextPlayer()
         }
     }
 
-    suspend fun nextPlayer() {
-        LOGGER.debug("next player")
-        val activePlayers = board.players().filter { player -> !player.isInactive }
-        if (activePlayers.isEmpty()) return
-        val playerIds = activePlayers.map { it.id }
-        val activePlayerIndex = playerIds.indexOf(board.activePlayer)
-        val nextPlayerId = if (activePlayerIndex + 1 == playerIds.size) {
-            playerIds.first()
-        } else {
-            playerIds[activePlayerIndex + 1]
-        }
-        changeBoard {
-            discardPileB().copy(
-                activePlayer = nextPlayerId,
-                moveCount = moveCount + 1,
-                canRoll = true,
-                diceRolling = false,
-                takenCard = null,
-                canTakeCard = null
-            )
-        }
-        val nextPlayer = activePlayers.find { it.id == nextPlayerId }
-        if ((nextPlayer?.inRest ?: 0) > 0) {
-            players.value[nextPlayerId]?.update {
-                it.copy(inRest = it.inRest - 1)
-            }
-            nextPlayer()
-        }
+    private suspend fun nextPlayer() {
+        boardState.nextPlayer()
     }
 
     override suspend fun closeSession() {
@@ -557,30 +517,27 @@ class RaceRatServiceImpl(
     }
 
     private suspend fun changeBoard(todo: suspend Board.() -> Board) {
-        boardState?.value?.let { oldBoard ->
-            boardState?.value = oldBoard.todo()
-        }
+        boardState.changeBoard(todo)
     }
 
     private suspend fun changePlayer(todo: suspend Player.() -> Player) {
-        players.value[uuid]?.let { playerState ->
-            val player = playerState.value.todo()
-            playerState.value = player.let {
+        getPlayerState(uuid)?.let { playerState ->
+            playerState.value = playerState.value.todo().let { player ->
                 val newTotal = player.total()
                 val previous = playerState.value.total()
-                if(newTotal != previous) {
+                if (newTotal != previous) {
                     val delta = newTotal - previous
-                    it.copy(lastTotals = (it.lastTotals + delta).takeLast(3))
-                } else it
+                    player.copy(lastTotals = (player.lastTotals + delta).takeLast(3))
+                } else player
             }.let {
                 val newCashFlow = player.cashFlow()
                 val previews = playerState.value.cashFlow()
-                if(newCashFlow != previews) {
+                if (newCashFlow != previews) {
                     val delta = newCashFlow - previews
                     it.copy(lastCashFlows = (it.lastCashFlows + delta).takeLast(3))
                 } else it
             }
-            globalEventBus.emit(GlobalEvent.PlayerChanged(player))
+            globalEventBus.emit(GlobalEvent.PlayerChanged(playerState.value))
         }
     }
 
@@ -614,7 +571,7 @@ class RaceRatServiceImpl(
             }
             if (newFunds.isEmpty() && stub < value) {
                 val newLoan = loan + (value - stub)
-                if(newLoan > board.loanLimit) {
+                if (newLoan > board.loanLimit) {
                     launch { eventBus.emit(Event.LoanOverlimited) }
                 }
                 copy(cash = 0, deposit = 0, funds = emptyList(), loan = newLoan)
@@ -624,7 +581,7 @@ class RaceRatServiceImpl(
         } else {
             launch { eventBus.emit(Event.LoanAdded(value - (cash + deposit))) }
             val newLoan = loan + (value - (deposit + cash))
-            if(newLoan > board.loanLimit) {
+            if (newLoan > board.loanLimit) {
                 launch { eventBus.emit(Event.LoanOverlimited) }
             }
             copy(cash = 0, deposit = 0, loan = newLoan)
@@ -670,16 +627,16 @@ class RaceRatServiceImpl(
         processNewPosition(position)
     }
 
-    override suspend fun buyEstate(card: BoardCard.Chance.Estate) {
+    override suspend fun buyEstate(estate: Estate) {
         changePlayer {
-            copy(estateList = estateList + Estate(name = card.name, card.price)).minusCash(card.price)
+            copy(estateList = estateList + estate).minusCash(estate.price)
         }
         nextPlayer()
     }
 
-    override suspend fun buyLand(card: BoardCard.Chance.Land) {
+    override suspend fun buyLand(land: Land) {
         changePlayer {
-            copy(landList = landList + Land(name = card.name, card.area, card.price)).minusCash(card.price)
+            copy(landList = landList + land).minusCash(land.price)
         }
         nextPlayer()
     }
@@ -691,9 +648,9 @@ class RaceRatServiceImpl(
         nextPlayer()
     }
 
-    override suspend fun buyShares(card: BoardCard.Chance.Shares, count: Long) {
+    override suspend fun buyShares(shares: Shares) {
         changePlayer {
-            copy(sharesList = sharesList + Shares(card.sharesType, count, card.price)).minusCash(count * card.price)
+            copy(sharesList = sharesList + shares).minusCash(shares.price)
         }
         nextPlayer()
     }
@@ -821,6 +778,70 @@ class RaceRatServiceImpl(
     override suspend fun repayLoan(amount: Long) {
         changePlayer {
             copy(loan = loan - amount).minusCash(amount)
+        }
+    }
+
+    override suspend fun advertiseAuction(auction: Auction) {
+        changeBoard {
+            copy(auction = auction)
+        }
+    }
+
+    override suspend fun sellBid(bid: Bid) {
+        val auction = board.auction ?: return
+        val profit = auction.getProfit(bid)
+        changePlayer {
+            plusCash(profit)
+        }
+        globalEventBus.emit(GlobalEvent.BidSelled(bid))
+        if (auction !is Auction.SharesAuction) {
+            changeBoard {
+                copy(auction = null, bidList = emptyList())
+            }
+            nextPlayer()
+        } else {
+            changeBoard {
+                copy(
+                    auction = auction.copy(
+                        shares = auction.shares.copy(
+                            count = auction.shares.count - bid.count
+                        )
+                    )
+                )
+            }
+        }
+    }
+
+    override suspend fun makeBid(price: Long, count: Long) {
+        changeBoard {
+            copy(bidList = bidList.filter { it.playerId != uuid } + Bid(uuid, price, count))
+        }
+    }
+
+    private suspend fun buyLot(
+        auction: Auction,
+        bid: Bid
+    ) {
+        when (auction) {
+            is Auction.BusinessAuction -> {
+                buyBusiness(auction.business.copy(price = bid.bid))
+                eventBus.emit(Event.BidBusinessAuctionSuccessBuy)
+            }
+
+            is Auction.EstateAuction -> {
+                buyEstate(auction.estate.copy(price = bid.bid))
+                eventBus.emit(Event.BidEstateAuctionSuccessBuy)
+            }
+
+            is Auction.LandAuction -> {
+                buyLand(auction.land.copy(price = bid.bid))
+                eventBus.emit(Event.BidLandAuctionSuccessBuy)
+            }
+
+            is Auction.SharesAuction -> {
+                buyShares(auction.shares.copy(count = bid.count, buyPrice = bid.bid))
+                eventBus.emit(Event.BidSharesAuctionSuccessBuy)
+            }
         }
     }
 }

@@ -15,10 +15,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.OutlinedBasicTextField
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
@@ -34,7 +34,6 @@ import ua.vald_zx.game.rat.race.card.shared.CardLink
 @Composable
 fun BoxWithConstraintsScope.ChanceCardFront(
     cardLink: CardLink,
-    isActive: Boolean,
     vm: BoardViewModel,
 ) {
     remember(cardLink.id) {
@@ -42,19 +41,19 @@ fun BoxWithConstraintsScope.ChanceCardFront(
     }?.let { chanceCard ->
         when (chanceCard) {
             is BoardCard.Chance.Estate -> {
-                EstateCardFront(cardLink, chanceCard, isActive, vm)
+                EstateCardFront(cardLink, chanceCard, vm)
             }
 
             is BoardCard.Chance.Land -> {
-                LandCardFront(cardLink, chanceCard, isActive, vm)
+                LandCardFront(cardLink, chanceCard, vm)
             }
 
             is BoardCard.Chance.RandomJob -> {
-                RandomJobCardFront(cardLink, chanceCard, isActive, vm)
+                RandomJobCardFront(cardLink, chanceCard, vm)
             }
 
             is BoardCard.Chance.Shares -> {
-                SharesCardFront(cardLink, chanceCard, isActive, vm)
+                SharesCardFront(cardLink, chanceCard, vm)
             }
         }
     }
@@ -64,7 +63,6 @@ fun BoxWithConstraintsScope.ChanceCardFront(
 private fun BoxWithConstraintsScope.EstateCardFront(
     cardLink: CardLink,
     card: BoardCard.Chance.Estate,
-    isActive: Boolean,
     vm: BoardViewModel
 ) {
     val density = LocalDensity.current
@@ -133,7 +131,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
             )
         }
         val state by vm.uiState.collectAsState()
-        if (isActive) {
+        if (state.currentPlayerIsActive) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround
@@ -164,7 +162,6 @@ private fun BoxWithConstraintsScope.EstateCardFront(
 private fun BoxWithConstraintsScope.LandCardFront(
     cardLink: CardLink,
     card: BoardCard.Chance.Land,
-    isActive: Boolean,
     vm: BoardViewModel
 ) {
     val density = LocalDensity.current
@@ -259,7 +256,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
             )
         }
         val state by vm.uiState.collectAsState()
-        if (isActive) {
+        if (state.currentPlayerIsActive) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround
@@ -290,7 +287,6 @@ private fun BoxWithConstraintsScope.LandCardFront(
 private fun BoxWithConstraintsScope.RandomJobCardFront(
     cardLink: CardLink,
     card: BoardCard.Chance.RandomJob,
-    isActive: Boolean,
     vm: BoardViewModel
 ) {
     val density = LocalDensity.current
@@ -344,7 +340,8 @@ private fun BoxWithConstraintsScope.RandomJobCardFront(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = smallPadding).align(Alignment.CenterHorizontally)
         )
-        if (isActive) {
+        val state by vm.uiState.collectAsState()
+        if (state.currentPlayerIsActive) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround
@@ -365,7 +362,6 @@ private fun BoxWithConstraintsScope.RandomJobCardFront(
 private fun BoxWithConstraintsScope.SharesCardFront(
     cardLink: CardLink,
     card: BoardCard.Chance.Shares,
-    isActive: Boolean,
     vm: BoardViewModel
 ) {
     val density = LocalDensity.current
@@ -445,7 +441,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
             )
         }
         val state by vm.uiState.collectAsState()
-        if (isActive) {
+        if (state.currentPlayerIsActive) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround,
@@ -504,13 +500,13 @@ fun ChanceEstateCardFrontPreview() {
                 modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                ChanceCardFront(CardLink(BoardCardType.Chance, 52), isActive = false, vm)
+                ChanceCardFront(CardLink(BoardCardType.Chance, 52), vm)
             }
             BoxWithConstraints(
                 modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                ChanceCardFront(CardLink(BoardCardType.Chance, 53), isActive = true, vm)
+                ChanceCardFront(CardLink(BoardCardType.Chance, 53), vm)
             }
         }
     }
@@ -525,13 +521,13 @@ fun ChanceLandCardFrontPreview() {
                 modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                ChanceCardFront(CardLink(BoardCardType.Chance, 16), isActive = false, vm)
+                ChanceCardFront(CardLink(BoardCardType.Chance, 16), vm)
             }
             BoxWithConstraints(
                 modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                ChanceCardFront(CardLink(BoardCardType.Chance, 17), isActive = true, vm)
+                ChanceCardFront(CardLink(BoardCardType.Chance, 17), vm)
             }
         }
     }
@@ -546,13 +542,13 @@ fun ChanceRandomJobCardFrontPreview() {
                 modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                ChanceCardFront(CardLink(BoardCardType.Chance, 1), isActive = false, vm)
+                ChanceCardFront(CardLink(BoardCardType.Chance, 1), vm)
             }
             BoxWithConstraints(
                 modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                ChanceCardFront(CardLink(BoardCardType.Chance, 2), isActive = true, vm)
+                ChanceCardFront(CardLink(BoardCardType.Chance, 2), vm)
             }
         }
     }
@@ -567,13 +563,13 @@ fun ChanceSharesCardFrontPreview() {
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                ChanceCardFront(CardLink(BoardCardType.Chance, 36), isActive = false, vm)
+                ChanceCardFront(CardLink(BoardCardType.Chance, 36), vm)
             }
             BoxWithConstraints(
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                ChanceCardFront(CardLink(BoardCardType.Chance, 37), isActive = true, vm)
+                ChanceCardFront(CardLink(BoardCardType.Chance, 37), vm)
             }
         }
     }

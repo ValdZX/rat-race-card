@@ -21,6 +21,7 @@ data class CardLink(val type: BoardCardType, val id: Int)
 sealed class BoardCard(val type: BoardCardType) {
     @Serializable
     data class SmallBusiness(
+        val name: String,
         val description: String,
         val price: Long,
         val profit: Long,
@@ -28,6 +29,7 @@ sealed class BoardCard(val type: BoardCardType) {
 
     @Serializable
     data class MediumBusiness(
+        val name: String,
         val description: String,
         val price: Long,
         val profit: Long,
@@ -35,6 +37,7 @@ sealed class BoardCard(val type: BoardCardType) {
 
     @Serializable
     data class BigBusiness(
+        val name: String,
         val description: String,
         val price: Long,
         val profit: Long,
@@ -56,16 +59,19 @@ sealed class BoardCard(val type: BoardCardType) {
             val description: String,
             val price: Long
         ) : EventStore()
+
         @Serializable
         data class Land(
             val description: String,
             val price: Long
         ) : EventStore()
+
         @Serializable
         data class Estate(
             val description: String,
             val price: Long
         ) : EventStore()
+
         @Serializable
         data class BusinessExtending(
             val description: String,
@@ -85,6 +91,7 @@ sealed class BoardCard(val type: BoardCardType) {
             val description: String,
             val profit: Long
         ) : Chance()
+
         @Serializable
         data class Land(
             val name: String,
@@ -92,6 +99,7 @@ sealed class BoardCard(val type: BoardCardType) {
             val price: Long,
             val area: Long,
         ) : Chance()
+
         @Serializable
         data class Shares(
             val description: String,
@@ -99,6 +107,7 @@ sealed class BoardCard(val type: BoardCardType) {
             val maxCount: Int,
             val sharesType: SharesType
         ) : Chance()
+
         @Serializable
         data class Estate(
             val name: String,

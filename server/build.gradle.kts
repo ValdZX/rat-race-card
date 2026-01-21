@@ -29,6 +29,7 @@ dependencies {
     testImplementation(libs.kotlinx.rpc.krpc.ktor.client)
     testImplementation(libs.kotlin.test.junit)
     implementation(libs.google.cloud.firestore)
+    implementation(libs.google.cloud.storage)
 }
 
 ktor {

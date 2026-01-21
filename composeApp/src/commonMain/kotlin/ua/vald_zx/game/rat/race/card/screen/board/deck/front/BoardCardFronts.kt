@@ -22,7 +22,6 @@ import ua.vald_zx.game.rat.race.card.shared.CardLink
 @Composable
 fun BoxWithConstraintsScope.BoardCardFront(
     card: CardLink,
-    isActive: Boolean,
     size: DpSize,
     vm: BoardViewModel,
 ) {
@@ -42,35 +41,35 @@ fun BoxWithConstraintsScope.BoardCardFront(
     ) {
         when (card.type) {
             BoardCardType.Chance -> {
-                ChanceCardFront(card, isActive, vm)
+                ChanceCardFront(card, vm)
             }
 
             BoardCardType.SmallBusiness -> {
-                SmallBusinessCardFront(card, isActive, vm)
+                SmallBusinessCardFront(card, vm)
             }
 
             BoardCardType.MediumBusiness -> {
-                MediumBusinessCardFront(card, isActive, vm)
+                MediumBusinessCardFront(card, vm)
             }
 
             BoardCardType.BigBusiness -> {
-                BigBusinessCardFront(card, isActive, vm)
+                BigBusinessCardFront(card, vm)
             }
 
             BoardCardType.Expenses -> {
-                ExpensesCardFront(card, isActive, vm)
+                ExpensesCardFront(card, vm)
             }
 
             BoardCardType.EventStore -> {
-                EventStoreCardFront(card, isActive, vm)
+                EventStoreCardFront(card, vm)
             }
 
             BoardCardType.Shopping -> {
-                ShoppingCardFront(card, isActive, vm)
+                ShoppingCardFront(card, vm)
             }
 
             BoardCardType.Deputy -> {
-                DeputyCardFront(card, isActive, vm)
+                DeputyCardFront(card, vm)
             }
         }
     }

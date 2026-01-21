@@ -214,5 +214,16 @@
     <string name="loanLimit">Кредитний ліміт</string>
     <string name="businessLimit">Максимальна кількість бізнесів</string>
     <string name="limitOverload">Перевищено кредитний ліміт в %1$s$. Вас обʼявлено банкрутом. Почати заново?</string>
+    <string name="auction">Aукціон</string>
+    <string name="firstBid">Перша ставка</string>
+    <string name="bid">Ставка</string>
+    <string name="advertiseAuction">Обʼявити аукціон</string>
+    <string name="noBetsYet">Ставок поки що немає</string>
+    <string name="resell">Перепродати</string>
+    <string name="placeBet">Зробити ставку</string>
+    <string name="bidBusinessAuctionSuccessBuy">Бізнес успішно викуплено</string>
+    <string name="bidEstateAuctionSuccessBuy">Нерухомість успішно викуплено</string>
+    <string name="bidLandAuctionSuccessBuy">Землю успішно викуплено</string>
+    <string name="bidSharesAuctionSuccessBuy">Акції успішно викуплено</string>
 </resources>
 

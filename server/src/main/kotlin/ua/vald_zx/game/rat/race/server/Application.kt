@@ -10,6 +10,9 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -20,6 +23,10 @@ import kotlinx.rpc.krpc.ktor.server.Krpc
 import kotlinx.rpc.krpc.ktor.server.rpc
 import kotlinx.rpc.krpc.serialization.json.json
 import ua.vald_zx.game.rat.race.card.shared.*
+import ua.vald_zx.game.rat.race.server.utils.existInStorage
+import ua.vald_zx.game.rat.race.server.utils.removeFromStorage
+import ua.vald_zx.game.rat.race.server.utils.savedMutableStateFlow
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -36,9 +43,32 @@ fun main() {
     ).start(wait = true)
 }
 
+fun DefaultScope(): CoroutineScope = object : CoroutineScope {
+    override val coroutineContext: CoroutineContext = Dispatchers.IO + SupervisorJob()
+    override fun toString(): String = "CoroutineScope(coroutineContext=$coroutineContext)"
+}
 
-val boards = MutableStateFlow<List<MutableStateFlow<Board>>>(emptyList())
-val players = MutableStateFlow<Map<String, MutableStateFlow<Player>>>(emptyMap())
+
+val boards by lazy { savedMutableStateFlow<List<String>>({ emptyList() }, "boards") }
+val players by lazy { savedMutableStateFlow<List<String>>({ emptyList() }, "players") }
+
+val boardMap = mutableMapOf<String, MutableStateFlow<Board>>()
+val playerMap = mutableMapOf<String, MutableStateFlow<Player>>()
+
+fun getBoardState(id: String): MutableStateFlow<Board>? {
+    return boardMap.getOrPut(id) {
+        if (!existInStorage(id)) return null
+        savedMutableStateFlow({ error("WTF") }, id)
+    }
+}
+
+fun getPlayerState(id: String): MutableStateFlow<Player>? {
+    return playerMap.getOrPut(id) {
+        if (!existInStorage(id)) return null
+        savedMutableStateFlow({ error("WTF") }, id)
+    }
+}
+
 operator fun MutableStateFlow<Map<String, MutableStateFlow<Player>>>.get(key: String): Player {
     return this.value[key]?.value ?: error("No player found for $key")
 }
@@ -72,10 +102,11 @@ fun Application.module() {
             }
             closeReason.invokeOnCompletion {
                 launch {
-                    players.value[uuid]?.let { playerFlow ->
+                    getPlayerState(uuid)?.let { playerFlow ->
                         val player = playerFlow.value.copy(isInactive = true)
                         playerFlow.update { player }
                         getGlobalEventBus(player.boardId).emit(GlobalEvent.PlayerChanged(player))
+                        validateBoard(player.boardId, player.id)
                     }
                 }
             }
@@ -83,19 +114,23 @@ fun Application.module() {
     }
 }
 
-fun validateBoard(boardId: String) {
-    boards.value.find { boardState -> boardState.value.id == boardId }?.let { boardState ->
+suspend fun validateBoard(boardId: String, inActivePlayerId: String = "") {
+    getBoardState(boardId)?.let { boardState ->
         val board = boardState.value
         val timeZone = TimeZone.currentSystemDefault()
-        if (players.value.none { (_, player) -> !player.value.isInactive }) {
+        if (board.players().none { player -> !player.isInactive }) {
             val now = Clock.System.now()
             val lastCheckTime = board.lastCheckTime.toInstant(timeZone)
             val duration: Duration = now - lastCheckTime
             if (duration > 1.hours) {
-                boards.value = boards.value.filter { it.value.id != boardId }
+                boards.value = boards.value.filter { it != boardId }
+                removeFromStorage(boardId)
             }
         }
         boardState.value = boardState.value.copy(lastCheckTime = Clock.System.now().toLocalDateTime(timeZone))
+        if (inActivePlayerId == board.activePlayer) {
+            boardState.nextPlayer()
+        }
     }
 }
 
