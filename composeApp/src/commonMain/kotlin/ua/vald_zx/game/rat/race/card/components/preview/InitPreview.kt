@@ -101,7 +101,7 @@ fun InitPreview(
                             //NOP
                         }
 
-                        override suspend fun buyBusiness(business: Business) {
+                        override suspend fun buyBusiness(business: Business, needGoNextPlayer: Boolean) {
                             //NOP
                         }
 
@@ -125,11 +125,11 @@ fun InitPreview(
                             //NOP
                         }
 
-                        override suspend fun buyEstate(card: Estate) {
+                        override suspend fun buyEstate(card: Estate, needGoNextPlayer: Boolean) {
                             //NOP
                         }
 
-                        override suspend fun buyLand(land: Land) {
+                        override suspend fun buyLand(land: Land, needGoNextPlayer: Boolean) {
                             //NOP
                         }
 
@@ -137,7 +137,7 @@ fun InitPreview(
                             //NOP
                         }
 
-                        override suspend fun buyShares(shares: Shares) {
+                        override suspend fun buyShares(shares: Shares, needGoNextPlayer: Boolean) {
                             //NOP
                         }
 

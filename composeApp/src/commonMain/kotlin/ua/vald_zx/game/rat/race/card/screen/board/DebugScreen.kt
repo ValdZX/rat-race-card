@@ -18,7 +18,7 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
     override fun Content() {
         val state by vm.uiState.collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        BottomSheetContainer {
+        BottomSheetContainer(verticalScrollState = null) {
             val boardText = remember(state.board) {
                 val prettyJson = Json { prettyPrint = true }
                 prettyJson.encodeToString(state.board)

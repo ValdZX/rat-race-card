@@ -23,7 +23,7 @@ sealed class GlobalEvent {
     data class PlayerDivorced(val playerId: String) : GlobalEvent()
 
     @Serializable
-    data class BidSelled(val bid: Bid) : GlobalEvent()
+    data class BidSelled(val bid: Bid, val auction: Auction) : GlobalEvent()
 }
 
 @Serializable
@@ -122,17 +122,17 @@ interface RaceRatService {
     suspend fun next()
     suspend fun takeCard(cardType: BoardCardType)
     suspend fun takeSalary()
-    suspend fun buyBusiness(business: Business)
+    suspend fun buyBusiness(business: Business, needGoNextPlayer: Boolean = true)
 
     suspend fun dismissalConfirmed(business: Business)
     suspend fun sellingAllBusinessConfirmed(business: Business)
     suspend fun minusCash(price: Long)
     suspend fun buyThing(card: BoardCard.Shopping)
     suspend fun changePosition(position: Int)
-    suspend fun buyEstate(estate: Estate)
-    suspend fun buyLand(land: Land)
+    suspend fun buyEstate(estate: Estate, needGoNextPlayer: Boolean = true)
+    suspend fun buyLand(land: Land, needGoNextPlayer: Boolean = true)
     suspend fun randomJob(card: BoardCard.Chance.RandomJob)
-    suspend fun buyShares(shares: Shares)
+    suspend fun buyShares(shares: Shares, needGoNextPlayer: Boolean = true)
     suspend fun selectCardByNo(cardId: Int)
     suspend fun extendBusiness(business: Business, card: BoardCard.EventStore.BusinessExtending)
     suspend fun sellLands(area: Long, priceOfUnit: Long)

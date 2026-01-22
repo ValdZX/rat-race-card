@@ -4,14 +4,10 @@ package ua.vald_zx.game.rat.race.server
 
 import io.ktor.util.logging.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.*
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import ua.vald_zx.game.rat.race.card.shared.*
-import ua.vald_zx.game.rat.race.server.utils.removeFromStorage
 import ua.vald_zx.game.rat.race.server.utils.savedMutableStateFlow
 import kotlin.math.absoluteValue
 import kotlin.time.Clock
@@ -26,9 +22,9 @@ fun getGlobalEventBus(boardId: String): MutableSharedFlow<GlobalEvent> {
     return globalEventBusMap.getOrPut(boardId) { MutableSharedFlow() }
 }
 
-class RaceRatServiceImpl(
-    private val uuid: String,
-) : RaceRatService, CoroutineScope by CoroutineScope(Dispatchers.Default) {
+class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : RaceRatService,
+    CoroutineScope by CoroutineScope(Dispatchers.Default) {
+    private var uuid: String = ""
     private val eventBus = MutableSharedFlow<Event>()
     private val boardId: String
         get() = boardState?.value?.id.orEmpty()
@@ -82,9 +78,8 @@ class RaceRatServiceImpl(
                             }
 
                             is GlobalEvent.BidSelled -> {
-                                val auction = board.auction
-                                if (event.bid.playerId == uuid && auction != null) {
-                                    buyLot(auction, event.bid)
+                                if (event.bid.playerId == uuid) {
+                                    buyLot(event.auction, event.bid)
                                 }
                             }
                         }
@@ -93,33 +88,29 @@ class RaceRatServiceImpl(
             }
         }
 
+    init {
+        invokeOnCompletionFlow.onEach {
+            closeSession()
+        }.launchIn(this)
+    }
+
     override suspend fun hello(helloUuid: String): Instance {
         boards.value.forEach { boardId ->
-            val boardState = getBoardState(boardId)
-            if (boardState?.value?.playerIds?.contains(helloUuid) == true) {
-                this@RaceRatServiceImpl.boardState = boardState
-                val oldPlayerState = getPlayerState(helloUuid) ?: error("No player found for $helloUuid")
-                val player = oldPlayerState.value.copy(id = uuid, isInactive = false)
-                val playerState = savedMutableStateFlow({ player }, uuid)
-                players.value = players.value.toMutableList().apply {
-                    this.remove(helloUuid)
-                    removeFromStorage(helloUuid)
-                    this.add(uuid)
-                }
-                changeBoard {
-                    copy(
-                        playerIds = playerIds - helloUuid + uuid,
-                        activePlayer = if (helloUuid == activePlayer) uuid else activePlayer
-                    )
-                }
+            boardState = getBoardState(boardId)
+            val board = boardState?.value
+            if (board?.playerIds?.contains(helloUuid) == true) {
+                uuid = helloUuid
+                invalidateNextPlayer(board.activePlayer)
+                invalidateBoard(board)
                 playerStateSubJob?.cancel()
                 playerStateSubJob = launch {
-                    playerState.collect { player ->
+                    getPlayerState(uuid)?.collect { player ->
                         globalEventBus.emit(GlobalEvent.PlayerChanged(player))
                     }
                 }
-                invalidateNextPlayer(boardState.value.activePlayer)
-                return Instance(uuid, boardState.value, player)
+                return Instance(uuid, board, player)
+            } else {
+                uuid = Uuid.random().toString()
             }
         }
         return Instance(uuid, null, null)
@@ -276,6 +267,12 @@ class RaceRatServiceImpl(
         }
     }
 
+    private suspend fun invalidateBoard(board: Board) {
+        if (!board.canRoll && !board.diceRolling && board.canTakeCard == null && board.takenCard == null) {
+            nextPlayer()
+        }
+    }
+
     private suspend fun nextPlayer() {
         boardState.nextPlayer()
     }
@@ -290,6 +287,10 @@ class RaceRatServiceImpl(
         boardState?.value?.let { board ->
             validateBoard(board.id)
         }
+        boardStateSubJob?.cancel()
+        playerStateSubJob?.cancel()
+        boardGlobalEventsJob?.cancel()
+        coroutineContext.cancel()
     }
 
     override suspend fun takeSalary() {
@@ -303,7 +304,7 @@ class RaceRatServiceImpl(
         }
     }
 
-    override suspend fun buyBusiness(business: Business) {
+    override suspend fun buyBusiness(business: Business, needGoNextPlayer: Boolean) {
         val currentBusiness = player.businesses
         if (business.type == BusinessType.SMALL
             && currentBusiness.any { it.type == BusinessType.WORK }
@@ -320,7 +321,7 @@ class RaceRatServiceImpl(
                 copy(businesses = currentBusiness + business)
                     .minusCash(business.price)
             }
-            nextPlayer()
+            if (needGoNextPlayer) nextPlayer()
         }
     }
 
@@ -627,18 +628,18 @@ class RaceRatServiceImpl(
         processNewPosition(position)
     }
 
-    override suspend fun buyEstate(estate: Estate) {
+    override suspend fun buyEstate(estate: Estate, needGoNextPlayer: Boolean) {
         changePlayer {
             copy(estateList = estateList + estate).minusCash(estate.price)
         }
-        nextPlayer()
+        if (needGoNextPlayer) nextPlayer()
     }
 
-    override suspend fun buyLand(land: Land) {
+    override suspend fun buyLand(land: Land, needGoNextPlayer: Boolean) {
         changePlayer {
             copy(landList = landList + land).minusCash(land.price)
         }
-        nextPlayer()
+        if (needGoNextPlayer) nextPlayer()
     }
 
     override suspend fun randomJob(card: BoardCard.Chance.RandomJob) {
@@ -648,11 +649,11 @@ class RaceRatServiceImpl(
         nextPlayer()
     }
 
-    override suspend fun buyShares(shares: Shares) {
+    override suspend fun buyShares(shares: Shares, needGoNextPlayer: Boolean) {
         changePlayer {
             copy(sharesList = sharesList + shares).minusCash(shares.price)
         }
-        nextPlayer()
+        if (needGoNextPlayer) nextPlayer()
     }
 
     override suspend fun extendBusiness(
@@ -793,7 +794,7 @@ class RaceRatServiceImpl(
         changePlayer {
             plusCash(profit)
         }
-        globalEventBus.emit(GlobalEvent.BidSelled(bid))
+        globalEventBus.emit(GlobalEvent.BidSelled(bid, auction))
         if (auction !is Auction.SharesAuction) {
             changeBoard {
                 copy(auction = null, bidList = emptyList())
@@ -824,22 +825,22 @@ class RaceRatServiceImpl(
     ) {
         when (auction) {
             is Auction.BusinessAuction -> {
-                buyBusiness(auction.business.copy(price = bid.bid))
+                buyBusiness(auction.business.copy(price = bid.bid), needGoNextPlayer = false)
                 eventBus.emit(Event.BidBusinessAuctionSuccessBuy)
             }
 
             is Auction.EstateAuction -> {
-                buyEstate(auction.estate.copy(price = bid.bid))
+                buyEstate(auction.estate.copy(price = bid.bid), needGoNextPlayer = false)
                 eventBus.emit(Event.BidEstateAuctionSuccessBuy)
             }
 
             is Auction.LandAuction -> {
-                buyLand(auction.land.copy(price = bid.bid))
+                buyLand(auction.land.copy(price = bid.bid), needGoNextPlayer = false)
                 eventBus.emit(Event.BidLandAuctionSuccessBuy)
             }
 
             is Auction.SharesAuction -> {
-                buyShares(auction.shares.copy(count = bid.count, buyPrice = bid.bid))
+                buyShares(auction.shares.copy(count = bid.count, buyPrice = bid.bid), needGoNextPlayer = false)
                 eventBus.emit(Event.BidSharesAuctionSuccessBuy)
             }
         }

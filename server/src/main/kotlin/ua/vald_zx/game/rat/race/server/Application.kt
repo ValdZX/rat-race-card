@@ -13,8 +13,8 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -22,7 +22,10 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.rpc.krpc.ktor.server.Krpc
 import kotlinx.rpc.krpc.ktor.server.rpc
 import kotlinx.rpc.krpc.serialization.json.json
-import ua.vald_zx.game.rat.race.card.shared.*
+import ua.vald_zx.game.rat.race.card.shared.Board
+import ua.vald_zx.game.rat.race.card.shared.Player
+import ua.vald_zx.game.rat.race.card.shared.RaceRatCardService
+import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.server.utils.existInStorage
 import ua.vald_zx.game.rat.race.server.utils.removeFromStorage
 import ua.vald_zx.game.rat.race.server.utils.savedMutableStateFlow
@@ -32,7 +35,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 fun main() {
     embeddedServer(
@@ -88,26 +90,21 @@ fun Application.module() {
         }
 
         rpc("/api") {
-            val uuid = Uuid.random().toString()
             rpcConfig {
                 serialization {
                     json()
                 }
             }
+            val invokeOnCompletionFlow = MutableSharedFlow<Boolean>()
             registerService<RaceRatService> {
-                RaceRatServiceImpl(uuid)
+                RaceRatServiceImpl(invokeOnCompletionFlow)
             }
             registerService<RaceRatCardService> {
-                RaceRatCardServiceImpl(uuid)
+                RaceRatCardServiceImpl()
             }
             closeReason.invokeOnCompletion {
                 launch {
-                    getPlayerState(uuid)?.let { playerFlow ->
-                        val player = playerFlow.value.copy(isInactive = true)
-                        playerFlow.update { player }
-                        getGlobalEventBus(player.boardId).emit(GlobalEvent.PlayerChanged(player))
-                        validateBoard(player.boardId, player.id)
-                    }
+                    invokeOnCompletionFlow.emit(true)
                 }
             }
         }

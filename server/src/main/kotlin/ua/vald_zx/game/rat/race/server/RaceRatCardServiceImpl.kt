@@ -9,14 +9,15 @@ import kotlinx.coroutines.flow.onEach
 import ua.vald_zx.game.rat.race.card.shared.OfflinePlayer
 import ua.vald_zx.game.rat.race.card.shared.RaceRatCardService
 import ua.vald_zx.game.rat.race.card.shared.SendMoneyPack
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 var offlinePlayers: Map<String, Map<String, OfflinePlayer>> = emptyMap()
 val playerFlow = MutableSharedFlow<OfflinePlayer>()
 val sendMoneyFlow = MutableSharedFlow<SendMoneyPack>()
 
-class RaceRatCardServiceImpl(
-    private val uuid: String,
-) : RaceRatCardService, CoroutineScope by CoroutineScope(Dispatchers.Default) {
+class RaceRatCardServiceImpl : RaceRatCardService, CoroutineScope by CoroutineScope(Dispatchers.Default) {
+    private var uuid: String = ""
     private var room = ""
     private val localPlayerFlow = MutableSharedFlow<OfflinePlayer>()
     private val localSendMoneyFlow = MutableSharedFlow<SendMoneyPack>()
@@ -34,17 +35,15 @@ class RaceRatCardServiceImpl(
         }.launchIn(this)
     }
 
+    @OptIn(ExperimentalUuidApi::class)
     override suspend fun hello(player: OfflinePlayer): String {
         room = player.room
         offlinePlayers = offlinePlayers.toMutableMap().apply {
             this[player.room] = this.getOrPut(player.room, { emptyMap() }).toMutableMap().apply {
-                if (player.id.isNotEmpty()) {
-                    this.remove(player.id)
-                    playerFlow.emit(player.copy(removed = true))
-                }
+                uuid = player.id.ifEmpty { Uuid.random().toString() }
                 val updatedPlayer = player.copy(id = uuid)
                 this[uuid] = updatedPlayer
-                playerFlow.emit(player)
+                playerFlow.emit(updatedPlayer)
             }
         }
         return uuid

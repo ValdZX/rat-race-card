@@ -190,8 +190,10 @@ class BoardViewModel(
             }
         }
         safeLaunch {
-            delay(5000)
-            ping()
+            while (true) {
+                delay(5000)
+                ping()
+            }
         }
     }
 
