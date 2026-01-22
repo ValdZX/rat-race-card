@@ -8,6 +8,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
 import ua.vald_zx.game.rat.race.card.shared.*
+import kotlin.coroutines.CoroutineContext
 
 val players = MutableStateFlow(emptyList<Player>())
 
@@ -66,13 +67,13 @@ class BoardViewModel(
     private val _actions = Channel<BoardUiAction>()
     val actions = _actions.receiveAsFlow()
 
-    private fun safeLaunch(block: suspend RaceRatService.() -> Unit): Job {
+    private fun safeLaunch(block: suspend RaceRatService.(CoroutineContext) -> Unit): Job {
         return viewModelScope.launch(viewModelScope.coroutineContext + SupervisorJob() + CoroutineExceptionHandler { _, t ->
             Napier.e("Invalid server", t)
             viewModelScope.launch {
                 _actions.send(ConnectionLost)
             }
-        }, block = { serviceProvider().block() })
+        }, block = { serviceProvider().block(coroutineContext) })
     }
 
     fun init(player: Player) {
@@ -189,8 +190,8 @@ class BoardViewModel(
                 }
             }
         }
-        safeLaunch {
-            while (true) {
+        safeLaunch { context ->
+            while (context.isActive) {
                 delay(5000)
                 ping()
             }

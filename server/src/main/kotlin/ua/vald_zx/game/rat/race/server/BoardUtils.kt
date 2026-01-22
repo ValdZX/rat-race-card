@@ -6,9 +6,7 @@ import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Player
 
 suspend inline fun MutableStateFlow<Board>?.changeBoard(todo: suspend Board.() -> Board) {
-    this?.value?.let { oldBoard ->
-        this.value = oldBoard.todo()
-    }
+    this?.update { it.todo() }
 }
 
 fun Board.players(): List<Player> {

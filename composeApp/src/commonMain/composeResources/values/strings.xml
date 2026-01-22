@@ -160,12 +160,8 @@
     <string name="attention">Attention</string>
     <string name="buy_business_title">Buy Business</string>
     <string name="resign">Resign</string>
-    <string name="lose_job_on_second_business_with_salary">When buying a second business, you lose your job with a
-        salary of %1$s
-    </string>
-    <string name="need_sell_all_businesses_with_sum">To buy a higher-class business, you need to sell all existing
-        businesses. Total sale amount: %1$s
-    </string>
+    <string name="lose_job_on_second_business_with_salary">When buying a second business, you lose your job with a salary of %1$s</string>
+    <string name="need_sell_all_businesses_with_sum">To buy a higher-class business, you need to sell all existing businesses. Total sale amount: %1$s</string>
     <string name="not_enough_cash_taken_from_deposit">Not enough cash, taken from deposit: %1$s</string>
     <string name="not_enough_cash_loan_taken">Not enough cash, loan taken: %1$s</string>
     <string name="cash_received_amount">Player %1$s has sent you cash: %2$s</string>

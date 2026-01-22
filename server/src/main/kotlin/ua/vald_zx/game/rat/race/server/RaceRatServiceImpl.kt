@@ -51,6 +51,7 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
                 boardGlobalEventsJob?.cancel()
                 boardGlobalEventsJob = launch {
                     globalEventBus.collect { event ->
+                        LOGGER.info("Change ${player.card.name} ${hashCode()} global event: $event")
                         when (event) {
                             is GlobalEvent.SendMoney -> {
                                 if (event.receiverId == uuid) {
@@ -100,6 +101,7 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
             val board = boardState?.value
             if (board?.playerIds?.contains(helloUuid) == true) {
                 uuid = helloUuid
+                changePlayer { copy(isInactive = false) }
                 invalidateNextPlayer(board.activePlayer)
                 invalidateBoard(board)
                 playerStateSubJob?.cancel()
@@ -274,6 +276,7 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
     }
 
     private suspend fun nextPlayer() {
+        LOGGER.info("Change ${player.card.name} ${hashCode()} next player")
         boardState.nextPlayer()
     }
 
@@ -517,27 +520,41 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
         }
     }
 
+    var id = 0
+    var id2 = 0
+
     private suspend fun changeBoard(todo: suspend Board.() -> Board) {
+        id += 1
+        val changeId = id
+        LOGGER.info("Change ${player.card.name} ${hashCode()} + $changeId Start Board")
         boardState.changeBoard(todo)
+        LOGGER.info("Change ${player.card.name} ${hashCode()} + $changeId End Board")
     }
 
     private suspend fun changePlayer(todo: suspend Player.() -> Player) {
+        LOGGER.info("Change ${player.card.name} ${hashCode()} call to change player ")
         getPlayerState(uuid)?.let { playerState ->
-            playerState.value = playerState.value.todo().let { player ->
-                val newTotal = player.total()
-                val previous = playerState.value.total()
-                if (newTotal != previous) {
-                    val delta = newTotal - previous
-                    player.copy(lastTotals = (player.lastTotals + delta).takeLast(3))
-                } else player
-            }.let {
-                val newCashFlow = player.cashFlow()
-                val previews = playerState.value.cashFlow()
-                if (newCashFlow != previews) {
-                    val delta = newCashFlow - previews
-                    it.copy(lastCashFlows = (it.lastCashFlows + delta).takeLast(3))
-                } else it
+            id2 += 1
+            val changeId = id2
+            LOGGER.info("Change ${player.card.name} ${hashCode()} + $changeId Start Player")
+            playerState.update {
+                it.todo().let { player ->
+                    val newTotal = player.total()
+                    val previous = playerState.value.total()
+                    if (newTotal != previous) {
+                        val delta = newTotal - previous
+                        player.copy(lastTotals = (player.lastTotals + delta).takeLast(3))
+                    } else player
+                }.let {
+                    val newCashFlow = player.cashFlow()
+                    val previews = playerState.value.cashFlow()
+                    if (newCashFlow != previews) {
+                        val delta = newCashFlow - previews
+                        it.copy(lastCashFlows = (it.lastCashFlows + delta).takeLast(3))
+                    } else it
+                }
             }
+            LOGGER.info("Change ${player.card.name} ${hashCode()} + $changeId End Player")
             globalEventBus.emit(GlobalEvent.PlayerChanged(playerState.value))
         }
     }
