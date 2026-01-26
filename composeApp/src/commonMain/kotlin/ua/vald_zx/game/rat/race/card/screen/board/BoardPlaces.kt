@@ -333,7 +333,7 @@ fun BoxScope.Places(
             }
         }
         val players by players.collectAsState()
-        val points = remember(players, route, state.board.activePlayer) {
+        val points = remember(players, route, state.board.activePlayerId) {
             players.filter { layer.level == it.location.level }.map {
                 PlayerPointState(
                     position = moveTo(it.location.position, layer.cellCount, route.offset),
@@ -342,7 +342,7 @@ fun BoxScope.Places(
                     name = it.card.profession,
                     player = it,
                     isCurrentPlayer = it.id == state.player.id,
-                    isActivePlayer = it.id == state.board.activePlayer,
+                    isActivePlayer = it.id == state.board.activePlayerId,
                 )
             }
         }

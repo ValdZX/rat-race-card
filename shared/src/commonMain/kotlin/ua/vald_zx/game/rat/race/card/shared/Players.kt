@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.card.shared
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -27,6 +28,7 @@ data class SendMoneyPack(
 
 @Serializable
 data class Player(
+    @SerialName("_id")
     val id: String,
     val boardId: String,
     val attrs: PlayerAttributes,

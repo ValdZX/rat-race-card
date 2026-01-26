@@ -2,16 +2,19 @@
 
 package ua.vald_zx.game.rat.race.server
 
+import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import io.ktor.util.logging.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import ua.vald_zx.game.rat.race.card.shared.*
-import ua.vald_zx.game.rat.race.server.utils.savedMutableStateFlow
 import kotlin.math.absoluteValue
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -22,95 +25,45 @@ fun getGlobalEventBus(boardId: String): MutableSharedFlow<GlobalEvent> {
     return globalEventBusMap.getOrPut(boardId) { MutableSharedFlow() }
 }
 
-class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : RaceRatService,
-    CoroutineScope by CoroutineScope(Dispatchers.Default) {
+class RaceRatServiceImpl(
+    appScope: CoroutineScope,
+    private val db: MongoDatabase,
+    private val uuidStateProvider: MutableStateFlow<String>
+) :
+    RaceRatService, CoroutineScope by appScope {
+
+    private var boardId: String = ""
     private var uuid: String = ""
+        set(value) {
+            uuidStateProvider.value = value
+            field = value
+        }
     private val eventBus = MutableSharedFlow<Event>()
-    private val boardId: String
-        get() = boardState?.value?.id.orEmpty()
+    private val pongFlow = MutableSharedFlow<Instant>()
+    private val boardsFlow = MutableSharedFlow<List<BoardId>>()
     private val globalEventBus: MutableSharedFlow<GlobalEvent>
         get() = getGlobalEventBus(boardId)
     private var boardStateSubJob: Job? = null
     private var playerStateSubJob: Job? = null
-    private var boardGlobalEventsJob: Job? = null
+    private var globalEventsJob: Job? = null
 
-    private val player: Player
-        get() = getPlayerState(uuid)?.value ?: error("No player found for $uuid")
-    private val board: Board
-        get() = boardState?.value ?: error("No board found")
-    private var boardState: MutableStateFlow<Board>? = null
-        set(value) {
-            field = value
-            if (value != null) {
-                boardStateSubJob?.cancel()
-                boardStateSubJob = launch {
-                    value.collect { boardState ->
-                        eventBus.emit(Event.BoardChanged(boardState))
-                    }
-                }
-                boardGlobalEventsJob?.cancel()
-                boardGlobalEventsJob = launch {
-                    globalEventBus.collect { event ->
-                        LOGGER.info("Change ${player.card.name} ${hashCode()} global event: $event")
-                        when (event) {
-                            is GlobalEvent.SendMoney -> {
-                                if (event.receiverId == uuid) {
-                                    eventBus.emit(Event.MoneyIncome(event.playerId, event.amount))
-                                    changePlayer {
-                                        this.plusCash(event.amount)
-                                    }
-                                }
-                            }
-
-                            is GlobalEvent.PlayerChanged -> {
-                                eventBus.emit(Event.PlayerChanged(event.player))
-                            }
-
-                            is GlobalEvent.PlayerHadBaby -> {
-                                eventBus.emit(Event.PlayerHadBaby(event.playerId, event.babies))
-                            }
-
-                            is GlobalEvent.PlayerMarried -> {
-                                eventBus.emit(Event.PlayerMarried(event.playerId))
-                            }
-
-                            is GlobalEvent.PlayerDivorced -> {
-                                eventBus.emit(Event.PlayerDivorced(event.playerId))
-                            }
-
-                            is GlobalEvent.BidSelled -> {
-                                if (event.bid.playerId == uuid) {
-                                    buyLot(event.auction, event.bid)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-    init {
-        invokeOnCompletionFlow.onEach {
-            closeSession()
-        }.launchIn(this)
-    }
+    private suspend fun player() = db.getPlayer(uuid)
+    private suspend fun board() = db.getBoard(boardId)
 
     override suspend fun hello(helloUuid: String): Instance {
-        boards.value.forEach { boardId ->
-            boardState = getBoardState(boardId)
-            val board = boardState?.value
-            if (board?.playerIds?.contains(helloUuid) == true) {
+        val boards = db.boards()
+        boards.forEach { board ->
+            if (board.playerIds.contains(helloUuid)) {
+                boardSelected(board)
                 uuid = helloUuid
                 changePlayer { copy(isInactive = false) }
-                invalidateNextPlayer(board.activePlayer)
+                invalidateNextPlayer(board.activePlayerId)
                 invalidateBoard(board)
                 playerStateSubJob?.cancel()
-                playerStateSubJob = launch {
-                    getPlayerState(uuid)?.collect { player ->
-                        globalEventBus.emit(GlobalEvent.PlayerChanged(player))
-                    }
-                }
-                return Instance(uuid, board, player)
+                playerStateSubJob = db.observePlayers(board.id).onEach { player ->
+                    globalEventBus.emit(GlobalEvent.PlayerChanged(player))
+                }.launchIn(this)
+                return Instance(uuid, board, player())
             } else {
                 uuid = Uuid.random().toString()
             }
@@ -118,24 +71,70 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
         return Instance(uuid, null, null)
     }
 
-    override suspend fun ping() {
-        LOGGER.info("Pong $uuid")
+    private suspend fun boardSelected(board: Board) {
+        boardId = board.id
+        startBoardObserving(board)
     }
+
+    private suspend fun startBoardObserving(board: Board) {
+        boardStateSubJob?.cancel()
+        boardStateSubJob = db.observeBoard(board.id).onEach { board ->
+            LOGGER.info("Change ${hashCode()} Board ${board.name}")
+            eventBus.emit(Event.BoardChanged(board))
+        }.launchIn(this)
+        globalEventsJob?.cancel()
+        globalEventsJob = globalEventBus.onEach { event ->
+            LOGGER.info("Change ${hashCode()} global event: ${event::class.simpleName}")
+            when (event) {
+                is GlobalEvent.SendMoney -> {
+                    if (event.receiverId == uuid) {
+                        eventBus.emit(Event.MoneyIncome(event.playerId, event.amount))
+                        changePlayer {
+                            this.plusCash(event.amount)
+                        }
+                    }
+                }
+
+                is GlobalEvent.PlayerChanged -> {
+                    eventBus.emit(Event.PlayerChanged(event.player))
+                }
+
+                is GlobalEvent.PlayerHadBaby -> {
+                    eventBus.emit(Event.PlayerHadBaby(event.playerId, event.babies))
+                }
+
+                is GlobalEvent.PlayerMarried -> {
+                    eventBus.emit(Event.PlayerMarried(event.playerId))
+                }
+
+                is GlobalEvent.PlayerDivorced -> {
+                    eventBus.emit(Event.PlayerDivorced(event.playerId))
+                }
+
+                is GlobalEvent.BidSelled -> {
+                    if (event.bid.playerId == uuid) {
+                        buyLot(event.auction, event.bid)
+                    }
+                }
+            }
+        }.launchIn(this)
+        db.observeBoards().onEach {
+            boardsFlow.emit(getBoards())
+        }.launchIn(this)
+    }
+
+    override suspend fun ping() {
+        delay(2000)
+        pongFlow.emit(Clock.System.now())
+    }
+
+    override fun pong(): Flow<Instant> = pongFlow
 
     override suspend fun getBoards(): List<BoardId> {
-        return boards.value.mapNotNull { boardId ->
-            val boardState = getBoardState(boardId) ?: return@mapNotNull null
-            val board = boardState.value
-            BoardId(board.id, board.name, board.createDateTime)
-        }
+        return db.boards().map { board -> board.toBoardId() }
     }
 
-    override fun observeBoards(): Flow<List<BoardId>> = boards.mapNotNull { list ->
-        list.map { board ->
-            val boardState = getBoardState(board) ?: error("No board found for $board")
-            boardState.value.toBoardId()
-        }
-    }
+    override fun observeBoards(): Flow<List<BoardId>> = boardsFlow
 
     override suspend fun createBoard(
         name: String,
@@ -153,22 +152,23 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
                 type to (1..size).toMutableList()
             }.toMap()
         )
-        val boardFlow = savedMutableStateFlow({ board }, board.id)
-        boards.value = boards.value.toMutableList().apply { add(board.id) }
-        boardMap[board.id] = boardFlow
-        boardState = boardFlow
+        db.newBoard(board)
+        boardSelected(board)
         return board
     }
 
-    override suspend fun selectBoard(boardId: String): Board {
-        boardState = getBoardState(boardId)
-        return boardState?.value ?: error("No board found for $boardId")
+    override suspend fun selectBoard(id: String): Board {
+        val board = db.getBoard(id)
+        boardSelected(board)
+        return board
     }
 
     override suspend fun makePlayer(
         color: Long,
         card: PlayerCard,
     ): Player {
+        val board = board()
+        uuid = Uuid.random().toString()
         val newPlayer = Player(
             id = uuid,
             boardId = board.id,
@@ -183,20 +183,17 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
                 )
             )
         )
-        players.value = players.value.toMutableList().apply {
-            add(uuid)
-            playerMap[uuid] = savedMutableStateFlow({ newPlayer }, uuid)
-        }
+        db.newPlayer(newPlayer)
         changeBoard {
             copy(playerIds = playerIds + uuid)
         }
         takeSalary()
-        invalidateNextPlayer(boardState?.value?.activePlayer.orEmpty())
-        return player
+        invalidateNextPlayer(board.activePlayerId)
+        return newPlayer
     }
 
     override suspend fun getPlayer(): Player {
-        return player
+        return player()
     }
 
     override suspend fun updateAttributes(attrs: PlayerAttributes) = changePlayer {
@@ -205,14 +202,10 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
 
     override fun eventsObserve(): Flow<Event> = eventBus
 
-    override suspend fun getPlayers(): List<Player> {
-        return boardState?.value?.playerIds?.map { playerId ->
-            getPlayerState(playerId)?.value ?: error("No player found for $playerId")
-        }?.toList().orEmpty()
-    }
+    override suspend fun getPlayers(): List<Player> = db.players(boardId)
 
     override suspend fun getBoard(): Board {
-        return board
+        return board()
     }
 
     override suspend fun sendMoney(receiverId: String, amount: Long) {
@@ -235,7 +228,7 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
     }
 
     override suspend fun takeCard(cardType: BoardCardType) {
-        val card = board.cards[cardType]?.random() ?: return
+        val card = board().cards[cardType]?.random() ?: return
         selectCard(card, cardType)
     }
 
@@ -253,7 +246,7 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
     }
 
     override suspend fun selectCardByNo(cardId: Int) {
-        board.canTakeCard?.let { cardType ->
+        board().canTakeCard?.let { cardType ->
             selectCard(cardId, cardType)
         }
     }
@@ -262,9 +255,9 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
         nextPlayer()
     }
 
-    private suspend fun invalidateNextPlayer(activePlayer: String) {
-        val playerIds = boardState?.value?.playerIds.orEmpty()
-        if (activePlayer.isEmpty() || !playerIds.contains(activePlayer) || getPlayerState(activePlayer)?.value?.isInactive.let { it == null || it }) {
+    private suspend fun invalidateNextPlayer(activePlayerId: String) {
+        val playerIds = board().playerIds
+        if (activePlayerId.isEmpty() || !playerIds.contains(activePlayerId) || db.getPlayer(activePlayerId).isInactive) {
             nextPlayer()
         }
     }
@@ -276,24 +269,8 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
     }
 
     private suspend fun nextPlayer() {
-        LOGGER.info("Change ${player.card.name} ${hashCode()} next player")
-        boardState.nextPlayer()
-    }
-
-    override suspend fun closeSession() {
-        changePlayer {
-            if (boardState?.value?.activePlayer == uuid) {
-                nextPlayer()
-            }
-            copy(isInactive = true)
-        }
-        boardState?.value?.let { board ->
-            validateBoard(board.id)
-        }
-        boardStateSubJob?.cancel()
-        playerStateSubJob?.cancel()
-        boardGlobalEventsJob?.cancel()
-        coroutineContext.cancel()
+        LOGGER.info("Change ${hashCode()} next player")
+        db.nextPlayer(board())
     }
 
     override suspend fun takeSalary() {
@@ -308,7 +285,7 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
     }
 
     override suspend fun buyBusiness(business: Business, needGoNextPlayer: Boolean) {
-        val currentBusiness = player.businesses
+        val currentBusiness = player().businesses
         if (business.type == BusinessType.SMALL
             && currentBusiness.any { it.type == BusinessType.WORK }
             && currentBusiness.count { it.type == BusinessType.SMALL } == 1
@@ -330,7 +307,7 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
 
     override suspend fun dismissalConfirmed(business: Business) {
         changePlayer {
-            val businesses = player.businesses.filter { it.type != BusinessType.WORK } + business
+            val businesses = player().businesses.filter { it.type != BusinessType.WORK } + business
             copy(businesses = businesses).minusCash(business.price)
         }
         nextPlayer()
@@ -339,21 +316,23 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
     override suspend fun sellingAllBusinessConfirmed(business: Business) {
         changePlayer {
             copy(businesses = listOf(business))
-                .plusCash(player.businesses.sumOf { it.price })
+                .plusCash(player().businesses.sumOf { it.price })
                 .minusCash(business.price)
         }
         nextPlayer()
     }
 
     private suspend fun move() {
+        val player = player()
         val layer = player.location.level.toLayer()
         val cellCount = layer.cellCount
         val currentPosition = player.location.position
-        val newPosition = moveTo(currentPosition, cellCount, board.dice)
+        val newPosition = moveTo(currentPosition, cellCount, board().dice)
         processNewPosition(newPosition)
     }
 
     private suspend fun processNewPosition(newPosition: Int) {
+        val player = player()
         val layer = player.location.level.toLayer()
         val currentPosition = player.location.position
         val list = if (currentPosition > newPosition) {
@@ -526,53 +505,49 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
     private suspend fun changeBoard(todo: suspend Board.() -> Board) {
         id += 1
         val changeId = id
-        LOGGER.info("Change ${player.card.name} ${hashCode()} + $changeId Start Board")
-        boardState.changeBoard(todo)
-        LOGGER.info("Change ${player.card.name} ${hashCode()} + $changeId End Board")
+        LOGGER.info("Change  ${hashCode()} $changeId Start Board")
+        db.updateBoard(board().todo())
+        LOGGER.info("Change  ${hashCode()} $changeId End Board")
     }
 
     private suspend fun changePlayer(todo: suspend Player.() -> Player) {
-        LOGGER.info("Change ${player.card.name} ${hashCode()} call to change player ")
-        getPlayerState(uuid)?.let { playerState ->
-            id2 += 1
-            val changeId = id2
-            LOGGER.info("Change ${player.card.name} ${hashCode()} + $changeId Start Player")
-            playerState.update {
-                it.todo().let { player ->
-                    val newTotal = player.total()
-                    val previous = playerState.value.total()
-                    if (newTotal != previous) {
-                        val delta = newTotal - previous
-                        player.copy(lastTotals = (player.lastTotals + delta).takeLast(3))
-                    } else player
-                }.let {
-                    val newCashFlow = player.cashFlow()
-                    val previews = playerState.value.cashFlow()
-                    if (newCashFlow != previews) {
-                        val delta = newCashFlow - previews
-                        it.copy(lastCashFlows = (it.lastCashFlows + delta).takeLast(3))
-                    } else it
-                }
-            }
-            LOGGER.info("Change ${player.card.name} ${hashCode()} + $changeId End Player")
-            globalEventBus.emit(GlobalEvent.PlayerChanged(playerState.value))
+        id2 += 1
+        val changeId = id2
+        LOGGER.info("Change  ${hashCode()} $changeId Start Player")
+        val previeusPlayer = player()
+        val newPlayer = previeusPlayer.todo().let { player ->
+            val newTotal = player.total()
+            val previous = previeusPlayer.total()
+            val totals = if (newTotal != previous) {
+                (player.lastTotals + (newTotal - previous)).takeLast(3)
+            } else player.lastTotals
+            val newCashFlow = player.cashFlow()
+            val previews = previeusPlayer.cashFlow()
+            val cashFlows = if (newCashFlow != previews) {
+                (player.lastCashFlows + (newCashFlow - previews)).takeLast(3)
+            } else player.lastCashFlows
+            player.copy(lastTotals = totals, lastCashFlows = cashFlows)
         }
+        db.updatePlayer(newPlayer)
+        LOGGER.info("Change  ${hashCode()} ${newPlayer.card.name} + $changeId End Player")
+        globalEventBus.emit(GlobalEvent.PlayerChanged(newPlayer))
     }
 
     private fun Player.plusCash(value: Long): Player {
         return copy(cash = cash + value)
     }
 
-    private fun Player.minusCash(
+    private suspend fun Player.minusCash(
         value: Long,
         isFundBuy: Boolean = false
     ): Player {
+        val board = board()
         if (value == 0L) return this
-        launch { eventBus.emit(Event.SubCash(value)) }
+        eventBus.emit(Event.SubCash(value))
         return if (cash > value) {
             copy(cash = cash - value)
         } else if ((cash + deposit) > value) {
-            launch { eventBus.emit(Event.DepositWithdraw(value - cash)) }
+            eventBus.emit(Event.DepositWithdraw(value - cash))
             copy(cash = 0, deposit = (deposit + cash) - value)
         } else if (!isFundBuy && config.hasFunds && funds.isNotEmpty()) {
             var stub = cash + deposit
@@ -590,17 +565,17 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
             if (newFunds.isEmpty() && stub < value) {
                 val newLoan = loan + (value - stub)
                 if (newLoan > board.loanLimit) {
-                    launch { eventBus.emit(Event.LoanOverlimited) }
+                    eventBus.emit(Event.LoanOverlimited)
                 }
                 copy(cash = 0, deposit = 0, funds = emptyList(), loan = newLoan)
             } else {
                 copy(cash = 0, deposit = 0, funds = newFunds)
             }
         } else {
-            launch { eventBus.emit(Event.LoanAdded(value - (cash + deposit))) }
+            eventBus.emit(Event.LoanAdded(value - (cash + deposit)))
             val newLoan = loan + (value - (deposit + cash))
             if (newLoan > board.loanLimit) {
-                launch { eventBus.emit(Event.LoanOverlimited) }
+                eventBus.emit(Event.LoanOverlimited)
             }
             copy(cash = 0, deposit = 0, loan = newLoan)
         }
@@ -766,6 +741,7 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
     }
 
     override suspend fun passLand() {
+        val board = board()
         val playersWithLands = board.players().filter { it.landList.isNotEmpty() }.map { it.id }.toSet()
         if (playersWithLands.isEmpty() || playersWithLands == board.processedPlayerIds) {
             nextPlayer()
@@ -773,6 +749,7 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
     }
 
     override suspend fun passShares(sharesType: SharesType) {
+        val board = board()
         val playersWithShares =
             board.players().filter { it.sharesList.any { it.type == sharesType } }.map { it.id }.toSet()
         if (playersWithShares.isEmpty() || playersWithShares == board.processedPlayerIds) {
@@ -781,6 +758,7 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
     }
 
     override suspend fun passEstate() {
+        val board = board()
         val playersWithEstate = board.players().filter { it.estateList.isNotEmpty() }.map { it.id }.toSet()
         if (playersWithEstate.isEmpty() || playersWithEstate == board.processedPlayerIds) {
             nextPlayer()
@@ -806,7 +784,7 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
     }
 
     override suspend fun sellBid(bid: Bid) {
-        val auction = board.auction ?: return
+        val auction = board().auction ?: return
         val profit = auction.getProfit(bid)
         changePlayer {
             plusCash(profit)
@@ -862,4 +840,69 @@ class RaceRatServiceImpl(invokeOnCompletionFlow: MutableSharedFlow<Boolean>) : R
             }
         }
     }
+
+    private suspend fun Board.players(): List<Player> {
+        return playerIds.map { playerId ->
+            db.getPlayer(playerId)
+        }
+    }
+}
+
+suspend fun MongoDatabase.nextPlayer(board: Board) {
+    LOGGER.debug("next player")
+    val activePlayers = players(board.id).filter { player -> !player.isInactive }
+    if (activePlayers.isEmpty()) return
+    val playerIds = activePlayers.map { it.id }
+    val activePlayerIndex = playerIds.indexOf(board.activePlayerId)
+    val nextPlayerId = if (activePlayerIndex + 1 == playerIds.size) {
+        playerIds.first()
+    } else {
+        playerIds[activePlayerIndex + 1]
+    }
+    updateBoard(board.discardPileB().copy(
+        activePlayerId = nextPlayerId,
+        moveCount = board.moveCount + 1,
+        canRoll = true,
+        diceRolling = false,
+        takenCard = null,
+        canTakeCard = null,
+        auction = null,
+        bidList = emptyList()
+    ))
+    val nextPlayer = activePlayers.find { it.id == nextPlayerId }
+    if ((nextPlayer?.inRest ?: 0) > 0) {
+        val player = getPlayer(nextPlayerId)
+        val updatedPlayer = player.copy(inRest = player.inRest - 1)
+        updatePlayer(updatedPlayer)
+        nextPlayer(board)
+    }
+}
+
+
+
+private fun Board.discardPileB(): Board {
+    val card = takenCard
+    return if (card != null) {
+        val discard = discard.toMutableMap()
+        discard[card.type] = discard[card.type].orEmpty() + card.id
+        val cards = cards.toMutableMap()
+        cards[card.type] = cards[card.type].orEmpty() - card.id
+        copy(
+            discard = discard,
+            cards = cards,
+            takenCard = null,
+        ).invalidateDecks()
+    } else this
+}
+
+private fun Board.invalidateDecks(): Board {
+    val discard = discard.toMutableMap()
+    val cards = cards.map { (type, list) ->
+        type to list.ifEmpty {
+            val cards = discard[type]
+            discard[type] = emptyList()
+            cards
+        }.orEmpty()
+    }.toMap()
+    return copy(cards = cards, discard = discard)
 }

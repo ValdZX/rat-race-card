@@ -18,7 +18,7 @@ data class BoardState(
 ) {
     val layer: BoardLayer = player.location.level.toLayer()
     val color: Long = player.attrs.color
-    val currentPlayerIsActive: Boolean by lazy { player.id == board.activePlayer }
+    val currentPlayerIsActive: Boolean by lazy { player.id == board.activePlayerId }
     val canRoll: Boolean by lazy { board.canRoll && currentPlayerIsActive }
 
     fun canPay(price: Long): Boolean {
@@ -190,9 +190,10 @@ class BoardViewModel(
                 }
             }
         }
-        safeLaunch { context ->
-            while (context.isActive) {
-                delay(5000)
+        safeLaunch {
+            ping()
+            pong().collect {
+                delay(3000)
                 ping()
             }
         }

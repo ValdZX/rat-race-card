@@ -46,6 +46,7 @@ kotlin {
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.rpc.core)
                 implementation(libs.kotlinx.serialization.json)
+                implementation(libs.mongodb.bson)
             }
         }
     }

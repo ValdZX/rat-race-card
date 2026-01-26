@@ -30,6 +30,9 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
     implementation(libs.google.cloud.firestore)
     implementation(libs.google.cloud.storage)
+    implementation(platform(libs.mongodb.bom))
+    implementation(libs.mongodb.coroutine)
+    implementation(libs.mongodb.bson.kotlinx)
 }
 
 ktor {

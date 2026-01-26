@@ -1,6 +1,7 @@
 package ua.vald_zx.game.rat.race.card.shared
 
 import kotlinx.datetime.LocalDateTime
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 
@@ -13,18 +14,18 @@ data class BoardId(
 
 @Serializable
 data class Board(
+    @SerialName("_id")
+    val id: String,
     val name: String,
     val loanLimit: Long,
     val businessLimit: Long,
     val createDateTime: LocalDateTime,
-    val lastCheckTime: LocalDateTime = createDateTime,
-    val id: String,
     val cards: Map<BoardCardType, List<Int>>,
     val canTakeCard: BoardCardType? = null,
     val takenCard: CardLink? = null,
     val discard: Map<BoardCardType, List<Int>> = emptyMap(),
     val playerIds: Set<String> = emptySet(),
-    val activePlayer: String = "",
+    val activePlayerId: String = "",
     val moveCount: Int = 0,
     val canRoll: Boolean = true,
     val dice: Int = 6,

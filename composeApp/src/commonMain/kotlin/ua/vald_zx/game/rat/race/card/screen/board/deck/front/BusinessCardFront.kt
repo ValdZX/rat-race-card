@@ -163,7 +163,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                                     vm, Auction.BusinessAuction(
                                         Business(
                                             type = BusinessType.SMALL,
-                                            name = cardLink.id.toString(),
+                                            name = card.name,
                                             price = card.price,
                                             profit = card.profit
                                         ), card.price
@@ -277,7 +277,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                             vm.buyBusiness(
                                 Business(
                                     type = BusinessType.MEDIUM,
-                                    name = cardLink.id.toString(),
+                                    name = card.name,
                                     price = card.price,
                                     profit = card.profit
                                 )
@@ -297,7 +297,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                                     vm, Auction.BusinessAuction(
                                         Business(
                                             type = BusinessType.MEDIUM,
-                                            name = cardLink.id.toString(),
+                                            name = card.name,
                                             price = card.price,
                                             profit = card.profit
                                         ), card.price
@@ -411,7 +411,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                             vm.buyBusiness(
                                 Business(
                                     type = BusinessType.LARGE,
-                                    name = cardLink.id.toString(),
+                                    name = card.name,
                                     price = card.price,
                                     profit = card.profit
                                 )
@@ -431,7 +431,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                                     vm, Auction.BusinessAuction(
                                         Business(
                                             type = BusinessType.LARGE,
-                                            name = cardLink.id.toString(),
+                                            name = card.name,
                                             price = card.price,
                                             profit = card.profit
                                         ), card.price

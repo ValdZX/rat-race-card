@@ -3,6 +3,7 @@ package ua.vald_zx.game.rat.race.card.shared
 import kotlinx.coroutines.flow.Flow
 import kotlinx.rpc.annotations.Rpc
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 @Serializable
 sealed class GlobalEvent {
@@ -94,7 +95,7 @@ interface RaceRatService {
     suspend fun hello(helloUuid: String = ""): Instance
 
     suspend fun ping()
-    suspend fun closeSession()
+    fun pong(): Flow<Instant>
     suspend fun getBoards(): List<BoardId>
     fun observeBoards(): Flow<List<BoardId>>
     suspend fun createBoard(
@@ -104,7 +105,7 @@ interface RaceRatService {
         decks: Map<BoardCardType, Int>
     ): Board
 
-    suspend fun selectBoard(boardId: String): Board
+    suspend fun selectBoard(id: String): Board
     suspend fun updateAttributes(attrs: PlayerAttributes)
     suspend fun getPlayer(): Player
     suspend fun makePlayer(

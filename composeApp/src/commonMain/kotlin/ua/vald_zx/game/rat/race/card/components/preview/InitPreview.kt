@@ -14,6 +14,7 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import kotlin.time.Clock
+import kotlin.time.Instant
 
 
 @Composable
@@ -35,8 +36,8 @@ fun InitPreview(
                             //nop
                         }
 
-                        override suspend fun closeSession() {
-                            //NOP
+                        override fun pong(): Flow<Instant> {
+                            error("Not for preview")
                         }
 
                         override suspend fun getBoards(): List<BoardId> = emptyList()
@@ -54,7 +55,7 @@ fun InitPreview(
                             error("Not for preview")
                         }
 
-                        override suspend fun selectBoard(boardId: String): Board {
+                        override suspend fun selectBoard(id: String): Board {
                             error("Not for preview")
                         }
 
@@ -226,7 +227,6 @@ fun InitPreviewWithVm(
                         loanLimit = 0,
                         businessLimit = 0,
                         createDateTime = Clock.System.now().toLocalDateTime(TimeZone.UTC),
-                        lastCheckTime = Clock.System.now().toLocalDateTime(TimeZone.UTC),
                         id = "",
                         cards = emptyMap(),
                         canTakeCard = null,
