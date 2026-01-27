@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.server
+package ua.vald_zx.game.rat.race.server.data
 
 import com.mongodb.ConnectionString
 import com.mongodb.MongoClientSettings
@@ -49,18 +49,13 @@ suspend fun MongoDatabase.boards(): List<Board> {
     return boardCollection().find().toList()
 }
 
-suspend fun MongoDatabase.removeBoard(boardId: String) {
-    boardCollection().deleteOne(Filters.eq("boardId", boardId))
+suspend fun MongoDatabase.removeBoard(id: String) {
+    boardCollection().deleteOne(Filters.eq("_id", id))
 }
 
-fun MongoDatabase.observeBoard(id: String): Flow<Board> =
-    boardCollection().watch(
-        listOf(
-            Aggregates.match(
-                Filters.eq("fullDocument._id", id)
-            )
-        )
-    ).mapNotNull { it.fullDocument }
+suspend fun MongoDatabase.removePlayer(id: String) {
+    playerCollection().deleteOne(Filters.eq("_id", id))
+}
 
 suspend fun MongoDatabase.newBoard(board: Board) {
     boardCollection().insertOne(board)
@@ -72,14 +67,6 @@ suspend fun MongoDatabase.updateBoard(board: Board) {
         replacement = board,
         options = ReplaceOptions().upsert(true)
     )
-}
-
-fun MongoDatabase.observeBoards(): Flow<Board> = boardCollection().watch().mapNotNull { it.fullDocument }
-
-suspend fun MongoDatabase.players(boardId: String): List<Player> {
-    return playerCollection()
-        .find(Filters.eq("boardId", boardId))
-        .toList()
 }
 
 suspend fun MongoDatabase.newPlayer(player: Player) {

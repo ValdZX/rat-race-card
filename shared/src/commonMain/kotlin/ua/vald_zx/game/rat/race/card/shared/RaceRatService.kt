@@ -84,6 +84,9 @@ sealed class Event {
 
     @Serializable
     data object BidSharesAuctionSuccessBuy : Event()
+
+    @Serializable
+    data object CheckState : Event()
 }
 
 @Serializable
@@ -94,6 +97,7 @@ interface RaceRatService {
     suspend fun hello(helloUuid: String = ""): Instance
 
     suspend fun ping()
+    suspend fun connectionIsValid()
     suspend fun getBoards(): List<BoardId>
     fun observeBoards(): Flow<List<BoardId>>
     suspend fun createBoard(

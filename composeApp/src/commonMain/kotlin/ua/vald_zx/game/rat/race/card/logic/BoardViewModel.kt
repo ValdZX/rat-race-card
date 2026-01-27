@@ -190,6 +190,10 @@ class BoardViewModel(
                     Event.BidSharesAuctionSuccessBuy -> {
                         _actions.send(BidSharesAuctionSuccessBuy)
                     }
+
+                    Event.CheckState -> {
+                        safeLaunch { connectionIsValid() }
+                    }
                 }
             }
         }

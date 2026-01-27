@@ -35,6 +35,10 @@ fun InitPreview(
                             //nop
                         }
 
+                        override suspend fun connectionIsValid() {
+                            //nop
+                        }
+
                         override suspend fun getBoards(): List<BoardId> = emptyList()
 
                         override fun observeBoards(): Flow<List<BoardId>> {

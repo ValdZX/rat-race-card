@@ -2,7 +2,6 @@
 
 package ua.vald_zx.game.rat.race.server
 
-import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import io.ktor.util.logging.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -12,6 +11,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import ua.vald_zx.game.rat.race.card.shared.*
+import ua.vald_zx.game.rat.race.server.data.Storage
 import kotlin.math.absoluteValue
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -20,14 +20,8 @@ import kotlin.uuid.Uuid
 
 internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
-val globalEventBusMap = mutableMapOf<String, MutableSharedFlow<GlobalEvent>>()
-fun getGlobalEventBus(boardId: String): MutableSharedFlow<GlobalEvent> {
-    return globalEventBusMap.getOrPut(boardId) { MutableSharedFlow() }
-}
-
 class RaceRatServiceImpl(
     appScope: CoroutineScope,
-    private val db: MongoDatabase,
     private val uuidStateProvider: MutableStateFlow<String>
 ) :
     RaceRatService, CoroutineScope by appScope {
@@ -43,47 +37,45 @@ class RaceRatServiceImpl(
     private val globalEventBus: MutableSharedFlow<GlobalEvent>
         get() = getGlobalEventBus(boardId)
     private var boardStateSubJob: Job? = null
-    private var playerStateSubJob: Job? = null
     private var globalEventsJob: Job? = null
     private var diceRollingJob: Job? = null
 
-    private suspend fun player() = db.getPlayer(uuid)
-    private suspend fun board() = db.getBoard(boardId)
+    init {
+        checkStatusFlow.onEach {
+            eventBus.emit(Event.CheckState)
+        }.launchIn(this)
+    }
+
+    private suspend fun player() = Storage.getPlayer(uuid)
+    private suspend fun board() = Storage.getBoard(boardId)
 
     override suspend fun hello(helloUuid: String): Instance {
-        val boards = db.boards()
+        val boards = Storage.boards()
         boards.forEach { board ->
             if (board.playerIds.contains(helloUuid)) {
+                checkStatusJobs[helloUuid]?.cancel()
                 boardSelected(board)
-                initPlayer(helloUuid, board)
+                uuid = helloUuid
                 changePlayer { copy(isInactive = false) }
                 invalidateNextPlayer(board.activePlayerId)
                 invalidateBoard(board)
                 return Instance(uuid, board, player())
             }
         }
-        db.observeBoards().onEach {
+        Storage.observeBoards().onEach {
             boardsFlow.emit(getBoards())
         }.launchIn(this)
         return Instance("", null, null)
     }
 
-    private suspend fun initPlayer(helloUuid: String, board: Board) {
-        uuid = helloUuid
-        playerStateSubJob?.cancel()
-        playerStateSubJob = db.observePlayers(board.id).onEach { player ->
-            globalEventBus.emit(GlobalEvent.PlayerChanged(player))
-        }.launchIn(this)
-    }
-
-    private fun boardSelected(board: Board) {
+    private suspend fun boardSelected(board: Board) {
         boardId = board.id
         startBoardObserving(board)
     }
 
-    private fun startBoardObserving(board: Board) {
+    private suspend fun startBoardObserving(board: Board) {
         boardStateSubJob?.cancel()
-        boardStateSubJob = db.observeBoard(board.id).onEach { board ->
+        boardStateSubJob = Storage.observeBoard(board.id).onEach { board ->
             LOGGER.info("Change ${hashCode()} Board ${board.name}")
             eventBus.emit(Event.BoardChanged(board))
         }.launchIn(this)
@@ -129,9 +121,12 @@ class RaceRatServiceImpl(
         delay(2000)
     }
 
+    override suspend fun connectionIsValid() {
+        checkStatusJobs[uuid]?.cancel()
+    }
 
     override suspend fun getBoards(): List<BoardId> {
-        return db.boards().map { board -> board.toBoardId() }
+        return Storage.boards().map { board -> board.toBoardId() }
     }
 
     override fun observeBoards(): Flow<List<BoardId>> = boardsFlow
@@ -152,13 +147,13 @@ class RaceRatServiceImpl(
                 type to (1..size).toMutableList()
             }.toMap()
         )
-        db.newBoard(board)
+        Storage.newBoard(board)
         boardSelected(board)
         return board
     }
 
     override suspend fun selectBoard(id: String): Board {
-        val board = db.getBoard(id)
+        val board = Storage.getBoard(id)
         boardSelected(board)
         return board
     }
@@ -183,11 +178,11 @@ class RaceRatServiceImpl(
                 )
             )
         )
-        db.newPlayer(newPlayer)
+        Storage.newPlayer(newPlayer)
+        getGlobalEventBus(boardId).emit(GlobalEvent.PlayerChanged(newPlayer))
         changeBoard {
             copy(playerIds = playerIds + uuid)
         }
-        initPlayer(uuid, board)
         takeSalary()
         invalidateNextPlayer(board.activePlayerId)
         return newPlayer
@@ -203,7 +198,7 @@ class RaceRatServiceImpl(
 
     override fun eventsObserve(): Flow<Event> = eventBus
 
-    override suspend fun getPlayers(): List<Player> = db.players(boardId)
+    override suspend fun getPlayers(): List<Player> = Storage.players(boardId)
 
     override suspend fun getBoard(): Board {
         return board()
@@ -265,7 +260,7 @@ class RaceRatServiceImpl(
 
     private suspend fun invalidateNextPlayer(activePlayerId: String) {
         val playerIds = board().playerIds
-        if (activePlayerId.isEmpty() || !playerIds.contains(activePlayerId) || db.getPlayer(activePlayerId).isInactive) {
+        if (activePlayerId.isEmpty() || !playerIds.contains(activePlayerId) || Storage.getPlayer(activePlayerId).isInactive) {
             nextPlayer()
         }
     }
@@ -279,7 +274,7 @@ class RaceRatServiceImpl(
 
     private suspend fun nextPlayer() {
         LOGGER.info("Change ${hashCode()} next player")
-        db.nextPlayer(board())
+        nextPlayer(board())
     }
 
     override suspend fun takeSalary() {
@@ -515,7 +510,7 @@ class RaceRatServiceImpl(
         id += 1
         val changeId = id
         LOGGER.info("Change  ${hashCode()} $changeId Start Board")
-        db.updateBoard(board().todo())
+        Storage.updateBoard(board().todo())
         LOGGER.info("Change  ${hashCode()} $changeId End Board")
     }
 
@@ -537,8 +532,8 @@ class RaceRatServiceImpl(
             } else player.lastCashFlows
             player.copy(lastTotals = totals, lastCashFlows = cashFlows)
         }
-        db.updatePlayer(newPlayer)
-        LOGGER.info("Change  ${hashCode()} ${newPlayer.card.name} + $changeId End Player")
+        Storage.updatePlayer(newPlayer)
+        LOGGER.info("Change  ${hashCode()} + $changeId End Player")
         globalEventBus.emit(GlobalEvent.PlayerChanged(newPlayer))
     }
 
@@ -852,14 +847,14 @@ class RaceRatServiceImpl(
 
     private suspend fun Board.players(): List<Player> {
         return playerIds.map { playerId ->
-            db.getPlayer(playerId)
+            Storage.getPlayer(playerId)
         }
     }
 }
 
-suspend fun MongoDatabase.nextPlayer(board: Board) {
+suspend fun nextPlayer(board: Board) {
     LOGGER.debug("next player")
-    val activePlayers = players(board.id).filter { player -> !player.isInactive }
+    val activePlayers = Storage.players(board.id).filter { player -> !player.isInactive }
     if (activePlayers.isEmpty()) return
     val playerIds = activePlayers.map { it.id }
     val activePlayerIndex = playerIds.indexOf(board.activePlayerId)
@@ -868,7 +863,7 @@ suspend fun MongoDatabase.nextPlayer(board: Board) {
     } else {
         playerIds[activePlayerIndex + 1]
     }
-    updateBoard(
+    Storage.updateBoard(
         board.discardPileB().copy(
             activePlayerId = nextPlayerId,
             moveCount = board.moveCount + 1,
@@ -882,9 +877,9 @@ suspend fun MongoDatabase.nextPlayer(board: Board) {
     )
     val nextPlayer = activePlayers.find { it.id == nextPlayerId }
     if ((nextPlayer?.inRest ?: 0) > 0) {
-        val player = getPlayer(nextPlayerId)
+        val player = Storage.getPlayer(nextPlayerId)
         val updatedPlayer = player.copy(inRest = player.inRest - 1)
-        updatePlayer(updatedPlayer)
+        Storage.updatePlayer(updatedPlayer)
         nextPlayer(board)
     }
 }

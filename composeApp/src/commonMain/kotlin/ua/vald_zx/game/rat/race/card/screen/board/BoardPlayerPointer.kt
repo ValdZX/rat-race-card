@@ -18,9 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -86,6 +84,13 @@ fun PlayerPoint(
         typeConverter = TwoWayConverter({ AnimationVector(it.value) }, { it.value.dp })
     )
     val playerColor = remember(pointerState.color) { Color(pointerState.color) }
+    val secondaryColor = remember(pointerState.player.isInactive) {
+        if (pointerState.player.isInactive) {
+            Color.Black
+        } else {
+            Color.White
+        }
+    }
     Box(
         modifier = Modifier
             .offset(animatedX, animatedY)
@@ -119,19 +124,19 @@ fun PlayerPoint(
                             listOf(
                                 playerColor,
                                 playerColor,
-                                Color.Black,
+                                secondaryColor,
                                 playerColor,
                                 playerColor,
-                                Color.Black,
+                                secondaryColor,
                                 playerColor,
                                 playerColor,
-                                Color.Black,
+                                secondaryColor,
                                 playerColor,
                                 playerColor,
-                                Color.Black,
+                                secondaryColor,
                                 playerColor,
                                 playerColor,
-                                Color.Black,
+                                secondaryColor,
                                 playerColor,
                                 playerColor,
                             )
@@ -168,13 +173,26 @@ fun PlayerPoint(
                 state = tooltipState,
                 enableUserInput = false
             ) {
-                Image(
-                    imageVector = Images.RatPlayer1,
-                    contentDescription = null,
-                    modifier = Modifier.clickable {
-                        coroutineScope.launch { tooltipState.show() }
-                    }
-                )
+                if (pointerState.player.isInactive) {
+                    Image(
+                        imageVector = Images.RatPlayer1,
+                        contentDescription = null,
+                        modifier = Modifier.clickable {
+                            coroutineScope.launch { tooltipState.show() }
+                        },
+                        colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply {
+                            setToSaturation(0f)
+                        })
+                    )
+                } else {
+                    Image(
+                        imageVector = Images.RatPlayer1,
+                        contentDescription = null,
+                        modifier = Modifier.clickable {
+                            coroutineScope.launch { tooltipState.show() }
+                        }
+                    )
+                }
             }
         }
         if (pointerState.player.card.gender == Gender.FEMALE) {
@@ -239,7 +257,11 @@ fun PlayerTooltip(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
-                Text(state.player.card.profession)
+                if (state.player.isInactive) {
+                    Text(state.player.card.name + " - Offline")
+                } else {
+                    Text(state.player.card.name)
+                }
                 CashFlowField(
                     name = "Статки",
                     rainbow = GoldRainbow,
