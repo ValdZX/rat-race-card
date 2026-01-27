@@ -14,7 +14,6 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import kotlin.time.Clock
-import kotlin.time.Instant
 
 
 @Composable
@@ -34,10 +33,6 @@ fun InitPreview(
 
                         override suspend fun ping() {
                             //nop
-                        }
-
-                        override fun pong(): Flow<Instant> {
-                            error("Not for preview")
                         }
 
                         override suspend fun getBoards(): List<BoardId> = emptyList()

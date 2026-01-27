@@ -3,9 +3,12 @@ package ua.vald_zx.game.rat.race.card.logic
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.aakira.napier.Napier
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
 import ua.vald_zx.game.rat.race.card.shared.*
 import kotlin.coroutines.CoroutineContext
@@ -191,9 +194,7 @@ class BoardViewModel(
             }
         }
         safeLaunch {
-            ping()
-            pong().collect {
-                delay(3000)
+            while (true) {
                 ping()
             }
         }

@@ -7,7 +7,6 @@ import com.mongodb.ServerApiVersion
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.ReplaceOptions
-import com.mongodb.client.model.changestream.FullDocument
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import kotlinx.coroutines.flow.Flow
@@ -75,7 +74,7 @@ suspend fun MongoDatabase.updateBoard(board: Board) {
     )
 }
 
-fun MongoDatabase.observeBoards() = boardCollection().watch().fullDocument(FullDocument.UPDATE_LOOKUP)
+fun MongoDatabase.observeBoards(): Flow<Board> = boardCollection().watch().mapNotNull { it.fullDocument }
 
 suspend fun MongoDatabase.players(boardId: String): List<Player> {
     return playerCollection()
@@ -99,7 +98,7 @@ suspend fun MongoDatabase.observePlayers(boardId: String): Flow<Player> =
     playerCollection().watch(
         listOf(
             Aggregates.match(
-                Filters.eq("boardId", boardId)
+                Filters.eq("fullDocument.boardId", boardId)
             )
         )
     ).mapNotNull { it.fullDocument }

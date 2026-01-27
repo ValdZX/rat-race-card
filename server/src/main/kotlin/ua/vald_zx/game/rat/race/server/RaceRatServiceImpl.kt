@@ -8,13 +8,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import ua.vald_zx.game.rat.race.card.shared.*
 import kotlin.math.absoluteValue
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -39,13 +39,13 @@ class RaceRatServiceImpl(
             field = value
         }
     private val eventBus = MutableSharedFlow<Event>()
-    private val pongFlow = MutableSharedFlow<Instant>()
     private val boardsFlow = MutableSharedFlow<List<BoardId>>()
     private val globalEventBus: MutableSharedFlow<GlobalEvent>
         get() = getGlobalEventBus(boardId)
     private var boardStateSubJob: Job? = null
     private var playerStateSubJob: Job? = null
     private var globalEventsJob: Job? = null
+    private var diceRollingJob: Job? = null
 
     private suspend fun player() = db.getPlayer(uuid)
     private suspend fun board() = db.getBoard(boardId)
@@ -55,28 +55,33 @@ class RaceRatServiceImpl(
         boards.forEach { board ->
             if (board.playerIds.contains(helloUuid)) {
                 boardSelected(board)
-                uuid = helloUuid
+                initPlayer(helloUuid, board)
                 changePlayer { copy(isInactive = false) }
                 invalidateNextPlayer(board.activePlayerId)
                 invalidateBoard(board)
-                playerStateSubJob?.cancel()
-                playerStateSubJob = db.observePlayers(board.id).onEach { player ->
-                    globalEventBus.emit(GlobalEvent.PlayerChanged(player))
-                }.launchIn(this)
                 return Instance(uuid, board, player())
-            } else {
-                uuid = Uuid.random().toString()
             }
         }
-        return Instance(uuid, null, null)
+        db.observeBoards().onEach {
+            boardsFlow.emit(getBoards())
+        }.launchIn(this)
+        return Instance("", null, null)
     }
 
-    private suspend fun boardSelected(board: Board) {
+    private suspend fun initPlayer(helloUuid: String, board: Board) {
+        uuid = helloUuid
+        playerStateSubJob?.cancel()
+        playerStateSubJob = db.observePlayers(board.id).onEach { player ->
+            globalEventBus.emit(GlobalEvent.PlayerChanged(player))
+        }.launchIn(this)
+    }
+
+    private fun boardSelected(board: Board) {
         boardId = board.id
         startBoardObserving(board)
     }
 
-    private suspend fun startBoardObserving(board: Board) {
+    private fun startBoardObserving(board: Board) {
         boardStateSubJob?.cancel()
         boardStateSubJob = db.observeBoard(board.id).onEach { board ->
             LOGGER.info("Change ${hashCode()} Board ${board.name}")
@@ -118,17 +123,12 @@ class RaceRatServiceImpl(
                 }
             }
         }.launchIn(this)
-        db.observeBoards().onEach {
-            boardsFlow.emit(getBoards())
-        }.launchIn(this)
     }
 
     override suspend fun ping() {
         delay(2000)
-        pongFlow.emit(Clock.System.now())
     }
 
-    override fun pong(): Flow<Instant> = pongFlow
 
     override suspend fun getBoards(): List<BoardId> {
         return db.boards().map { board -> board.toBoardId() }
@@ -187,6 +187,7 @@ class RaceRatServiceImpl(
         changeBoard {
             copy(playerIds = playerIds + uuid)
         }
+        initPlayer(uuid, board)
         takeSalary()
         invalidateNextPlayer(board.activePlayerId)
         return newPlayer
@@ -220,11 +221,18 @@ class RaceRatServiceImpl(
             val dice = (1..6).random()
             copy(dice = dice, canRoll = false, diceRolling = true)
         }
-        delay(4000)
-        changeBoard {
-            copy(diceRolling = false)
+        launchRollingWait()
+    }
+
+    private fun launchRollingWait() {
+        diceRollingJob?.cancel()
+        diceRollingJob = launch {
+            delay(4000)
+            changeBoard {
+                copy(diceRolling = false)
+            }
+            move()
         }
-        move()
     }
 
     override suspend fun takeCard(cardType: BoardCardType) {
@@ -262,9 +270,10 @@ class RaceRatServiceImpl(
         }
     }
 
-    private suspend fun invalidateBoard(board: Board) {
-        if (!board.canRoll && !board.diceRolling && board.canTakeCard == null && board.takenCard == null) {
-            nextPlayer()
+    private fun invalidateBoard(board: Board) {
+        val job = diceRollingJob
+        if (board.diceRolling && (job == null || !job.isActive)) {
+            launchRollingWait()
         }
     }
 
@@ -859,16 +868,18 @@ suspend fun MongoDatabase.nextPlayer(board: Board) {
     } else {
         playerIds[activePlayerIndex + 1]
     }
-    updateBoard(board.discardPileB().copy(
-        activePlayerId = nextPlayerId,
-        moveCount = board.moveCount + 1,
-        canRoll = true,
-        diceRolling = false,
-        takenCard = null,
-        canTakeCard = null,
-        auction = null,
-        bidList = emptyList()
-    ))
+    updateBoard(
+        board.discardPileB().copy(
+            activePlayerId = nextPlayerId,
+            moveCount = board.moveCount + 1,
+            canRoll = true,
+            diceRolling = false,
+            takenCard = null,
+            canTakeCard = null,
+            auction = null,
+            bidList = emptyList()
+        )
+    )
     val nextPlayer = activePlayers.find { it.id == nextPlayerId }
     if ((nextPlayer?.inRest ?: 0) > 0) {
         val player = getPlayer(nextPlayerId)
@@ -877,7 +888,6 @@ suspend fun MongoDatabase.nextPlayer(board: Board) {
         nextPlayer(board)
     }
 }
-
 
 
 private fun Board.discardPileB(): Board {

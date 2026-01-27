@@ -42,8 +42,8 @@ class LoadOnlineScreen : Screen {
             }
             CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
                 val service = koin.get<RaceRatService>()
-                val instance = service.hello(appKStore.get()?.onlinePlayerId.orEmpty())
-                appKStore.update { it?.copy(onlinePlayerId = instance.playerId) }
+                val helloUuid = appKStore.get()?.onlinePlayerId.orEmpty()
+                val instance = service.hello(helloUuid)
                 val board = instance.board
                 val player = instance.player
                 if (board == null || player == null) {

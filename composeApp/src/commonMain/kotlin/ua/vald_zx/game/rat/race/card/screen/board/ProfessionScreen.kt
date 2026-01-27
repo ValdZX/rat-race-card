@@ -15,6 +15,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
+import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.DetailsField
 import ua.vald_zx.game.rat.race.card.launchWithHandler
@@ -94,6 +95,7 @@ class ProfessionScreen(
                             phone = card.phone,
                         ),
                     )
+                    appKStore.update { it?.copy(onlinePlayerId = player.id) }
                     navigator.push(BoardScreen(board, player))
                 }
             }
