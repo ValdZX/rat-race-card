@@ -18,8 +18,8 @@ import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 
 
 //private val apiUrl = "wss://race-rat-online-1033277102369.us-central1.run.app/api"
-//private val apiUrl = "ws://192.168.0.159:8080/api"
-private val apiUrl = "ws://10.65.184.61:8080/api"
+private val apiUrl = "ws://192.168.0.159:8080/api"
+//private val apiUrl = "ws://10.65.184.61:8080/api"
 val baseModule = module {
     single {
         HttpClient {

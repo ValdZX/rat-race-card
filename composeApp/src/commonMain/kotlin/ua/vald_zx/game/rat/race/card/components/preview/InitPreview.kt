@@ -27,8 +27,16 @@ fun InitPreview(
                 player = parameters.get<Player>(),
                 serviceProvider = {
                     object : RaceRatService {
+                        override suspend fun init() {
+                            //nop
+                        }
+
                         override suspend fun hello(helloUuid: String): Instance {
                             error("Not for preview")
+                        }
+
+                        override suspend fun eventReceived(event: Event) {
+                            //nop
                         }
 
                         override suspend fun ping() {
@@ -101,7 +109,7 @@ fun InitPreview(
                             //NOP
                         }
 
-                        override suspend fun buyBusiness(business: Business, needGoNextPlayer: Boolean) {
+                        override suspend fun buyBusiness(business: Business) {
                             //NOP
                         }
 
@@ -125,11 +133,11 @@ fun InitPreview(
                             //NOP
                         }
 
-                        override suspend fun buyEstate(card: Estate, needGoNextPlayer: Boolean) {
+                        override suspend fun buyEstate(card: Estate) {
                             //NOP
                         }
 
-                        override suspend fun buyLand(land: Land, needGoNextPlayer: Boolean) {
+                        override suspend fun buyLand(land: Land) {
                             //NOP
                         }
 
@@ -137,7 +145,7 @@ fun InitPreview(
                             //NOP
                         }
 
-                        override suspend fun buyShares(shares: Shares, needGoNextPlayer: Boolean) {
+                        override suspend fun buyShares(shares: Shares) {
                             //NOP
                         }
 

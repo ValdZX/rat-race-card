@@ -192,9 +192,10 @@ class BoardViewModel(
                     }
 
                     Event.CheckState -> {
-                        safeLaunch { connectionIsValid() }
+                        connectionIsValid()
                     }
                 }
+                eventReceived(event)
             }
         }
         safeLaunch {

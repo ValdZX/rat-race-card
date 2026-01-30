@@ -36,7 +36,7 @@ fun main() {
             checkStatusFlow.emit(Uuid.random().toString())
             Storage.boards().forEach { board ->
                 val players = board.playerIds.map { playerId -> Storage.getPlayer(playerId) }
-                if(players.all { it.isInactive }) {
+                if (players.all { it.isInactive }) {
                     //So sad
                 } else {
                     players.forEach { player ->
@@ -67,20 +67,12 @@ fun getGlobalEventBus(boardId: String): MutableSharedFlow<GlobalEvent> {
 }
 
 fun Application.module() {
-    val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     install(Krpc)
     installCORS()
     routing {
         staticResources("/content", "mycontent")
-
-        get("/") {
-            call.respondText("Race rat RPC services")
-        }
-
-        get("/error-test") {
-            throw IllegalStateException("Too Busy")
-        }
-
+        get("/") { call.respondText("Race rat RPC services") }
+        get("/error-test") { throw IllegalStateException("Too Busy") }
         rpc("/api") {
             rpcConfig {
                 serialization {
@@ -89,7 +81,7 @@ fun Application.module() {
             }
             val uuidStateProvider = MutableStateFlow("")
             registerService<RaceRatService> {
-                RaceRatServiceImpl(appScope, uuidStateProvider)
+                RaceRatServiceImpl(uuidStateProvider)
             }
             registerService<RaceRatCardService> {
                 RaceRatCardServiceImpl()

@@ -94,7 +94,10 @@ data class Instance(val playerId: String, val board: Board?, val player: Player?
 
 @Rpc
 interface RaceRatService {
+    suspend fun init()
+
     suspend fun hello(helloUuid: String = ""): Instance
+    suspend fun eventReceived(event: Event)
 
     suspend fun ping()
     suspend fun connectionIsValid()
@@ -125,17 +128,17 @@ interface RaceRatService {
     suspend fun next()
     suspend fun takeCard(cardType: BoardCardType)
     suspend fun takeSalary()
-    suspend fun buyBusiness(business: Business, needGoNextPlayer: Boolean = true)
+    suspend fun buyBusiness(business: Business)
 
     suspend fun dismissalConfirmed(business: Business)
     suspend fun sellingAllBusinessConfirmed(business: Business)
     suspend fun minusCash(price: Long)
     suspend fun buyThing(card: BoardCard.Shopping)
     suspend fun changePosition(position: Int)
-    suspend fun buyEstate(estate: Estate, needGoNextPlayer: Boolean = true)
-    suspend fun buyLand(land: Land, needGoNextPlayer: Boolean = true)
+    suspend fun buyEstate(estate: Estate)
+    suspend fun buyLand(land: Land)
     suspend fun randomJob(card: BoardCard.Chance.RandomJob)
-    suspend fun buyShares(shares: Shares, needGoNextPlayer: Boolean = true)
+    suspend fun buyShares(shares: Shares)
     suspend fun selectCardByNo(cardId: Int)
     suspend fun extendBusiness(business: Business, card: BoardCard.EventStore.BusinessExtending)
     suspend fun sellLands(area: Long, priceOfUnit: Long)

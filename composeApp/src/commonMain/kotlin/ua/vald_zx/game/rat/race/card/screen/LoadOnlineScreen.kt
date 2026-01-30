@@ -43,6 +43,11 @@ class LoadOnlineScreen : Screen {
             CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
                 val service = koin.get<RaceRatService>()
                 val helloUuid = appKStore.get()?.onlinePlayerId.orEmpty()
+                launch {
+                    Napier.d("Service init")
+                    service.init()
+                    Napier.d("Service end")
+                }
                 val instance = service.hello(helloUuid)
                 val board = instance.board
                 val player = instance.player

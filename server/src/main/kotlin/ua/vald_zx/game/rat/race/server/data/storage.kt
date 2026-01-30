@@ -73,8 +73,6 @@ object Storage {
 
     fun observeBoards(): Flow<List<Board>> = boardsFlow
 
-    suspend fun observePlayer(playerId: String): Flow<Player> = getPlayerState(playerId)
-
     suspend fun observeBoard(id: String): Flow<Board> = getBoardState(id)
 
     suspend fun newBoard(board: Board) {
