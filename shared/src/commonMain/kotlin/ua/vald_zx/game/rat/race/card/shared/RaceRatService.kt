@@ -97,8 +97,6 @@ interface RaceRatService {
     suspend fun init()
 
     suspend fun hello(helloUuid: String = ""): Instance
-    suspend fun eventReceived(event: Event)
-
     suspend fun ping()
     suspend fun connectionIsValid()
     suspend fun getBoards(): List<BoardId>

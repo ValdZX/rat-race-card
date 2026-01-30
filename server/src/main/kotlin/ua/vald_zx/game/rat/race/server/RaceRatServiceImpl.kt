@@ -7,6 +7,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.TimeZone
@@ -41,17 +42,10 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     private suspend fun player() = Storage.getPlayer(uuid)
     private suspend fun board() = Storage.getBoard(boardIdState.value)
 
-    override suspend fun eventReceived(event: Event) {
-        LOGGER.debug("Change ${this@RaceRatServiceImpl.hashCode()} event received ${event::class.simpleName}")
-    }
-
     override suspend fun init() {
         coroutineScope {
             checkStatusFlow.onEach {
                 eventBus.emit(Event.CheckState)
-            }.launchIn(this)
-            eventBus.onEach { event ->
-                LOGGER.debug("Change ${this@RaceRatServiceImpl.hashCode()} sended event ${event::class.simpleName}")
             }.launchIn(this)
             Storage.observeBoards().onEach {
                 boardsFlow.emit(getBoards())
@@ -60,41 +54,41 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
                 if (boardId.isNotBlank()) {
                     boardStateSubJob?.cancel()
                     boardStateSubJob = Storage.observeBoard(boardId).onEach { board ->
-                        LOGGER.info("Change ${this@RaceRatServiceImpl.hashCode()} Board ${board.name} updated")
                         eventBus.emit(Event.BoardChanged(board))
                     }.launchIn(this)
                     globalEventStateSubJob?.cancel()
                     globalEventStateSubJob = globalEventBus.onEach { event ->
-                        LOGGER.info("Change ${this@RaceRatServiceImpl.hashCode()} global event: ${event::class.simpleName}")
-                        when (event) {
-                            is GlobalEvent.SendMoney -> {
-                                if (event.receiverId == uuid) {
-                                    eventBus.emit(Event.MoneyIncome(event.playerId, event.amount))
-                                    updatePlayer {
-                                        this.plusCash(event.amount)
+                        launch {
+                            when (event) {
+                                is GlobalEvent.SendMoney -> {
+                                    if (event.receiverId == uuid) {
+                                        eventBus.emit(Event.MoneyIncome(event.playerId, event.amount))
+                                        updatePlayer {
+                                            this.plusCash(event.amount)
+                                        }
                                     }
                                 }
-                            }
 
-                            is GlobalEvent.PlayerChanged -> {
-                                eventBus.emit(Event.PlayerChanged(event.player))
-                            }
+                                is GlobalEvent.PlayerChanged -> {
+                                    eventBus.emit(Event.PlayerChanged(event.player))
+                                }
 
-                            is GlobalEvent.PlayerHadBaby -> {
-                                eventBus.emit(Event.PlayerHadBaby(event.playerId, event.babies))
-                            }
+                                is GlobalEvent.PlayerHadBaby -> {
+                                    eventBus.emit(Event.PlayerHadBaby(event.playerId, event.babies))
+                                }
 
-                            is GlobalEvent.PlayerMarried -> {
-                                eventBus.emit(Event.PlayerMarried(event.playerId))
-                            }
+                                is GlobalEvent.PlayerMarried -> {
+                                    eventBus.emit(Event.PlayerMarried(event.playerId))
+                                }
 
-                            is GlobalEvent.PlayerDivorced -> {
-                                eventBus.emit(Event.PlayerDivorced(event.playerId))
-                            }
+                                is GlobalEvent.PlayerDivorced -> {
+                                    eventBus.emit(Event.PlayerDivorced(event.playerId))
+                                }
 
-                            is GlobalEvent.BidSelled -> {
-                                if (event.bid.playerId == uuid) {
-                                    buyLot(event.auction, event.bid)
+                                is GlobalEvent.BidSelled -> {
+                                    if (event.bid.playerId == uuid) {
+                                        buyLot(event.auction, event.bid)
+                                    }
                                 }
                             }
                         }
@@ -124,7 +118,6 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     }
 
     override suspend fun ping() {
-        delay(10000)
         if (player().isInactive) {
             updatePlayer { copy(isInactive = false) }
         }
@@ -270,7 +263,6 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     }
 
     private suspend fun nextPlayer() {
-        LOGGER.info("Change ${this@RaceRatServiceImpl.hashCode()} next player")
         nextPlayer(board())
     }
 
@@ -366,7 +358,6 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
             copy(location = location.copy(position = newPosition), salaryPosition = salaryPosition)
         }
         val place = layer.places[newPosition]
-        LOGGER.info("Change  ${this@RaceRatServiceImpl.hashCode()} $place place to process")
         when (place) {
             PlaceType.BigBusiness -> {
                 updateBoard {
@@ -508,9 +499,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     private suspend fun updateBoard(change: suspend Board.() -> Board) = updateBoardMutex.withLock {
         updateBoardCounter += 1
         val changeId = updateBoardCounter
-        LOGGER.info("Change ${this@RaceRatServiceImpl.hashCode()} $changeId Start Board M:${updateBoardMutex.hashCode()}")
         Storage.updateBoard(board().change())
-        LOGGER.info("Change ${this@RaceRatServiceImpl.hashCode()} $changeId End Board M:${updateBoardMutex.hashCode()}")
     }
 
     private val updatePlayerMutex = Mutex()
@@ -519,7 +508,6 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     private suspend fun updatePlayer(change: suspend Player.() -> Player) = updatePlayerMutex.withLock {
         updatePlayerCounter += 1
         val changeId = updatePlayerCounter
-        LOGGER.info("Change ${this@RaceRatServiceImpl.hashCode()} $changeId Start Player M:${updatePlayerMutex.hashCode()}")
         val previeusPlayer = player()
         val newPlayer = previeusPlayer.change().let { player ->
             val newTotal = player.total()
@@ -535,7 +523,6 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
             player.copy(lastTotals = totals, lastCashFlows = cashFlows)
         }
         Storage.updatePlayer(newPlayer)
-        LOGGER.info("Change  ${this@RaceRatServiceImpl.hashCode()} $changeId End Player M:${updatePlayerMutex.hashCode()}")
         globalEventBus.emit(GlobalEvent.PlayerChanged(newPlayer))
     }
 
@@ -807,7 +794,6 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
         updatePlayer {
             plusCash(profit)
         }
-        globalEventBus.emit(GlobalEvent.BidSelled(bid, auction))
         if (auction !is Auction.SharesAuction) {
             updateBoard {
                 copy(auction = null, bidList = emptyList())
@@ -824,6 +810,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
                 )
             }
         }
+        globalEventBus.emit(GlobalEvent.BidSelled(bid, auction))
     }
 
     override suspend fun makeBid(price: Long, count: Long) {
@@ -838,7 +825,8 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     ) {
         when (auction) {
             is Auction.BusinessAuction -> {
-                buyBusiness(auction.business.copy(price = bid.bid)) {
+                val business = auction.business.copy(price = bid.bid)
+                buyBusiness(business) {
                     LOGGER.info("Change ${this@RaceRatServiceImpl.hashCode()} auction is buying business")
                 }
                 eventBus.emit(Event.BidBusinessAuctionSuccessBuy)
@@ -875,7 +863,6 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
 }
 
 suspend fun nextPlayer(board: Board) {
-    LOGGER.info("Change next player")
     val activePlayers = Storage.players(board.id).filter { player -> !player.isInactive }
     if (activePlayers.isEmpty()) return
     val playerIds = activePlayers.map { it.id }

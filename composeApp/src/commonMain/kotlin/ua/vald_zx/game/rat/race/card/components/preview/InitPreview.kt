@@ -35,10 +35,6 @@ fun InitPreview(
                             error("Not for preview")
                         }
 
-                        override suspend fun eventReceived(event: Event) {
-                            //nop
-                        }
-
                         override suspend fun ping() {
                             //nop
                         }

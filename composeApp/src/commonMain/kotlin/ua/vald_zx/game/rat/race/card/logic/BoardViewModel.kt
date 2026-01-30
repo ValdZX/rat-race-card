@@ -3,12 +3,9 @@ package ua.vald_zx.game.rat.race.card.logic
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.aakira.napier.Napier
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
 import ua.vald_zx.game.rat.race.card.shared.*
 import kotlin.coroutines.CoroutineContext
@@ -71,7 +68,7 @@ class BoardViewModel(
     val actions = _actions.receiveAsFlow()
 
     private fun safeLaunch(block: suspend RaceRatService.(CoroutineContext) -> Unit): Job {
-        return viewModelScope.launch(viewModelScope.coroutineContext + SupervisorJob() + CoroutineExceptionHandler { _, t ->
+        return viewModelScope.launch(Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, t ->
             Napier.e("Invalid server", t)
             viewModelScope.launch {
                 _actions.send(ConnectionLost)
@@ -195,11 +192,11 @@ class BoardViewModel(
                         connectionIsValid()
                     }
                 }
-                eventReceived(event)
             }
         }
         safeLaunch {
             while (true) {
+                delay(10000)
                 ping()
             }
         }

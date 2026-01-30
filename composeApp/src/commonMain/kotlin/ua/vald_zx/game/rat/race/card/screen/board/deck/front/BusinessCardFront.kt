@@ -154,7 +154,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                         },
                     )
                 }
-                if (state.currentPlayerIsActive || state.board.auction != null) {
+                if (state.currentPlayerIsActive || (state.board.auction != null && state.canBuyBusiness())) {
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = {
@@ -288,7 +288,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                         },
                     )
                 }
-                if (state.currentPlayerIsActive || state.board.auction != null) {
+                if (state.currentPlayerIsActive || (state.board.auction != null && state.canBuyBusiness())) {
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = {
@@ -422,7 +422,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                         },
                     )
                 }
-                if (state.currentPlayerIsActive || state.board.auction != null) {
+                if (state.currentPlayerIsActive || (state.board.auction != null && state.canBuyBusiness())) {
                     ElevatedButton(
                         modifier = Modifier,
                         onClick = {
