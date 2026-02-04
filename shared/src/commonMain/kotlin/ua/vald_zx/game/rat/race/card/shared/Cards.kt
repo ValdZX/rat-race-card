@@ -104,7 +104,7 @@ sealed class BoardCard(val type: BoardCardType) {
         data class Shares(
             val description: String,
             val price: Long,
-            val maxCount: Int,
+            val maxCount: Long,
             val sharesType: SharesType
         ) : Chance()
 

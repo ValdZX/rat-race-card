@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,12 +20,13 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
-import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.DetailsField
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Send
 import ua.vald_zx.game.rat.race.card.shared.Auction
 
 class AuctionScreen(private val vm: BoardViewModel, private val auction: Auction) : Screen {
@@ -86,6 +85,9 @@ class AuctionScreen(private val vm: BoardViewModel, private val auction: Auction
                                         players.value.find { it.id == item.playerId }?.card?.name.orEmpty()
                                     }
                                     DetailsField(stringResource(Res.string.player_name), playerName)
+                                    if (item.count > 0) {
+                                        DetailsField(stringResource(Res.string.quantity), item.count.toString())
+                                    }
                                     DetailsField(stringResource(Res.string.bid), item.bid.formatAmount())
                                     DetailsField(
                                         stringResource(Res.string.profit),
@@ -93,37 +95,51 @@ class AuctionScreen(private val vm: BoardViewModel, private val auction: Auction
                                     )
                                 }
                                 if (state.currentPlayerIsActive) {
-                                    Button(
-                                        stringResource(Res.string.resell),
-                                        modifier = Modifier.align(Alignment.CenterVertically)
-                                    ) {
-                                        vm.sellBid(item)
-                                        bottomSheetNavigator.hide()
-                                    }
+                                    IconButton(
+                                        modifier = Modifier.align(Alignment.CenterVertically),
+                                        onClick = {
+                                            vm.sellBid(item)
+                                            bottomSheetNavigator.hide()
+                                        },
+                                        content = {
+                                            Icon(Images.Send, contentDescription = null)
+                                        },
+                                        enabled = auction !is Auction.SharesAuction || auction.shares.count >= item.count
+                                    )
                                 }
                             }
                         }
                     }
                 }
-                if (!state.currentPlayerIsActive) {
-                    Row {
+                if (!state.currentPlayerIsActive && state.canMakeBid()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         val bidState = remember {
                             mutableStateOf(TextFieldValue(minBid.toString()))
+                        }
+                        val quantityState = remember {
+                            mutableStateOf(TextFieldValue(""))
                         }
                         NumberTextField(
                             input = bidState,
                             inputLabel = stringResource(Res.string.bid),
                             modifier = Modifier.weight(1f),
                         )
+                        if (auction is Auction.SharesAuction) {
+                            NumberTextField(
+                                input = quantityState,
+                                inputLabel = stringResource(Res.string.quantity),
+                                modifier = Modifier.weight(1f).padding(start = 8.dp),
+                            )
+                        }
                         val bid = bidState.value.text.toLongOrNull() ?: 0
                         ElevatedButton(
                             modifier = Modifier
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                                 .widthIn(min = 200.dp),
                             onClick = {
-                                vm.makeBid(bid, 1)
+                                vm.makeBid(bid, quantityState.value.text.toLongOrNull() ?: 0)
                             },
-                            enabled = bidState.value.text.isNotEmpty() && bid >= minBid,
+                            enabled = bidState.value.text.isNotEmpty() && bid >= minBid && state.canPay(bid),
                             content = {
                                 Text(stringResource(Res.string.placeBet))
                             }

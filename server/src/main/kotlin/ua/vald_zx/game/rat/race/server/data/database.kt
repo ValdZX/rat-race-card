@@ -9,10 +9,7 @@ import com.mongodb.client.model.Filters
 import com.mongodb.client.model.ReplaceOptions
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.pojo.PojoCodecProvider
 import ua.vald_zx.game.rat.race.card.shared.Board
@@ -70,6 +67,12 @@ suspend fun MongoDatabase.updateBoard(board: Board) {
 }
 
 suspend fun MongoDatabase.newPlayer(player: Player) {
+    val oldPlayer = playerCollection()
+        .find(Filters.eq("_id", player.id))
+        .firstOrNull()
+    if(oldPlayer != null) {
+        removePlayer(oldPlayer.id)
+    }
     playerCollection().insertOne(player)
 }
 
@@ -98,7 +101,7 @@ suspend fun MongoDatabase.getBoard(id: String): Board {
 
 
 suspend fun MongoDatabase.getPlayer(id: String): Player {
-    return getCollection<Player>("player")
+    return playerCollection()
         .find(Filters.eq("_id", id))
         .first()
 }

@@ -59,7 +59,6 @@ import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
-import ua.vald_zx.game.rat.race.card.screen.BoardListScreen
 import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDeck
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDialog
@@ -426,7 +425,8 @@ class BoardScreen(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            navigator.popUntil { it is BoardListScreen }
+                            navigator.popUntilRoot()
+                            navigator.push(InitPlayerScreen(board))
                             loanOverlimitedDialog = false
                         }
                     ) { Text(stringResource(Res.string.yes)) }

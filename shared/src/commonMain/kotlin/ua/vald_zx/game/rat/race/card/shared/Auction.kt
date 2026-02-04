@@ -24,6 +24,7 @@ sealed class Auction {
             is LandAuction -> firstBid
             is SharesAuction -> firstBid
         }
+
     fun copy(bid: Long): Auction {
         return when (this) {
             is BusinessAuction -> copy(firstBid = bid)
@@ -33,22 +34,30 @@ sealed class Auction {
         }
     }
 
+    val quantity: Long
+        get() = when (this) {
+            is BusinessAuction -> 0
+            is EstateAuction -> 0
+            is LandAuction -> 0
+            is SharesAuction -> shares.count
+        }
+
     fun getProfit(bid: Bid): Long {
         return when (this) {
-            is Auction.BusinessAuction -> {
+            is BusinessAuction -> {
                 bid.bid - this.business.price
             }
 
-            is Auction.EstateAuction -> {
+            is EstateAuction -> {
                 bid.bid - this.estate.price
             }
 
-            is Auction.LandAuction -> {
+            is LandAuction -> {
                 bid.bid - this.land.price
             }
 
-            is Auction.SharesAuction -> {
-                bid.bid * bid.count - this.shares.price * this.shares.count
+            is SharesAuction -> {
+                bid.bid * bid.count - this.shares.buyPrice * bid.count
             }
         }
     }

@@ -165,7 +165,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
         card: PlayerCard,
     ): Player {
         val board = board()
-        uuid = Uuid.random().toString()
+        uuid = uuid.ifEmpty { Uuid.random().toString() }
         val newPlayer = Player(
             id = uuid,
             boardId = board.id,

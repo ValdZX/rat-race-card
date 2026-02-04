@@ -36,7 +36,7 @@ fun BoxWithConstraintsScope.CardDialog(vm: BoardViewModel) {
         }
     }
     if (showDialog) {
-        val card = remember { takenCard ?: error("Illegal state") }
+        val card = remember { takenCard } ?: return
         var targetProgress by remember { mutableStateOf(0f) }
 
         val progress by animateFloatAsState(

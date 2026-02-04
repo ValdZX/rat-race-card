@@ -28,6 +28,24 @@ data class BoardState(
     fun canBuyBusiness(): Boolean {
         return player.businesses.size <= board.businessLimit
     }
+
+    fun canMakeBid(): Boolean {
+        val auction = board.auction ?: return false
+        return when (auction) {
+            is Auction.BusinessAuction -> {
+                canPay(auction.firstBid) && canBuyBusiness()
+            }
+            is Auction.EstateAuction -> {
+                canPay(auction.firstBid)
+            }
+            is Auction.LandAuction -> {
+                canPay(auction.firstBid)
+            }
+            is Auction.SharesAuction -> {
+                canPay(auction.firstBid)
+            }
+        }
+    }
 }
 
 sealed class BoardUiAction {
