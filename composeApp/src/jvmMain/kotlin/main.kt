@@ -3,9 +3,11 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import ua.vald_zx.game.rat.race.card.App
+import ua.vald_zx.game.rat.race.card.storageKeyPrefix
 import java.awt.Dimension
 
 fun main() {
+    storageKeyPrefix = System.getenv("storage")
     application {
         Window(
             title = "Cashflow: Rat Race Edition",

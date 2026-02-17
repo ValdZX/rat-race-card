@@ -36,8 +36,10 @@ data class AppDataStorageBean(
     val theme: Boolean?,
 )
 
+var storageKeyPrefix = ""
+
 val appKStore: KStore<AppDataStorageBean>
-    get() = getStore("appData.json", AppDataStorageBean("", null))
+    get() = getStore("${storageKeyPrefix}appData.json", AppDataStorageBean("", null))
 
 @Composable
 internal fun App() {

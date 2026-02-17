@@ -283,7 +283,18 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
             && currentBusiness.any { it.type == BusinessType.WORK }
             && currentBusiness.count { it.type == BusinessType.SMALL } == 1
         ) {
-            eventBus.emit(Event.ConfirmDismissal(business))
+            if (business.fromAuction) {
+                updatePlayer {
+                    copy(businesses = currentBusiness.filter { it.type == BusinessType.WORK } + business)
+                        .minusCash(business.price)
+                }
+                currentBusiness.find { it.type == BusinessType.WORK }?.let { work ->
+                    eventBus.emit(Event.Fired(work))
+                }
+                doNext()
+            } else {
+                eventBus.emit(Event.ConfirmDismissal(business))
+            }
         } else if (currentBusiness.isNotEmpty()
             && currentBusiness.first().type.klass != business.type.klass
             && !currentBusiness.any { it.type == BusinessType.WORK }
@@ -825,7 +836,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     ) {
         when (auction) {
             is Auction.BusinessAuction -> {
-                val business = auction.business.copy(price = bid.bid)
+                val business = auction.business.copy(price = bid.bid, fromAuction = true)
                 buyBusiness(business) {
                     LOGGER.info("Change ${this@RaceRatServiceImpl.hashCode()} auction is buying business")
                 }

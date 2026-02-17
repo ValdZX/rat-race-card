@@ -201,6 +201,7 @@ class BoardScreen(
         }
 
         var confirmDismissalDialog: Business? by remember { mutableStateOf(null) }
+        var firedDialog: Business? by remember { mutableStateOf(null) }
         var confirmSellingAllBusinessDialog: Business? by remember { mutableStateOf(null) }
         var bankruptBusinessDialog: Business? by remember { mutableStateOf(null) }
         var congratulationsWithBabyDialog by remember { mutableStateOf(false) }
@@ -221,6 +222,10 @@ class BoardScreen(
                 when (event) {
                     is BoardUiAction.ConfirmDismissal -> {
                         confirmDismissalDialog = event.business
+                    }
+
+                    is BoardUiAction.Fired -> {
+                        firedDialog = event.business
                     }
 
                     is BoardUiAction.ConfirmSellingAllBusiness -> {
@@ -330,6 +335,25 @@ class BoardScreen(
                         vm.pass()
                         confirmDismissalDialog = null
                     }) { Text(stringResource(Res.string.cancel)) }
+                }
+            )
+        }
+        firedDialog?.let { business ->
+            AlertDialog(
+                title = { Text(text = stringResource(Res.string.fire_from_job)) },
+                text = {
+                    Text(
+                        text = stringResource(
+                            Res.string.lose_job_on_second_business_with_salary,
+                            business.profit.toString()
+                        )
+                    )
+                },
+                onDismissRequest = { confirmDismissalDialog = null },
+                confirmButton = {
+                    TextButton(onClick = { confirmDismissalDialog = null }) {
+                        Text(stringResource(Res.string.ok))
+                    }
                 }
             )
         }

@@ -85,6 +85,7 @@ data class Business(
     val profit: Long,
     val extentions: List<Long> = emptyList(),
     val alarmed: Boolean = false,
+    val fromAuction: Boolean = false,
 )
 
 @Serializable

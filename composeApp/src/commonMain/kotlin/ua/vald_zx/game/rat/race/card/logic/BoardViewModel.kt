@@ -50,6 +50,7 @@ data class BoardState(
 
 sealed class BoardUiAction {
     data class ConfirmDismissal(val business: Business) : BoardUiAction()
+    data class Fired(val business: Business) : BoardUiAction()
     data class BankruptBusiness(val business: Business) : BoardUiAction()
     data class ConfirmSellingAllBusiness(val business: Business) : BoardUiAction()
     data class DepositWithdraw(val balance: Long) : BoardUiAction()
@@ -126,6 +127,10 @@ class BoardViewModel(
 
                     is Event.ConfirmDismissal -> {
                         _actions.send(ConfirmDismissal(event.business))
+                    }
+
+                    is Event.Fired -> {
+                        _actions.send(Fired(event.business))
                     }
 
                     is Event.ConfirmSellingAllBusiness -> {

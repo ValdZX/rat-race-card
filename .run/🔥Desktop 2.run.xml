@@ -1,6 +1,11 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="🔥Desktop" type="GradleRunConfiguration" factoryName="Gradle">
+  <configuration default="false" name="🔥Desktop 2" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
+      <option name="env">
+        <map>
+          <entry key="storage" value="second" />
+        </map>
+      </option>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$/composeApp" />
       <option name="externalSystemIdString" value="GRADLE" />
