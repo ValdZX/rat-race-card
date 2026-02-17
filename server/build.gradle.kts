@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "ua.vald_zx.game.rat.race.server"
-version = "0.2.8"
+version = "0.2.9"
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
 }
