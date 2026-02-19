@@ -3,11 +3,8 @@
 package ua.vald_zx.game.rat.race.server
 
 import io.ktor.util.logging.*
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.TimeZone
@@ -24,7 +21,8 @@ internal val LOGGER = KtorSimpleLogger("RaceRatService")
 var updateBoardCounter = 0
 private val updateBoardMutex = Mutex()
 
-class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>) : RaceRatService {
+class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>) : RaceRatService,
+    CoroutineScope by CoroutineScope(Dispatchers.Default) {
 
     private var boardIdState = MutableStateFlow("")
     private var uuid: String = ""
@@ -42,68 +40,66 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     private suspend fun player() = Storage.getPlayer(uuid)
     private suspend fun board() = Storage.getBoard(boardIdState.value)
 
-    override suspend fun init() {
-        coroutineScope {
-            checkStatusFlow.onEach {
+    init {
+        checkStatusFlow.onEach {
+            launch {
+                eventBus.emit(Event.CheckState)
+            }
+        }.launchIn(this)
+        Storage.observeBoards().onEach {
+            launch {
+                boardsFlow.emit(getBoards())
+            }
+        }.launchIn(this)
+        boardIdState.onEach { boardId ->
+            if (boardId.isNotBlank()) {
                 launch {
-                    eventBus.emit(Event.CheckState)
-                }
-            }.launchIn(this)
-            Storage.observeBoards().onEach {
-                launch {
-                    boardsFlow.emit(getBoards())
-                }
-            }.launchIn(this)
-            boardIdState.onEach { boardId ->
-                if (boardId.isNotBlank()) {
-                    launch {
-                        boardStateSubJob?.cancel()
-                        boardStateSubJob = Storage.observeBoard(boardId).onEach { board ->
-                            launch {
-                                eventBus.emit(Event.BoardChanged(board))
-                            }
-                        }.launchIn(this)
-                        globalEventStateSubJob?.cancel()
-                        globalEventStateSubJob = globalEventBus.onEach { event ->
-                            launch {
-                                when (event) {
-                                    is GlobalEvent.SendMoney -> {
-                                        if (event.receiverId == uuid) {
-                                            eventBus.emit(Event.MoneyIncome(event.playerId, event.amount))
-                                            updatePlayer {
-                                                this.plusCash(event.amount)
-                                            }
-                                        }
-                                    }
-
-                                    is GlobalEvent.PlayerChanged -> {
-                                        eventBus.emit(Event.PlayerChanged(event.player))
-                                    }
-
-                                    is GlobalEvent.PlayerHadBaby -> {
-                                        eventBus.emit(Event.PlayerHadBaby(event.playerId, event.babies))
-                                    }
-
-                                    is GlobalEvent.PlayerMarried -> {
-                                        eventBus.emit(Event.PlayerMarried(event.playerId))
-                                    }
-
-                                    is GlobalEvent.PlayerDivorced -> {
-                                        eventBus.emit(Event.PlayerDivorced(event.playerId))
-                                    }
-
-                                    is GlobalEvent.BidSelled -> {
-                                        if (event.bid.playerId == uuid) {
-                                            buyLot(event.auction, event.bid)
+                    boardStateSubJob?.cancel()
+                    boardStateSubJob = Storage.observeBoard(boardId).onEach { board ->
+                        launch {
+                            eventBus.emit(Event.BoardChanged(board))
+                        }
+                    }.launchIn(this)
+                    globalEventStateSubJob?.cancel()
+                    globalEventStateSubJob = globalEventBus.onEach { event ->
+                        launch {
+                            when (event) {
+                                is GlobalEvent.SendMoney -> {
+                                    if (event.receiverId == uuid) {
+                                        eventBus.emit(Event.MoneyIncome(event.playerId, event.amount))
+                                        updatePlayer {
+                                            this.plusCash(event.amount)
                                         }
                                     }
                                 }
+
+                                is GlobalEvent.PlayerChanged -> {
+                                    eventBus.emit(Event.PlayerChanged(event.player))
+                                }
+
+                                is GlobalEvent.PlayerHadBaby -> {
+                                    eventBus.emit(Event.PlayerHadBaby(event.playerId, event.babies))
+                                }
+
+                                is GlobalEvent.PlayerMarried -> {
+                                    eventBus.emit(Event.PlayerMarried(event.playerId))
+                                }
+
+                                is GlobalEvent.PlayerDivorced -> {
+                                    eventBus.emit(Event.PlayerDivorced(event.playerId))
+                                }
+
+                                is GlobalEvent.BidSelled -> {
+                                    if (event.bid.playerId == uuid) {
+                                        buyLot(event.auction, event.bid)
+                                    }
+                                }
                             }
-                        }.launchIn(this)
-                    }
+                        }
+                    }.launchIn(this)
                 }
-            }.launchIn(this)
-        }
+            }
+        }.launchIn(this)
     }
 
     override suspend fun hello(helloUuid: String): Instance {

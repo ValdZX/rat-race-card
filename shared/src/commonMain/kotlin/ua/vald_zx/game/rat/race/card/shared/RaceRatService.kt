@@ -97,8 +97,6 @@ data class Instance(val playerId: String, val board: Board?, val player: Player?
 
 @Rpc
 interface RaceRatService {
-    suspend fun init()
-
     suspend fun hello(helloUuid: String = ""): Instance
     suspend fun ping()
     suspend fun connectionIsValid()
