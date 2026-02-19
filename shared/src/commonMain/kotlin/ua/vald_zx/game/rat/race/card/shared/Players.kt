@@ -106,7 +106,9 @@ enum class SharesType {
     GC,
     ShchHP,
     TO,
-    CST
+    CST,
+    AGRO,
+    IT,
 }
 
 
