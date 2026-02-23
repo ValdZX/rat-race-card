@@ -124,7 +124,8 @@ class AuctionScreen(private val vm: BoardViewModel, private val auction: Auction
                             inputLabel = stringResource(Res.string.bid),
                             modifier = Modifier.weight(1f),
                         )
-                        if (auction is Auction.SharesAuction) {
+                        val isShares = auction is Auction.SharesAuction
+                        if (isShares) {
                             NumberTextField(
                                 input = quantityState,
                                 inputLabel = stringResource(Res.string.quantity),
@@ -132,14 +133,15 @@ class AuctionScreen(private val vm: BoardViewModel, private val auction: Auction
                             )
                         }
                         val bid = bidState.value.text.toLongOrNull() ?: 0
+                        val count = quantityState.value.text.toLongOrNull() ?: 0
                         ElevatedButton(
                             modifier = Modifier
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                                 .widthIn(min = 200.dp),
                             onClick = {
-                                vm.makeBid(bid, quantityState.value.text.toLongOrNull() ?: 0)
+                                vm.makeBid(bid, count)
                             },
-                            enabled = bidState.value.text.isNotEmpty() && bid >= minBid && state.canPay(bid),
+                            enabled = isShares && state.canPay(bid * count) || bidState.value.text.isNotEmpty() && bid >= minBid && state.canPay(bid),
                             content = {
                                 Text(stringResource(Res.string.placeBet))
                             }
