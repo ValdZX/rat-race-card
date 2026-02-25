@@ -21,8 +21,10 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.datetime.format
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.getKoin
 import org.koin.compose.koinInject
 import rat_race_card.composeapp.generated.resources.*
+import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.components.TextButton
@@ -30,6 +32,7 @@ import ua.vald_zx.game.rat.race.card.dateFullDotsFormat
 import ua.vald_zx.game.rat.race.card.launchWithHandler
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
+import ua.vald_zx.game.rat.race.card.screen.board.BoardScreen
 import ua.vald_zx.game.rat.race.card.screen.board.InitPlayerScreen
 import ua.vald_zx.game.rat.race.card.screen.board.cards.decks
 import ua.vald_zx.game.rat.race.card.shared.BoardId
@@ -43,6 +46,7 @@ class BoardListScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         var boardList by remember { mutableStateOf(emptyList<BoardId>()) }
         var newBoardDialog by remember { mutableStateOf(false) }
+        val koin = getKoin()
         LaunchedEffect(Unit) {
             boardList = service.getBoards()
             service.observeBoards().onEach {
@@ -79,9 +83,19 @@ class BoardListScreen : Screen {
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.primaryContainer)
                                 .clickable {
-                                    launchWithHandler({ navigator.replaceAll(LoadOnlineScreen()) }) {
-                                        val selectedBoard = service.selectBoard(board.id)
-                                        navigator.push(InitPlayerScreen(selectedBoard))
+                                    launchWithHandler({ navigator.push(LoadOnlineScreen()) }) {
+                                        val service = koin.get<RaceRatService>()
+                                        val helloUuid = appKStore.get()?.onlinePlayerId.orEmpty()
+                                        val instance = service.hello(helloUuid)
+                                        val instBoard = instance.board
+                                        val player = instance.player
+                                        if (instBoard == null || instBoard.id != board.id || player == null) {
+                                            val selectedBoard = service.selectBoard(board.id)
+                                            navigator.push(InitPlayerScreen(selectedBoard))
+                                        } else {
+                                            navigator.push(BoardScreen(instBoard, player))
+                                        }
+
                                     }
                                 }.padding(8.dp)
                         ) {
@@ -133,7 +147,7 @@ class BoardListScreen : Screen {
                                     && loanLimit.value.text.isNotEmpty()
                                     && businessLimit.value.text.isNotEmpty()
                         ) {
-                            launchWithHandler({ navigator.replaceAll(LoadOnlineScreen()) }) {
+                            launchWithHandler({ navigator.push(LoadOnlineScreen()) }) {
                                 val board = service.createBoard(
                                     name = boardName,
                                     loanLimit = loanLimit.value.text.toLong(),

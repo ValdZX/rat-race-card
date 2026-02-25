@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.max
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import rat_race_card.composeapp.generated.resources.*
+import ua.vald_zx.game.rat.race.card.components.EButton
 import ua.vald_zx.game.rat.race.card.components.OutlinedBasicTextField
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
@@ -142,21 +143,17 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
-                ElevatedButton(
-                    modifier = Modifier,
+                EButton(
                     onClick = { vm.passEstate() },
-                    content = {
-                        Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
-                    },
+                    title = stringResource(Res.string.pass),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
-                ElevatedButton(
-                    modifier = Modifier,
-                    onClick = {
-                        bottomSheetNavigator.show(EstateSelectScreen(vm, card.price))
-                    },
-                    content = {
-                        Text(stringResource(Res.string.sell), fontSize = unitTS * 14)
-                    },
+                EButton(
+                    onClick = { bottomSheetNavigator.show(EstateSelectScreen(vm, card.price)) },
+                    title = stringResource(Res.string.sell),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
             }
         } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
@@ -242,30 +239,25 @@ private fun BoxWithConstraintsScope.LandCardFront(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
-                ElevatedButton(
-                    modifier = Modifier,
+                EButton(
                     onClick = { vm.passLand() },
-                    content = {
-                        Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
-                    },
+                    title = stringResource(Res.string.pass),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
-                ElevatedButton(
-                    modifier = Modifier,
-                    onClick = {
-                        bottomSheetNavigator.show(SellLandScreen(vm, card.price))
-                    },
-                    content = {
-                        Text(stringResource(Res.string.sell), fontSize = unitTS * 14)
-                    },
+                EButton(
+                    onClick = { bottomSheetNavigator.show(SellLandScreen(vm, card.price)) },
+                    title = stringResource(Res.string.sell),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
             }
         } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
-            ElevatedButton(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                onClick = { vm.passEstate() },
-                content = {
-                    Text(stringResource(Res.string.close), fontSize = unitTS * 14)
-                },
+            EButton(
+                onClick = { vm.passLand() },
+                title = stringResource(Res.string.close),
+                unitTS = unitTS,
+                unitDp = unitDp,
             )
         }
     }
@@ -342,12 +334,11 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ElevatedButton(
-                    modifier = Modifier,
+                EButton(
                     onClick = { vm.passShares(card.sharesType) },
-                    content = {
-                        Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
-                    },
+                    title = stringResource(Res.string.pass),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
                 var count by remember { mutableStateOf(0L) }
                 Column(
@@ -381,23 +372,19 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                         ),
                     )
                 }
-                ElevatedButton(
-                    modifier = Modifier,
-                    onClick = {
-                        vm.sellShares(card, count)
-                    },
-                    content = {
-                        Text(stringResource(Res.string.sell), fontSize = unitTS * 14)
-                    },
+                EButton(
+                    onClick = { vm.sellShares(card, count) },
+                    title = stringResource(Res.string.sell),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
             }
         } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
-            ElevatedButton(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+            EButton(
                 onClick = { vm.passEstate() },
-                content = {
-                    Text(stringResource(Res.string.close), fontSize = unitTS * 14)
-                },
+                title = stringResource(Res.string.close),
+                unitTS = unitTS,
+                unitDp = unitDp,
             )
         }
     }

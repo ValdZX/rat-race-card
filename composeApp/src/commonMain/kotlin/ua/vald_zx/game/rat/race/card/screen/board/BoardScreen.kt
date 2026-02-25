@@ -59,6 +59,7 @@ import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
+import ua.vald_zx.game.rat.race.card.screen.BoardListScreen
 import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDeck
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDialog
@@ -193,7 +194,9 @@ class BoardScreen(
             }
             IconButton(
                 modifier = Modifier.align(Alignment.TopStart),
-                onClick = { navigator.popUntilRoot() },
+                onClick = { navigator.popUntil { screen ->
+                    screen is BoardListScreen
+                } },
                 content = {
                     Icon(Images.Back, contentDescription = null)
                 }
@@ -289,7 +292,7 @@ class BoardScreen(
                     }
 
                     BoardUiAction.ConnectionLost -> {
-                        navigator.replace(LoadOnlineScreen())
+                        navigator.push(LoadOnlineScreen())
                     }
 
                     BoardUiAction.BidBusinessAuctionSuccessBuy -> {

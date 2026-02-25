@@ -35,7 +35,7 @@ fun main() {
             checkStatusJobs.clear()
             checkStatusFlow.emit(Uuid.random().toString())
             Storage.boards().forEach { board ->
-                val players = board.playerIds.map { playerId -> Storage.getPlayer(playerId) }
+                val players = board.playerIds.map { playerId -> Storage.getPlayer(playerId, board.id) }
                 if (players.all { it.isInactive }) {
                     //So sad
                 } else {
@@ -43,7 +43,7 @@ fun main() {
                         if (!player.isInactive) {
                             checkStatusJobs[player.id] = launch {
                                 delay(5000)
-                                val player = Storage.getPlayer(player.id)
+                                val player = Storage.getPlayer(player.id, board.id)
                                 Storage.updatePlayer(player.copy(isInactive = true))
                             }
                         }
@@ -90,12 +90,19 @@ fun Application.module() {
                 runBlocking {
                     val uuid = uuidStateProvider.value
                     if (uuid.isEmpty()) return@runBlocking
-                    val player = Storage.getPlayer(uuid).copy(isInactive = true)
-                    Storage.updatePlayer(player)
-                    getGlobalEventBus(player.boardId).emit(GlobalEvent.PlayerChanged(player))
-                    val board = Storage.getBoard(player.boardId)
-                    if (Storage.getPlayer(board.activePlayerId).isInactive) {
-                        nextPlayer(board)
+                    Storage.boards().forEach { board ->
+                        if (board.playerIds.contains(uuid)) {
+                            val player = Storage.getPlayer(uuid, board.id)
+                            if (!player.isInactive) {
+                                val inactivePlayer = player.copy(isInactive = true)
+                                Storage.updatePlayer(inactivePlayer)
+                                getGlobalEventBus(board.id).emit(GlobalEvent.PlayerChanged(inactivePlayer))
+                                val board = Storage.getBoard(board.id)
+                                if (Storage.getPlayer(board.activePlayerId, board.id).isInactive) {
+                                    nextPlayer(board)
+                                }
+                            }
+                        }
                     }
                 }
             }

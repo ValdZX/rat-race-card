@@ -13,20 +13,20 @@ object Storage {
     private val players: MutableMap<String, MutableStateFlow<Player>> = mutableMapOf()
     private val boards: MutableMap<String, MutableStateFlow<Board>> = mutableMapOf()
 
-    private suspend fun getPlayerState(id: String): MutableStateFlow<Player> {
-        return players.getOrPut(id) { MutableStateFlow(db.getPlayer(id)) }
+    private suspend fun getPlayerState(id: String, boardId: String): MutableStateFlow<Player> {
+        return players.getOrPut(boardId + id) { MutableStateFlow(db.getPlayer(boardId + id)) }
     }
 
     private suspend fun getBoardState(id: String): MutableStateFlow<Board> {
         return boards.getOrPut(id) { MutableStateFlow(db.getBoard(id)) }
     }
 
-    suspend fun getPlayer(id: String): Player {
-        return getPlayerState(id).value
+    suspend fun getPlayer(id: String, boardId: String): Player {
+        return getPlayerState(id, boardId).value
     }
 
     suspend fun updatePlayer(player: Player) {
-        getPlayerState(player.id).value = player
+        getPlayerState(player.id, player.boardId).value = player
         db.updatePlayer(player)
     }
 
@@ -35,19 +35,19 @@ object Storage {
     }
 
     suspend fun players(boardId: String): List<Player> {
-        return getBoard(boardId).playerIds.map { playerId -> getPlayer(playerId) }
+        return getBoard(boardId).playerIds.map { playerId -> getPlayer(playerId, boardId) }
     }
 
     suspend fun removeBoard(boardId: String) {
-        getBoard(boardId).playerIds.forEach { playerId -> removePlayer(playerId) }
+        getBoard(boardId).playerIds.forEach { playerId -> removePlayer(playerId, boardId) }
         boards.remove(boardId)
         db.removeBoard(boardId)
         updateBoardList()
     }
 
-    suspend fun removePlayer(playerId: String) {
-        players.remove(playerId)
-        db.removePlayer(playerId)
+    suspend fun removePlayer(playerId: String, boardId: String) {
+        players.remove(boardId + playerId)
+        db.removePlayer(boardId + playerId)
     }
 
     private suspend fun updateBoardList() {

@@ -37,7 +37,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     private var boardStateSubJob: Job? = null
     private var globalEventStateSubJob: Job? = null
 
-    private suspend fun player() = Storage.getPlayer(uuid)
+    private suspend fun player() = Storage.getPlayer(uuid, board().id)
     private suspend fun board() = Storage.getBoard(boardIdState.value)
 
     init {
@@ -261,7 +261,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
 
     private suspend fun invalidateNextPlayer(activePlayerId: String) {
         val playerIds = board().playerIds
-        if (activePlayerId.isEmpty() || !playerIds.contains(activePlayerId) || Storage.getPlayer(activePlayerId).isInactive) {
+        if (activePlayerId.isEmpty() || !playerIds.contains(activePlayerId) || Storage.getPlayer(activePlayerId, board().id).isInactive) {
             nextPlayer()
         }
     }
@@ -872,7 +872,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
 
     private suspend fun Board.players(): List<Player> {
         return playerIds.map { playerId ->
-            Storage.getPlayer(playerId)
+            Storage.getPlayer(playerId, board().id)
         }
     }
 }
@@ -901,7 +901,7 @@ suspend fun nextPlayer(board: Board) {
     )
     val nextPlayer = activePlayers.find { it.id == nextPlayerId }
     if ((nextPlayer?.inRest ?: 0) > 0) {
-        val player = Storage.getPlayer(nextPlayerId)
+        val player = Storage.getPlayer(nextPlayerId, board.id)
         val updatedPlayer = player.copy(inRest = player.inRest - 1)
         Storage.updatePlayer(updatedPlayer)
         nextPlayer(board)

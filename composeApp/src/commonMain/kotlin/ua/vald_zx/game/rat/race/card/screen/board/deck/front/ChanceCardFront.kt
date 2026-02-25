@@ -3,7 +3,6 @@ package ua.vald_zx.game.rat.race.card.screen.board.deck.front
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults.contentPadding
 import androidx.compose.material3.Text
@@ -21,6 +20,7 @@ import androidx.compose.ui.unit.max
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import rat_race_card.composeapp.generated.resources.*
+import ua.vald_zx.game.rat.race.card.components.EButton
 import ua.vald_zx.game.rat.race.card.components.OutlinedBasicTextField
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
@@ -137,27 +137,22 @@ private fun BoxWithConstraintsScope.EstateCardFront(
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             if (state.currentPlayerIsActive) {
-                ElevatedButton(
-                    modifier = Modifier,
+                EButton(
                     onClick = { vm.pass() },
-                    content = {
-                        Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
-                    },
+                    title = stringResource(Res.string.pass),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
-                ElevatedButton(
-                    modifier = Modifier,
+                EButton(
+                    onClick = { vm.buy(card) },
+                    title = stringResource(Res.string.buy),
                     enabled = state.canPay(card.price),
-                    onClick = {
-                        vm.buy(card)
-                    },
-                    content = {
-                        Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
-                    },
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
             }
             if (state.currentPlayerIsActive || state.board.auction != null) {
-                ElevatedButton(
-                    modifier = Modifier,
+                EButton(
                     onClick = {
                         bottomSheetNavigator.show(
                             AuctionScreen(
@@ -170,9 +165,9 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                             )
                         )
                     },
-                    content = {
-                        Text(stringResource(Res.string.auction), fontSize = unitTS * 14)
-                    },
+                    title = stringResource(Res.string.auction),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
             }
         }
@@ -283,27 +278,21 @@ private fun BoxWithConstraintsScope.LandCardFront(
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             if (state.currentPlayerIsActive) {
-                ElevatedButton(
-                    modifier = Modifier,
+                EButton(
                     onClick = { vm.pass() },
-                    content = {
-                        Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
-                    },
+                    title = stringResource(Res.string.pass),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
-                ElevatedButton(
-                    modifier = Modifier,
-                    enabled = state.canPay(card.price),
-                    onClick = {
-                        vm.buy(card)
-                    },
-                    content = {
-                        Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
-                    },
+                EButton(
+                    onClick = { vm.buy(card) },
+                    title = stringResource(Res.string.buy),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
             }
             if (state.currentPlayerIsActive || state.board.auction != null) {
-                ElevatedButton(
-                    modifier = Modifier,
+                EButton(
                     onClick = {
                         bottomSheetNavigator.show(
                             AuctionScreen(
@@ -317,9 +306,9 @@ private fun BoxWithConstraintsScope.LandCardFront(
                             )
                         )
                     },
-                    content = {
-                        Text(stringResource(Res.string.auction), fontSize = unitTS * 14)
-                    },
+                    title = stringResource(Res.string.auction),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
             }
         }
@@ -389,12 +378,11 @@ private fun BoxWithConstraintsScope.RandomJobCardFront(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
-                ElevatedButton(
-                    modifier = Modifier,
+                EButton(
                     onClick = { vm.randomJob(card) },
-                    content = {
-                        Text(stringResource(Res.string.ok), fontSize = unitTS * 14)
-                    },
+                    title = stringResource(Res.string.ok),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
             }
         }
@@ -488,21 +476,20 @@ private fun BoxWithConstraintsScope.SharesCardFront(
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
-            horizontalArrangement = Arrangement.SpaceAround,
+            horizontalArrangement = Arrangement.spacedBy(smallPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (state.currentPlayerIsActive) {
-                ElevatedButton(
-                    modifier = Modifier,
+                EButton(
                     onClick = { vm.pass() },
-                    content = {
-                        Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
-                    },
+                    title = stringResource(Res.string.pass),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
                 var count by remember { mutableStateOf(0L) }
                 val value = if (count <= 0) "" else count.toString()
                 OutlinedBasicTextField(
-                    modifier = Modifier.padding(top = smallPadding),
+                    modifier = Modifier.padding(top = smallPadding).weight(1f),
                     value = value,
                     onValueChange = {
                         val tapedCount = it.toLongOrNull() ?: 0
@@ -521,20 +508,16 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                         bottom = unitDp * 4
                     ),
                 )
-                ElevatedButton(
-                    modifier = Modifier,
-                    onClick = {
-                        vm.buyShares(card, count)
-                    },
+                EButton(
+                    onClick = { vm.buyShares(card, count) },
                     enabled = count > 0 && state.canPay(card.price * count),
-                    content = {
-                        Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
-                    },
+                    title = stringResource(Res.string.buy),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
             }
             if (state.currentPlayerIsActive || state.board.auction != null) {
-                ElevatedButton(
-                    modifier = Modifier,
+                EButton(
                     onClick = {
                         bottomSheetNavigator.show(
                             AuctionScreen(
@@ -544,9 +527,9 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                             )
                         )
                     },
-                    content = {
-                        Text(stringResource(Res.string.auction), fontSize = unitTS * 14)
-                    },
+                    title = stringResource(Res.string.auction),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
             }
         }
