@@ -128,7 +128,7 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.androidx.ui.android)
 }
-version = "3.3"
+version = "3.4"
 android {
     namespace = "ua.vald_zx.game.rat.race.card"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
