@@ -13,20 +13,20 @@ object Storage {
     private val players: MutableMap<String, MutableStateFlow<Player>> = mutableMapOf()
     private val boards: MutableMap<String, MutableStateFlow<Board>> = mutableMapOf()
 
-    private suspend fun getPlayerState(id: String, boardId: String): MutableStateFlow<Player> {
-        return players.getOrPut(boardId + id) { MutableStateFlow(db.getPlayer(boardId + id)) }
+    private suspend fun getPlayerState(id: String): MutableStateFlow<Player> {
+        return players.getOrPut(id) { MutableStateFlow(db.getPlayer(id)) }
     }
 
     private suspend fun getBoardState(id: String): MutableStateFlow<Board> {
         return boards.getOrPut(id) { MutableStateFlow(db.getBoard(id)) }
     }
 
-    suspend fun getPlayer(id: String, boardId: String): Player {
-        return getPlayerState(id, boardId).value
+    suspend fun getPlayer(id: String): Player {
+        return getPlayerState(id).value
     }
 
     suspend fun updatePlayer(player: Player) {
-        getPlayerState(player.id, player.boardId).value = player
+        getPlayerState(player.id).value = player
         db.updatePlayer(player)
     }
 
@@ -35,7 +35,7 @@ object Storage {
     }
 
     suspend fun players(boardId: String): List<Player> {
-        return getBoard(boardId).playerIds.map { playerId -> getPlayer(playerId, boardId) }
+        return getBoard(boardId).playerIds.map { playerId -> getPlayer(playerId) }
     }
 
     suspend fun removeBoard(boardId: String) {

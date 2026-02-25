@@ -3,7 +3,6 @@ package ua.vald_zx.game.rat.race.card.screen.board.deck.front
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import org.jetbrains.compose.resources.stringResource
 import rat_race_card.composeapp.generated.resources.*
+import ua.vald_zx.game.rat.race.card.components.EButton
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
@@ -100,24 +100,18 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                     modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    ElevatedButton(
-                        modifier = Modifier,
-                        onClick = {
-                            vm.pass()
-                        },
-                        content = {
-                            Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
-                        },
+                    EButton(
+                        onClick = { vm.pass() },
+                        title = stringResource(Res.string.pass),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
-                    ElevatedButton(
-                        modifier = Modifier,
+                    EButton(
+                        onClick = { vm.buy(card) },
                         enabled = state.canPay(card.price),
-                        onClick = {
-                            vm.buy(card)
-                        },
-                        content = {
-                            Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
-                        },
+                        title = stringResource(Res.string.buy),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
                 }
             }

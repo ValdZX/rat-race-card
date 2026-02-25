@@ -464,7 +464,7 @@ class BoardScreen(
                             navigator.popUntilRoot()
                             MainScope().launch {
                                 appKStore.update {
-                                    it?.copy(onlinePlayerId = "")
+                                    it?.copy(clientUuid = "")
                                 }
                             }
                             loanOverlimitedDialog = false

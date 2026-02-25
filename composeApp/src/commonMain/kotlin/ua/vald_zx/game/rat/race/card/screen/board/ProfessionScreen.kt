@@ -24,6 +24,8 @@ import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.PlayerCard
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 class ProfessionScreen(
     private val board: Board,
@@ -31,7 +33,7 @@ class ProfessionScreen(
     private val playerName: String,
     private val color: Long,
 ) : Screen {
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
@@ -81,7 +83,13 @@ class ProfessionScreen(
             )
             Button("Далі") {
                 launchWithHandler({ navigator.replaceAll(LoadOnlineScreen()) }) {
+                    val helloUuid = appKStore.get()?.clientUuid.orEmpty().ifEmpty {
+                        Uuid.random().toString().apply {
+                            appKStore.update { it?.copy(clientUuid = this) }
+                        }
+                    }
                     val player = service.makePlayer(
+                        uuid = helloUuid,
                         color = color,
                         card = PlayerCard(
                             name = playerName,
@@ -95,7 +103,6 @@ class ProfessionScreen(
                             phone = card.phone,
                         ),
                     )
-                    appKStore.update { it?.copy(onlinePlayerId = player.id) }
                     navigator.push(BoardScreen(board, player))
                 }
             }

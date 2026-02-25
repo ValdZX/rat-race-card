@@ -11,6 +11,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.server.data.Storage
+import ua.vald_zx.game.rat.race.server.data.generateStableDbId
 import kotlin.math.absoluteValue
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -25,11 +26,6 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     CoroutineScope by CoroutineScope(Dispatchers.Default) {
 
     private var boardIdState = MutableStateFlow("")
-    private var uuid: String = ""
-        set(value) {
-            uuidStateProvider.value = value
-            field = value
-        }
     private val eventBus = MutableSharedFlow<Event>()
     private val boardsFlow = MutableSharedFlow<List<BoardId>>()
     private val globalEventBus: MutableSharedFlow<GlobalEvent>
@@ -37,7 +33,10 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     private var boardStateSubJob: Job? = null
     private var globalEventStateSubJob: Job? = null
 
-    private suspend fun player() = Storage.getPlayer(uuid, board().id)
+    private val playerId: String
+        get() = generateStableDbId(boardIdState.value, uuidStateProvider.value)
+
+    private suspend fun player() = Storage.getPlayer(playerId)
     private suspend fun board() = Storage.getBoard(boardIdState.value)
 
     init {
@@ -65,7 +64,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
                         launch {
                             when (event) {
                                 is GlobalEvent.SendMoney -> {
-                                    if (event.receiverId == uuid) {
+                                    if (event.receiverId == playerId) {
                                         eventBus.emit(Event.MoneyIncome(event.playerId, event.amount))
                                         updatePlayer {
                                             this.plusCash(event.amount)
@@ -90,7 +89,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
                                 }
 
                                 is GlobalEvent.BidSelled -> {
-                                    if (event.bid.playerId == uuid) {
+                                    if (event.bid.playerId == playerId) {
                                         buyLot(event.auction, event.bid)
                                     }
                                 }
@@ -102,19 +101,17 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
         }.launchIn(this)
     }
 
-    override suspend fun hello(helloUuid: String): Instance {
-        val boards = Storage.boards()
-        boards.forEach { board ->
-            if (board.playerIds.contains(helloUuid)) {
-                checkStatusJobs[helloUuid]?.cancel()
-                boardSelected(board)
-                uuid = helloUuid
-                updatePlayer { copy(isInactive = false) }
-                invalidateNextPlayer(board.activePlayerId)
-                return Instance(uuid, board, player())
-            }
+    override suspend fun hello(helloUuid: String, boardId: String): Instance {
+        val board = Storage.getBoard(boardId)
+        boardSelected(board)
+        uuidStateProvider.value = helloUuid
+        if (board.playerIds.contains(playerId)) {
+            checkStatusJobs[playerId]?.cancel()
+            updatePlayer { copy(isInactive = false) }
+            invalidateNextPlayer(board.activePlayerId)
+            return Instance(board, player())
         }
-        return Instance("", null, null)
+        return Instance(board, null)
     }
 
     private fun boardSelected(board: Board) {
@@ -128,7 +125,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     }
 
     override suspend fun connectionIsValid() {
-        checkStatusJobs[uuid]?.cancel()
+        checkStatusJobs[uuidStateProvider.value]?.cancel()
     }
 
     override suspend fun getBoards(): List<BoardId> {
@@ -158,20 +155,15 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
         return board
     }
 
-    override suspend fun selectBoard(id: String): Board {
-        val board = Storage.getBoard(id)
-        boardSelected(board)
-        return board
-    }
-
     override suspend fun makePlayer(
+        uuid: String,
         color: Long,
         card: PlayerCard,
     ): Player {
         val board = board()
-        uuid = uuid.ifEmpty { Uuid.random().toString() }
+        uuidStateProvider.value = uuid
         val newPlayer = Player(
-            id = uuid,
+            id = playerId,
             boardId = board.id,
             attrs = PlayerAttributes(color = color),
             card = card,
@@ -186,9 +178,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
         )
         Storage.newPlayer(newPlayer)
         getGlobalEventBus(boardIdState.value).emit(GlobalEvent.PlayerChanged(newPlayer))
-        updateBoard {
-            copy(playerIds = playerIds + uuid)
-        }
+        updateBoard { copy(playerIds = playerIds + playerId) }
         takeSalary()
         invalidateNextPlayer(board.activePlayerId)
         return newPlayer
@@ -213,7 +203,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
     }
 
     override suspend fun sendMoney(receiverId: String, amount: Long) {
-        globalEventBus.emit(GlobalEvent.SendMoney(uuid, receiverId, amount))
+        globalEventBus.emit(GlobalEvent.SendMoney(playerId, receiverId, amount))
         updatePlayer {
             this.minusCash(amount)
         }
@@ -261,7 +251,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
 
     private suspend fun invalidateNextPlayer(activePlayerId: String) {
         val playerIds = board().playerIds
-        if (activePlayerId.isEmpty() || !playerIds.contains(activePlayerId) || Storage.getPlayer(activePlayerId, board().id).isInactive) {
+        if (activePlayerId.isEmpty() || !playerIds.contains(activePlayerId) || Storage.getPlayer(activePlayerId).isInactive) {
             nextPlayer()
         }
     }
@@ -431,7 +421,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
                 updatePlayer {
                     val totalBabies = babies + 1
                     copy(babies = totalBabies).plusCash(1000).apply {
-                        globalEventBus.emit(GlobalEvent.PlayerHadBaby(uuid, totalBabies))
+                        globalEventBus.emit(GlobalEvent.PlayerHadBaby(playerId, totalBabies))
                     }
                 }
                 nextPlayer()
@@ -445,7 +435,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
                         } else {
                             copy(isMarried = false)
                         }.apply {
-                            globalEventBus.emit(GlobalEvent.PlayerDivorced(uuid))
+                            globalEventBus.emit(GlobalEvent.PlayerDivorced(playerId))
                         }
                     }
                 }
@@ -468,7 +458,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
                 if (!player.isMarried) {
                     updatePlayer {
                         copy(isMarried = true).apply {
-                            globalEventBus.emit(GlobalEvent.PlayerMarried(uuid))
+                            globalEventBus.emit(GlobalEvent.PlayerMarried(playerId))
                         }
                     }
                     if (player.card.gender == Gender.MALE) {
@@ -708,7 +698,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
             }
         }
         updateBoard {
-            copy(processedPlayerIds = processedPlayerIds + uuid)
+            copy(processedPlayerIds = processedPlayerIds + playerId)
         }
         passLand()
     }
@@ -742,7 +732,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
             copy(sharesList = resultList).plusCash(count * card.price)
         }
         updateBoard {
-            copy(processedPlayerIds = processedPlayerIds + uuid)
+            copy(processedPlayerIds = processedPlayerIds + playerId)
         }
         passShares(card.sharesType)
     }
@@ -755,7 +745,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
             copy(estateList = estateList - card).plusCash(card.size * price)
         }
         updateBoard {
-            copy(processedPlayerIds = processedPlayerIds + uuid)
+            copy(processedPlayerIds = processedPlayerIds + playerId)
         }
         passEstate()
     }
@@ -830,7 +820,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
 
     override suspend fun makeBid(price: Long, count: Long) {
         updateBoard {
-            copy(bidList = bidList.filter { it.playerId != uuid } + Bid(uuid, price, count))
+            copy(bidList = bidList.filter { it.playerId != playerId } + Bid(playerId, price, count))
         }
     }
 
@@ -872,7 +862,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
 
     private suspend fun Board.players(): List<Player> {
         return playerIds.map { playerId ->
-            Storage.getPlayer(playerId, board().id)
+            Storage.getPlayer(playerId)
         }
     }
 }
@@ -901,7 +891,7 @@ suspend fun nextPlayer(board: Board) {
     )
     val nextPlayer = activePlayers.find { it.id == nextPlayerId }
     if ((nextPlayer?.inRest ?: 0) > 0) {
-        val player = Storage.getPlayer(nextPlayerId, board.id)
+        val player = Storage.getPlayer(nextPlayerId)
         val updatedPlayer = player.copy(inRest = player.inRest - 1)
         Storage.updatePlayer(updatedPlayer)
         nextPlayer(board)

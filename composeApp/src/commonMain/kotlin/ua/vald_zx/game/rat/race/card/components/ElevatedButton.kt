@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.card.components
 
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -18,17 +19,17 @@ fun EButton(
     unitDp: Dp,
 ) {
     ElevatedButton(
-        modifier = modifier,
+        modifier = modifier.height(unitDp * 32),
         onClick = onClick,
         enabled = enabled,
         content = {
-            Text(title, fontSize = unitTS * 14)
+            Text(title, fontSize = unitTS * 12)
         },
         contentPadding = OutlinedTextFieldDefaults.contentPadding(
-            start = unitDp * 4,
-            top = unitDp * 2,
-            bottom = unitDp * 2,
-            end = unitDp * 4
+            start = unitDp * 8,
+            top = unitDp,
+            bottom = unitDp,
+            end = unitDp * 8
         ),
     )
 }

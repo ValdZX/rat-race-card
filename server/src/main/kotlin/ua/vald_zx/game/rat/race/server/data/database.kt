@@ -68,7 +68,7 @@ suspend fun MongoDatabase.updateBoard(board: Board) {
 
 suspend fun MongoDatabase.newPlayer(player: Player) {
     val oldPlayer = playerCollection()
-        .find(Filters.eq("_id", player.id))
+        .find(Filters.eq("_id", player.boardId + player.id))
         .firstOrNull()
     if(oldPlayer != null) {
         removePlayer(oldPlayer.id)

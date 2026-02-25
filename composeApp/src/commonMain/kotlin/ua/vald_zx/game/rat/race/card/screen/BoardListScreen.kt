@@ -85,13 +85,12 @@ class BoardListScreen : Screen {
                                 .clickable {
                                     launchWithHandler({ navigator.push(LoadOnlineScreen()) }) {
                                         val service = koin.get<RaceRatService>()
-                                        val helloUuid = appKStore.get()?.onlinePlayerId.orEmpty()
-                                        val instance = service.hello(helloUuid)
+                                        val helloUuid = appKStore.get()?.clientUuid.orEmpty()
+                                        val instance = service.hello(helloUuid, board.id)
                                         val instBoard = instance.board
                                         val player = instance.player
-                                        if (instBoard == null || instBoard.id != board.id || player == null) {
-                                            val selectedBoard = service.selectBoard(board.id)
-                                            navigator.push(InitPlayerScreen(selectedBoard))
+                                        if (player == null) {
+                                            navigator.push(InitPlayerScreen(instBoard))
                                         } else {
                                             navigator.push(BoardScreen(instBoard, player))
                                         }

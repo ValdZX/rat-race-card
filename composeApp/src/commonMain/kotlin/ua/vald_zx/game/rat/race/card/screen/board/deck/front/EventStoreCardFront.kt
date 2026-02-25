@@ -3,7 +3,6 @@ package ua.vald_zx.game.rat.race.card.screen.board.deck.front
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults.contentPadding
 import androidx.compose.material3.Text
@@ -137,33 +136,35 @@ private fun BoxWithConstraintsScope.EstateCardFront(
             )
         }
         val state by vm.uiState.collectAsState()
-        val currentPlayerNotProcessed = !state.board.processedPlayerIds.contains(state.player.id)
-        if (state.player.estateList.isNotEmpty() && currentPlayerNotProcessed) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
+        if (state.board.takenCard != null) {
+            val currentPlayerNotProcessed = !state.board.processedPlayerIds.contains(state.player.id)
+            if (state.player.estateList.isNotEmpty() && currentPlayerNotProcessed) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    EButton(
+                        onClick = { vm.passEstate() },
+                        title = stringResource(Res.string.pass),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
+                    )
+                    EButton(
+                        onClick = { bottomSheetNavigator.show(EstateSelectScreen(vm, card.price)) },
+                        title = stringResource(Res.string.sell),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
+                    )
+                }
+            } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
                 EButton(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
                     onClick = { vm.passEstate() },
-                    title = stringResource(Res.string.pass),
-                    unitTS = unitTS,
-                    unitDp = unitDp,
-                )
-                EButton(
-                    onClick = { bottomSheetNavigator.show(EstateSelectScreen(vm, card.price)) },
-                    title = stringResource(Res.string.sell),
+                    title = stringResource(Res.string.close),
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )
             }
-        } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
-            ElevatedButton(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                onClick = { vm.passEstate() },
-                content = {
-                    Text(stringResource(Res.string.close), fontSize = unitTS * 14)
-                },
-            )
         }
     }
 }
@@ -254,6 +255,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
             }
         } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
             EButton(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
                 onClick = { vm.passLand() },
                 title = stringResource(Res.string.close),
                 unitTS = unitTS,
@@ -381,6 +383,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
             }
         } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
             EButton(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
                 onClick = { vm.passEstate() },
                 title = stringResource(Res.string.close),
                 unitTS = unitTS,
@@ -471,24 +474,22 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ElevatedButton(
+                EButton(
                     modifier = Modifier,
-                    onClick = {
-                        vm.extendBusiness(randomSmallBusiness, card)
-                    },
-                    content = {
-                        Text("Чудово!", fontSize = unitTS * 14)
-                    },
+                    onClick = { vm.extendBusiness(randomSmallBusiness, card) },
+                    title = stringResource(Res.string.great),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
                 )
             }
         } else if (state.currentPlayerIsActive) {
             Text("Поки що немає бізнесів!", fontSize = unitTS * 14, modifier = Modifier.padding(smallPadding))
-            ElevatedButton(
+            EButton(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 onClick = { vm.passEstate() },
-                content = {
-                    Text(stringResource(Res.string.close), fontSize = unitTS * 14)
-                },
+                title = stringResource(Res.string.close),
+                unitTS = unitTS,
+                unitDp = unitDp,
             )
         }
     }

@@ -93,11 +93,11 @@ sealed class Event {
 }
 
 @Serializable
-data class Instance(val playerId: String, val board: Board?, val player: Player?)
+data class Instance(val board: Board, val player: Player?)
 
 @Rpc
 interface RaceRatService {
-    suspend fun hello(helloUuid: String = ""): Instance
+    suspend fun hello(helloUuid: String = "", boardId: String): Instance
     suspend fun ping()
     suspend fun connectionIsValid()
     suspend fun getBoards(): List<BoardId>
@@ -109,10 +109,10 @@ interface RaceRatService {
         decks: Map<BoardCardType, Int>
     ): Board
 
-    suspend fun selectBoard(id: String): Board
     suspend fun updateAttributes(attrs: PlayerAttributes)
     suspend fun getPlayer(): Player
     suspend fun makePlayer(
+        uuid: String,
         color: Long,
         card: PlayerCard,
     ): Player

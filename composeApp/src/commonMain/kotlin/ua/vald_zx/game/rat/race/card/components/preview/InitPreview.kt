@@ -28,7 +28,7 @@ fun InitPreview(
                 serviceProvider = {
                     object : RaceRatService {
 
-                        override suspend fun hello(helloUuid: String): Instance {
+                        override suspend fun hello(helloUuid: String, boardId: String): Instance {
                             error("Not for preview")
                         }
 
@@ -55,10 +55,6 @@ fun InitPreview(
                             error("Not for preview")
                         }
 
-                        override suspend fun selectBoard(id: String): Board {
-                            error("Not for preview")
-                        }
-
                         override suspend fun updateAttributes(attrs: PlayerAttributes) {
                             error("Not for preview")
                         }
@@ -68,6 +64,7 @@ fun InitPreview(
                         }
 
                         override suspend fun makePlayer(
+                            uuid: String,
                             color: Long,
                             card: PlayerCard
                         ): Player {

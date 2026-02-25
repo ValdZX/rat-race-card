@@ -3,7 +3,6 @@ package ua.vald_zx.game.rat.race.card.screen.board.deck.front
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +23,7 @@ import org.jetbrains.compose.resources.stringResource
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.not_for_me
 import rat_race_card.composeapp.generated.resources.pay
+import ua.vald_zx.game.rat.race.card.components.EButton
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.cards.expensesCards
@@ -87,24 +87,20 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
             val state by vm.uiState.collectAsState()
             if (state.currentPlayerIsActive) {
                 if (vm.uiState.value.player.needPayExpenses(card)) {
-                    ElevatedButton(
+                    EButton(
                         modifier = Modifier.align(Alignment.CenterHorizontally),
-                        onClick = {
-                            vm.sideExpenses(card.price)
-                        },
-                        content = {
-                            Text(stringResource(Res.string.pay), fontSize = unitTS * 14)
-                        },
+                        onClick = { vm.sideExpenses(card.price) },
+                        title = stringResource(Res.string.pay),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
                 } else {
-                    ElevatedButton(
+                    EButton(
                         modifier = Modifier.align(Alignment.CenterHorizontally),
-                        onClick = {
-                            vm.pass()
-                        },
-                        content = {
-                            Text(stringResource(Res.string.not_for_me), fontSize = unitTS * 14)
-                        },
+                        onClick = { vm.pass() },
+                        title = stringResource(Res.string.not_for_me),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
                 }
             }

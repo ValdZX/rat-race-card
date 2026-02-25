@@ -3,7 +3,6 @@ package ua.vald_zx.game.rat.race.card.screen.board.deck.front
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +25,7 @@ import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.auction
 import rat_race_card.composeapp.generated.resources.buy
 import rat_race_card.composeapp.generated.resources.pass
+import ua.vald_zx.game.rat.race.card.components.EButton
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
@@ -129,14 +129,13 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 if (state.currentPlayerIsActive) {
-                    ElevatedButton(
-                        modifier = Modifier,
+                    EButton(
                         onClick = { vm.pass() },
-                        content = {
-                            Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
-                        },
+                        title = stringResource(Res.string.pass),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
-                    ElevatedButton(
+                    EButton(
                         modifier = Modifier,
                         enabled = state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {
@@ -149,13 +148,13 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                                 )
                             )
                         },
-                        content = {
-                            Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
-                        },
+                        title = stringResource(Res.string.buy),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
                 }
                 if (state.currentPlayerIsActive || state.board.auction != null) {
-                    ElevatedButton(
+                    EButton(
                         modifier = Modifier,
                         onClick = {
                             bottomSheetNavigator.show(
@@ -171,9 +170,9 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                                 )
                             )
                         },
-                        content = {
-                            Text(stringResource(Res.string.auction), fontSize = unitTS * 14)
-                        },
+                        title = stringResource(Res.string.auction),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
                 }
             }
@@ -263,14 +262,13 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 if (state.currentPlayerIsActive) {
-                    ElevatedButton(
-                        modifier = Modifier,
+                    EButton(
                         onClick = { vm.pass() },
-                        content = {
-                            Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
-                        },
+                        title = stringResource(Res.string.pass),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
-                    ElevatedButton(
+                    EButton(
                         modifier = Modifier,
                         enabled = state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {
@@ -283,13 +281,13 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                                 )
                             )
                         },
-                        content = {
-                            Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
-                        },
+                        title = stringResource(Res.string.buy),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
                 }
                 if (state.currentPlayerIsActive || state.board.auction != null) {
-                    ElevatedButton(
+                    EButton(
                         modifier = Modifier,
                         onClick = {
                             bottomSheetNavigator.show(
@@ -305,9 +303,9 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                                 )
                             )
                         },
-                        content = {
-                            Text(stringResource(Res.string.auction), fontSize = unitTS * 14)
-                        },
+                        title = stringResource(Res.string.auction),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
                 }
             }
@@ -397,14 +395,13 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 if (state.currentPlayerIsActive) {
-                    ElevatedButton(
-                        modifier = Modifier,
+                    EButton(
                         onClick = { vm.pass() },
-                        content = {
-                            Text(stringResource(Res.string.pass), fontSize = unitTS * 14)
-                        },
+                        title = stringResource(Res.string.pass),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
-                    ElevatedButton(
+                    EButton(
                         modifier = Modifier,
                         enabled = state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {
@@ -417,13 +414,13 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                                 )
                             )
                         },
-                        content = {
-                            Text(stringResource(Res.string.buy), fontSize = unitTS * 14)
-                        },
+                        title = stringResource(Res.string.buy),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
                 }
                 if (state.currentPlayerIsActive || state.board.auction != null) {
-                    ElevatedButton(
+                    EButton(
                         modifier = Modifier,
                         onClick = {
                             bottomSheetNavigator.show(
@@ -439,9 +436,9 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                                 )
                             )
                         },
-                        content = {
-                            Text(stringResource(Res.string.auction), fontSize = unitTS * 14)
-                        },
+                        title = stringResource(Res.string.auction),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
                     )
                 }
             }

@@ -32,14 +32,14 @@ var lottieDiceAnimations: Map<Int, LottieComposition> = emptyMap()
 
 @Serializable
 data class AppDataStorageBean(
-    val onlinePlayerId: String,
+    val clientUuid: String,
     val theme: Boolean?,
 )
 
 var storageKeyPrefix = ""
 
 val appKStore: KStore<AppDataStorageBean>
-    get() = getStore("${storageKeyPrefix}appData.json", AppDataStorageBean("", null))
+    get() = getStore("${storageKeyPrefix}_appData.json", AppDataStorageBean("", null))
 
 @Composable
 internal fun App() {
