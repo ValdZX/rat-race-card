@@ -101,6 +101,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     EButton(
+                        enabled = !state.isProgress,
                         onClick = { vm.pass() },
                         title = stringResource(Res.string.close),
                         unitTS = unitTS,
@@ -108,7 +109,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                     )
                     EButton(
                         onClick = { vm.buy(card) },
-                        enabled = state.canPay(card.price),
+                        enabled = !state.isProgress && state.canPay(card.price),
                         title = stringResource(Res.string.buy),
                         unitTS = unitTS,
                         unitDp = unitDp,

@@ -13,6 +13,7 @@ import kotlin.coroutines.CoroutineContext
 val players = MutableStateFlow(emptyList<Player>())
 
 data class BoardState(
+    val isProgress: Boolean,
     val board: Board,
     val player: Player,
 ) {
@@ -83,23 +84,30 @@ class BoardViewModel(
 ) : ViewModel() {
 
 
-    private val _uiState = MutableStateFlow(BoardState(board, player))
+    private val _uiState = MutableStateFlow(BoardState(false, board, player))
     val uiState: StateFlow<BoardState> = _uiState.asStateFlow()
 
     private val _actions = Channel<BoardUiAction>()
     val actions = _actions.receiveAsFlow()
 
-    private fun safeLaunch(block: suspend RaceRatService.(CoroutineContext) -> Unit): Job {
+    private fun safeLaunch(
+        needProgress: Boolean = true,
+        block: suspend RaceRatService.(CoroutineContext) -> Unit
+    ): Job {
         return viewModelScope.launch(Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, t ->
             Napier.e("Invalid server", t)
             viewModelScope.launch {
                 _actions.send(ConnectionLost)
             }
-        }, block = { serviceProvider().block(coroutineContext) })
+        }, block = {
+            if (needProgress) _uiState.update { it.copy(isProgress = true) }
+            serviceProvider().block(coroutineContext)
+            if (needProgress) _uiState.update { it.copy(isProgress = false) }
+        })
     }
 
     fun init(player: Player) {
-        safeLaunch {
+        safeLaunch(false) {
             val actualPlayers = getPlayers()
             players.value = actualPlayers
             _uiState.update { it.copy(board = getBoard(), player = player) }
@@ -220,7 +228,7 @@ class BoardViewModel(
                 }
             }
         }
-        safeLaunch {
+        safeLaunch(false) {
             while (true) {
                 delay(10000)
                 ping()

@@ -129,6 +129,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
             ) {
                 if (state.currentPlayerIsActive) {
                     EButton(
+                        enabled = !state.isProgress,
                         onClick = { vm.pass() },
                         title = stringResource(Res.string.close),
                         unitTS = unitTS,
@@ -136,7 +137,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                     )
                     EButton(
                         modifier = Modifier,
-                        enabled = state.canPay(card.price) && state.canBuyBusiness(),
+                        enabled = !state.isProgress && state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {
                             vm.buyBusiness(
                                 Business(
@@ -154,7 +155,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                 }
                 if (state.currentPlayerIsActive || state.board.auction != null) {
                     EButton(
-                        modifier = Modifier,
+                        enabled = !state.isProgress,
                         onClick = {
                             bottomSheetNavigator.show(
                                 AuctionScreen(
@@ -262,14 +263,14 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
             ) {
                 if (state.currentPlayerIsActive) {
                     EButton(
+                        enabled = !state.isProgress,
                         onClick = { vm.pass() },
                         title = stringResource(Res.string.close),
                         unitTS = unitTS,
                         unitDp = unitDp,
                     )
                     EButton(
-                        modifier = Modifier,
-                        enabled = state.canPay(card.price) && state.canBuyBusiness(),
+                        enabled = !state.isProgress && state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {
                             vm.buyBusiness(
                                 Business(
@@ -287,7 +288,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                 }
                 if (state.currentPlayerIsActive || state.board.auction != null) {
                     EButton(
-                        modifier = Modifier,
+                        enabled = !state.isProgress,
                         onClick = {
                             bottomSheetNavigator.show(
                                 AuctionScreen(
@@ -395,6 +396,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
             ) {
                 if (state.currentPlayerIsActive) {
                     EButton(
+                        enabled = !state.isProgress,
                         onClick = { vm.pass() },
                         title = stringResource(Res.string.close),
                         unitTS = unitTS,
@@ -402,7 +404,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                     )
                     EButton(
                         modifier = Modifier,
-                        enabled = state.canPay(card.price) && state.canBuyBusiness(),
+                        enabled = !state.isProgress && state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {
                             vm.buyBusiness(
                                 Business(

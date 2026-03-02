@@ -144,12 +144,14 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     EButton(
+                        enabled = !state.isProgress,
                         onClick = { vm.passEstate() },
                         title = stringResource(Res.string.close),
                         unitTS = unitTS,
                         unitDp = unitDp,
                     )
                     EButton(
+                        enabled = !state.isProgress,
                         onClick = { bottomSheetNavigator.show(EstateSelectScreen(vm, card.price)) },
                         title = stringResource(Res.string.sell),
                         unitTS = unitTS,
@@ -158,6 +160,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                 }
             } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
                 EButton(
+                    enabled = !state.isProgress,
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                     onClick = { vm.passEstate() },
                     title = stringResource(Res.string.close),
@@ -241,12 +244,14 @@ private fun BoxWithConstraintsScope.LandCardFront(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = { vm.passLand() },
                     title = stringResource(Res.string.close),
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = { bottomSheetNavigator.show(SellLandScreen(vm, card.price)) },
                     title = stringResource(Res.string.sell),
                     unitTS = unitTS,
@@ -255,6 +260,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
             }
         } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
             EButton(
+                enabled = !state.isProgress,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 onClick = { vm.passLand() },
                 title = stringResource(Res.string.close),
@@ -337,6 +343,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = { vm.passShares(card.sharesType) },
                     title = stringResource(Res.string.close),
                     unitTS = unitTS,
@@ -375,6 +382,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                     )
                 }
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = { vm.sellShares(card, count) },
                     title = stringResource(Res.string.sell),
                     unitTS = unitTS,
@@ -383,6 +391,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
             }
         } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
             EButton(
+                enabled = !state.isProgress,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 onClick = { vm.passEstate() },
                 title = stringResource(Res.string.close),
@@ -475,6 +484,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 EButton(
+                    enabled = !state.isProgress,
                     modifier = Modifier,
                     onClick = { vm.extendBusiness(randomSmallBusiness, card) },
                     title = stringResource(Res.string.great),
@@ -485,6 +495,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
         } else if (state.currentPlayerIsActive) {
             Text("Поки що немає бізнесів!", fontSize = unitTS * 14, modifier = Modifier.padding(smallPadding))
             EButton(
+                enabled = !state.isProgress,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 onClick = { vm.passEstate() },
                 title = stringResource(Res.string.close),

@@ -789,7 +789,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
         val board = board()
         val playersWithShares =
             board.players().filter { it.sharesList.any { it.type == sharesType } }.map { it.id }.toSet()
-        if (playersWithShares.isEmpty() || playersWithShares == board.processedPlayerIds) {
+        if (playersWithShares.isEmpty() || playersWithShares.size == 1 || playersWithShares == board.processedPlayerIds) {
             nextPlayer()
         }
     }

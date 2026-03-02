@@ -88,6 +88,7 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
             if (state.currentPlayerIsActive) {
                 if (vm.uiState.value.player.needPayExpenses(card)) {
                     EButton(
+                        enabled = !state.isProgress,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         onClick = { vm.sideExpenses(card.price) },
                         title = stringResource(Res.string.pay),
@@ -96,6 +97,7 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
                     )
                 } else {
                     EButton(
+                        enabled = !state.isProgress,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         onClick = { vm.pass() },
                         title = stringResource(Res.string.not_for_me),

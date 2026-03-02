@@ -138,6 +138,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
         ) {
             if (state.currentPlayerIsActive) {
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = { vm.pass() },
                     title = stringResource(Res.string.close),
                     unitTS = unitTS,
@@ -146,13 +147,14 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                 EButton(
                     onClick = { vm.buy(card) },
                     title = stringResource(Res.string.buy),
-                    enabled = state.canPay(card.price),
+                    enabled = !state.isProgress && state.canPay(card.price),
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )
             }
             if (state.currentPlayerIsActive || state.board.auction != null) {
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = {
                         bottomSheetNavigator.show(
                             AuctionScreen(
@@ -279,12 +281,14 @@ private fun BoxWithConstraintsScope.LandCardFront(
         ) {
             if (state.currentPlayerIsActive) {
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = { vm.pass() },
                     title = stringResource(Res.string.close),
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = { vm.buy(card) },
                     title = stringResource(Res.string.buy),
                     unitTS = unitTS,
@@ -293,6 +297,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
             }
             if (state.currentPlayerIsActive || state.board.auction != null) {
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = {
                         bottomSheetNavigator.show(
                             AuctionScreen(
@@ -379,6 +384,7 @@ private fun BoxWithConstraintsScope.RandomJobCardFront(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = { vm.randomJob(card) },
                     title = stringResource(Res.string.ok),
                     unitTS = unitTS,
@@ -485,6 +491,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
         ) {
             if (state.currentPlayerIsActive) {
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = { vm.pass() },
                     title = stringResource(Res.string.close),
                     unitTS = unitTS,
@@ -514,7 +521,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 )
                 EButton(
                     onClick = { vm.buyShares(card, count) },
-                    enabled = count > 0 && state.canPay(card.price * count),
+                    enabled = !state.isProgress && count > 0 && state.canPay(card.price * count),
                     title = stringResource(Res.string.buy),
                     unitTS = unitTS,
                     unitDp = unitDp,
@@ -522,6 +529,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
             }
             if (state.currentPlayerIsActive || state.board.auction != null) {
                 EButton(
+                    enabled = !state.isProgress,
                     onClick = {
                         bottomSheetNavigator.show(
                             AuctionScreen(
