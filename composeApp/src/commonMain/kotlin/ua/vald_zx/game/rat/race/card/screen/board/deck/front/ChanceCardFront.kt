@@ -139,7 +139,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
             if (state.currentPlayerIsActive) {
                 EButton(
                     onClick = { vm.pass() },
-                    title = stringResource(Res.string.pass),
+                    title = stringResource(Res.string.close),
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )
@@ -280,7 +280,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
             if (state.currentPlayerIsActive) {
                 EButton(
                     onClick = { vm.pass() },
-                    title = stringResource(Res.string.pass),
+                    title = stringResource(Res.string.close),
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )
@@ -428,8 +428,8 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 Text(
                     text = card.sharesType.label(),
                     color = Color.White,
-                    fontSize = unitTS * 15,
-                    lineHeight = unitTS * 15,
+                    fontSize = unitTS * 14,
+                    lineHeight = unitTS * 14,
                     fontWeight = FontWeight.Bold,
                 )
             }
@@ -466,7 +466,11 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                "${state.board.auction?.quantity ?: card.maxCount}",
+                "${
+                    state.board.auction?.quantity
+                        ?: state.board.sharesCount
+                        ?: card.maxCount
+                }",
                 fontSize = unitTS * 14,
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold
@@ -482,7 +486,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
             if (state.currentPlayerIsActive) {
                 EButton(
                     onClick = { vm.pass() },
-                    title = stringResource(Res.string.pass),
+                    title = stringResource(Res.string.close),
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )
@@ -522,7 +526,11 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                         bottomSheetNavigator.show(
                             AuctionScreen(
                                 vm, Auction.SharesAuction(
-                                    Shares(card.sharesType, card.maxCount, card.price), card.price
+                                    Shares(
+                                        type = card.sharesType,
+                                        count = state.board.sharesCount ?: card.maxCount,
+                                        buyPrice = card.price
+                                    ), card.price
                                 )
                             )
                         )

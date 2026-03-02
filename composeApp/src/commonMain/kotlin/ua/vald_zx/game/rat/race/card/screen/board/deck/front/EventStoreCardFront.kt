@@ -145,7 +145,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                 ) {
                     EButton(
                         onClick = { vm.passEstate() },
-                        title = stringResource(Res.string.pass),
+                        title = stringResource(Res.string.close),
                         unitTS = unitTS,
                         unitDp = unitDp,
                     )
@@ -242,7 +242,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
             ) {
                 EButton(
                     onClick = { vm.passLand() },
-                    title = stringResource(Res.string.pass),
+                    title = stringResource(Res.string.close),
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )
@@ -338,7 +338,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
             ) {
                 EButton(
                     onClick = { vm.passShares(card.sharesType) },
-                    title = stringResource(Res.string.pass),
+                    title = stringResource(Res.string.close),
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )

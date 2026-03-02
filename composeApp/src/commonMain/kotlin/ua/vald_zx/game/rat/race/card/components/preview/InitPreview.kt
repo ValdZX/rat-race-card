@@ -135,7 +135,7 @@ fun InitPreview(
                             //NOP
                         }
 
-                        override suspend fun buyShares(shares: Shares) {
+                        override suspend fun buyShares(shares: Shares, totalCount: Long) {
                             //NOP
                         }
 

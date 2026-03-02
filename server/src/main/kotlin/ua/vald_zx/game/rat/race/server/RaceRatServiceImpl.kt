@@ -233,6 +233,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
                     this[cardType]?.remove(cardId)
                 },
                 takenCard = CardLink(cardType, cardId),
+                sharesCount = null,
                 canTakeCard = null,
                 processedPlayerIds = emptySet(),
             )
@@ -418,10 +419,12 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
             }
 
             PlaceType.Child -> {
-                updatePlayer {
-                    val totalBabies = babies + 1
-                    copy(babies = totalBabies).plusCash(1000).apply {
-                        globalEventBus.emit(GlobalEvent.PlayerHadBaby(playerId, totalBabies))
+                if (player.card.gender == Gender.FEMALE || player.card.gender == Gender.MALE && player.isMarried) {
+                    updatePlayer {
+                        val totalBabies = babies + 1
+                        copy(babies = totalBabies).plusCash(1000).apply {
+                            globalEventBus.emit(GlobalEvent.PlayerHadBaby(playerId, totalBabies))
+                        }
                     }
                 }
                 nextPlayer()
@@ -647,15 +650,28 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
         nextPlayer()
     }
 
-    private suspend fun buyShares(shares: Shares, doNext: suspend () -> Unit = {}) {
+    private suspend fun buyShares(totalCount: Long, shares: Shares) {
         updatePlayer {
             copy(sharesList = sharesList + shares).minusCash(shares.price)
         }
-        doNext()
+        val board = board()
+        val auction = board.auction
+        if (auction != null && auction is Auction.SharesAuction) {
+            updateBoard {
+                copy(
+                    sharesCount = null,
+                    auction = auction.copy(shares = auction.shares.copy(count = auction.shares.count - shares.count))
+                )
+            }
+        } else {
+            updateBoard {
+                copy(sharesCount = totalCount - shares.count)
+            }
+        }
     }
 
-    override suspend fun buyShares(shares: Shares) {
-        buyShares(shares) { nextPlayer() }
+    override suspend fun buyShares(shares: Shares, totalCount: Long) {
+        buyShares(totalCount, shares)
     }
 
     override suspend fun extendBusiness(
@@ -852,9 +868,7 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
             }
 
             is Auction.SharesAuction -> {
-                buyShares(auction.shares.copy(count = bid.count, buyPrice = bid.bid)) {
-                    LOGGER.info("Change ${this@RaceRatServiceImpl.hashCode()} auction is buying shares")
-                }
+                buyShares(bid.count, auction.shares.copy(count = bid.count, buyPrice = bid.bid))
                 eventBus.emit(Event.BidSharesAuctionSuccessBuy)
             }
         }
@@ -884,6 +898,7 @@ suspend fun nextPlayer(board: Board) {
             canRoll = true,
             diceRolling = false,
             takenCard = null,
+            sharesCount = null,
             canTakeCard = null,
             auction = null,
             bidList = emptyList()
@@ -910,6 +925,7 @@ private fun Board.discardPileB(): Board {
             discard = discard,
             cards = cards,
             takenCard = null,
+            sharesCount = null,
         ).invalidateDecks()
     } else this
 }

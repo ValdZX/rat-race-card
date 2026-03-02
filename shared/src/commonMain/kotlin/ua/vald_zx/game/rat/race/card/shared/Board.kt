@@ -23,6 +23,7 @@ data class Board(
     val cards: Map<BoardCardType, List<Int>>,
     val canTakeCard: BoardCardType? = null,
     val takenCard: CardLink? = null,
+    val sharesCount: Long? = null,
     val discard: Map<BoardCardType, List<Int>> = emptyMap(),
     val playerIds: Set<String> = emptySet(),
     val activePlayerId: String = "",

@@ -35,12 +35,15 @@ data class BoardState(
             is Auction.BusinessAuction -> {
                 canPay(auction.firstBid) && canBuyBusiness()
             }
+
             is Auction.EstateAuction -> {
                 canPay(auction.firstBid)
             }
+
             is Auction.LandAuction -> {
                 canPay(auction.firstBid)
             }
+
             is Auction.SharesAuction -> {
                 canPay(auction.firstBid)
             }
@@ -347,7 +350,7 @@ class BoardViewModel(
 
     fun buyShares(card: BoardCard.Chance.Shares, count: Long) {
         safeLaunch {
-            buyShares(Shares(card.sharesType, count, card.price))
+            buyShares(Shares(card.sharesType, count, card.price), uiState.value.board.sharesCount ?: card.maxCount)
         }
     }
 

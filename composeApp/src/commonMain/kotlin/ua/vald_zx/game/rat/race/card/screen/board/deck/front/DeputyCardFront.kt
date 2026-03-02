@@ -6,7 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import org.jetbrains.compose.resources.stringResource
 import rat_race_card.composeapp.generated.resources.Res
-import rat_race_card.composeapp.generated.resources.pass
+import rat_race_card.composeapp.generated.resources.close
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.shared.CardLink
@@ -19,7 +19,7 @@ fun BoxWithConstraintsScope.DeputyCardFront(
 ) {
     val state by vm.uiState.collectAsState()
     if (state.currentPlayerIsActive) {
-        Button(stringResource(Res.string.pass)) {
+        Button(stringResource(Res.string.close)) {
             vm.pass()
         }
     }

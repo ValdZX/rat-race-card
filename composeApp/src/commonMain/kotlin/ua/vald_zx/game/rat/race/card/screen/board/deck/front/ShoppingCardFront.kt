@@ -102,7 +102,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                 ) {
                     EButton(
                         onClick = { vm.pass() },
-                        title = stringResource(Res.string.pass),
+                        title = stringResource(Res.string.close),
                         unitTS = unitTS,
                         unitDp = unitDp,
                     )

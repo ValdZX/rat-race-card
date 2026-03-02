@@ -24,7 +24,7 @@ import org.jetbrains.compose.resources.stringResource
 import rat_race_card.composeapp.generated.resources.Res
 import rat_race_card.composeapp.generated.resources.auction
 import rat_race_card.composeapp.generated.resources.buy
-import rat_race_card.composeapp.generated.resources.pass
+import rat_race_card.composeapp.generated.resources.close
 import ua.vald_zx.game.rat.race.card.components.EButton
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
@@ -51,7 +51,6 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
         val unitDp = cardWidth / 300
         val padding = unitDp * 10
         val smallPadding = unitDp * 6
-        val state by vm.uiState.collectAsState()
         Column(modifier = Modifier.padding(padding)) {
             Row {
                 Text(
@@ -131,7 +130,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                 if (state.currentPlayerIsActive) {
                     EButton(
                         onClick = { vm.pass() },
-                        title = stringResource(Res.string.pass),
+                        title = stringResource(Res.string.close),
                         unitTS = unitTS,
                         unitDp = unitDp,
                     )
@@ -264,7 +263,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                 if (state.currentPlayerIsActive) {
                     EButton(
                         onClick = { vm.pass() },
-                        title = stringResource(Res.string.pass),
+                        title = stringResource(Res.string.close),
                         unitTS = unitTS,
                         unitDp = unitDp,
                     )
@@ -397,7 +396,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                 if (state.currentPlayerIsActive) {
                     EButton(
                         onClick = { vm.pass() },
-                        title = stringResource(Res.string.pass),
+                        title = stringResource(Res.string.close),
                         unitTS = unitTS,
                         unitDp = unitDp,
                     )

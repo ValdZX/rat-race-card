@@ -45,10 +45,12 @@ class BoardListScreen : Screen {
         val service = koinInject<RaceRatService>()
         val navigator = LocalNavigator.currentOrThrow
         var boardList by remember { mutableStateOf(emptyList<BoardId>()) }
+        var isProgressVisible by remember { mutableStateOf(true) }
         var newBoardDialog by remember { mutableStateOf(false) }
         val koin = getKoin()
         LaunchedEffect(Unit) {
             boardList = service.getBoards()
+            isProgressVisible = false
             service.observeBoards().onEach {
                 boardList = it
             }.launchIn(this)
@@ -69,7 +71,9 @@ class BoardListScreen : Screen {
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Button(stringResource(Res.string.new_table)) {
+                Button(
+                    enabled = !isProgressVisible,
+                    text = stringResource(Res.string.new_table)) {
                     newBoardDialog = true
                 }
                 LazyColumn(
@@ -103,6 +107,9 @@ class BoardListScreen : Screen {
                         }
                     }
                 }
+            }
+            if (isProgressVisible) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
         if (newBoardDialog) {

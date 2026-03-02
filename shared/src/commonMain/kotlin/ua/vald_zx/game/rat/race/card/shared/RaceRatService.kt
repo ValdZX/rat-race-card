@@ -137,7 +137,7 @@ interface RaceRatService {
     suspend fun buyEstate(estate: Estate)
     suspend fun buyLand(land: Land)
     suspend fun randomJob(card: BoardCard.Chance.RandomJob)
-    suspend fun buyShares(shares: Shares)
+    suspend fun buyShares(shares: Shares, totalCount: Long)
     suspend fun selectCardByNo(cardId: Int)
     suspend fun extendBusiness(business: Business, card: BoardCard.EventStore.BusinessExtending)
     suspend fun sellLands(area: Long, priceOfUnit: Long)
