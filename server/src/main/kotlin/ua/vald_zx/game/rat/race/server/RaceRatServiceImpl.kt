@@ -234,14 +234,14 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
                 },
                 takenCard = CardLink(cardType, cardId),
                 sharesCount = null,
-                canTakeCard = null,
+                canTakeCard = emptyList(),
                 processedPlayerIds = emptySet(),
             )
         }
     }
 
-    override suspend fun selectCardByNo(cardId: Int) {
-        board().canTakeCard?.let { cardType ->
+    override suspend fun selectCardByNo(cardId: Int, cardType: BoardCardType) {
+        board().canTakeCard.forEach {
             selectCard(cardId, cardType)
         }
     }
@@ -367,43 +367,54 @@ class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>
         when (place) {
             PlaceType.BigBusiness -> {
                 updateBoard {
-                    copy(canTakeCard = BoardCardType.BigBusiness)
+                    copy(canTakeCard = listOf(BoardCardType.BigBusiness))
                 }
             }
 
             PlaceType.Business -> {
                 updateBoard {
-                    copy(canTakeCard = BoardCardType.SmallBusiness)
+                    copy(
+                        canTakeCard =
+                            if (player.businesses.any { it.type == BusinessType.LARGE }) {
+                                listOf(BoardCardType.BigBusiness)
+                            } else if (player.businesses.any { it.type == BusinessType.MEDIUM }) {
+                                listOf(BoardCardType.BigBusiness, BoardCardType.MediumBusiness)
+                            } else if (player.businesses.any { it.type == BusinessType.SMALL || it.type == BusinessType.MEDIUM }) {
+                                listOf(BoardCardType.SmallBusiness, BoardCardType.MediumBusiness)
+                            } else {
+                                listOf(BoardCardType.SmallBusiness)
+                            }
+                    )
                 }
             }
 
             PlaceType.Chance -> {
                 updateBoard {
-                    copy(canTakeCard = BoardCardType.Chance)
+                    copy(canTakeCard = listOf(BoardCardType.Chance))
                 }
             }
 
             PlaceType.Deputy -> {
                 updateBoard {
-                    copy(canTakeCard = BoardCardType.Deputy)
+                    copy(canTakeCard = listOf(BoardCardType.Deputy))
                 }
             }
 
             PlaceType.Expenses -> {
                 updateBoard {
-                    copy(canTakeCard = BoardCardType.Expenses)
+                    copy(canTakeCard = listOf(BoardCardType.Expenses))
                 }
             }
 
             PlaceType.Shopping -> {
                 updateBoard {
-                    copy(canTakeCard = BoardCardType.Shopping)
+                    copy(canTakeCard = listOf(BoardCardType.Shopping))
                 }
             }
 
             PlaceType.Store -> {
                 updateBoard {
-                    copy(canTakeCard = BoardCardType.EventStore)
+                    copy(canTakeCard = listOf(BoardCardType.EventStore))
                 }
             }
 
@@ -899,7 +910,7 @@ suspend fun nextPlayer(board: Board) {
             diceRolling = false,
             takenCard = null,
             sharesCount = null,
-            canTakeCard = null,
+            canTakeCard = emptyList(),
             auction = null,
             bidList = emptyList()
         )

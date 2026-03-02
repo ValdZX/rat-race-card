@@ -66,7 +66,7 @@ fun CardDeck(
                     mutableStateOf(coordinates)
                 }.value = coordinates
             }
-            .optionalModifier(cardType == state.board.canTakeCard && state.currentPlayerIsActive) {
+            .optionalModifier(state.board.canTakeCard.contains(cardType) && state.currentPlayerIsActive) {
                 boxShadow(
                     blurRadius = blurRadius,
                     spreadRadius = spreadRadius,

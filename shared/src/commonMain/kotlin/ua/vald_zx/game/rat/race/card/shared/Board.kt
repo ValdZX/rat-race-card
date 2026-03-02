@@ -21,7 +21,7 @@ data class Board(
     val businessLimit: Long,
     val createDateTime: LocalDateTime,
     val cards: Map<BoardCardType, List<Int>>,
-    val canTakeCard: BoardCardType? = null,
+    val canTakeCard: List<BoardCardType> = emptyList(),
     val takenCard: CardLink? = null,
     val sharesCount: Long? = null,
     val discard: Map<BoardCardType, List<Int>> = emptyMap(),

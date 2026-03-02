@@ -139,7 +139,7 @@ fun InitPreview(
                             //NOP
                         }
 
-                        override suspend fun selectCardByNo(cardId: Int) {
+                        override suspend fun selectCardByNo(cardId: Int, cardType: BoardCardType) {
                             //NOP
                         }
 
@@ -226,7 +226,7 @@ fun InitPreviewWithVm(
                         createDateTime = Clock.System.now().toLocalDateTime(TimeZone.UTC),
                         id = "",
                         cards = emptyMap(),
-                        canTakeCard = null,
+                        canTakeCard = emptyList(),
                     ), Player(
                         id = "",
                         boardId = "",
