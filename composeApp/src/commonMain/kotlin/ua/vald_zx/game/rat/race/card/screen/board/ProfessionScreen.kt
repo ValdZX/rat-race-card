@@ -81,7 +81,7 @@ class ProfessionScreen(
                 stringResource(Res.string.phone), card.phone.toString(),
                 color = MaterialTheme.colorScheme.tertiary
             )
-            Button("Далі") {
+            Button(stringResource(Res.string.next)) {
                 launchWithHandler({ navigator.replaceAll(LoadOnlineScreen()) }) {
                     val helloUuid = appKStore.get()?.clientUuid.orEmpty().ifEmpty {
                         Uuid.random().toString().apply {

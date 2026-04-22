@@ -20,6 +20,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import rat_race_card.composeapp.generated.resources.Res
+import rat_race_card.composeapp.generated.resources.next
 import rat_race_card.composeapp.generated.resources.player_name_label
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
@@ -71,7 +72,7 @@ class InitPlayerScreen(private val board: Board) : Screen {
                     currentGender = it
                 }
             )
-            Button("Далі", enabled = playerName.isNotEmpty()) {
+            Button(stringResource(Res.string.next), enabled = playerName.isNotEmpty()) {
                 coroutineScope.launch {
                     val card = when (currentGender) {
                         Gender.MALE -> menProfessionCards.random()

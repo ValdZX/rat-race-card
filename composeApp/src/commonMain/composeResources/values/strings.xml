@@ -13,6 +13,7 @@
     <string name="new_table">New Table</string>
     <string name="table_name">Table Name</string>
     <string name="cancel">Cancel</string>
+    <string name="next">Next</string>
     <string name="create_table">Create Table</string>
     <string name="connection_failed">Failed to connect to server</string>
 
