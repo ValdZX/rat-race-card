@@ -99,7 +99,6 @@ class AuctionScreen(private val vm: BoardViewModel, private val auction: Auction
                                         modifier = Modifier.align(Alignment.CenterVertically),
                                         onClick = {
                                             vm.sellBid(item)
-                                            bottomSheetNavigator.hide()
                                         },
                                         content = {
                                             Icon(Images.Send, contentDescription = null)

@@ -5,20 +5,20 @@ android-minSdk = "26"
 android-targetSdk = "36"
 appdirs = "1.5.0"
 commonsCodec = "1.21.0"
-firebaseBom = "34.9.0"
-kotlin = "2.3.10"
-compose = "1.10.1"
+firebaseBom = "34.12.0"
+kotlin = "2.3.20"
+compose = "1.10.3"
 compose-hot-reload = "1.0.0"
 agp = "8.12.3"
-androidx-activityCompose = "1.12.4"
-localina = "1.0.0-alpha3"
+androidx-activityCompose = "1.13.0"
+localina = "1.0.0-beta2"
 voyager = "1.1.0-beta03"
 napier = "2.7.1"
-mongodb = "5.6.3"
-buildConfig = "6.0.7"
+mongodb = "5.6.5"
+buildConfig = "6.0.9"
 kotlinx-coroutines = "1.10.2"
-ktor = "3.4.0"
-kotlinx-serialization = "1.10.0"
+ktor = "3.4.2"
+kotlinx-serialization = "1.11.0"
 kstore = "1.0.0"
 lexilabs-sound = "0.2.6-beta02"
 lexilabs-haptic = "0.2.6-beta02"
@@ -28,10 +28,10 @@ app-update = "2.1.0"
 fragment = "1.8.9"
 kotlinx-rpc = "0.10.2"
 logback = "1.5.32"
-compottie = "2.0.2"
-uiAndroid = "1.10.3"
-koin-bom = "4.1.1"
-androidx-lifecycle = "2.9.6"
+compottie = "2.1.0"
+uiAndroid = "1.10.6"
+koin-bom = "4.2.1"
+androidx-lifecycle = "2.10.0"
 materialKolor = "4.1.1"
 jsontree = "2.6.0"
 
@@ -39,8 +39,8 @@ jsontree = "2.6.0"
 [libraries]
 
 commons-codec = { module = "commons-codec:commons-codec", version.ref = "commonsCodec" }
-google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.37.0" }
-google-cloud-storage = { module = "com.google.cloud:google-cloud-storage", version = "2.63.0" }
+google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.41.0" }
+google-cloud-storage = { module = "com.google.cloud:google-cloud-storage", version = "2.67.0" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version = "0.7.1" }
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
@@ -108,7 +108,7 @@ lexilabs-basic-haptic = { module = "app.lexilabs.basic:basic-haptic", version.re
 compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "compottie" }
 compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources", version.ref = "compottie" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
-constraintlayout = { module = "tech.annexflow.compose:constraintlayout-compose-multiplatform", version = "0.6.1" }
+constraintlayout = { module = "tech.annexflow.compose:constraintlayout-compose-multiplatform", version = "0.7.0" }
 composables-core = { module = "com.composables:core", version = "1.49.6" }
 materialKolor = { module = "com.materialkolor:material-kolor", version.ref = "materialKolor" }
 jsontree = { module = "com.sebastianneubauer.jsontree:jsontree", version.ref = "jsontree" }
@@ -124,7 +124,7 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 buildConfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildConfig" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version = "4.4.4" }
-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version = "3.0.6" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version = "3.0.7" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 kotlinx-rpc = { id = "org.jetbrains.kotlinx.rpc.plugin", version.ref = "kotlinx-rpc" }
 androidLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
