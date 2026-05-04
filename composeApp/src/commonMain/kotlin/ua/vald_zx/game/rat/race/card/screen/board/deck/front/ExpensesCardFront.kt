@@ -114,15 +114,18 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
 @Composable
 fun CardExpensesFrontPreview() {
     InitPreviewWithVm { vm ->
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.background(Color.White).padding(16.dp)
+        ) {
             BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                modifier = Modifier.width(300.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
                 ExpensesCardFront(CardLink(BoardCardType.Expenses, 1), vm)
             }
             BoxWithConstraints(
-                modifier = Modifier.size(300.dp, 200.dp).clip(RoundedCornerShape(16.dp))
+                modifier = Modifier.width(300.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
                 ExpensesCardFront(CardLink(BoardCardType.Expenses, 2), vm)

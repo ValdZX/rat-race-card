@@ -105,7 +105,7 @@ fun calculatePointerOffset(
 @Composable
 fun AlgPreview() {
     Box(modifier = Modifier.size(60.dp, 100.dp).background(Color.Black)) {
-        val count = 2
+        val count = 5
         repeat(count) { index ->
             val offset = calculatePointerOffset(
                 pointerWidth = 10.dp,

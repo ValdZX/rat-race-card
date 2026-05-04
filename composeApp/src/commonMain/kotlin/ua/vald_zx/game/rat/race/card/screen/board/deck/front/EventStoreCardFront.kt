@@ -510,7 +510,10 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
 @Composable
 fun EventEstateCardFrontPreview() {
     InitPreviewWithVm { vm ->
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.background(Color.White).padding(16.dp)
+        ) {
             BoxWithConstraints(
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
@@ -531,7 +534,10 @@ fun EventEstateCardFrontPreview() {
 @Composable
 fun EventLandCardFrontPreview() {
     InitPreviewWithVm { vm ->
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.background(Color.White).padding(16.dp)
+        ) {
             BoxWithConstraints(
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
@@ -552,7 +558,10 @@ fun EventLandCardFrontPreview() {
 @Composable
 fun EventSharesCardFrontPreview() {
     InitPreviewWithVm { vm ->
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.background(Color.White).padding(16.dp)
+        ) {
             BoxWithConstraints(
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)
@@ -573,7 +582,10 @@ fun EventSharesCardFrontPreview() {
 @Composable
 fun EventBusinessExtendingPreview() {
     InitPreviewWithVm { vm ->
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(16.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.background(Color.White).padding(16.dp)
+        ) {
             BoxWithConstraints(
                 modifier = Modifier.width(300.dp).heightIn(min = 200.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.background)

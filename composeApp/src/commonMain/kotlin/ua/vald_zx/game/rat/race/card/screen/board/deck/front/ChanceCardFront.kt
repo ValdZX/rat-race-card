@@ -434,7 +434,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 Text(
                     text = card.sharesType.label(),
                     color = Color.White,
-                    fontSize = unitTS * 14,
+                    fontSize = unitTS * 13,
                     lineHeight = unitTS * 14,
                     fontWeight = FontWeight.Bold,
                 )
