@@ -2,50 +2,16 @@
 
 package ua.vald_zx.game.rat.race.server
 
-import io.ktor.util.logging.KtorSimpleLogger
+import io.ktor.util.logging.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import ua.vald_zx.game.rat.race.card.shared.Auction
-import ua.vald_zx.game.rat.race.card.shared.Bid
-import ua.vald_zx.game.rat.race.card.shared.Board
-import ua.vald_zx.game.rat.race.card.shared.BoardCard
-import ua.vald_zx.game.rat.race.card.shared.BoardCardType
-import ua.vald_zx.game.rat.race.card.shared.BoardId
-import ua.vald_zx.game.rat.race.card.shared.Business
-import ua.vald_zx.game.rat.race.card.shared.BusinessType
-import ua.vald_zx.game.rat.race.card.shared.CardLink
-import ua.vald_zx.game.rat.race.card.shared.Estate
-import ua.vald_zx.game.rat.race.card.shared.Event
-import ua.vald_zx.game.rat.race.card.shared.Gender
-import ua.vald_zx.game.rat.race.card.shared.GlobalEvent
-import ua.vald_zx.game.rat.race.card.shared.Instance
-import ua.vald_zx.game.rat.race.card.shared.Land
-import ua.vald_zx.game.rat.race.card.shared.PlaceType
-import ua.vald_zx.game.rat.race.card.shared.Player
-import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
-import ua.vald_zx.game.rat.race.card.shared.PlayerCard
-import ua.vald_zx.game.rat.race.card.shared.RaceRatService
-import ua.vald_zx.game.rat.race.card.shared.Shares
-import ua.vald_zx.game.rat.race.card.shared.SharesType
-import ua.vald_zx.game.rat.race.card.shared.ShopType
-import ua.vald_zx.game.rat.race.card.shared.cashFlow
-import ua.vald_zx.game.rat.race.card.shared.moveTo
-import ua.vald_zx.game.rat.race.card.shared.remove
-import ua.vald_zx.game.rat.race.card.shared.replace
-import ua.vald_zx.game.rat.race.card.shared.toBoardId
-import ua.vald_zx.game.rat.race.card.shared.toLayer
-import ua.vald_zx.game.rat.race.card.shared.total
+import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.server.data.Storage
 import ua.vald_zx.game.rat.race.server.data.generateStableDbId
 import java.util.concurrent.ConcurrentHashMap
@@ -58,20 +24,15 @@ import kotlin.uuid.Uuid
 
 internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
-/**
- * Per-board mutexes serialize board mutations across all connections to the same
- * board (the old single global mutex serialized unrelated boards together, and the
- * per-instance player mutex did NOT serialize updates to the same player coming from
- * different connections). Read-modify-write of board/player state must hold the lock
- * for the entire cycle to avoid lost updates.
- */
 private val boardMutexes = ConcurrentHashMap<String, Mutex>()
 private val playerMutexes = ConcurrentHashMap<String, Mutex>()
 private fun boardMutex(boardId: String): Mutex = boardMutexes.getOrPut(boardId) { Mutex() }
 private fun playerMutex(playerId: String): Mutex = playerMutexes.getOrPut(playerId) { Mutex() }
 
-class RaceRatServiceImpl(private val uuidStateProvider: MutableStateFlow<String>) : RaceRatService,
-    CoroutineScope by CoroutineScope(Dispatchers.Default) {
+class RaceRatServiceImpl(
+    private val uuidStateProvider: MutableStateFlow<String>,
+    private val scope: CoroutineScope,
+) : RaceRatService, CoroutineScope by scope {
 
     private var boardIdState = MutableStateFlow("")
     private val eventBus = MutableSharedFlow<Event>()

@@ -2,28 +2,17 @@
 
 package ua.vald_zx.game.rat.race.server
 
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMethod
-import io.ktor.server.application.Application
-import io.ktor.server.application.ApplicationStopping
-import io.ktor.server.application.install
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.http.content.staticResources
-import io.ktor.server.netty.Netty
-import io.ktor.server.plugins.cors.routing.CORS
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.get
-import io.ktor.server.routing.routing
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.http.content.*
+import io.ktor.server.netty.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.rpc.krpc.ktor.server.Krpc
 import kotlinx.rpc.krpc.ktor.server.rpc
 import kotlinx.rpc.krpc.serialization.json.json
@@ -134,15 +123,20 @@ fun Application.module() {
                 }
             }
             val uuidStateProvider = MutableStateFlow("")
+            val connectionScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
             registerService<RaceRatService> {
-                RaceRatServiceImpl(uuidStateProvider)
+                RaceRatServiceImpl(uuidStateProvider, connectionScope)
             }
             registerService<RaceRatCardService> {
-                RaceRatCardServiceImpl()
+                RaceRatCardServiceImpl(connectionScope)
             }
             closeReason.invokeOnCompletion {
                 instanceScope.launch {
-                    handleDisconnect(uuidStateProvider.value)
+                    try {
+                        handleDisconnect(uuidStateProvider.value)
+                    } finally {
+                        connectionScope.cancel()
+                    }
                 }
             }
         }

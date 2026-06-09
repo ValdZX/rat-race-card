@@ -1,7 +1,6 @@
 package ua.vald_zx.game.rat.race.server
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
@@ -19,7 +18,9 @@ private val sendMoneyFlow = MutableSharedFlow<SendMoneyPack>()
 
 private fun roomPlayers(room: String) = rooms.getOrPut(room) { ConcurrentHashMap() }
 
-class RaceRatCardServiceImpl : RaceRatCardService, CoroutineScope by CoroutineScope(Dispatchers.Default) {
+class RaceRatCardServiceImpl(
+    private val scope: CoroutineScope,
+) : RaceRatCardService, CoroutineScope by scope {
     private var uuid: String = ""
     private var room = ""
     private val localPlayerFlow = MutableSharedFlow<OfflinePlayer>()
