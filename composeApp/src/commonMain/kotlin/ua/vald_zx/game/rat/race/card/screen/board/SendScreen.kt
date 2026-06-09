@@ -3,6 +3,8 @@ package ua.vald_zx.game.rat.race.card.screen.board
 import androidx.compose.runtime.Composable
 import cafe.adriel.voyager.core.screen.Screen
 import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.screen.InputScreen
 
 class SendScreen(
@@ -15,8 +17,8 @@ class SendScreen(
     @Composable
     override fun Content() {
         InputScreen(
-            inputLabel = "Відправити кошти до $playerName",
-            buttonText = "Відправити",
+            inputLabel = stringResource(Res.string.send_money_to, playerName),
+            buttonText = stringResource(Res.string.send),
             validation = { price -> price.isNotEmpty() },
             onClick = { price ->
                 sendMoney(playerId, price.toLong())

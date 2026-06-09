@@ -14,9 +14,7 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import rat_race_card.composeapp.generated.resources.Res
-import rat_race_card.composeapp.generated.resources.empty_room
-import rat_race_card.composeapp.generated.resources.room
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
@@ -63,14 +61,14 @@ class PlayersScreen : Screen {
                             Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
                                 Text(player.name)
                                 CashFlowField(
-                                    name = "Статки",
+                                    name = stringResource(Res.string.total_assets),
                                     lastCashFlows = player.lastTotals,
                                     rainbow = GoldRainbow,
                                     value = player.total.splitDecimal(),
                                     fontSize = 12.sp
                                 )
                                 CashFlowField(
-                                    name = "Cash Flow",
+                                    name = stringResource(Res.string.cash_flow),
                                     lastCashFlows = player.lastCashFlows,
                                     value = player.cashFlow.splitDecimal(),
                                     fontSize = 12.sp
@@ -100,7 +98,7 @@ class PlayersScreen : Screen {
                     label = { Text(stringResource(Res.string.room)) }
                 )
                 Button(
-                    text = "Connect",
+                    text = stringResource(Res.string.connect_action),
                     onClick = {
                         store.dispatch(RatRace2CardAction.Connect(room))
                     })

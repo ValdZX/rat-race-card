@@ -226,5 +226,23 @@
     <string name="bidEstateAuctionSuccessBuy">Нерухомість успішно викуплено</string>
     <string name="bidLandAuctionSuccessBuy">Землю успішно викуплено</string>
     <string name="bidSharesAuctionSuccessBuy">Акції успішно викуплено</string>
+    <string name="deposit_action">Вкласти</string>
+    <string name="send_money_to">Відправити кошти до %1$s</string>
+    <string name="repay_amount">Сума погашення</string>
+    <string name="repay_action">Погасити</string>
+    <string name="connect_action">Підключитись</string>
+    <string name="position_number">Номер позиції</string>
+    <string name="go_to">Перейти</string>
+    <string name="card_number">Номер картки</string>
+    <string name="select_action">Вибрати</string>
+    <string name="min_bid">Мінімальна ставка: %1$s</string>
+    <string name="cost">Вартість:</string>
+    <string name="land_short">З</string>
+    <string name="in_stock">В наявності: %1$s</string>
+    <string name="business_expansion">Розширення бізнесу</string>
+    <string name="business_expansion_short">РБ</string>
+    <string name="business_profit_increased_to">Прибуток бізнесу %1$s виріс на:</string>
+    <string name="business_profit_increased">Прибуток бізнесу виріс на:</string>
+    <string name="no_businesses_yet">Поки що немає бізнесів!</string>
 </resources>
 

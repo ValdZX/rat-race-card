@@ -119,7 +119,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             Text(
-                "Вартість:",
+                stringResource(Res.string.cost),
                 fontSize = unitTS * 10,
                 textAlign = TextAlign.Center
             )
@@ -187,7 +187,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
     Column(modifier = Modifier.padding(padding)) {
         Row {
             Text(
-                text = "Земля",
+                text = stringResource(Res.string.land),
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
                 lineHeight = unitTS * 12,
@@ -208,7 +208,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
                     modifier = Modifier.align(Alignment.End)
                 )
                 Text(
-                    text = "З",
+                    text = stringResource(Res.string.land_short),
                     color = Color.White,
                     fontSize = unitTS * 20,
                     lineHeight = unitTS * 17,
@@ -286,7 +286,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
     Column(modifier = Modifier.padding(padding)) {
         Row {
             Text(
-                text = "Акції",
+                text = stringResource(Res.string.shares),
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
                 lineHeight = unitTS * 12,
@@ -323,7 +323,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
         )
         Text(
             modifier = Modifier.padding(top = padding).align(Alignment.CenterHorizontally),
-            text = "Вартість:",
+            text = stringResource(Res.string.cost),
             fontSize = unitTS * 10,
             textAlign = TextAlign.Center,
         )
@@ -356,7 +356,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 ) {
                     val maxCount = state.player.sharesList.filter { it.type == card.sharesType }.sumOf { it.count }
                     Text(
-                        "В наявності: $maxCount",
+                        stringResource(Res.string.in_stock, maxCount.toString()),
                         fontSize = unitTS * 12,
                     )
                     val value = if (count <= 0) "" else count.toString()
@@ -417,7 +417,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
     Column(modifier = Modifier.padding(padding)) {
         Row {
             Text(
-                text = "Розширення бізнесу",
+                text = stringResource(Res.string.business_expansion),
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
                 lineHeight = unitTS * 12,
@@ -438,7 +438,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
                     modifier = Modifier.align(Alignment.End)
                 )
                 Text(
-                    text = "РБ",
+                    text = stringResource(Res.string.business_expansion_short),
                     color = Color.White,
                     fontSize = unitTS * 15,
                     lineHeight = unitTS * 15,
@@ -458,14 +458,14 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
         if (state.currentPlayerIsActive && randomSmallBusiness != null) {
             Text(
                 modifier = Modifier.padding(top = padding).align(Alignment.CenterHorizontally),
-                text = "Прибуток бізнесу ${randomSmallBusiness.name} виріс на:",
+                text = stringResource(Res.string.business_profit_increased_to, randomSmallBusiness.name),
                 fontSize = unitTS * 10,
                 textAlign = TextAlign.Center,
             )
         } else {
             Text(
                 modifier = Modifier.padding(top = padding).align(Alignment.CenterHorizontally),
-                text = "Прибуток бізнесу виріс на:",
+                text = stringResource(Res.string.business_profit_increased),
                 fontSize = unitTS * 10,
                 textAlign = TextAlign.Center,
             )
@@ -493,7 +493,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
                 )
             }
         } else if (state.currentPlayerIsActive) {
-            Text("Поки що немає бізнесів!", fontSize = unitTS * 14, modifier = Modifier.padding(smallPadding))
+            Text(stringResource(Res.string.no_businesses_yet), fontSize = unitTS * 14, modifier = Modifier.padding(smallPadding))
             EButton(
                 enabled = !state.isProgress,
                 modifier = Modifier.align(Alignment.CenterHorizontally),

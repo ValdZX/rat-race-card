@@ -69,7 +69,7 @@ class AuctionScreen(private val vm: BoardViewModel, private val auction: Auction
             } else {
                 if (state.board.bidList.isEmpty()) {
                     Text(stringResource(Res.string.noBetsYet), style = MaterialTheme.typography.titleSmall)
-                    Text("Мінімальна ставка ${auction.getBid}", style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(Res.string.min_bid, auction.getBid.toString()), style = MaterialTheme.typography.titleSmall)
                 } else {
                     LazyColumn {
                         items(state.board.bidList) { item ->

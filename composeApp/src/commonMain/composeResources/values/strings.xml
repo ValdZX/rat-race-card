@@ -221,4 +221,22 @@
     <string name="bidEstateAuctionSuccessBuy">Estate successfully purchased</string>
     <string name="bidLandAuctionSuccessBuy">Land successfully purchased</string>
     <string name="bidSharesAuctionSuccessBuy">Shares successfully purchased</string>
+    <string name="deposit_action">Deposit</string>
+    <string name="send_money_to">Send money to %1$s</string>
+    <string name="repay_amount">Repayment amount</string>
+    <string name="repay_action">Repay</string>
+    <string name="connect_action">Connect</string>
+    <string name="position_number">Position Number</string>
+    <string name="go_to">Go to</string>
+    <string name="card_number">Card Number</string>
+    <string name="select_action">Select</string>
+    <string name="min_bid">Minimum bid: %1$s</string>
+    <string name="cost">Cost:</string>
+    <string name="land_short">L</string>
+    <string name="in_stock">In stock: %1$s</string>
+    <string name="business_expansion">Business Expansion</string>
+    <string name="business_expansion_short">BE</string>
+    <string name="business_profit_increased_to">Profit of business %1$s increased by:</string>
+    <string name="business_profit_increased">Profit of business increased by:</string>
+    <string name="no_businesses_yet">No businesses yet!</string>
 </resources>

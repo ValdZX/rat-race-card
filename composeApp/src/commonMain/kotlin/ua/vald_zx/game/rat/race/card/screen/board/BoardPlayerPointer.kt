@@ -38,6 +38,8 @@ import ua.vald_zx.game.rat.race.card.shared.Gender
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.cashFlow
 import ua.vald_zx.game.rat.race.card.shared.total
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
 
@@ -263,13 +265,13 @@ fun PlayerTooltip(
                     Text(state.player.card.name)
                 }
                 CashFlowField(
-                    name = "Статки",
+                    name = stringResource(Res.string.total_assets),
                     rainbow = GoldRainbow,
                     value = state.player.total().splitDecimal(),
                     fontSize = 12.sp
                 )
                 CashFlowField(
-                    name = "Cash Flow",
+                    name = stringResource(Res.string.cash_flow),
                     value = state.player.cashFlow().splitDecimal(),
                     fontSize = 12.sp
                 )

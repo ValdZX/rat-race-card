@@ -9,6 +9,8 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import com.sebastianneubauer.jsontree.JsonTree
 import kotlinx.serialization.json.Json
+import org.jetbrains.compose.resources.stringResource
+import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
@@ -30,11 +32,11 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
             var position by remember { mutableStateOf(state.player.location.position.toString()) }
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Номер позиції") },
+                label = { Text(stringResource(Res.string.position_number)) },
                 value = position,
                 onValueChange = { position = it.toIntOrNull()?.toString() ?: "" },
             )
-            Button(text = "Перейти", enabled = position.isNotBlank()) {
+            Button(text = stringResource(Res.string.go_to), enabled = position.isNotBlank()) {
                 vm.changePosition(position.toInt())
                 bottomSheetNavigator.hide()
             }
@@ -42,11 +44,11 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
                 var cardNo by remember { mutableStateOf("") }
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Номер картки") },
+                    label = { Text(stringResource(Res.string.card_number)) },
                     value = cardNo,
                     onValueChange = { cardNo = it.toIntOrNull()?.toString() ?: "" },
                 )
-                Button(text = "Вибрати", enabled = cardNo.isNotBlank()) {
+                Button(text = stringResource(Res.string.select_action), enabled = cardNo.isNotBlank()) {
                     vm.selectCardByNo(cardNo.toInt())
                     bottomSheetNavigator.hide()
                 }
