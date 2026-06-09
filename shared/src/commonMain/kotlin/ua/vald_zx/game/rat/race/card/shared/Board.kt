@@ -34,6 +34,7 @@ data class Board(
     val processedPlayerIds: Set<String> = emptySet(),
     val auction: Auction? = null,
     val bidList: List<Bid> = emptyList(),
+    val allInactiveSinceEpochMs: Long? = null,
 )
 
 fun Board.toBoardId(): BoardId {

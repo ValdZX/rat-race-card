@@ -31,6 +31,7 @@ import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.server.data.Env
 import ua.vald_zx.game.rat.race.server.data.Storage
 import ua.vald_zx.game.rat.race.server.data.generateStableDbId
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -43,12 +44,20 @@ val checkStatusJobs = mutableMapOf<String, Job>()
 
 private const val STATUS_SWEEP_INTERVAL = 60
 private const val INACTIVITY_GRACE_MS = 5000L
+private val BOARD_CLEANUP_INTERVAL = 1.days
+private val BOARD_MAX_INACTIVITY = 7.days
 
 fun main() {
     instanceScope.launch {
         while (isActive) {
             delay(STATUS_SWEEP_INTERVAL.seconds)
             runStatusSweep()
+        }
+    }
+    instanceScope.launch {
+        while (isActive) {
+            delay(BOARD_CLEANUP_INTERVAL)
+            runBoardCleanup()
         }
     }
     embeddedServer(
@@ -85,6 +94,17 @@ private suspend fun runStatusSweep() {
 private val globalEventBusMap = mutableMapOf<String, MutableSharedFlow<GlobalEvent>>()
 fun getGlobalEventBus(boardId: String): MutableSharedFlow<GlobalEvent> {
     return globalEventBusMap.getOrPut(boardId) { MutableSharedFlow() }
+}
+
+private suspend fun runBoardCleanup() {
+    runCatching {
+        val removed = Storage.removeInactiveBoardsOlderThan(BOARD_MAX_INACTIVITY)
+        if (removed.isNotEmpty()) {
+            LOGGER.info("Removed ${removed.size} inactive boards: $removed")
+        }
+    }.onFailure { error ->
+        LOGGER.error("Board cleanup failed", error)
+    }
 }
 
 fun Application.module() {

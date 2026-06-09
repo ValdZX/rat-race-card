@@ -7,7 +7,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Player
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 object Storage {
     private val db: MongoDatabase by lazy { connectToDatabase() }
 
@@ -54,6 +57,23 @@ object Storage {
             players[player.id] = MutableStateFlow(player)
         }
         db.updatePlayer(player)
+        recalculateBoardActivity(player.boardId)
+    }
+
+    private suspend fun recalculateBoardActivity(boardId: String) {
+        val board = getBoardOrNull(boardId) ?: return
+        val boardPlayers = board.playerIds.mapNotNull { getPlayerOrNull(it) }
+        val allInactive = boardPlayers.all { it.isInactive }
+        val updated = when {
+            allInactive && board.allInactiveSinceEpochMs == null ->
+                board.copy(allInactiveSinceEpochMs = Clock.System.now().toEpochMilliseconds())
+
+            !allInactive && board.allInactiveSinceEpochMs != null ->
+                board.copy(allInactiveSinceEpochMs = null)
+
+            else -> return
+        }
+        updateBoard(updated)
     }
 
     suspend fun players(boardId: String): List<Player> {
@@ -108,13 +128,29 @@ object Storage {
         getBoardStateOrNull(id) ?: error("Board not found: $id")
 
     suspend fun newBoard(board: Board) {
-        db.newBoard(board)
-        boards[board.id] = MutableStateFlow(board)
+        val initialized =
+            if (board.allInactiveSinceEpochMs == null) {
+                board.copy(allInactiveSinceEpochMs = Clock.System.now().toEpochMilliseconds())
+            } else board
+        db.newBoard(initialized)
+        boards[initialized.id] = MutableStateFlow(initialized)
         updateBoardList()
     }
 
     suspend fun newPlayer(player: Player) {
         db.newPlayer(player)
         players[player.id] = MutableStateFlow(player)
+    }
+
+    suspend fun removeInactiveBoardsOlderThan(maxInactivity: kotlin.time.Duration): List<String> {
+        boards().forEach { board -> recalculateBoardActivity(board.id) }
+        val nowMs = Clock.System.now().toEpochMilliseconds()
+        val maxInactivityMs = maxInactivity.inWholeMilliseconds
+        val expiredBoardIds = boards().filter { board ->
+            val sinceMs = board.allInactiveSinceEpochMs ?: return@filter false
+            nowMs - sinceMs >= maxInactivityMs
+        }.map { it.id }
+        expiredBoardIds.forEach { boardId -> removeBoard(boardId) }
+        return expiredBoardIds
     }
 }
