@@ -1,18 +1,31 @@
 package ua.vald_zx.game.rat.race.server.data
 
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
+import io.ktor.util.logging.KtorSimpleLogger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Player
 import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 object Storage {
+    private val log = KtorSimpleLogger("Storage")
     private val db: MongoDatabase by lazy { connectToDatabase() }
+    private val persistenceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val boardsFlow = MutableStateFlow<List<Board>>(emptyList())
     private val players: MutableMap<String, MutableStateFlow<Player>> = mutableMapOf()
@@ -20,6 +33,9 @@ object Storage {
 
     private val playersLock = Mutex()
     private val boardsLock = Mutex()
+
+    private val playerWriteQueue = WriteBehindQueue<Player>(persistenceScope) { db.updatePlayer(it) }
+    private val boardWriteQueue = WriteBehindQueue<Board>(persistenceScope) { db.updateBoard(it) }
 
     private suspend fun getPlayerStateOrNull(id: String): MutableStateFlow<Player>? {
         players[id]?.let { return it }
@@ -50,14 +66,21 @@ object Storage {
         getBoardOrNull(id) ?: error("Board not found: $id")
 
     suspend fun updatePlayer(player: Player) {
-        val state = getPlayerStateOrNull(player.id)
-        if (state != null) {
-            state.value = player
-        } else {
-            players[player.id] = MutableStateFlow(player)
-        }
-        db.updatePlayer(player)
+        cachePlayer(player)
+        playerWriteQueue.enqueue(player.id, player)
         recalculateBoardActivity(player.boardId)
+    }
+
+    private fun cachePlayer(player: Player) {
+        val state = players[player.id]
+        if (state != null) state.value = player
+        else players[player.id] = MutableStateFlow(player)
+    }
+
+    private fun cacheBoard(board: Board) {
+        val state = boards[board.id]
+        if (state != null) state.value = board
+        else boards[board.id] = MutableStateFlow(board)
     }
 
     private suspend fun recalculateBoardActivity(boardId: String) {
@@ -83,28 +106,27 @@ object Storage {
 
     suspend fun removeBoard(boardId: String) {
         getBoardOrNull(boardId)?.playerIds?.forEach { playerId -> removePlayer(playerId) }
+        boardWriteQueue.cancel(boardId)
         boards.remove(boardId)
-        db.removeBoard(boardId)
+        runCatching { db.removeBoard(boardId) }
+            .onFailure { log.error("Failed to remove board $boardId", it) }
         updateBoardList()
     }
 
     suspend fun removePlayer(playerId: String) {
+        playerWriteQueue.cancel(playerId)
         players.remove(playerId)
-        db.removePlayer(playerId)
+        runCatching { db.removePlayer(playerId) }
+            .onFailure { log.error("Failed to remove player $playerId", it) }
     }
 
-    private suspend fun updateBoardList() {
-        boardsFlow.emit(boards.values.map { it.value })
+    private fun updateBoardList() {
+        boardsFlow.value = boards.values.map { it.value }
     }
 
     suspend fun updateBoard(board: Board) {
-        val state = getBoardStateOrNull(board.id)
-        if (state != null) {
-            state.value = board
-        } else {
-            boards[board.id] = MutableStateFlow(board)
-        }
-        db.updateBoard(board)
+        cacheBoard(board)
+        boardWriteQueue.enqueue(board.id, board)
         updateBoardList()
     }
 
@@ -132,17 +154,17 @@ object Storage {
             if (board.allInactiveSinceEpochMs == null) {
                 board.copy(allInactiveSinceEpochMs = Clock.System.now().toEpochMilliseconds())
             } else board
-        db.newBoard(initialized)
-        boards[initialized.id] = MutableStateFlow(initialized)
+        cacheBoard(initialized)
         updateBoardList()
+        boardWriteQueue.enqueue(initialized.id, initialized)
     }
 
     suspend fun newPlayer(player: Player) {
-        db.newPlayer(player)
-        players[player.id] = MutableStateFlow(player)
+        cachePlayer(player)
+        playerWriteQueue.enqueue(player.id, player)
     }
 
-    suspend fun removeInactiveBoardsOlderThan(maxInactivity: kotlin.time.Duration): List<String> {
+    suspend fun removeInactiveBoardsOlderThan(maxInactivity: Duration): List<String> {
         boards().forEach { board -> recalculateBoardActivity(board.id) }
         val nowMs = Clock.System.now().toEpochMilliseconds()
         val maxInactivityMs = maxInactivity.inWholeMilliseconds
@@ -152,5 +174,82 @@ object Storage {
         }.map { it.id }
         expiredBoardIds.forEach { boardId -> removeBoard(boardId) }
         return expiredBoardIds
+    }
+
+    suspend fun flushPendingWrites() {
+        playerWriteQueue.flush()
+        boardWriteQueue.flush()
+    }
+
+    private class WriteBehindQueue<T>(
+        private val scope: CoroutineScope,
+        private val write: suspend (T) -> Unit,
+    ) {
+        private val lock = Mutex()
+        private val pending = mutableMapOf<String, T>()
+        private val workers = mutableMapOf<String, Job>()
+
+        suspend fun enqueue(key: String, value: T) {
+            lock.withLock {
+                pending[key] = value
+                if (workers[key]?.isActive != true) {
+                    workers[key] = scope.launch { drain(key) }
+                }
+            }
+        }
+
+        suspend fun cancel(key: String) {
+            val worker = lock.withLock {
+                pending.remove(key)
+                workers.remove(key)
+            }
+            worker?.cancelAndJoin()
+        }
+
+        private suspend fun drain(key: String) {
+            while (true) {
+                val value = lock.withLock {
+                    val next = pending.remove(key)
+                    if (next == null) {
+                        workers.remove(key)
+                        return
+                    }
+                    next
+                }
+                persist(key, value)
+            }
+        }
+
+        private suspend fun persist(key: String, value: T) {
+            var attempt = 0
+            while (true) {
+                val result = runCatching { write(value) }
+                if (result.isSuccess) return
+                attempt += 1
+                if (attempt >= RETRY_LIMIT) {
+                    LOG.error("Giving up persisting $key after $attempt attempts", result.exceptionOrNull())
+                    return
+                }
+                LOG.warn("Persist attempt $attempt failed for $key, retrying", result.exceptionOrNull())
+                delay(RETRY_DELAY)
+            }
+        }
+
+        suspend fun flush() {
+            val activeWorkers = lock.withLock { workers.values.toList() }
+            activeWorkers.joinAll()
+            val leftovers = lock.withLock {
+                val snapshot = pending.toMap()
+                pending.clear()
+                snapshot
+            }
+            leftovers.forEach { (key, value) -> persist(key, value) }
+        }
+
+        private companion object {
+            val LOG = KtorSimpleLogger("Storage.WriteBehind")
+            const val RETRY_LIMIT = 5
+            val RETRY_DELAY = 2.seconds
+        }
     }
 }

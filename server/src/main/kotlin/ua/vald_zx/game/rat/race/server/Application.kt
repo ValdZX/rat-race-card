@@ -5,6 +5,7 @@ package ua.vald_zx.game.rat.race.server
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.http.content.staticResources
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.rpc.krpc.ktor.server.Krpc
 import kotlinx.rpc.krpc.ktor.server.rpc
 import kotlinx.rpc.krpc.serialization.json.json
@@ -48,6 +50,12 @@ private val BOARD_CLEANUP_INTERVAL = 1.days
 private val BOARD_MAX_INACTIVITY = 7.days
 
 fun main() {
+    Runtime.getRuntime().addShutdownHook(Thread {
+        runBlocking {
+            runCatching { Storage.flushPendingWrites() }
+                .onFailure { LOGGER.error("Failed to flush pending writes on shutdown", it) }
+        }
+    })
     instanceScope.launch {
         while (isActive) {
             delay(STATUS_SWEEP_INTERVAL.seconds)
@@ -110,6 +118,12 @@ private suspend fun runBoardCleanup() {
 fun Application.module() {
     install(Krpc)
     installCORS()
+    monitor.subscribe(ApplicationStopping) {
+        runBlocking {
+            runCatching { Storage.flushPendingWrites() }
+                .onFailure { LOGGER.error("Failed to flush pending writes on stop", it) }
+        }
+    }
     routing {
         staticResources("/content", "mycontent")
         get("/") { call.respondText("Race rat RPC services") }
