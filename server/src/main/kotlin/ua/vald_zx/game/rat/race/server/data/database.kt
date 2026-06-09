@@ -9,16 +9,19 @@ import com.mongodb.client.model.Filters
 import com.mongodb.client.model.ReplaceOptions
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.toList
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.pojo.PojoCodecProvider
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Player
 
-@Suppress("AuthLeak")
 fun connectToDatabase(): MongoDatabase {
-    val connectionString =
-        "mongodb+srv://vladyslavkhimichenko_db_user:mOdJBl7Ppu7Bd6ER@cluster0.gzggo7a.mongodb.net/?appName=Cluster0"
+    val connectionString = Env.require("MONGODB_URI")
+    val databaseName = Env["MONGODB_DATABASE"] ?: "board"
+
     val serverApi = ServerApi.builder()
         .version(ServerApiVersion.V1)
         .build()
@@ -36,7 +39,7 @@ fun connectToDatabase(): MongoDatabase {
         .serverApi(serverApi)
         .codecRegistry(codecRegistry)
         .build()
-    return MongoClient.create(mongoClientSettings).getDatabase("board")
+    return MongoClient.create(mongoClientSettings).getDatabase(databaseName)
 }
 
 fun MongoDatabase.boardCollection() = getCollection<Board>("board")
@@ -67,13 +70,11 @@ suspend fun MongoDatabase.updateBoard(board: Board) {
 }
 
 suspend fun MongoDatabase.newPlayer(player: Player) {
-    val oldPlayer = playerCollection()
-        .find(Filters.eq("_id", player.boardId + player.id))
-        .firstOrNull()
-    if(oldPlayer != null) {
-        removePlayer(oldPlayer.id)
-    }
-    playerCollection().insertOne(player)
+    playerCollection().replaceOne(
+        filter = Filters.eq("_id", player.id),
+        replacement = player,
+        options = ReplaceOptions().upsert(true)
+    )
 }
 
 suspend fun MongoDatabase.updatePlayer(player: Player) {
@@ -93,15 +94,14 @@ suspend fun MongoDatabase.observePlayers(boardId: String): Flow<Player> =
         )
     ).mapNotNull { it.fullDocument }
 
-suspend fun MongoDatabase.getBoard(id: String): Board {
-    return getCollection<Board>("board")
+suspend fun MongoDatabase.getBoard(id: String): Board? {
+    return boardCollection()
         .find(Filters.eq("_id", id))
-        .first()
+        .firstOrNull()
 }
 
-
-suspend fun MongoDatabase.getPlayer(id: String): Player {
+suspend fun MongoDatabase.getPlayer(id: String): Player? {
     return playerCollection()
         .find(Filters.eq("_id", id))
-        .first()
+        .firstOrNull()
 }

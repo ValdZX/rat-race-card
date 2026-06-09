@@ -2,25 +2,37 @@
 
 package ua.vald_zx.game.rat.race.server
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.http.content.*
-import io.ktor.server.netty.*
-import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import kotlinx.coroutines.*
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.http.content.staticResources
+import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.rpc.krpc.ktor.server.Krpc
 import kotlinx.rpc.krpc.ktor.server.rpc
 import kotlinx.rpc.krpc.serialization.json.json
 import ua.vald_zx.game.rat.race.card.shared.GlobalEvent
 import ua.vald_zx.game.rat.race.card.shared.RaceRatCardService
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
+import ua.vald_zx.game.rat.race.server.data.Env
 import ua.vald_zx.game.rat.race.server.data.Storage
 import ua.vald_zx.game.rat.race.server.data.generateStableDbId
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -29,28 +41,14 @@ val checkStatusFlow = MutableSharedFlow<String>()
 private val instanceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 val checkStatusJobs = mutableMapOf<String, Job>()
 
+private const val STATUS_SWEEP_INTERVAL = 60
+private const val INACTIVITY_GRACE_MS = 5000L
+
 fun main() {
     instanceScope.launch {
-        while (true) {
-            delay(1000 * 60)
-            checkStatusJobs.clear()
-            checkStatusFlow.emit(Uuid.random().toString())
-            Storage.boards().forEach { board ->
-                val players = board.playerIds.map { playerId -> Storage.getPlayer(playerId) }
-                if (players.all { it.isInactive }) {
-                    //So sad
-                } else {
-                    players.forEach { player ->
-                        if (!player.isInactive) {
-                            checkStatusJobs[player.id] = launch {
-                                delay(5000)
-                                val player = Storage.getPlayer(player.id)
-                                Storage.updatePlayer(player.copy(isInactive = true))
-                            }
-                        }
-                    }
-                }
-            }
+        while (isActive) {
+            delay(STATUS_SWEEP_INTERVAL.seconds)
+            runStatusSweep()
         }
     }
     embeddedServer(
@@ -61,6 +59,28 @@ fun main() {
     ).start(wait = true)
 }
 
+private suspend fun runStatusSweep() {
+    checkStatusJobs.values.forEach { it.cancel() }
+    checkStatusJobs.clear()
+
+    checkStatusFlow.emit(Uuid.random().toString())
+
+    Storage.boards().forEach { board ->
+        val players = board.playerIds.mapNotNull { playerId -> Storage.getPlayerOrNull(playerId) }
+        players.forEach { player ->
+            if (!player.isInactive) {
+                checkStatusJobs[player.id] = instanceScope.launch {
+                    delay(INACTIVITY_GRACE_MS.milliseconds)
+                    val current = Storage.getPlayerOrNull(player.id) ?: return@launch
+                    if (!current.isInactive) {
+                        Storage.updatePlayer(current.copy(isInactive = true))
+                    }
+                    checkStatusJobs.remove(player.id)
+                }
+            }
+        }
+    }
+}
 
 private val globalEventBusMap = mutableMapOf<String, MutableSharedFlow<GlobalEvent>>()
 fun getGlobalEventBus(boardId: String): MutableSharedFlow<GlobalEvent> {
@@ -73,7 +93,6 @@ fun Application.module() {
     routing {
         staticResources("/content", "mycontent")
         get("/") { call.respondText("Race rat RPC services") }
-        get("/error-test") { throw IllegalStateException("Too Busy") }
         rpc("/api") {
             rpcConfig {
                 serialization {
@@ -88,25 +107,30 @@ fun Application.module() {
                 RaceRatCardServiceImpl()
             }
             closeReason.invokeOnCompletion {
-                runBlocking {
-                    val uuid = uuidStateProvider.value
-                    if (uuid.isEmpty()) return@runBlocking
-                    Storage.boards().forEach { board ->
-                        if (board.playerIds.contains(uuid)) {
-                            val player = Storage.getPlayer(generateStableDbId(board.id, uuid))
-                            if (!player.isInactive) {
-                                val inactivePlayer = player.copy(isInactive = true)
-                                Storage.updatePlayer(inactivePlayer)
-                                getGlobalEventBus(board.id).emit(GlobalEvent.PlayerChanged(inactivePlayer))
-                                val board = Storage.getBoard(board.id)
-                                if (Storage.getPlayer(board.activePlayerId).isInactive) {
-                                    nextPlayer(board)
-                                }
-                            }
-                        }
-                    }
+                instanceScope.launch {
+                    handleDisconnect(uuidStateProvider.value)
                 }
             }
+        }
+    }
+}
+
+private suspend fun handleDisconnect(uuid: String) {
+    if (uuid.isEmpty()) return
+    Storage.boards().forEach { board ->
+        val playerId = generateStableDbId(board.id, uuid)
+        if (!board.playerIds.contains(playerId)) return@forEach
+        val player = Storage.getPlayerOrNull(playerId) ?: return@forEach
+        if (player.isInactive) return@forEach
+
+        val inactivePlayer = player.copy(isInactive = true)
+        Storage.updatePlayer(inactivePlayer)
+        getGlobalEventBus(board.id).emit(GlobalEvent.PlayerChanged(inactivePlayer))
+
+        val freshBoard = Storage.getBoardOrNull(board.id) ?: return@forEach
+        val activePlayer = Storage.getPlayerOrNull(freshBoard.activePlayerId)
+        if (activePlayer == null || activePlayer.isInactive) {
+            nextPlayer(freshBoard)
         }
     }
 }
@@ -123,8 +147,20 @@ fun Application.installCORS() {
         exposeHeader("X-My-Custom-Header")
         exposeHeader("X-Another-Custom-Header")
         allowNonSimpleContentTypes = true
-        allowCredentials = true
-        allowSameOrigin = true
-        anyHost()
+
+        val allowedOrigins = Env["ALLOWED_ORIGINS"]
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            .orEmpty()
+        if (allowedOrigins.isEmpty()) {
+            anyHost()
+        } else {
+            allowedOrigins.forEach { origin ->
+                val schemeAndHost = origin.removePrefix("https://").removePrefix("http://")
+                allowHost(schemeAndHost, schemes = listOf("http", "https"))
+            }
+            allowCredentials = true
+        }
     }
 }

@@ -9,12 +9,15 @@ import kotlinx.coroutines.flow.onEach
 import ua.vald_zx.game.rat.race.card.shared.OfflinePlayer
 import ua.vald_zx.game.rat.race.card.shared.RaceRatCardService
 import ua.vald_zx.game.rat.race.card.shared.SendMoneyPack
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-var offlinePlayers: Map<String, Map<String, OfflinePlayer>> = emptyMap()
-val playerFlow = MutableSharedFlow<OfflinePlayer>()
-val sendMoneyFlow = MutableSharedFlow<SendMoneyPack>()
+private val rooms = ConcurrentHashMap<String, ConcurrentHashMap<String, OfflinePlayer>>()
+private val playerFlow = MutableSharedFlow<OfflinePlayer>()
+private val sendMoneyFlow = MutableSharedFlow<SendMoneyPack>()
+
+private fun roomPlayers(room: String) = rooms.getOrPut(room) { ConcurrentHashMap() }
 
 class RaceRatCardServiceImpl : RaceRatCardService, CoroutineScope by CoroutineScope(Dispatchers.Default) {
     private var uuid: String = ""
@@ -38,25 +41,28 @@ class RaceRatCardServiceImpl : RaceRatCardService, CoroutineScope by CoroutineSc
     @OptIn(ExperimentalUuidApi::class)
     override suspend fun hello(player: OfflinePlayer): String {
         room = player.room
-        offlinePlayers = offlinePlayers.toMutableMap().apply {
-            this[player.room] = this.getOrPut(player.room, { emptyMap() }).toMutableMap().apply {
-                uuid = player.id.ifEmpty { Uuid.random().toString() }
-                val updatedPlayer = player.copy(id = uuid)
-                this[uuid] = updatedPlayer
-                playerFlow.emit(updatedPlayer)
-            }
-        }
+        uuid = player.id.ifEmpty { Uuid.random().toString() }
+        val updatedPlayer = player.copy(id = uuid)
+        roomPlayers(room)[uuid] = updatedPlayer
+        playerFlow.emit(updatedPlayer)
         return uuid
     }
 
     override suspend fun getPlayers(): List<OfflinePlayer> {
-        return offlinePlayers[room]?.values?.toList().orEmpty()
+        return rooms[room]?.values?.toList().orEmpty()
     }
 
     override fun playersObserve(): Flow<OfflinePlayer> = localPlayerFlow
     override fun sendMoneyObserve(): Flow<SendMoneyPack> = localSendMoneyFlow
 
     override suspend fun updatePlayer(player: OfflinePlayer) {
+        if (player.room.isNotEmpty()) {
+            if (player.removed) {
+                rooms[player.room]?.remove(player.id)
+            } else {
+                roomPlayers(player.room)[player.id] = player
+            }
+        }
         playerFlow.emit(player)
     }
 
