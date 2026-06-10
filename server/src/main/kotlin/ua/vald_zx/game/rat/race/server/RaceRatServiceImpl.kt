@@ -735,13 +735,18 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun advertiseAuction(auction: Auction) {
+        if (board().activePlayerId != playerId) return
         updateBoard {
-            copy(auction = auction)
+            copy(auction = auction, bidList = emptyList())
         }
     }
 
     override suspend fun sellBid(bid: Bid) {
-        val auction = board().auction ?: return
+        val board = board()
+        if (board.activePlayerId != playerId) return
+        val auction = board.auction ?: return
+        if (board.bidList.none { it.playerId == bid.playerId && it.bid == bid.bid && it.count == bid.count }) return
+        if (auction is Auction.SharesAuction && auction.shares.count < bid.count) return
         val profit = auction.getProfit(bid)
         updatePlayer { plusCash(profit) }
         if (auction !is Auction.SharesAuction) {
@@ -756,7 +761,8 @@ class RaceRatServiceImpl(
                         shares = auction.shares.copy(
                             count = auction.shares.count - bid.count
                         )
-                    )
+                    ),
+                    bidList = bidList.filter { it.playerId != bid.playerId }
                 )
             }
         }
@@ -764,6 +770,15 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun makeBid(price: Long, count: Long) {
+        val board = board()
+        val auction = board.auction ?: return
+        if (board.activePlayerId == playerId) return
+        if (price <= 0) return
+        if (auction is Auction.SharesAuction) {
+            if (count <= 0 || count > auction.shares.count) return
+        }
+        val minBid = board.bidList.maxOfOrNull { it.bid } ?: auction.getBid
+        if (price < minBid) return
         updateBoard {
             copy(bidList = bidList.filter { it.playerId != playerId } + Bid(playerId, price, count))
         }

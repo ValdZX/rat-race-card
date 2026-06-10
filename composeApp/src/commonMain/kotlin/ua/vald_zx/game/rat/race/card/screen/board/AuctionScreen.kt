@@ -59,9 +59,9 @@ class AuctionScreen(private val vm: BoardViewModel, private val auction: Auction
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                         .widthIn(min = 200.dp),
                     onClick = {
-                        vm.advertiseAuction(auction.copy(bid = firstBidState.value.text.toLong()))
+                        vm.advertiseAuction(auction.copy(bid = firstBidState.value.text.toLongOrNull() ?: minBid))
                     },
-                    enabled = firstBidState.value.text.isNotEmpty() && firstBidState.value.text.toLong() >= minBid,
+                    enabled = firstBidState.value.text.isNotEmpty() && (firstBidState.value.text.toLongOrNull() ?: 0) >= minBid,
                     content = {
                         Text(stringResource(Res.string.advertiseAuction))
                     }
@@ -133,6 +133,7 @@ class AuctionScreen(private val vm: BoardViewModel, private val auction: Auction
                         }
                         val bid = bidState.value.text.toLongOrNull() ?: 0
                         val count = quantityState.value.text.toLongOrNull() ?: 0
+                        val maxSharesCount = (auction as? Auction.SharesAuction)?.shares?.count ?: 0
                         ElevatedButton(
                             modifier = Modifier
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -140,7 +141,11 @@ class AuctionScreen(private val vm: BoardViewModel, private val auction: Auction
                             onClick = {
                                 vm.makeBid(bid, count)
                             },
-                            enabled = isShares && state.canPay(bid * count) || bidState.value.text.isNotEmpty() && bid >= minBid && state.canPay(bid),
+                            enabled = bidState.value.text.isNotEmpty() && bid >= minBid && if (isShares) {
+                                count in 1..maxSharesCount && state.canPay(bid * count)
+                            } else {
+                                state.canPay(bid)
+                            },
                             content = {
                                 Text(stringResource(Res.string.placeBet))
                             }
