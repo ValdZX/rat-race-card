@@ -201,8 +201,17 @@ compose.desktop {
 }
 
 buildConfig {
-    // BuildConfig configuration here.
     // https://github.com/gmazzo/gradle-buildconfig-plugin#usage-in-kts
+    packageName("ua.vald_zx.game.rat.race.card")
+    val cardOnly = (project.findProperty("cardOnly") as String?)?.toBoolean() ?: false
+    sourceSets.maybeCreate("commonMain").apply {
+        className("BuildConfig")
+        buildConfigField("Boolean", "CARD_ONLY_MODE", cardOnly.toString())
+    }
+}
+
+kotlin.sourceSets.commonMain {
+    kotlin.srcDir(tasks.named("generateCommonMainBuildConfigClasses"))
 }
 
 tasks.register("buildDist") {

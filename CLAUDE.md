@@ -19,12 +19,25 @@ Targets: **Android, iOS, Desktop (JVM), Web (Wasm/JS)**. App version is set in `
 
 `docs/` is **generated build output** (the Wasm production bundle published to GitHub Pages by the `buildDist` Gradle task) — do not hand-edit it. `proto/` is empty/scratch. `temp.txt` is scratch.
 
+## Run mode switch (compile-time)
+
+`App()` (`composeApp/.../card/App.kt`) picks the entry flow at compile time via `BuildConfig.CARD_ONLY_MODE`:
+
+- **Full app** (default) → `FullApp()` — `SelectTypeScreen`, online board + player card.
+- **Card-only prod build** → `CardOnlyApp()` — only the player-card flow (`PersonCard2Screen` / `RaceRate2Screen`).
+
+The flag is a generated `BuildConfig` field (gmazzo buildconfig plugin) driven by the `cardOnly` Gradle property. To switch, pass `-PcardOnly=true` on any task or add `cardOnly=true` to `gradle.properties` / `local.properties` — no code edits. Config lives in the `buildConfig {}` block of `composeApp/build.gradle.kts`; it's generated into `commonMain` and wired into the Kotlin source set right after that block.
+
 ## Two game modes (important)
 
 The app contains two largely separate gameplay systems. Don't conflate them:
 
 1. **Offline / single-device card mode** — local state managed by a hand-rolled Redux store, `RatRace2CardStore` (`composeApp/.../logic/RatRace2CardStore.kt`). State persisted locally via **KStore** JSON files (`Storages.kt`). Screens live under `screen/second/`. Optional lightweight P2P money-passing uses `RaceRatCardService`.
 2. **Online board mode** — full multiplayer board game driven by the server. Client state in `BoardViewModel` (`logic/BoardViewModel.kt`), talking to the server via `RaceRatService`. Screens under `screen/board/`. Server is authoritative; the client observes `Event`/`GlobalEvent` flows.
+
+## Code style
+
+Write self-explanatory code instead of comments. Do **not** add explanatory comments — prefer clear names, small functions, and obvious structure so the code reads on its own. Only keep a comment when it carries information the code genuinely cannot (e.g. a required external link, a non-obvious workaround reason). Match the surrounding style of the file you edit.
 
 ## Architecture patterns
 
