@@ -92,7 +92,10 @@
     <!-- Additional UI -->
     <string name="funds">Funds</string>
     <string name="offline_mode">Offline Card</string>
+    <string name="offline_mode_desc">Track your own card on this device</string>
     <string name="online_mode">Online Version</string>
+    <string name="online_mode_desc">Play with friends on a shared board</string>
+    <string name="select_mode_title">Choose how to play</string>
     <string name="retry_connection">Retry Connection</string>
 
     <!-- UI Actions and Labels -->

@@ -93,7 +93,10 @@
     <!-- Additional UI -->
     <string name="funds">Фонди</string>
     <string name="offline_mode">Офлайн картка</string>
+    <string name="offline_mode_desc">Веди власну картку на цьому пристрої</string>
     <string name="online_mode">Онлайн версія</string>
+    <string name="online_mode_desc">Грай з друзями на спільному полі</string>
+    <string name="select_mode_title">Обери, як грати</string>
     <string name="retry_connection">Спробувати підключития ще раз</string>
 
     <!-- UI Actions and Labels -->
