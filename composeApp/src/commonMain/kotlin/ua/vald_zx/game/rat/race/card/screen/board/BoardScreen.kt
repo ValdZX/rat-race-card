@@ -19,7 +19,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
@@ -49,7 +48,6 @@ import rat_race_card.composeapp.generated.resources.*
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
-import ua.vald_zx.game.rat.race.card.logic.BoardState
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
@@ -61,56 +59,10 @@ import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.screen.BoardListScreen
 import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
-import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDeck
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDialog
-import ua.vald_zx.game.rat.race.card.screen.board.deck.DiscardPile
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 import kotlin.math.absoluteValue
-
-enum class Side(val isHorizontal: Boolean) {
-    TOP(true), LEFT(false), BOTTOM(true), RIGHT(false)
-}
-
-data class Location(
-    val side: Side,
-    val position: Int,
-)
-
-data class Place(
-    val type: PlaceType,
-    val location: Location,
-    val offset: DpOffset,
-    val size: DpSize,
-) {
-    val isVertical: Boolean
-        get() = (location.side == Side.TOP || location.side == Side.BOTTOM) && !type.isBig
-}
-
-data class BoardLayers(
-    val layers: Map<BoardLayer, BoardRoute>
-)
-
-data class BoardRoute(
-    val horizontalCells: Int,
-    val verticalCells: Int,
-    val places: List<PlaceType>,
-    val offset: Int = 0,
-) {
-    fun rotate(): BoardRoute {
-        val offset = horizontalCells - 4
-        val firstPart = places.take(offset)
-        val secondPart = places.drop(offset)
-        return BoardRoute(
-            horizontalCells = verticalCells,
-            verticalCells = horizontalCells,
-            places = secondPart + firstPart,
-            offset = places.size - offset
-        )
-    }
-}
-
-const val INNER_LAYER_SCALE = 1.2f
 
 val navigationBarHeightState = mutableStateOf(0.dp)
 val statusBarHeightState = mutableStateOf(0.dp)
@@ -798,223 +750,6 @@ fun BackSide() {
 }
 
 @Composable
-fun BoxWithConstraintsScope.BoardPanel(
-    isVertical: Boolean,
-    vm: BoardViewModel,
-) {
-    val maxWidth = maxWidth
-    val maxHeight = maxHeight
-    val density = LocalDensity.current
-    var isDark by LocalThemeIsDark.current
-    Box(
-        modifier = Modifier.fillMaxSize()
-            .shadow(30.dp, shape = RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                if (isDark) {
-                    Brush.radialGradient(
-                        0.0f to Color(0xFF31250E),
-                        0.4f to Color(0xFF282215),
-                        0.6f to Color(0xFF2F200C),
-                        1.0f to Color(0xFF320202),
-                        radius = with(density) { min(maxWidth, maxHeight).toPx() },
-                        tileMode = TileMode.Repeated
-                    )
-                } else {
-                    Brush.radialGradient(
-                        0.0f to Color(0xFFD7C228),
-                        0.4f to Color(0xFFF8C954),
-                        0.6f to Color(0xFFFFB370),
-                        1.0f to Color(0xFFFFB370),
-                        radius = with(density) { min(maxWidth, maxHeight).toPx() },
-                        tileMode = TileMode.Repeated
-                    )
-                }
-            )
-    ) {
-        val outRoute = boardLayers.layers[BoardLayer.OUTER] ?: return
-        val inRoute = boardLayers.layers[BoardLayer.INNER] ?: return
-        val actualOutRoute = remember(isVertical) {
-            if (isVertical) outRoute.rotate() else outRoute
-        }
-        Places(
-            layer = BoardLayer.OUTER,
-            size = DpSize(maxWidth, maxHeight),
-            route = actualOutRoute,
-            vm = vm,
-        )
-        val outSpotSize =
-            maxWidth / actualOutRoute.horizontalCells
-        val inPadding = outSpotSize / 3
-        val actualInRoute = remember(isVertical) {
-            if (isVertical) inRoute.rotate() else inRoute
-        }
-        val inBoardWidth =
-            (maxWidth - outSpotSize * 4 - inPadding * 2)
-        val inBoardHeight =
-            (maxHeight - outSpotSize * 4 - inPadding * 2)
-        Places(
-            layer = BoardLayer.INNER,
-            size = DpSize(inBoardWidth, inBoardHeight),
-            route = actualInRoute,
-            vm = vm,
-        )
-        val inSpotSize =
-            inBoardWidth / actualInRoute.horizontalCells
-        val cardsPadding = inSpotSize
-        val cardsWidth =
-            (inBoardWidth - inSpotSize * 4 - cardsPadding * 2)
-        val cardsHeight =
-            (inBoardHeight - inSpotSize * 4 - cardsPadding * 2)
-        CardDecks(
-            size = DpSize(cardsWidth, cardsHeight),
-            vm = vm,
-        )
-    }
-}
-
-@Composable
-fun BoxScope.CardDecks(
-    size: DpSize,
-    vm: BoardViewModel,
-) {
-    Box(
-        modifier = Modifier
-            .align(Alignment.Center)
-            .size(size.width, size.height)
-    ) {
-        if (size.width < size.height) {
-            val width = size.width / 5
-            val height = (width * 3) / 2
-            val cardSize = DpSize(width, height)
-            Column(
-                modifier = Modifier.fillMaxWidth().align(Alignment.TopStart),
-                verticalArrangement = Arrangement.spacedBy(width / 2)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    LeftCardDecks(cardSize, vm = vm)
-                }
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    val state by vm.uiState.collectAsState()
-                    LeftDiscardPiles(cardSize, state = state)
-                }
-            }
-            Column(
-                modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart),
-                verticalArrangement = Arrangement.spacedBy(width / 2)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    val state by vm.uiState.collectAsState()
-                    RightDiscardPiles(cardSize, state = state)
-                }
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    RightCardDecks(cardSize, vm = vm)
-                }
-            }
-        } else {
-            val height = size.height / 5
-            val width = (height * 3) / 2
-            val cardSize = DpSize(width, height)
-            Row(
-                modifier = Modifier.fillMaxHeight().align(Alignment.TopStart),
-                horizontalArrangement = Arrangement.spacedBy(height / 2)
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxHeight()
-                ) {
-                    LeftCardDecks(cardSize, vm = vm)
-                }
-                Column(
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxHeight()
-                ) {
-                    val state by vm.uiState.collectAsState()
-                    LeftDiscardPiles(
-                        size = cardSize,
-                        state = state,
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxHeight().align(Alignment.TopEnd),
-                horizontalArrangement = Arrangement.spacedBy(height / 2)
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxHeight()
-                ) {
-                    val state by vm.uiState.collectAsState()
-                    RightDiscardPiles(cardSize, state = state)
-                }
-                Column(
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxHeight()
-                ) {
-                    RightCardDecks(cardSize, vm = vm)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun LeftCardDecks(
-    size: DpSize,
-    vm: BoardViewModel
-) {
-    CardDeck(BoardCardType.Chance, size, vm)
-    CardDeck(BoardCardType.BigBusiness, size, vm)
-    CardDeck(BoardCardType.MediumBusiness, size, vm)
-    CardDeck(BoardCardType.SmallBusiness, size, vm)
-}
-
-@Composable
-fun RightCardDecks(
-    size: DpSize,
-    vm: BoardViewModel
-) {
-    CardDeck(BoardCardType.Expenses, size, vm)
-    CardDeck(BoardCardType.Deputy, size, vm)
-    CardDeck(BoardCardType.EventStore, size, vm)
-    CardDeck(BoardCardType.Shopping, size, vm)
-}
-
-@Composable
-fun LeftDiscardPiles(
-    size: DpSize,
-    state: BoardState
-) {
-    DiscardPile(BoardCardType.Chance, size, state)
-    DiscardPile(BoardCardType.BigBusiness, size, state)
-    DiscardPile(BoardCardType.MediumBusiness, size, state)
-    DiscardPile(BoardCardType.SmallBusiness, size, state)
-}
-
-@Composable
-fun RightDiscardPiles(
-    size: DpSize,
-    state: BoardState
-) {
-    DiscardPile(BoardCardType.Expenses, size, state)
-    DiscardPile(BoardCardType.Deputy, size, state)
-    DiscardPile(BoardCardType.EventStore, size, state)
-    DiscardPile(BoardCardType.Shopping, size, state)
-}
-
-@Composable
 fun BoxScope.ColorsSelector(
     colorState: MutableState<Long>,
 ) {
@@ -1038,77 +773,6 @@ fun BoxScope.ColorsSelector(
         }
     }
 }
-
-fun PlaceType.getDpSize(
-    location: Location,
-    spotWidth: Dp,
-    spotHeight: Dp,
-): DpSize {
-    return if (isBig) {
-        DpSize(spotWidth * 2, spotHeight * 2)
-    } else {
-        if (location.side.isHorizontal) {
-            DpSize(spotWidth, spotHeight * 2)
-        } else {
-            DpSize(spotWidth * 2, spotHeight)
-        }
-    }
-}
-
-fun PlaceType.dpOffset(
-    location: Location,
-    spotWidth: Dp,
-    spotHeight: Dp,
-    cellX: Int,
-    cellY: Int,
-): DpOffset {
-    return when (location.side) {
-        Side.TOP -> DpOffset(
-            x = spotWidth * location.position,
-            y = 0.dp
-        )
-
-        Side.LEFT -> DpOffset(
-            x = spotWidth * (cellX - 2),
-            y = spotHeight * location.position
-        )
-
-        Side.BOTTOM -> DpOffset(
-            x = spotWidth * (location.position - if (isBig) 1 else 0),
-            y = spotHeight * (cellY - 2),
-        )
-
-        Side.RIGHT -> DpOffset(
-            x = 0.dp,
-            y = spotHeight * (location.position - if (isBig) 1 else 0)
-        )
-    }
-}
-
-fun getLocationOnBoard(
-    position: Int,
-    cellX: Int,
-    cellY: Int
-): Location {
-    val leftSideMax = cellX + cellY - 2
-    val bottomSideMax = leftSideMax + cellX - 2
-    return if (position < cellX) {
-        Location(Side.TOP, position)
-    } else if (position in cellX..<leftSideMax) {
-        Location(Side.LEFT, position - cellX + 2)
-    } else if (position in leftSideMax..<bottomSideMax) {
-        Location(Side.BOTTOM, cellX - (position - leftSideMax) - 3)
-    } else {
-        Location(Side.RIGHT, cellY - (position - bottomSideMax + 3))
-    }
-}
-
-val boardLayers = BoardLayers(
-    layers = mapOf(
-        BoardLayer.OUTER to BoardRoute(26, 18, outPlaces),
-        BoardLayer.INNER to BoardRoute(28, 18, inPlaces),
-    )
-)
 
 private fun Modifier.rotateOnDrag(
     rotX: Animatable<Float, AnimationVector1D>,
