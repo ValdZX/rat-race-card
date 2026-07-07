@@ -599,32 +599,13 @@ fun BoardFragment(vm: BoardViewModel) {
             .rotateOnDrag(rotX, rotY)
     ) {
         val state by vm.uiState.collectAsState()
-        val outRoute = boardLayers.layers[BoardLayer.OUTER] ?: error("Fix board")
-        val horizontalRatio =
-            outRoute.horizontalCells.toFloat() / outRoute.verticalCells.toFloat()
-        val verticalRatio =
-            outRoute.verticalCells.toFloat() / outRoute.horizontalCells.toFloat()
         val isVertical = maxHeight > maxWidth
         val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) INNER_LAYER_SCALE else 1.0f)
         BoxWithConstraints(
             modifier = Modifier
                 .padding(32.dp)
                 .align(Alignment.Center)
-                .let { modifier ->
-                    if (isVertical) {
-                        if (maxWidth / maxHeight > horizontalRatio) {
-                            modifier.fillMaxWidth().aspectRatio(verticalRatio)
-                        } else {
-                            modifier.fillMaxHeight().aspectRatio(verticalRatio)
-                        }
-                    } else {
-                        if (maxWidth / maxHeight > horizontalRatio) {
-                            modifier.fillMaxHeight().aspectRatio(horizontalRatio)
-                        } else {
-                            modifier.fillMaxWidth().aspectRatio(horizontalRatio)
-                        }
-                    }
-                }
+                .fitBoardFrame(maxWidth, maxHeight, isVertical)
                 .graphicsLayer {
                     rotationX = (-rotX.value).coerceIn(-180f, 180f)
                     rotationY = rotY.value.coerceIn(-180f, 180f)

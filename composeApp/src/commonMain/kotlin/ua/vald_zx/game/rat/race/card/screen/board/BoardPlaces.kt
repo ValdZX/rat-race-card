@@ -289,35 +289,14 @@ fun BoxScope.PlaceContent(
 @Composable
 fun BoxScope.Places(
     vm: BoardViewModel,
-    layer: BoardLayer,
-    size: DpSize,
-    route: BoardRoute,
+    layout: RouteLayout,
 ) {
-    val spotWidth = size.width / route.horizontalCells
-    val spotHeight = size.height / route.verticalCells
-    val places = remember(route.places, size) {
-        var placeOffset = 0
-        route.places.mapIndexed { index, type ->
-            val location =
-                getLocationOnBoard(placeOffset, route.horizontalCells, route.verticalCells)
-            val cellSize = type.getDpSize(location, spotWidth, spotHeight)
-            val cellOffset = type.dpOffset(
-                location,
-                spotWidth,
-                spotHeight,
-                route.horizontalCells,
-                route.verticalCells
-            )
-            placeOffset += if (type.isBig) 2 else 1
-            index to Place(type, location, cellOffset, cellSize)
-        }.sortedBy { (_, place) -> place.type == PlaceType.Salary }
-    }
     val state by vm.uiState.collectAsState()
-    val alpha by animateFloatAsState(if (state.layer == layer) 1f else 0.7f)
+    val alpha by animateFloatAsState(if (state.layer == layout.layer) 1f else 0.7f)
     Box(
-        modifier = Modifier.align(Alignment.Center).size(size).alpha(alpha)
+        modifier = Modifier.align(Alignment.Center).size(layout.size).alpha(alpha)
     ) {
-        places.forEach { (index, place) ->
+        layout.places.forEach { (index, place) ->
             Box(
                 modifier = Modifier
                     .size(width = place.size.width, height = place.size.height)
@@ -326,17 +305,20 @@ fun BoxScope.Places(
                 PlaceContent(
                     index = index,
                     place = place,
-                    route = route,
-                    layer = layer,
+                    route = layout.route,
+                    layer = layout.layer,
                     vm = vm,
                 )
             }
         }
         val players by players.collectAsState()
-        val points = remember(players, route, state.board.activePlayerId) {
-            players.filter { layer.level == it.location.level }.map {
+        val placeMap = remember(layout.places) {
+            layout.places.associate { it.index to it.place }
+        }
+        val points = remember(players, layout, state.board.activePlayerId, state.player.id) {
+            players.filter { layout.layer.level == it.location.level }.map {
                 PlayerPointState(
-                    position = moveTo(it.location.position, layer.cellCount, route.offset),
+                    position = moveTo(it.location.position, layout.layer.cellCount, layout.route.offset),
                     color = it.attrs.color,
                     level = it.location.level,
                     name = it.card.profession,
@@ -349,10 +331,10 @@ fun BoxScope.Places(
         points.groupBy { it.position }.forEach { (_, gPoints) ->
             gPoints.forEachIndexed { index, pointerState ->
                 PlayerPoint(
-                    places = places.toMap(),
+                    places = placeMap,
                     pointerState = pointerState,
                     vm = vm,
-                    spotSize = DpSize(spotWidth, spotHeight),
+                    spotSize = layout.cellSize,
                     index = index,
                     count = gPoints.size
                 )

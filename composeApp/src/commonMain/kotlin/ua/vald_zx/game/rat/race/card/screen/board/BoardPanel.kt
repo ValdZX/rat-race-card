@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
-import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 @Composable
@@ -32,6 +31,12 @@ fun BoxWithConstraintsScope.BoardPanel(
     val maxHeight = maxHeight
     val density = LocalDensity.current
     val isDark by LocalThemeIsDark.current
+    val layout = remember(isVertical, maxWidth, maxHeight) {
+        calculateBoardLayout(
+            boardSize = DpSize(maxWidth, maxHeight),
+            isVertical = isVertical,
+        )
+    } ?: return
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -45,8 +50,7 @@ fun BoxWithConstraintsScope.BoardPanel(
             )
     ) {
         BoardRoutes(
-            isVertical = isVertical,
-            size = DpSize(maxWidth, maxHeight),
+            layout = layout,
             vm = vm,
         )
     }
@@ -54,55 +58,22 @@ fun BoxWithConstraintsScope.BoardPanel(
 
 @Composable
 private fun BoxScope.BoardRoutes(
-    isVertical: Boolean,
-    size: DpSize,
+    layout: BoardLayout,
     vm: BoardViewModel,
 ) {
-    val outRoute = boardLayers.layers[BoardLayer.OUTER] ?: return
-    val inRoute = boardLayers.layers[BoardLayer.INNER] ?: return
-    val actualOutRoute = remember(isVertical) {
-        if (isVertical) outRoute.rotate() else outRoute
-    }
-
     Places(
-        layer = BoardLayer.OUTER,
-        size = size,
-        route = actualOutRoute,
+        layout = layout.outerRoute,
         vm = vm,
     )
 
-    val outSpotSize = size.width / actualOutRoute.horizontalCells
-    val inPadding = outSpotSize / 3
-    val actualInRoute = remember(isVertical) {
-        if (isVertical) inRoute.rotate() else inRoute
-    }
-    val inBoardSize = DpSize(
-        width = size.width - outSpotSize * 4 - inPadding * 2,
-        height = size.height - outSpotSize * 4 - inPadding * 2,
-    )
-
     Places(
-        layer = BoardLayer.INNER,
-        size = inBoardSize,
-        route = actualInRoute,
+        layout = layout.innerRoute,
         vm = vm,
     )
 
     CardDecks(
-        size = cardDeckAreaSize(inBoardSize, actualInRoute),
+        layout = layout.cardDecks,
         vm = vm,
-    )
-}
-
-private fun cardDeckAreaSize(
-    inBoardSize: DpSize,
-    inRoute: BoardRoute,
-): DpSize {
-    val inSpotSize = inBoardSize.width / inRoute.horizontalCells
-    val cardsPadding = inSpotSize
-    return DpSize(
-        width = inBoardSize.width - inSpotSize * 4 - cardsPadding * 2,
-        height = inBoardSize.height - inSpotSize * 4 - cardsPadding * 2,
     )
 }
 
