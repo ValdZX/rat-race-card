@@ -16,3 +16,6 @@ xcuserdata/
 Pods/
 *.jks
 *yarn.lock
+
+# generated web bundle, deployed by .github/workflows/deploy-pages.yml
+docs

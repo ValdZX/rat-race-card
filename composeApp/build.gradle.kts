@@ -1,4 +1,3 @@
-import com.android.build.gradle.internal.tasks.factory.dependsOn
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
@@ -147,11 +146,3 @@ buildConfig {
 kotlin.sourceSets.commonMain {
     kotlin.srcDir(tasks.named("generateCommonMainBuildConfigClasses"))
 }
-
-tasks.register("buildDist") {
-    doFirst {
-        val file = File("docs")
-        file.deleteRecursively()
-        File("composeApp/build/dist/wasmJs/productionExecutable").copyRecursively(file)
-    }
-}.dependsOn("wasmJsBrowserDistribution")

@@ -22,7 +22,7 @@ Targets: **Android, iOS, Desktop (JVM), Web (Wasm/JS)**. App version is set in `
 
 `card` and `board` do not depend on each other — both go through `core`. Compose resources live only in `core` and are generated into the package `ua.vald_zx.game.rat.race.card.resources` (`publicResClass = true`), so every module imports `Res` from there.
 
-`docs/` is **generated build output** (the Wasm production bundle published to GitHub Pages by the `buildDist` Gradle task) — do not hand-edit it. `proto/` is empty/scratch. `temp.txt` is scratch.
+The web build is **not** committed: `.github/workflows/deploy-pages.yml` builds the Wasm bundle on every push to `main` and deploys it straight to GitHub Pages (Pages source must be set to "GitHub Actions", not a branch). `proto/` is empty/scratch. `temp.txt` is scratch.
 
 ## Run mode switch (compile-time)
 
@@ -94,8 +94,8 @@ JDK 17+ required. Set Android SDK path in `local.properties`.
 # Web (Wasm) dev server
 ./gradlew :composeApp:wasmJsBrowserDevelopmentRun --continue
 
-# Publish web bundle into docs/ (GitHub Pages)
-./gradlew buildDist
+# Production web bundle (what CI deploys) -> composeApp/build/dist/wasmJs/productionExecutable
+./gradlew :composeApp:wasmJsBrowserDistribution -PcardOnly=true
 
 # Server (Ktor)
 ./gradlew :server:run          # mainClass: io.ktor.server.netty.EngineMain, port 8080
