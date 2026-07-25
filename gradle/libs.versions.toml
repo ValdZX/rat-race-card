@@ -5,16 +5,16 @@ android-minSdk = "26"
 android-targetSdk = "37"
 appdirs = "1.5.0"
 commonsCodec = "1.22.0"
-firebaseBom = "34.15.0"
-kotlin = "2.4.0"
+firebaseBom = "34.16.0"
+kotlin = "2.4.10"
 compose = "1.11.1"
-compose-hot-reload = "1.1.1"
-agp = "8.12.3"
+compose-hot-reload = "1.2.0"
+agp = "8.13.2"
 androidx-activityCompose = "1.13.0"
 localina = "1.0.0-beta2"
 voyager = "2.2.21-1.10.3"
 napier = "2.7.1"
-mongodb = "5.8.0"
+mongodb = "5.9.1"
 buildConfig = "6.0.10"
 kotlinx-coroutines = "1.11.0"
 ktor = "3.5.1"
@@ -23,24 +23,24 @@ kstore = "1.1.0"
 lexilabs-sound = "0.2.6-beta02"
 lexilabs-haptic = "0.2.6-beta02"
 tts = "3.0.0"
-charts = "0.2.5"
+charts = "1.0.0"
 app-update = "2.1.0"
 fragment = "1.8.9"
 kotlinx-rpc = "0.10.3"
-logback = "1.5.37"
+logback = "1.6.0"
 compottie = "2.2.4"
 uiAndroid = "1.11.4"
 koin-bom = "4.2.2"
-androidx-lifecycle = "2.10.0"
-materialKolor = "4.1.1"
+androidx-lifecycle = "2.11.0"
+materialKolor = "5.0.0"
 jsontree = "2.7.0"
 
 
 [libraries]
 
 commons-codec = { module = "commons-codec:commons-codec", version.ref = "commonsCodec" }
-google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.43.1" }
-google-cloud-storage = { module = "com.google.cloud:google-cloud-storage", version = "2.69.0" }
+google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version = "3.44.0" }
+google-cloud-storage = { module = "com.google.cloud:google-cloud-storage", version = "2.70.0" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version = "0.8.0" }
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }

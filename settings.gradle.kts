@@ -19,4 +19,3 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-include(":shared")
