@@ -7,12 +7,7 @@ import kotlinx.rpc.krpc.ktor.client.rpc
 import kotlinx.rpc.krpc.ktor.client.rpcConfig
 import kotlinx.rpc.krpc.serialization.json.json
 import kotlinx.rpc.withService
-import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
-import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
-import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
-import ua.vald_zx.game.rat.race.card.shared.Board
-import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.RaceRatCardService
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 
@@ -21,7 +16,8 @@ import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 private val apiUrl = "wss://race-rat-production.up.railway.app/api"
 //private val apiUrl = "ws://192.168.0.159:8080/api"
 //private val apiUrl = "ws://10.194.162.82:8080/api"
-val baseModule = module {
+
+val coreModule = module {
     single {
         HttpClient {
             installKrpc()
