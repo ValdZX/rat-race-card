@@ -4,6 +4,9 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 include(":composeApp")
 include(":shared")
 include(":server")
+include(":core")
+include(":card")
+include(":board")
 
 pluginManagement {
     repositories {

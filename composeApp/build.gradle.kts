@@ -42,46 +42,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":shared"))
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material)
-            implementation(compose.material3)
-            implementation(compose.preview)
-            implementation(compose.components.resources)
-            implementation(compose.materialIconsExtended)
-            implementation(libs.voyager.navigator)
-            implementation(libs.voyager.bottom.sheet.navigator)
-            implementation(libs.napier)
-            implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.serialization.json)
-            implementation(libs.kotlinx.datetime)
-            implementation(libs.kstore)
-            implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.websockets)
-            implementation(libs.kotlinx.rpc.krpc.client)
-            implementation(libs.kotlinx.rpc.krpc.serialization.json)
-            implementation(libs.kotlinx.rpc.krpc.ktor.client)
-            implementation(libs.lexilabs.basic.sound)
-            implementation(libs.charts)
-            implementation(libs.tts)
-            implementation(libs.tts.compose)
-//            implementation(libs.kottie)
-            implementation(libs.compottie)
-            implementation(libs.compottie.resources)
-            implementation(libs.constraintlayout)
-            implementation(libs.composables.core)
-//            implementation(libs.zoomable)//add after wasm support
-            implementation(project.dependencies.platform(libs.koin.bom))
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(libs.koin.core)
-            implementation(libs.koin.compose)
-            implementation(libs.koin.compose.viewmodel)
-            implementation(libs.koin.compose.viewmodel.navigation)
-            implementation(libs.localina)
-            implementation(libs.materialKolor)
-            implementation(libs.jsontree)
+            implementation(project(":core"))
+            implementation(project(":card"))
+            implementation(project(":board"))
         }
 
         commonTest.dependencies {
@@ -89,35 +52,6 @@ kotlin {
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.uiTest)
             implementation(libs.kotlinx.coroutines.test)
-        }
-
-        androidMain.dependencies {
-            implementation(compose.uiTooling)
-            implementation(libs.androidx.activityCompose)
-            implementation(libs.kotlinx.coroutines.android)
-            implementation(libs.ktor.client.cio)
-            implementation(libs.kstore.file)
-            implementation(libs.app.update.ktx)
-            implementation(libs.fragment)
-            implementation(libs.lexilabs.basic.haptic)
-        }
-
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutines.swing)
-            implementation(libs.ktor.client.cio)
-            implementation(libs.appdirs)
-            implementation(libs.kstore.file)
-        }
-
-        iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-            implementation(libs.kstore.file)
-            implementation(libs.lexilabs.basic.haptic)
-        }
-        wasmJsMain.dependencies {
-            implementation(libs.ktor.client.js)
-            implementation(libs.kstore.storage)
         }
     }
 }

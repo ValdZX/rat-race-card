@@ -4,10 +4,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import org.jetbrains.compose.resources.stringResource
-import rat_race_card.composeapp.generated.resources.Res
-import rat_race_card.composeapp.generated.resources.active_profit
-import rat_race_card.composeapp.generated.resources.cash
-import rat_race_card.composeapp.generated.resources.total_expenses
+import ua.vald_zx.game.rat.race.card.resources.Res
+import ua.vald_zx.game.rat.race.card.resources.active_profit
+import ua.vald_zx.game.rat.race.card.resources.cash
+import ua.vald_zx.game.rat.race.card.resources.total_expenses
 import ua.vald_zx.game.rat.race.card.components.BalanceField
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.NegativeField

@@ -12,10 +12,15 @@ Targets: **Android, iOS, Desktop (JVM), Web (Wasm/JS)**. App version is set in `
 
 | Module | Purpose |
 |--------|---------|
-| `composeApp` | The multiplatform client (all UI, game logic, local state). Main module. |
+| `composeApp` | Thin app shell: `App()` entry, `SelectTypeScreen`, per-platform entry points (`MainActivity`/`main.kt`/`MainViewController`), Android app config, `BuildConfig`. Depends on `core` + `card` + `board`. |
+| `core` | Common client layer: theme, reusable components, vector icons, **all Compose resources**, platform `expect`/`actual` (`Platform.kt`), `NanoRedux`, kRPC client factories (`coreModule`). Exposes its deps as `api`, so `card`/`board` inherit them. |
+| `card` | Offline single-device card mode: `RatRace2CardStore`, `beans/`, `screen/second/**`, local KStore files (`cardModule`). |
+| `board` | Online board game: `BoardViewModel`, `screen/board/**`, card decks, board list / load screens (`boardModule`). |
 | `shared` | KMP library shared between client and server: data models (`Board`, `Player`, `Cards`, `Auction`, etc.) and the **kotlinx-rpc** service interfaces (`RaceRatService`, `RaceRatCardService`). |
 | `server` | Ktor + Netty JVM backend hosting the kRPC services over WebSockets. Persists to MongoDB / Google Firestore + Cloud Storage. |
 | `iosApp` | Xcode project wrapping the `ComposeApp` framework. |
+
+`card` and `board` do not depend on each other — both go through `core`. Compose resources live only in `core` and are generated into the package `ua.vald_zx.game.rat.race.card.resources` (`publicResClass = true`), so every module imports `Res` from there.
 
 `docs/` is **generated build output** (the Wasm production bundle published to GitHub Pages by the `buildDist` Gradle task) — do not hand-edit it. `proto/` is empty/scratch. `temp.txt` is scratch.
 
@@ -32,8 +37,8 @@ The flag is a generated `BuildConfig` field (gmazzo buildconfig plugin) driven b
 
 The app contains two largely separate gameplay systems. Don't conflate them:
 
-1. **Offline / single-device card mode** — local state managed by a hand-rolled Redux store, `RatRace2CardStore` (`composeApp/.../logic/RatRace2CardStore.kt`). State persisted locally via **KStore** JSON files (`Storages.kt`). Screens live under `screen/second/`. Optional lightweight P2P money-passing uses `RaceRatCardService`.
-2. **Online board mode** — full multiplayer board game driven by the server. Client state in `BoardViewModel` (`logic/BoardViewModel.kt`), talking to the server via `RaceRatService`. Screens under `screen/board/`. Server is authoritative; the client observes `Event`/`GlobalEvent` flows.
+1. **Offline / single-device card mode** — local state managed by a hand-rolled Redux store, `RatRace2CardStore` (`card/.../logic/RatRace2CardStore.kt`). State persisted locally via **KStore** JSON files (`Storages.kt`). Screens live under `screen/second/`. Optional lightweight P2P money-passing uses `RaceRatCardService`.
+2. **Online board mode** — full multiplayer board game driven by the server. Client state in `BoardViewModel` (`board/.../logic/BoardViewModel.kt`), talking to the server via `RaceRatService`. Screens under `screen/board/`. Server is authoritative; the client observes `Event`/`GlobalEvent` flows.
 
 ## Code style
 
@@ -43,22 +48,35 @@ Write self-explanatory code instead of comments. Do **not** add explanatory comm
 
 - **State management (offline):** custom minimal Redux in `logic/NanoRedux.kt` — `State` / `Action` / `Effect` interfaces and a `Store<S,A,E>` with `observeState()` / `observeSideEffect()` / `dispatch()`. `RatRace2CardStore.dispatch()` is one big `when(action)` reducer producing a new `RatRace2CardState`; one-shot UI events go through `sideEffect`.
 - **State management (online):** `BoardViewModel` (AndroidX `ViewModel`) holds `BoardState`, dispatches `BoardUiAction`, and reacts to server `Event` streams.
-- **RPC:** `kotlinx-rpc` (kRPC) over Ktor WebSockets, JSON serialization. Service interfaces are annotated `@Rpc` in `shared/`. Client stubs are built in `di/module.kt` (`getRaceRatService()` / `getRaceRatCardService()`); server impls are `RaceRatServiceImpl` / `RaceRatCardServiceImpl`.
-- **DI:** Koin (`di/module.kt`, `baseModule`). `App.kt` wraps the UI in `KoinApplication`.
+- **RPC:** `kotlinx-rpc` (kRPC) over Ktor WebSockets, JSON serialization. Service interfaces are annotated `@Rpc` in `shared/`. Client stubs are built in `core/.../di/Rpc.kt` (`getRaceRatService()` / `getRaceRatCardService()`); server impls are `RaceRatServiceImpl` / `RaceRatCardServiceImpl`.
+- **DI:** Koin, one module per Gradle module — `coreModule` (`core/.../di/Rpc.kt`), `cardModule` (`card/.../di/CardModule.kt`), `boardModule` (`board/.../di/BoardModule.kt`). `App.kt` in `composeApp` wires all three into `KoinApplication`.
 - **Navigation:** Voyager (`Navigator` / `CurrentScreen`, screens are `Screen` classes). Entry screen is `SelectTypeScreen`.
 - **Localization:** Localina (`LocalinaApp`). UA/EN.
 - **Theming:** `theme/` with `expect`/`actual` per platform; MaterialKolor for dynamic color. Dark mode via `LocalThemeIsDark`.
-- **Platform code:** `expect`/`actual`. Common declarations in `App.kt` (`platformContext`, `openUrl`, `share`, `getTts`, `vibrateClick`, `getStore`) with `actual`s in `androidMain` / `iosMain` / `jvmMain` / `wasmJsMain`.
+- **Platform code:** `expect`/`actual`. Common declarations in `core/.../Platform.kt` (`platformContext`, `openUrl`, `share`, `getTts`, `vibrateClick`, `noIme`) and `core/.../Storages.kt` (`getStore`), with `actual`s in `core`'s `androidMain` / `iosMain` / `jvmMain` / `wasmJsMain`. On Android the `Application`/`Activity` live in `composeApp` and register themselves into `core`'s `AndroidPlatform` holder.
 
-## Where things live (`composeApp/src/commonMain/.../card/`)
+## Where things live
 
-- `logic/` — Redux store, reducer, `BoardViewModel`, `Statistics`.
-- `screen/second/` — offline card-mode screens (+ `page/` tabs).
-- `screen/board/` — online board-mode screens; `cards/` = card deck definitions & logic, `deck/` = card rendering, `page/` = asset tabs, `visualize/` = board drawing.
-- `beans/Models.kt` — offline-mode domain models (`Business`, `Land`, `Shares`, `Fund`, `Config`, `PlayerCard`).
+All modules share the package root `ua.vald_zx.game.rat.race.card`.
+
+`core/src/commonMain/.../card/`:
 - `components/` — reusable Compose widgets.
+- `theme/`, `Utils.kt`, `Storages.kt` (`getStore` expect), `Platform.kt`, `di/Rpc.kt` (`apiUrl`, service factories, `coreModule`).
+- `logic/NanoRedux.kt` — the minimal Redux primitives.
+- `screen/` — `InputScreen`, `SendScreen` (used by both modes).
 - `resource/images/` — **vector icons authored as Kotlin `ImageVector` code** (large, low-signal; skip when exploring).
-- `theme/`, `di/`, `Storages.kt`, `Utils.kt`.
+- `composeResources/` — strings (UA/EN), drawables, fonts, lottie/audio files. The only resource root in the project.
+
+`card/src/commonMain/.../card/`:
+- `logic/RatRace2CardStore.kt` — Redux store, reducer, `Statistics`.
+- `screen/second/` — offline card-mode screens (+ `page/` tabs), `screen/ExportScreen.kt`.
+- `beans/Models.kt` — offline-mode domain models (`Business`, `Land`, `Shares`, `Fund`, `Config`, `PlayerCard`).
+- `Storages.kt` (`raceRate2KStore`, `statistics2KStore`), `di/CardModule.kt`.
+
+`board/src/commonMain/.../card/`:
+- `logic/BoardViewModel.kt`.
+- `screen/board/` — online board-mode screens; `cards/` = card deck definitions & logic, `deck/` = card rendering, `page/` = asset tabs, `visualize/` = board drawing.
+- `screen/BoardListScreen.kt`, `screen/LoadOnlineScreen.kt`, `components/preview/`, `di/BoardModule.kt`.
 
 Shared models the server also uses live in `shared/.../shared/` (`Board.kt`, `Players.kt`, `Cards.kt`, `Auction.kt`, `Place.kt`, `ProfessionCard.kt`).
 
@@ -98,7 +116,7 @@ There is no CI config in-repo; verify changes by building the relevant target.
 
 ## Gotchas / conventions
 
-- **`di/module.kt` hardcodes `apiUrl`** to a LAN address (`ws://192.168.0.159:8080/api`) with prod URLs commented out. This is the active server endpoint the client connects to — update it for your environment; don't assume it points at production.
+- **`core/.../di/Rpc.kt` hardcodes `apiUrl`** to a LAN address (`ws://192.168.0.159:8080/api`) with prod URLs commented out. This is the active server endpoint the client connects to — update it for your environment; don't assume it points at production.
 - Adding/changing a `@Rpc` method means editing **both** the interface in `shared/` and the impl in `server/`, and (for client) the call sites in the store/view model.
 - New `Action`s go in the `RatRace2CardAction` sealed class **and** the `dispatch` `when` in `RatRace2CardStore.kt`. New one-shot UI events go in `RatRace2CardSideEffect`.
 - Persisted local state is plain JSON via KStore; changing `@Serializable` model fields can break existing saved files — keep defaults on new fields.

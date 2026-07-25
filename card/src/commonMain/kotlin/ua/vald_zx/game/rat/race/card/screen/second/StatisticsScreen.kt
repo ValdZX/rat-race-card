@@ -1,0 +1,245 @@
+package ua.vald_zx.game.rat.race.card.screen.second
+
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.core.screen.Screen
+import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
+import ir.ehsannarmani.compose_charts.LineChart
+import ir.ehsannarmani.compose_charts.extensions.format
+import ir.ehsannarmani.compose_charts.models.*
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
+import ua.vald_zx.game.rat.race.card.resources.*
+import ua.vald_zx.game.rat.race.card.components.*
+import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
+import ua.vald_zx.game.rat.race.card.logic.total
+import ua.vald_zx.game.rat.race.card.theme.AppTheme
+
+class StatisticsScreen : Screen {
+    @OptIn(ExperimentalKStoreApi::class)
+    @Composable
+    override fun Content() {
+        val raceRate2store = koinInject<RatRace2CardStore>()
+        val statistics = raceRate2store.statistics ?: return
+        BottomSheetContainer {
+            Column(modifier = Modifier.statusBarsPadding()) {
+                Text(stringResource(Res.string.salary_count, statistics.salaryCount.toString()))
+                var needTotal by remember { mutableStateOf(true) }
+                var needCashFlow by remember { mutableStateOf(true) }
+                var needCash by remember { mutableStateOf(true) }
+                var needDeposit by remember { mutableStateOf(true) }
+                var needLoan by remember { mutableStateOf(true) }
+                val primary = MaterialTheme.colorScheme.primary
+                val tertiary = MaterialTheme.colorScheme.tertiary
+                val cashColor = AppTheme.colors.cash
+                // Localized labels
+                val totalAssetsText = stringResource(Res.string.total_assets)
+                val cashFlowText = stringResource(Res.string.cash_flow)
+                val cashText = stringResource(Res.string.cash)
+                val depositText = stringResource(Res.string.deposit)
+                val loanText = stringResource(Res.string.loan)
+                Card(
+                    modifier = Modifier.height(270.dp).fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                ) {
+                    Box(modifier = Modifier.fillMaxSize().padding(vertical = 12.dp)) {
+                        LineChart(
+                            data = remember(
+                                needTotal,
+                                needCashFlow,
+                                needCash,
+                                needDeposit,
+                                needLoan
+                            ) {
+                                val lines = mutableListOf<Line>()
+                                if (!(needTotal || needCashFlow || needCash || needDeposit || needLoan)) {
+                                    needCashFlow = true
+                                }
+                                if (needTotal) {
+                                    lines.add(
+                                        Line(
+                                            label = totalAssetsText,
+                                            values = statistics.log.map {
+                                                it.total().toDouble()
+                                            },
+                                            color = Brush.horizontalGradient(GoldRainbow),
+                                            firstGradientFillColor = Color(0xFFb48811).copy(
+                                                alpha = .4f
+                                            ),
+                                            curvedEdges = true,
+                                            secondGradientFillColor = Color.Transparent,
+                                            strokeAnimationSpec = spring(
+                                                stiffness = Spring.StiffnessMedium
+                                            ),
+                                            gradientAnimationSpec = spring(
+                                                stiffness = Spring.StiffnessMedium
+                                            ),
+                                            gradientAnimationDelay = 0,
+                                        )
+                                    )
+                                }
+                                if (needCashFlow) {
+                                    lines.add(
+                                        Line(
+                                            label = cashFlowText,
+                                            values = statistics.log.map {
+                                                it.cashFlow().toDouble()
+                                            },
+                                            color = Brush.horizontalGradient(SkittlesRainbow),
+                                            firstGradientFillColor = RainbowOrange.copy(alpha = .4f),
+                                            curvedEdges = true,
+                                            secondGradientFillColor = Color.Transparent,
+                                            strokeAnimationSpec = spring(
+                                                stiffness = Spring.StiffnessMedium
+                                            ),
+                                            gradientAnimationSpec = spring(
+                                                stiffness = Spring.StiffnessMedium
+                                            ),
+                                            gradientAnimationDelay = 0,
+                                        )
+                                    )
+                                }
+                                if (needCash) {
+                                    lines.add(
+                                        Line(
+                                            label = cashText,
+                                            values = statistics.log.map { it.cash.toDouble() },
+                                            color = SolidColor(cashColor),
+                                            firstGradientFillColor = cashColor.copy(alpha = .5f),
+                                            curvedEdges = true,
+                                            secondGradientFillColor = Color.Transparent,
+                                            strokeAnimationSpec = spring(
+                                                stiffness = Spring.StiffnessMedium
+                                            ),
+                                            gradientAnimationSpec = spring(
+                                                stiffness = Spring.StiffnessMedium
+                                            ),
+                                            gradientAnimationDelay = 0,
+                                        )
+                                    )
+                                }
+                                if (needDeposit) {
+                                    lines.add(
+                                        Line(
+                                            label = depositText,
+                                            values = statistics.log.map { it.deposit.toDouble() },
+                                            color = SolidColor(primary),
+                                            firstGradientFillColor = primary.copy(alpha = .4f),
+                                            curvedEdges = true,
+                                            secondGradientFillColor = Color.Transparent,
+                                            strokeAnimationSpec = spring(
+                                                stiffness = Spring.StiffnessMedium
+                                            ),
+                                            gradientAnimationSpec = spring(
+                                                stiffness = Spring.StiffnessMedium
+                                            ),
+                                            gradientAnimationDelay = 0,
+                                        )
+                                    )
+                                }
+                                if (needLoan) {
+                                    lines.add(
+                                        Line(
+                                            label = loanText,
+                                            values = statistics.log.map { it.loan.toDouble() },
+                                            color = SolidColor(tertiary),
+                                            firstGradientFillColor = tertiary.copy(alpha = .5f),
+                                            curvedEdges = true,
+                                            secondGradientFillColor = Color.Transparent,
+                                            strokeAnimationSpec = spring(
+                                                stiffness = Spring.StiffnessMedium
+                                            ),
+                                            gradientAnimationSpec = spring(
+                                                stiffness = Spring.StiffnessMedium
+                                            ),
+                                            gradientAnimationDelay = 0,
+                                        )
+                                    )
+                                }
+                                lines
+                            },
+                            animationDelay = 100,
+                            animationMode = AnimationMode.Together(delayBuilder = { it * 300L }),
+                            indicatorProperties = HorizontalIndicatorProperties(
+                                textStyle = TextStyle(
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ),
+                                contentBuilder = {
+                                    it.format(0) + " $"
+                                },
+                            ),
+                            popupProperties = PopupProperties(
+                                textStyle = TextStyle(
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ),
+                                contentBuilder = { popup ->
+                                    popup.value.format(0) + " $"
+                                },
+                                containerColor = Color(0xff414141)
+                            ),
+                            labelHelperProperties = LabelHelperProperties(
+                                textStyle = TextStyle(
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            ),
+                        )
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SmoothRainbowText(totalAssetsText, rainbow = GoldRainbow)
+                    Switch(needTotal, onCheckedChange = { needTotal = it })
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SmoothRainbowText(cashFlowText, rainbow = SkittlesRainbow)
+                    Switch(needCashFlow, onCheckedChange = { needCashFlow = it })
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(cashText, color = AppTheme.colors.cash)
+                    Switch(needCash, onCheckedChange = { needCash = it })
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(depositText, color = primary)
+                    Switch(needDeposit, onCheckedChange = { needDeposit = it })
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(loanText, color = tertiary)
+                    Switch(needLoan, onCheckedChange = { needLoan = it })
+                }
+            }
+        }
+    }
+}
