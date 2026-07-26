@@ -13,7 +13,7 @@ import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 
 
 //private val apiUrl = "wss://race-rat-online-1033277102369.us-central1.run.app/api"
-private val apiUrl = "wss://race-rat-production.up.railway.app/api"
+private val apiUrl = "wss://p01--rat-race--8zcqpqq8ysrd.code.run/api"
 //private val apiUrl = "ws://192.168.0.159:8080/api"
 //private val apiUrl = "ws://10.194.162.82:8080/api"
 
