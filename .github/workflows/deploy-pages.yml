@@ -27,7 +27,7 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - run: ./gradlew :composeApp:wasmJsBrowserDistribution -PcardOnly=true
+      - run: ./gradlew :composeApp:wasmJsBrowserDistribution
 
       - uses: actions/upload-pages-artifact@v3
         with:
