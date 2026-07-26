@@ -100,6 +100,9 @@ JDK 17+ required. Set Android SDK path in `local.properties`.
 # Server (Ktor)
 ./gradlew :server:run          # mainClass: io.ktor.server.netty.EngineMain, port 8080
 
+# Server container (root Dockerfile; what Northflank builds). Needs no Android SDK.
+docker build -t race-rat-server . && docker run -e PORT=8080 -p 8080:8080 race-rat-server
+
 # iOS: open iosApp/iosApp.xcodeproj in Xcode, or run from Android Studio KMP plugin.
 ```
 
@@ -121,6 +124,7 @@ There is no CI config in-repo; verify changes by building the relevant target.
 - New `Action`s go in the `RatRace2CardAction` sealed class **and** the `dispatch` `when` in `RatRace2CardStore.kt`. New one-shot UI events go in `RatRace2CardSideEffect`.
 - Persisted local state is plain JSON via KStore; changing `@Serializable` model fields can break existing saved files — keep defaults on new fields.
 - `resource/images/*.kt` are generated-style vector assets — large and noisy; the user has asked to ignore resource-heavy dirs during analysis.
+- `server/src/main/resources/application.conf` binds `0.0.0.0` and honours `${?PORT}` / `${?HOST}` — required by any container host. The `main()` in `Application.kt` is unused by the packaged app (`mainClass` is `EngineMain`, which reads this file).
 - Server config/secrets: `.env` (see `.env.example` — `MONGODB_URI`, `MONGODB_DATABASE`, `ALLOWED_ORIGINS`); MongoDB creds also referenced in `gradle.properties`; Android signing config is inline in `composeApp/build.gradle.kts`. Treat all of these as secrets — don't echo or commit new ones.
 - The Android `release` build uses minify + shrink (`proguard-rules.pro`).
 
