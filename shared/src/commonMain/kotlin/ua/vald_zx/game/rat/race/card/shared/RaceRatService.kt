@@ -23,6 +23,9 @@ sealed class GlobalEvent {
     data class PlayerDivorced(val playerId: String) : GlobalEvent()
 
     @Serializable
+    data class PlayerMessage(val playerId: String, val text: String) : GlobalEvent()
+
+    @Serializable
     data class BidSelled(val bid: Bid, val auction: Auction) : GlobalEvent()
 }
 
@@ -39,6 +42,9 @@ sealed class Event {
 
     @Serializable
     data class PlayerDivorced(val playerId: String) : Event()
+
+    @Serializable
+    data class PlayerMessage(val playerId: String, val text: String) : Event()
 
     @Serializable
     data class PlayerChanged(val player: Player) : Event()
@@ -122,6 +128,7 @@ interface RaceRatService {
     suspend fun getBoard(): Board
 
     suspend fun sendMoney(receiverId: String, amount: Long)
+    suspend fun sendMessage(text: String)
 
     suspend fun rollDice()
     suspend fun next()

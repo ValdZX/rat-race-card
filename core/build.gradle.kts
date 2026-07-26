@@ -5,14 +5,20 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.androidComposeLibrary)
+    alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
-    androidTarget {
+    android {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
+        }
+        namespace = "ua.vald_zx.game.rat.race.card.core"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        androidResources {
+            enable = true
         }
     }
 
@@ -97,21 +103,6 @@ kotlin {
             api(libs.ktor.client.js)
             api(libs.kstore.storage)
         }
-    }
-}
-
-android {
-    namespace = "ua.vald_zx.game.rat.race.card.core"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    buildFeatures {
-        compose = true
     }
 }
 

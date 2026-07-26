@@ -9,6 +9,7 @@
     <!-- UI Labels -->
     <string name="card_code">Card Code</string>
     <string name="send">Send</string>
+    <string name="send_message">Send message</string>
     <string name="copy">Copy</string>
     <string name="new_table">New Table</string>
     <string name="table_name">Table Name</string>

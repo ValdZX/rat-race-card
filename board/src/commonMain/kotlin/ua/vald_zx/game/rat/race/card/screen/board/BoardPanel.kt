@@ -75,6 +75,16 @@ private fun BoxScope.BoardRoutes(
         layout = layout.cardDecks,
         vm = vm,
     )
+
+    PlayerMessages(
+        layout = layout.outerRoute,
+        vm = vm,
+    )
+
+    PlayerMessages(
+        layout = layout.innerRoute,
+        vm = vm,
+    )
 }
 
 private fun boardBackgroundBrush(

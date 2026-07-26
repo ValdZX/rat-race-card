@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.*
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
 import ua.vald_zx.game.rat.race.card.shared.*
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Clock
 
 val players = MutableStateFlow(emptyList<Player>())
 
@@ -52,6 +53,11 @@ data class BoardState(
     }
 }
 
+data class PlayerMessage(
+    val id: Long,
+    val text: String,
+)
+
 sealed class BoardUiAction {
     data class ConfirmDismissal(val business: Business) : BoardUiAction()
     data class Fired(val business: Business) : BoardUiAction()
@@ -89,6 +95,10 @@ class BoardViewModel(
 
     private val _actions = Channel<BoardUiAction>()
     val actions = _actions.receiveAsFlow()
+
+    private val _playerMessages = MutableStateFlow<Map<String, PlayerMessage>>(emptyMap())
+    val playerMessages: StateFlow<Map<String, PlayerMessage>> = _playerMessages.asStateFlow()
+    private var nextPlayerMessageId = 0L
 
     private fun safeLaunch(
         needProgress: Boolean = true,
@@ -129,6 +139,12 @@ class BoardViewModel(
                         if (changedPlayer.id == _uiState.value.player.id) {
                             _uiState.update { it.copy(player = changedPlayer) }
                         }
+                        changedPlayer.speech
+                            ?.takeIf {
+                                it.text.isNotBlank() &&
+                                        it.expiresAtEpochMs > Clock.System.now().toEpochMilliseconds()
+                            }
+                            ?.let { showPlayerMessage(changedPlayer.id, it.text, it.expiresAtEpochMs) }
                     }
 
                     is Event.BoardChanged -> {
@@ -177,6 +193,8 @@ class BoardViewModel(
                             }
                         }
                     }
+
+                    is Event.PlayerMessage -> showPlayerMessage(event.playerId, event.text)
 
                     is Event.PlayerHadBaby -> {
                         if (event.playerId == _uiState.value.player.id) {
@@ -241,6 +259,22 @@ class BoardViewModel(
             val localIds = players.value.map { player -> player.id }.toSet()
             if (localIds != playerIds) {
                 players.value = getPlayers()
+            }
+        }
+    }
+
+    private fun showPlayerMessage(
+        playerId: String,
+        text: String,
+        expiresAtEpochMs: Long = Clock.System.now().toEpochMilliseconds() + 8_000,
+    ) {
+        if (text.isBlank()) return
+        val message = PlayerMessage(++nextPlayerMessageId, text)
+        _playerMessages.update { it + (playerId to message) }
+        viewModelScope.launch {
+            delay((expiresAtEpochMs - Clock.System.now().toEpochMilliseconds()).coerceAtLeast(0))
+            _playerMessages.update {
+                if (it[playerId]?.id == message.id) it - playerId else it
             }
         }
     }
@@ -347,6 +381,12 @@ class BoardViewModel(
     fun sendMoney(playerId: String, amount: Long) {
         safeLaunch {
             sendMoney(playerId, amount)
+        }
+    }
+
+    fun sendMessage(text: String) {
+        safeLaunch(false) {
+            sendMessage(text)
         }
     }
 

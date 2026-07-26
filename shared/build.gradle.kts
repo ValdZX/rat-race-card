@@ -1,4 +1,4 @@
-import com.android.build.api.dsl.androidLibrary
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
@@ -10,6 +10,16 @@ plugins {
 }
 
 kotlin {
+    android {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+        namespace = "ua.vald_zx.game.rat.race.card.shared"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+    }
+
+    @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser {
             val projectDirPath = project.projectDir.path
@@ -21,15 +31,6 @@ kotlin {
                 }
             }
         }
-    }
-
-    androidLibrary {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
-        namespace = "ua.vald_zx.game.rat.race.card.shared"
-        compileSdk = libs.versions.android.compileSdk.get().toInt()
-        minSdk = libs.versions.android.minSdk.get().toInt()
     }
 
     iosX64()

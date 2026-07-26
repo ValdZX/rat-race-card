@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
@@ -311,34 +310,86 @@ fun BoxScope.Places(
                 )
             }
         }
-        val players by players.collectAsState()
-        val placeMap = remember(layout.places) {
-            layout.places.associate { it.index to it.place }
+        forEachPlayerPoint(vm, layout) { pointerState, placeMap, index, count ->
+            PlayerPoint(
+                places = placeMap,
+                pointerState = pointerState,
+                vm = vm,
+                spotSize = layout.cellSize,
+                index = index,
+                count = count,
+            )
         }
-        val points = remember(players, layout, state.board.activePlayerId, state.player.id) {
-            players.filter { layout.layer.level == it.location.level }.map {
-                PlayerPointState(
-                    position = moveTo(it.location.position, layout.layer.cellCount, layout.route.offset),
-                    color = it.attrs.color,
-                    level = it.location.level,
-                    name = it.card.profession,
-                    player = it,
-                    isCurrentPlayer = it.id == state.player.id,
-                    isActivePlayer = it.id == state.board.activePlayerId,
+    }
+}
+
+@Composable
+fun BoxScope.PlayerMessages(
+    vm: BoardViewModel,
+    layout: RouteLayout,
+) {
+    val playerMessages by vm.playerMessages.collectAsState()
+    if (playerMessages.isEmpty()) return
+    Box(modifier = Modifier.align(Alignment.Center).size(layout.size)) {
+        forEachPlayerPoint(vm, layout) { pointerState, placeMap, index, count ->
+            val message = playerMessages[pointerState.player.id]?.text
+            if (message != null) {
+                val place = placeMap.getValue(pointerState.position)
+                val offset = calculatePointerOffset(
+                    layout.cellSize.width,
+                    layout.cellSize.height,
+                    place,
+                    index,
+                    count
                 )
+                Box(
+                    modifier = Modifier
+                        .offset(offset.first, offset.second)
+                        .size(layout.cellSize)
+                ) {
+                    SpeechBubble(
+                        text = message,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        cellSize = layout.cellSize
+                    )
+                }
             }
         }
-        points.groupBy { it.position }.forEach { (_, gPoints) ->
-            gPoints.forEachIndexed { index, pointerState ->
-                PlayerPoint(
-                    places = placeMap,
-                    pointerState = pointerState,
-                    vm = vm,
-                    spotSize = layout.cellSize,
-                    index = index,
-                    count = gPoints.size
-                )
-            }
+    }
+}
+
+@Composable
+private fun forEachPlayerPoint(
+    vm: BoardViewModel,
+    layout: RouteLayout,
+    content: @Composable (
+        pointerState: PlayerPointState,
+        places: Map<Int, Place>,
+        index: Int,
+        count: Int,
+    ) -> Unit,
+) {
+    val state by vm.uiState.collectAsState()
+    val players by players.collectAsState()
+    val placeMap = remember(layout.places) {
+        layout.places.associate { it.index to it.place }
+    }
+    val points = remember(players, layout, state.board.activePlayerId, state.player.id) {
+        players.filter { layout.layer.level == it.location.level }.map {
+            PlayerPointState(
+                position = moveTo(it.location.position, layout.layer.cellCount, layout.route.offset),
+                color = it.attrs.color,
+                level = it.location.level,
+                name = it.card.profession,
+                player = it,
+                isCurrentPlayer = it.id == state.player.id,
+                isActivePlayer = it.id == state.board.activePlayerId,
+            )
+        }
+    }
+    points.groupBy { it.position }.forEach { (_, gPoints) ->
+        gPoints.forEachIndexed { index, pointerState ->
+            content(pointerState, placeMap, index, gPoints.size)
         }
     }
 }

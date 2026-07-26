@@ -83,6 +83,10 @@ fun InitPreview(
                             //NOP
                         }
 
+                        override suspend fun sendMessage(text: String) {
+                            //NOP
+                        }
+
                         override suspend fun rollDice() {
                             //NOP
                         }

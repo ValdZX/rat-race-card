@@ -3,7 +3,6 @@ package ua.vald_zx.game.rat.race.card.screen.board
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -19,19 +18,18 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import ua.vald_zx.game.rat.race.card.resources.Res
-import ua.vald_zx.game.rat.race.card.resources.next
-import ua.vald_zx.game.rat.race.card.resources.player_name_label
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
+import ua.vald_zx.game.rat.race.card.resources.Res
+import ua.vald_zx.game.rat.race.card.resources.next
+import ua.vald_zx.game.rat.race.card.resources.player_name_label
 import ua.vald_zx.game.rat.race.card.screen.board.cards.menProfessionCards
 import ua.vald_zx.game.rat.race.card.screen.board.cards.womenProfessionCards
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Gender
 
 class InitPlayerScreen(private val board: Board) : Screen {
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow

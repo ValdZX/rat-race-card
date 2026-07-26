@@ -18,29 +18,43 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.times
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
-import ua.vald_zx.game.rat.race.card.screen.SendScreen
 import dev.lennartegb.shadows.boxShadow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.Font
+import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.max
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Bow
 import ua.vald_zx.game.rat.race.card.resource.images.RatPlayer1
 import ua.vald_zx.game.rat.race.card.resource.images.Send
+import ua.vald_zx.game.rat.race.card.resources.*
+import ua.vald_zx.game.rat.race.card.screen.SendScreen
 import ua.vald_zx.game.rat.race.card.shared.Gender
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.cashFlow
 import ua.vald_zx.game.rat.race.card.shared.total
-import org.jetbrains.compose.resources.stringResource
-import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
 
@@ -64,6 +78,8 @@ fun PlayerPoint(
     index: Int,
     count: Int,
 ) {
+
+    var isMessageDialogVisible by remember(pointerState.player.id) { mutableStateOf(false) }
 
     var offset by remember {
         val place = places[pointerState.position]!!
@@ -181,7 +197,11 @@ fun PlayerPoint(
                         imageVector = Images.RatPlayer1,
                         contentDescription = null,
                         modifier = Modifier.clickable {
-                            coroutineScope.launch { tooltipState.show() }
+                            if (pointerState.isCurrentPlayer) {
+                                isMessageDialogVisible = true
+                            } else {
+                                coroutineScope.launch { tooltipState.show() }
+                            }
                         },
                         colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply {
                             setToSaturation(0f)
@@ -192,7 +212,11 @@ fun PlayerPoint(
                         imageVector = Images.RatPlayer1,
                         contentDescription = null,
                         modifier = Modifier.clickable {
-                            coroutineScope.launch { tooltipState.show() }
+                            if (pointerState.isCurrentPlayer) {
+                                isMessageDialogVisible = true
+                            } else {
+                                coroutineScope.launch { tooltipState.show() }
+                            }
                         }
                     )
                 }
@@ -210,6 +234,132 @@ fun PlayerPoint(
             )
         }
     }
+    if (isMessageDialogVisible) {
+        SendMessageDialog(
+            onDismiss = { isMessageDialogVisible = false },
+            onSend = {
+                vm.sendMessage(it)
+                isMessageDialogVisible = false
+            }
+        )
+    }
+}
+
+internal val bubbleCorner = 6
+internal val bubbleTailWidth = 14
+internal val bubbleTailHeight = 10
+internal val bubbleGap = 2
+internal val bubbleMinWidth = 64
+internal val bubbleMaxWidth = 168
+internal val bubbleOutline = 1
+
+internal class SpeechBubbleShape(
+    private val corner: Dp,
+    private val tailWidth: Dp,
+    private val tailHeight: Dp,
+) : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val r = with(density) { corner.toPx() }
+        val tailHalf = with(density) { tailWidth.toPx() } / 2f
+        val bodyBottom = size.height - with(density) { tailHeight.toPx() }
+        val centerX = size.width / 2f
+        val path = Path().apply {
+            moveTo(r, 0f)
+            lineTo(size.width - r, 0f)
+            arcTo(Rect(size.width - 2 * r, 0f, size.width, 2 * r), -90f, 90f, false)
+            lineTo(size.width, bodyBottom - r)
+            arcTo(Rect(size.width - 2 * r, bodyBottom - 2 * r, size.width, bodyBottom), 0f, 90f, false)
+            lineTo(centerX + tailHalf, bodyBottom)
+            lineTo(centerX, size.height)
+            lineTo(centerX - tailHalf, bodyBottom)
+            lineTo(r, bodyBottom)
+            arcTo(Rect(0f, bodyBottom - 2 * r, 2 * r, bodyBottom), 90f, 90f, false)
+            lineTo(0f, r)
+            arcTo(Rect(0f, 0f, 2 * r, 2 * r), 180f, 90f, false)
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
+
+@Composable
+internal fun SpeechBubble(
+    text: String,
+    modifier: Modifier = Modifier,
+    cellSize: DpSize,
+) {
+    val coef = cellSize.max / 20
+    val shape = remember { SpeechBubbleShape(coef * bubbleCorner, coef * bubbleTailWidth, coef * bubbleTailHeight) }
+    Box(
+        modifier = modifier
+            .layout { measurable, _ ->
+                val placeable = measurable.measure(
+                    Constraints(
+                        minWidth = (coef * bubbleMinWidth).roundToPx(),
+                        maxWidth = (coef * bubbleMaxWidth).roundToPx()
+                    )
+                )
+                layout(0, 0) {
+                    placeable.place(
+                        x = -placeable.width / 2,
+                        y = -placeable.height - (coef * bubbleGap).roundToPx()
+                    )
+                }
+            }
+            .background(Color.White, shape)
+            .border(coef * bubbleOutline, Color.Black, shape),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(
+                start = coef * 10,
+                end = coef * 10,
+                top = coef * 6,
+                bottom = coef * 6 + coef * bubbleTailHeight
+            ),
+            color = Color.Black,
+            fontSize = coef.value * 13.sp,
+            fontFamily = FontFamily(Font(Res.font.Bubbleboddy, weight = FontWeight.Medium)),
+            textAlign = TextAlign.Center,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun SendMessageDialog(
+    onDismiss: () -> Unit,
+    onSend: (String) -> Unit,
+) {
+    var text by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.send_message)) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.take(160) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = false,
+                maxLines = 3,
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSend(text.trim()) },
+                enabled = text.isNotBlank(),
+            ) {
+                Text(stringResource(Res.string.send))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.cancel))
+            }
+        }
+    )
 }
 
 @Composable

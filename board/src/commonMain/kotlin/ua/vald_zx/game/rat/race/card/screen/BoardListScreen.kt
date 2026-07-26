@@ -19,11 +19,12 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format
+import kotlinx.datetime.format.char
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
 import org.koin.compose.koinInject
-import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
@@ -32,6 +33,7 @@ import ua.vald_zx.game.rat.race.card.dateFullDotsFormat
 import ua.vald_zx.game.rat.race.card.launchWithHandler
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Back
+import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.BoardScreen
 import ua.vald_zx.game.rat.race.card.screen.board.InitPlayerScreen
 import ua.vald_zx.game.rat.race.card.screen.board.cards.decks
@@ -39,7 +41,6 @@ import ua.vald_zx.game.rat.race.card.shared.BoardId
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 
 class BoardListScreen : Screen {
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val service = koinInject<RaceRatService>()
@@ -73,7 +74,8 @@ class BoardListScreen : Screen {
             ) {
                 Button(
                     enabled = !isProgressVisible,
-                    text = stringResource(Res.string.new_table)) {
+                    text = stringResource(Res.string.new_table)
+                ) {
                     newBoardDialog = true
                 }
                 LazyColumn(

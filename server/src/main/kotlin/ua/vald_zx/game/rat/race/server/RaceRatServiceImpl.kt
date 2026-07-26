@@ -87,6 +87,7 @@ class RaceRatServiceImpl(
             is GlobalEvent.PlayerHadBaby -> eventBus.emit(Event.PlayerHadBaby(event.playerId, event.babies))
             is GlobalEvent.PlayerMarried -> eventBus.emit(Event.PlayerMarried(event.playerId))
             is GlobalEvent.PlayerDivorced -> eventBus.emit(Event.PlayerDivorced(event.playerId))
+            is GlobalEvent.PlayerMessage -> eventBus.emit(Event.PlayerMessage(event.playerId, event.text))
             is GlobalEvent.BidSelled -> {
                 if (event.bid.playerId == playerId) {
                     buyLot(event.auction, event.bid)
@@ -192,6 +193,15 @@ class RaceRatServiceImpl(
     override suspend fun sendMoney(receiverId: String, amount: Long) {
         globalEventBus.emit(GlobalEvent.SendMoney(playerId, receiverId, amount))
         updatePlayer { minusCash(amount) }
+    }
+
+    override suspend fun sendMessage(text: String) {
+        val message = text.trim().take(160)
+        if (message.isNotEmpty()) {
+            val speech = PlayerSpeech(message, Clock.System.now().toEpochMilliseconds() + 8_000)
+            updatePlayer { copy(speech = speech) }
+            globalEventBus.emit(GlobalEvent.PlayerMessage(playerId, message))
+        }
     }
 
     override suspend fun rollDice() {

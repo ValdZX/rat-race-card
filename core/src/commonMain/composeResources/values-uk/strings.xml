@@ -11,6 +11,7 @@
     <!-- UI Labels -->
     <string name="card_code">Код картки</string>
     <string name="send">Відправити</string>
+    <string name="send_message">Надіслати повідомлення</string>
     <string name="copy">Копіювати</string>
     <string name="new_table">Новий стіл</string>
     <string name="table_name">Назва столу</string>
@@ -248,4 +249,3 @@
     <string name="business_profit_increased">Прибуток бізнесу виріс на:</string>
     <string name="no_businesses_yet">Поки що немає бізнесів!</string>
 </resources>
-

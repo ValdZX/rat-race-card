@@ -19,6 +19,12 @@ data class OfflinePlayer(
 )
 
 @Serializable
+data class PlayerSpeech(
+    val text: String,
+    val expiresAtEpochMs: Long,
+)
+
+@Serializable
 data class SendMoneyPack(
     val payerName: String,
     val payerId: String,
@@ -56,6 +62,7 @@ data class Player(
     val salaryPosition: Int? = null,
     val lastTotals: List<Long> = emptyList(),
     val lastCashFlows: List<Long> = emptyList(),
+    val speech: PlayerSpeech? = null,
 )
 
 @Serializable
