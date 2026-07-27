@@ -380,7 +380,7 @@ class BoardViewModel(
     }
 
     fun changePlayerColor(value: Long) {
-        safeLaunch {
+        safeLaunch(false) {
             updateAttributes(uiState.value.player.attrs.copy(color = value))
         }
     }

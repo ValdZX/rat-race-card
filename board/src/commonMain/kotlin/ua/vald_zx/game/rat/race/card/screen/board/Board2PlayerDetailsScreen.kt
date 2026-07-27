@@ -28,6 +28,7 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Deposit
 import ua.vald_zx.game.rat.race.card.resource.images.Repay
+import ua.vald_zx.game.rat.race.card.resource.images.Settings
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.page.*
 import ua.vald_zx.game.rat.race.card.shared.*
@@ -220,7 +221,10 @@ fun Board2PlayerDetailsScreen(vm: BoardViewModel, scaffoldState: BottomSheetStat
 
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(bottom = 72.dp),
             ) { page ->
                 when (page) {
                     0 -> StatePage(
@@ -235,6 +239,15 @@ fun Board2PlayerDetailsScreen(vm: BoardViewModel, scaffoldState: BottomSheetStat
                     5 -> FundsPage(player)
                 }
             }
+        }
+        FilledTonalIconButton(
+            modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
+            onClick = { bottomSheetNavigator.show(OnlineSettingsScreen(vm)) },
+        ) {
+            Icon(
+                imageVector = Images.Settings,
+                contentDescription = stringResource(Res.string.online_settings),
+            )
         }
     }
 }

@@ -275,4 +275,7 @@
     <string name="debug_show_board_state">Show board state</string>
     <string name="debug_hide_board_state">Hide board state</string>
     <string name="debug_card_auto_move">The token will move to the nearest space for the selected deck, then the card will open.</string>
+    <string name="online_settings">Online game settings</string>
+    <string name="dark_theme">Dark theme</string>
+    <string name="player_token_color">Player token color</string>
 </resources>

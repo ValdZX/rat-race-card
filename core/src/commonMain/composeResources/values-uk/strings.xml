@@ -280,4 +280,7 @@
     <string name="debug_show_board_state">Показати стан дошки</string>
     <string name="debug_hide_board_state">Сховати стан дошки</string>
     <string name="debug_card_auto_move">Фішка перейде на найближчу клітинку вибраної колоди, після чого відкриється картка.</string>
+    <string name="online_settings">Налаштування онлайн-гри</string>
+    <string name="dark_theme">Темна тема</string>
+    <string name="player_token_color">Колір фішки гравця</string>
 </resources>
