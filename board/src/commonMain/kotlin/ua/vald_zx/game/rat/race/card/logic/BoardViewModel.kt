@@ -22,6 +22,19 @@ data class BoardState(
     val color: Long = player.attrs.color
     val currentPlayerIsActive: Boolean by lazy { player.id == board.activePlayerId }
     val canRoll: Boolean by lazy { board.canRoll && currentPlayerIsActive }
+    val canEnterOuterCircle: Boolean by lazy {
+        player.canEnterOuterCircle(board.outerCircleConditions)
+    }
+    val currentDream: Dream? by lazy {
+        val place = player.location.level.toLayer().places
+            .getOrNull(player.location.position) as? PlaceType.Desire
+        board.dreamById(place?.dreamId)
+    }
+    val canBuyDream: Boolean by lazy {
+        currentPlayerIsActive &&
+                currentDream != null &&
+                currentDream?.id?.let { it !in board.purchasedDreamIds } == true
+    }
 
     fun canPay(price: Long): Boolean {
         return (board.loanLimit + player.balance() - player.loan - price) > 0
@@ -81,6 +94,8 @@ sealed class BoardUiAction {
     data object BidSharesAuctionSuccessBuy : BoardUiAction()
     data object ConnectionLost : BoardUiAction()
     data class Resignation(val business: Business) : BoardUiAction()
+    data object DreamOffered : BoardUiAction()
+    data class PlayerWon(val playerName: String, val isCurrentPlayer: Boolean) : BoardUiAction()
 }
 
 class BoardViewModel(
@@ -120,7 +135,18 @@ class BoardViewModel(
         safeLaunch(false) {
             val actualPlayers = getPlayers()
             players.value = actualPlayers
-            _uiState.update { it.copy(board = getBoard(), player = player) }
+            val actualBoard = getBoard()
+            _uiState.update { it.copy(board = actualBoard, player = player) }
+            actualBoard.winnerId?.let { winnerId ->
+                actualPlayers.find { it.id == winnerId }?.let { winner ->
+                    _actions.send(
+                        PlayerWon(
+                            playerName = winner.card.name,
+                            isCurrentPlayer = winner.id == player.id,
+                        )
+                    )
+                }
+            }
             eventsObserve().collect { event ->
                 when (event) {
                     is Event.MoneyIncome -> {
@@ -242,6 +268,19 @@ class BoardViewModel(
 
                     Event.CheckState -> {
                         connectionIsValid()
+                    }
+
+                    Event.DreamOffered -> {
+                        _actions.send(DreamOffered)
+                    }
+
+                    is Event.PlayerWon -> {
+                        _actions.send(
+                            PlayerWon(
+                                playerName = event.playerName,
+                                isCurrentPlayer = event.playerId == _uiState.value.player.id,
+                            )
+                        )
                     }
                 }
             }
@@ -366,6 +405,22 @@ class BoardViewModel(
         }
     }
 
+    fun debugChangePosition(layer: BoardLayer, position: Int) {
+        if (uiState.value.currentPlayerIsActive) {
+            safeLaunch {
+                debugChangePosition(PlayerLocation(position = position, level = layer.level))
+            }
+        }
+    }
+
+    fun debugUpdatePlayer(values: DebugPlayerValues) {
+        if (uiState.value.currentPlayerIsActive) {
+            safeLaunch {
+                debugUpdatePlayer(values)
+            }
+        }
+    }
+
     fun dismissalConfirmed(business: Business) {
         safeLaunch {
             dismissalConfirmed(business)
@@ -426,9 +481,14 @@ class BoardViewModel(
         }
     }
 
-    fun selectCardByNo(cardNo: Int) {
+    fun selectCardByNo(cardNo: Int, cardType: BoardCardType) {
+        val moveToCard = uiState.value.canRoll
         safeLaunch {
-            selectCardByNo(cardNo)
+            if (moveToCard) {
+                debugMoveToAndSelectCard(cardNo, cardType)
+            } else {
+                selectCardByNo(cardNo, cardType)
+            }
         }
     }
 
@@ -459,6 +519,24 @@ class BoardViewModel(
     fun makeBid(price: Long, count: Long) {
         safeLaunch {
             makeBid(price, count)
+        }
+    }
+
+    fun enterOuterCircle() {
+        safeLaunch {
+            enterOuterCircle()
+        }
+    }
+
+    fun buyDream() {
+        safeLaunch {
+            buyDream()
+        }
+    }
+
+    fun selectDream(dreamId: String) {
+        safeLaunch {
+            selectDream(dreamId)
         }
     }
 }

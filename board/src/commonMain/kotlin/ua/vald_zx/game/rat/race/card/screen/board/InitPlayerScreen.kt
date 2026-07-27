@@ -2,10 +2,10 @@ package ua.vald_zx.game.rat.race.card.screen.board
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,9 +21,7 @@ import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
-import ua.vald_zx.game.rat.race.card.resources.Res
-import ua.vald_zx.game.rat.race.card.resources.next
-import ua.vald_zx.game.rat.race.card.resources.player_name_label
+import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.cards.menProfessionCards
 import ua.vald_zx.game.rat.race.card.screen.board.cards.womenProfessionCards
 import ua.vald_zx.game.rat.race.card.shared.Board
@@ -40,6 +38,7 @@ class InitPlayerScreen(private val board: Board) : Screen {
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -70,13 +69,23 @@ class InitPlayerScreen(private val board: Board) : Screen {
                     currentGender = it
                 }
             )
-            Button(stringResource(Res.string.next), enabled = playerName.isNotEmpty()) {
+            Button(
+                stringResource(Res.string.next),
+                enabled = playerName.isNotEmpty(),
+            ) {
                 coroutineScope.launch {
                     val card = when (currentGender) {
                         Gender.MALE -> menProfessionCards.random()
                         Gender.FEMALE -> womenProfessionCards.random()
                     }
-                    navigator.push(ProfessionScreen(board, card, playerName, colorState.value))
+                    navigator.push(
+                        ProfessionScreen(
+                            board = board,
+                            card = card,
+                            playerName = playerName,
+                            color = colorState.value,
+                        )
+                    )
                 }
             }
         }

@@ -26,13 +26,18 @@ import ua.vald_zx.game.rat.race.card.components.SilverBackground
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.*
 import ua.vald_zx.game.rat.race.card.shared.*
+import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 val greyScaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
 
 @Composable
-fun StatePage(player: Player) {
+fun StatePage(
+    player: Player,
+    selectedDream: Dream?,
+    victoryConditions: VictoryConditions,
+) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(state = rememberScrollState())) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -103,6 +108,38 @@ fun StatePage(player: Player) {
                 price = player.flight * player.config.flightCost
             )
         }
+        Text(
+            text = stringResource(Res.string.victory_conditions),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        if (victoryConditions.dreamRequired) {
+            VictoryCondition(
+                completed = player.selectedDreamId != null &&
+                        player.selectedDreamId in player.purchasedDreamIds,
+                text = selectedDream?.name
+                    ?: stringResource(Res.string.choose_dream_on_board),
+            )
+        }
+        if (victoryConditions.planeRequired) {
+            VictoryCondition(
+                completed = player.flight > 0,
+                text = stringResource(Res.string.plane),
+            )
+        }
+        if (victoryConditions.estateRequired) {
+            VictoryCondition(
+                completed = player.cottage > 0,
+                text = stringResource(Res.string.estate),
+            )
+        }
+        VictoryCondition(
+            completed = player.balance() >= victoryConditions.minimumAccountBalance,
+            text = stringResource(
+                Res.string.victory_account_balance_value,
+                victoryConditions.minimumAccountBalance.formatAmount(),
+            ),
+        )
         DetailsField(
             stringResource(Res.string.active_profit),
             player.activeProfit().toString(),
@@ -129,6 +166,20 @@ fun StatePage(player: Player) {
             MaterialTheme.colorScheme.tertiary
         )
     }
+}
+
+@Composable
+private fun VictoryCondition(
+    completed: Boolean,
+    text: String,
+) {
+    Text(
+        text = "${if (completed) "✓" else "○"} $text",
+        color = if (completed) AppTheme.colors.cash else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+    )
 }
 
 @Composable

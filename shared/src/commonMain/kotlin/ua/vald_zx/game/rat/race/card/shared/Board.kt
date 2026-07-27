@@ -35,6 +35,28 @@ data class Board(
     val auction: Auction? = null,
     val bidList: List<Bid> = emptyList(),
     val allInactiveSinceEpochMs: Long? = null,
+    val outerCircleConditions: OuterCircleConditions = OuterCircleConditions(),
+    val victoryConditions: VictoryConditions = VictoryConditions(),
+    val transportMovementBonusEnabled: Boolean = true,
+    val winnerId: String? = null,
+    val dreams: List<Dream> = ratRaceDreams,
+    val purchasedDreamIds: Set<String> = emptySet(),
+)
+
+@Serializable
+data class OuterCircleConditions(
+    val minimumCashFlow: Long = 50_000,
+    val apartmentRequired: Boolean = true,
+    val carRequired: Boolean = true,
+    val minimumAccountBalance: Long = 200_000,
+)
+
+@Serializable
+data class VictoryConditions(
+    val dreamRequired: Boolean = true,
+    val planeRequired: Boolean = true,
+    val estateRequired: Boolean = true,
+    val minimumAccountBalance: Long = 10_000_000,
 )
 
 fun Board.toBoardId(): BoardId {

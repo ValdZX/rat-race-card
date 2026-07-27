@@ -50,5 +50,10 @@ kotlin {
                 implementation(libs.mongodb.bson)
             }
         }
+        commonTest {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
     }
 }

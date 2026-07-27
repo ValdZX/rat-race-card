@@ -63,6 +63,22 @@ data class Player(
     val lastTotals: List<Long> = emptyList(),
     val lastCashFlows: List<Long> = emptyList(),
     val speech: PlayerSpeech? = null,
+    val selectedDreamId: String? = null,
+    val purchasedDreamIds: Set<String> = emptySet(),
+)
+
+@Serializable
+data class DebugPlayerValues(
+    val cash: Long,
+    val deposit: Long,
+    val loan: Long,
+    val babies: Long,
+    val cars: Long,
+    val apartment: Long,
+    val cottage: Long,
+    val yacht: Long,
+    val flight: Long,
+    val animal: Long,
 )
 
 @Serializable
@@ -167,7 +183,6 @@ data class Config(
     val tts: Boolean = false,
 )
 
-
 fun Player.total(): Long {
     return cash +
             deposit +
@@ -216,6 +231,51 @@ fun Player.totalExpenses(): Long {
 
 fun Player.cashFlow(): Long {
     return totalProfit() - totalExpenses()
+}
+
+fun Player.canEnterOuterCircle(conditions: OuterCircleConditions): Boolean {
+    return location.level == BoardLayer.INNER.level &&
+            cashFlow() >= conditions.minimumCashFlow &&
+            (!conditions.apartmentRequired || apartment > 0) &&
+            (!conditions.carRequired || cars > 0) &&
+            balance() >= conditions.minimumAccountBalance
+}
+
+fun Player.hasMetVictoryConditions(conditions: VictoryConditions): Boolean {
+    val selectedDreamPurchased = selectedDreamId != null &&
+            selectedDreamId in purchasedDreamIds
+    return (!conditions.dreamRequired || selectedDreamPurchased) &&
+            (!conditions.planeRequired || flight > 0) &&
+            (!conditions.estateRequired || cottage > 0) &&
+            balance() >= conditions.minimumAccountBalance
+}
+
+fun Player.movementSteps(dice: Int, transportMovementBonusEnabled: Boolean): Int {
+    val transportBonus = if (transportMovementBonusEnabled) {
+        when {
+            flight > 0 -> 2
+            cars > 0 -> 1
+            else -> 0
+        }
+    } else {
+        0
+    }
+    return dice + transportBonus
+}
+
+fun Player.withDebugValues(values: DebugPlayerValues): Player {
+    return copy(
+        cash = values.cash.coerceAtLeast(0),
+        deposit = values.deposit.coerceAtLeast(0),
+        loan = values.loan.coerceAtLeast(0),
+        babies = values.babies.coerceAtLeast(0),
+        cars = values.cars.coerceAtLeast(0),
+        apartment = values.apartment.coerceAtLeast(0),
+        cottage = values.cottage.coerceAtLeast(0),
+        yacht = values.yacht.coerceAtLeast(0),
+        flight = values.flight.coerceAtLeast(0),
+        animal = values.animal.coerceAtLeast(0),
+    )
 }
 
 fun Player.fundAmount(): Long {

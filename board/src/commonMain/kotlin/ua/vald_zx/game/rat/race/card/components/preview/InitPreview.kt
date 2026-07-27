@@ -50,7 +50,10 @@ fun InitPreview(
                             name: String,
                             loanLimit: Long,
                             businessLimit: Long,
-                            decks: Map<BoardCardType, Int>
+                            decks: Map<BoardCardType, Int>,
+                            outerCircleConditions: OuterCircleConditions,
+                            victoryConditions: VictoryConditions,
+                            transportMovementBonusEnabled: Boolean,
                         ): Board {
                             error("Not for preview")
                         }
@@ -66,7 +69,7 @@ fun InitPreview(
                         override suspend fun makePlayer(
                             uuid: String,
                             color: Long,
-                            card: PlayerCard
+                            card: PlayerCard,
                         ): Player {
                             error("Not for preview")
                         }
@@ -127,6 +130,14 @@ fun InitPreview(
                             //NOP
                         }
 
+                        override suspend fun debugChangePosition(location: PlayerLocation) {
+                            //NOP
+                        }
+
+                        override suspend fun debugUpdatePlayer(values: DebugPlayerValues) {
+                            //NOP
+                        }
+
                         override suspend fun buyEstate(card: Estate) {
                             //NOP
                         }
@@ -144,6 +155,13 @@ fun InitPreview(
                         }
 
                         override suspend fun selectCardByNo(cardId: Int, cardType: BoardCardType) {
+                            //NOP
+                        }
+
+                        override suspend fun debugMoveToAndSelectCard(
+                            cardId: Int,
+                            cardType: BoardCardType
+                        ) {
                             //NOP
                         }
 
@@ -203,6 +221,12 @@ fun InitPreview(
                         override suspend fun makeBid(price: Long, count: Long) {
                             //NOP
                         }
+
+                        override suspend fun enterOuterCircle() = Unit
+
+                        override suspend fun buyDream() = Unit
+
+                        override suspend fun selectDream(dreamId: String) = Unit
                     }
                 }
             )

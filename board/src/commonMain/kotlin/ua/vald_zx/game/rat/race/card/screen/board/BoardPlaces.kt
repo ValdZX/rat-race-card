@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -39,6 +40,7 @@ import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Money
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
+import ua.vald_zx.game.rat.race.card.shared.dreamById
 import ua.vald_zx.game.rat.race.card.shared.moveTo
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
@@ -55,7 +57,7 @@ private fun PlaceType.text(): String {
         PlaceType.Expenses -> stringResource(Res.string.expenses)
         PlaceType.Shopping -> stringResource(Res.string.shopping)
         PlaceType.Rest -> stringResource(Res.string.rest)
-        PlaceType.Desire -> stringResource(Res.string.desire)
+        is PlaceType.Desire -> stringResource(Res.string.desire)
         PlaceType.Start -> stringResource(Res.string.start)
         PlaceType.Resignation -> stringResource(Res.string.exaltation)
         PlaceType.Divorce -> stringResource(Res.string.divorce)
@@ -80,7 +82,7 @@ private fun PlaceType.color(): Color {
         PlaceType.Love -> AppTheme.colors.love
         PlaceType.Rest -> AppTheme.colors.rest
         PlaceType.Divorce -> AppTheme.colors.divorce
-        PlaceType.Desire -> AppTheme.colors.desire
+        is PlaceType.Desire -> AppTheme.colors.desire
         PlaceType.Deputy -> AppTheme.colors.deputy
         PlaceType.TaxInspection -> AppTheme.colors.inspection
         PlaceType.Resignation -> AppTheme.colors.exaltation
@@ -222,6 +224,81 @@ fun BoxScope.PlaceContent(
                     contentDescription = null,
                     modifier = Modifier.align(Alignment.Center)
                 )
+            }
+        }
+
+        is PlaceType.Desire -> {
+            val dream = state.board.dreamById(place.type.dreamId)
+            val isPurchased = dream?.id?.let { it in state.board.purchasedDreamIds } == true
+            val isSelected = dream?.id == state.player.selectedDreamId
+            val allPlayers by players.collectAsState()
+            val selectors = allPlayers.filter { it.selectedDreamId == dream?.id }
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        if (isPurchased) {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        } else {
+                            place.type.color()
+                        }
+                    )
+                    .clickable(enabled = dream != null && !isPurchased) {
+                        dream?.let { vm.selectDream(it.id) }
+                    }
+            ) {
+                OutlinedText(
+                    text = dream?.let {
+                        buildString {
+                            if (isPurchased) append("🔒 ")
+                            else if (isSelected) append("★ ")
+                            append(it.name)
+                            append("\n")
+                            append(it.price)
+                            append(" $")
+                        }
+                    } ?: place.type.text(),
+                    autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
+                    fontFamily = FontFamily(
+                        Font(
+                            Res.font.Bubbleboddy,
+                            weight = FontWeight.Medium,
+                        )
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(minSide / 14)
+                        .optionalModifier(place.isVertical) {
+                            rotateLayout(Rotation.ROT_90)
+                        },
+                    fillColor = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onPrimary
+                    },
+                    outlineColor = Color(0xFF8A8A8A),
+                    outlineDrawStyle = Stroke(2f),
+                    maxLines = 2,
+                )
+                if (selectors.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(minSide / 20),
+                        horizontalArrangement = Arrangement.spacedBy(minSide / 30),
+                    ) {
+                        selectors.forEach { player ->
+                            Box(
+                                modifier = Modifier
+                                    .size(minSide / 6)
+                                    .background(
+                                        color = Color(player.attrs.color),
+                                        shape = CircleShape,
+                                    )
+                            )
+                        }
+                    }
+                }
             }
         }
 

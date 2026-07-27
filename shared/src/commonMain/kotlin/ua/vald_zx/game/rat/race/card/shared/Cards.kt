@@ -144,3 +144,30 @@ enum class PayerType {
     APARTMENT_OR_HOUSE_OWNER,
     ANIMAL_OWNER,
 }
+
+fun BoardCardType.matches(placeType: PlaceType): Boolean {
+    return when (this) {
+        BoardCardType.Chance -> placeType == PlaceType.Chance
+        BoardCardType.SmallBusiness,
+        BoardCardType.MediumBusiness -> placeType == PlaceType.Business
+
+        BoardCardType.BigBusiness -> placeType == PlaceType.BigBusiness
+        BoardCardType.Expenses -> placeType == PlaceType.Expenses
+        BoardCardType.EventStore -> placeType == PlaceType.Store
+        BoardCardType.Shopping -> placeType == PlaceType.Shopping
+        BoardCardType.Deputy -> placeType == PlaceType.Deputy
+    }
+}
+
+fun BoardLayer.hasPlaceFor(cardType: BoardCardType): Boolean {
+    return places.any(cardType::matches)
+}
+
+fun BoardLayer.nearestPlacePosition(
+    currentPosition: Int,
+    cardType: BoardCardType,
+): Int? {
+    return (1..cellCount)
+        .map { offset -> moveTo(currentPosition, cellCount, offset) }
+        .firstOrNull { position -> cardType.matches(places[position]) }
+}

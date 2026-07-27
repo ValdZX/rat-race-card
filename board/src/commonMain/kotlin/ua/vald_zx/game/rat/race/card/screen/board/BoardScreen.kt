@@ -61,6 +61,7 @@ import ua.vald_zx.game.rat.race.card.screen.BoardListScreen
 import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDialog
 import ua.vald_zx.game.rat.race.card.shared.*
+import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 import kotlin.math.absoluteValue
 
@@ -171,6 +172,13 @@ class BoardScreen(
         var simpleDialog by remember { mutableStateOf(Res.string.app_name) }
         var loanOverlimitedDialog by remember { mutableStateOf(false) }
         var receivedCashDialog by remember { mutableStateOf<BoardUiAction.ReceivedCash?>(null) }
+        var dreamOfferedDialog by remember { mutableStateOf(false) }
+        var victoryDialog by remember { mutableStateOf<BoardUiAction.PlayerWon?>(null) }
+        LaunchedEffect(state.canBuyDream) {
+            if (state.canBuyDream) {
+                dreamOfferedDialog = true
+            }
+        }
         LaunchedEffect(Unit) {
             vm.init(player)
             vm.actions.collect { event ->
@@ -261,6 +269,14 @@ class BoardScreen(
 
                     BoardUiAction.BidSharesAuctionSuccessBuy -> {
                         simpleDialog = Res.string.bidSharesAuctionSuccessBuy
+                    }
+
+                    BoardUiAction.DreamOffered -> {
+                        dreamOfferedDialog = true
+                    }
+
+                    is BoardUiAction.PlayerWon -> {
+                        victoryDialog = event
                     }
                 }
             }
@@ -574,6 +590,68 @@ class BoardScreen(
                 },
             )
         }
+        if (dreamOfferedDialog) {
+            val dream = state.currentDream
+            AlertDialog(
+                title = { Text(stringResource(Res.string.dream_offer_title)) },
+                text = {
+                    Column {
+                        Text(
+                            dream?.let {
+                                stringResource(
+                                    Res.string.dream_offer_message,
+                                    it.name,
+                                    it.price.splitDecimal(),
+                                )
+                            }.orEmpty()
+                        )
+                        dream?.description?.let { Text(it) }
+                    }
+                },
+                onDismissRequest = {},
+                confirmButton = {
+                    TextButton(
+                        enabled = dream != null && state.canPay(dream.price),
+                        onClick = {
+                            vm.buyDream()
+                            dreamOfferedDialog = false
+                        },
+                    ) {
+                        Text(stringResource(Res.string.buy))
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            vm.pass()
+                            dreamOfferedDialog = false
+                        },
+                    ) {
+                        Text(stringResource(Res.string.pass))
+                    }
+                },
+            )
+        }
+        victoryDialog?.let { victory ->
+            AlertDialog(
+                title = { Text(stringResource(Res.string.victory)) },
+                text = {
+                    Text(
+                        if (victory.isCurrentPlayer) {
+                            stringResource(Res.string.you_won)
+                        } else {
+                            stringResource(Res.string.player_won, victory.playerName)
+                        }
+                    )
+                },
+                onDismissRequest = { victoryDialog = null },
+                confirmButton = {
+                    TextButton(onClick = { victoryDialog = null }) {
+                        Text(stringResource(Res.string.great))
+                    }
+                },
+            )
+        }
     }
 }
 
@@ -629,27 +707,40 @@ fun BoxScope.Controls(vm: BoardViewModel) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     val state by vm.uiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-    Row(modifier = Modifier.align(Alignment.TopEnd)) {
+    Column(
+        modifier = Modifier.align(Alignment.TopEnd),
+        horizontalAlignment = Alignment.End,
+    ) {
         var isDark by LocalThemeIsDark.current
         val icon = remember(isDark) {
             if (isDark) Images.IcLightMode
             else Images.IcDarkMode
         }
-        IconButton(
-            onClick = {
-                isDark = !isDark
-                coroutineScope.launch {
-                    appKStore.update { it?.copy(theme = isDark) }
+        Row {
+            IconButton(
+                onClick = {
+                    isDark = !isDark
+                    coroutineScope.launch {
+                        appKStore.update { it?.copy(theme = isDark) }
+                    }
+                },
+                content = {
+                    Icon(icon, contentDescription = null)
                 }
-            },
-            content = {
-                Icon(icon, contentDescription = null)
+            )
+            if (state.currentPlayerIsActive) {
+                TextButton(onClick = {
+                    bottomSheetNavigator.show(DebugScreen(vm))
+                }) { Text(stringResource(Res.string.debug_tools)) }
             }
-        )
-        if (state.currentPlayerIsActive) {
-            TextButton(onClick = {
-                bottomSheetNavigator.show(DebugScreen(vm))
-            }) { Text("Debug") }
+        }
+        if (state.canEnterOuterCircle) {
+            FilledTonalButton(
+                enabled = !state.isProgress,
+                onClick = { vm.enterOuterCircle() },
+            ) {
+                Text(stringResource(Res.string.enter_outer_circle))
+            }
         }
     }
 }

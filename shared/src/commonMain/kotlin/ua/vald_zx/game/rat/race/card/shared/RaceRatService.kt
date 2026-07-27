@@ -27,6 +27,9 @@ sealed class GlobalEvent {
 
     @Serializable
     data class BidSelled(val bid: Bid, val auction: Auction) : GlobalEvent()
+
+    @Serializable
+    data class PlayerWon(val playerId: String, val playerName: String) : GlobalEvent()
 }
 
 @Serializable
@@ -96,6 +99,12 @@ sealed class Event {
 
     @Serializable
     data object CheckState : Event()
+
+    @Serializable
+    data object DreamOffered : Event()
+
+    @Serializable
+    data class PlayerWon(val playerId: String, val playerName: String) : Event()
 }
 
 @Serializable
@@ -112,7 +121,10 @@ interface RaceRatService {
         name: String,
         loanLimit: Long,
         businessLimit: Long,
-        decks: Map<BoardCardType, Int>
+        decks: Map<BoardCardType, Int>,
+        outerCircleConditions: OuterCircleConditions = OuterCircleConditions(),
+        victoryConditions: VictoryConditions = VictoryConditions(),
+        transportMovementBonusEnabled: Boolean = true,
     ): Board
 
     suspend fun updateAttributes(attrs: PlayerAttributes)
@@ -141,11 +153,14 @@ interface RaceRatService {
     suspend fun minusCash(price: Long)
     suspend fun buyThing(card: BoardCard.Shopping)
     suspend fun changePosition(position: Int)
+    suspend fun debugChangePosition(location: PlayerLocation)
+    suspend fun debugUpdatePlayer(values: DebugPlayerValues)
     suspend fun buyEstate(estate: Estate)
     suspend fun buyLand(land: Land)
     suspend fun randomJob(card: BoardCard.Chance.RandomJob)
     suspend fun buyShares(shares: Shares, totalCount: Long)
     suspend fun selectCardByNo(cardId: Int, cardType: BoardCardType)
+    suspend fun debugMoveToAndSelectCard(cardId: Int, cardType: BoardCardType)
     suspend fun extendBusiness(business: Business, card: BoardCard.EventStore.BusinessExtending)
     suspend fun sellLands(area: Long, priceOfUnit: Long)
     suspend fun sellShares(card: BoardCard.EventStore.Shares, count: Long)
@@ -158,4 +173,7 @@ interface RaceRatService {
     suspend fun advertiseAuction(auction: Auction)
     suspend fun sellBid(bid: Bid)
     suspend fun makeBid(price: Long, count: Long)
+    suspend fun enterOuterCircle()
+    suspend fun buyDream()
+    suspend fun selectDream(dreamId: String)
 }

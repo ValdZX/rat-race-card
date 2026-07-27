@@ -88,6 +88,7 @@ class RaceRatServiceImpl(
             is GlobalEvent.PlayerMarried -> eventBus.emit(Event.PlayerMarried(event.playerId))
             is GlobalEvent.PlayerDivorced -> eventBus.emit(Event.PlayerDivorced(event.playerId))
             is GlobalEvent.PlayerMessage -> eventBus.emit(Event.PlayerMessage(event.playerId, event.text))
+            is GlobalEvent.PlayerWon -> eventBus.emit(Event.PlayerWon(event.playerId, event.playerName))
             is GlobalEvent.BidSelled -> {
                 if (event.bid.playerId == playerId) {
                     buyLot(event.auction, event.bid)
@@ -134,7 +135,10 @@ class RaceRatServiceImpl(
         name: String,
         loanLimit: Long,
         businessLimit: Long,
-        decks: Map<BoardCardType, Int>
+        decks: Map<BoardCardType, Int>,
+        outerCircleConditions: OuterCircleConditions,
+        victoryConditions: VictoryConditions,
+        transportMovementBonusEnabled: Boolean,
     ): Board {
         val board = Board(
             name = name,
@@ -142,7 +146,10 @@ class RaceRatServiceImpl(
             businessLimit = businessLimit,
             createDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
             id = Uuid.random().toString(),
-            cards = decks.mapValues { (_, size) -> (1..size).toList() }
+            cards = decks.mapValues { (_, size) -> (1..size).toList() },
+            outerCircleConditions = outerCircleConditions,
+            victoryConditions = victoryConditions,
+            transportMovementBonusEnabled = transportMovementBonusEnabled,
         )
         Storage.newBoard(board)
         boardSelected(board)
@@ -236,9 +243,24 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun selectCardByNo(cardId: Int, cardType: BoardCardType) {
-        if (board().canTakeCard.contains(cardType)) {
+        val board = board()
+        if (board.containsCard(cardId, cardType)) {
             selectCard(cardId, cardType)
         }
+    }
+
+    override suspend fun debugMoveToAndSelectCard(cardId: Int, cardType: BoardCardType) {
+        val board = board()
+        if (!board.canRoll || board.activePlayerId != playerId) return
+        if (!board.containsCard(cardId, cardType)) return
+        val currentPlayer = player()
+        val layer = currentPlayer.location.level.toLayer()
+        val position = layer.nearestPlacePosition(
+            currentPosition = currentPlayer.location.position,
+            cardType = cardType,
+        ) ?: return
+        processNewPosition(position)
+        selectCard(cardId, cardType)
     }
 
     override suspend fun next() {
@@ -324,10 +346,15 @@ class RaceRatServiceImpl(
 
     private suspend fun move() {
         val player = player()
+        val board = board()
         val layer = player.location.level.toLayer()
         val cellCount = layer.cellCount
         val currentPosition = player.location.position
-        val newPosition = moveTo(currentPosition, cellCount, board().dice)
+        val movementSteps = player.movementSteps(
+            dice = board.dice,
+            transportMovementBonusEnabled = board.transportMovementBonusEnabled,
+        )
+        val newPosition = moveTo(currentPosition, cellCount, movementSteps)
         processNewPosition(newPosition)
     }
 
@@ -362,7 +389,7 @@ class RaceRatServiceImpl(
             copy(location = location.copy(position = safeNewPosition), salaryPosition = salaryPosition)
         }
 
-        when (layer.places[safeNewPosition]) {
+        when (val place = layer.places[safeNewPosition]) {
             PlaceType.BigBusiness -> updateBoard {
                 copy(canTakeCard = listOf(BoardCardType.BigBusiness))
             }
@@ -447,10 +474,19 @@ class RaceRatServiceImpl(
                 nextPlayer()
             }
 
+            is PlaceType.Desire -> {
+                val currentBoard = board()
+                val dream = currentBoard.dreamById(place.dreamId)
+                if (dream != null && dream.id !in currentBoard.purchasedDreamIds) {
+                    eventBus.emit(Event.DreamOffered)
+                } else {
+                    nextPlayer()
+                }
+            }
+
             PlaceType.Salary,
             PlaceType.Start,
-            PlaceType.TaxInspection,
-            PlaceType.Desire -> nextPlayer()
+            PlaceType.TaxInspection -> nextPlayer()
         }
     }
 
@@ -482,6 +518,7 @@ class RaceRatServiceImpl(
 
     private suspend fun updatePlayer(change: suspend Player.() -> Player) {
         val id = playerId
+        var updatedPlayer: Player? = null
         playerMutex(id).withLock {
             val previousPlayer = player()
             val changed = previousPlayer.change()
@@ -498,6 +535,26 @@ class RaceRatServiceImpl(
             val newPlayer = changed.copy(lastTotals = totals, lastCashFlows = cashFlows)
             Storage.updatePlayer(newPlayer)
             globalEventBus.emit(GlobalEvent.PlayerChanged(newPlayer))
+            updatedPlayer = newPlayer
+        }
+        updatedPlayer?.let { checkVictory(it) }
+    }
+
+    private suspend fun checkVictory(player: Player) {
+        val board = board()
+        if (!player.hasMetVictoryConditions(board.victoryConditions)) return
+        if (board.winnerId != null) return
+        var becameWinner = false
+        updateBoard {
+            if (winnerId == null) {
+                becameWinner = true
+                copy(winnerId = player.id)
+            } else {
+                this
+            }
+        }
+        if (becameWinner) {
+            globalEventBus.emit(GlobalEvent.PlayerWon(player.id, player.card.name))
         }
     }
 
@@ -565,6 +622,23 @@ class RaceRatServiceImpl(
 
     override suspend fun changePosition(position: Int) {
         processNewPosition(position)
+    }
+
+    override suspend fun debugChangePosition(location: PlayerLocation) {
+        val layer = location.level.toLayer()
+        val position = location.position.coerceIn(0, layer.places.lastIndex)
+        updatePlayer {
+            copy(
+                location = PlayerLocation(position = position, level = layer.level),
+                salaryPosition = null,
+            )
+        }
+    }
+
+    override suspend fun debugUpdatePlayer(values: DebugPlayerValues) {
+        updatePlayer {
+            withDebugValues(values)
+        }
     }
 
     private suspend fun buyEstate(estate: Estate, doNext: suspend () -> Unit = {}) {
@@ -794,6 +868,56 @@ class RaceRatServiceImpl(
         }
     }
 
+    override suspend fun enterOuterCircle() {
+        val currentPlayer = player()
+        val conditions = board().outerCircleConditions
+        if (!currentPlayer.canEnterOuterCircle(conditions)) return
+        updatePlayer {
+            copy(
+                location = PlayerLocation(
+                    position = 1,
+                    level = BoardLayer.OUTER.level,
+                ),
+                salaryPosition = null,
+            )
+        }
+    }
+
+    override suspend fun buyDream() {
+        val currentBoard = board()
+        val currentPlayer = player()
+        val dreamPlace = currentPlayer.location.level.toLayer().places
+            .getOrNull(currentPlayer.location.position) as? PlaceType.Desire ?: return
+        val dream = currentBoard.dreamById(dreamPlace.dreamId) ?: return
+        val canBuy = currentBoard.activePlayerId == playerId &&
+                dream.id !in currentBoard.purchasedDreamIds &&
+                (currentBoard.loanLimit + currentPlayer.balance() - currentPlayer.loan - dream.price) > 0
+        if (!canBuy) return
+        var dreamClaimed = false
+        updateBoard {
+            if (dream.id !in purchasedDreamIds) {
+                dreamClaimed = true
+                copy(purchasedDreamIds = purchasedDreamIds + dream.id)
+            } else {
+                this
+            }
+        }
+        if (!dreamClaimed) return
+        updatePlayer {
+            copy(purchasedDreamIds = purchasedDreamIds + dream.id).minusCash(dream.price)
+        }
+        nextPlayer()
+    }
+
+    override suspend fun selectDream(dreamId: String) {
+        val currentBoard = board()
+        if (currentBoard.dreamById(dreamId) == null) return
+        if (dreamId in currentBoard.purchasedDreamIds) return
+        updatePlayer {
+            copy(selectedDreamId = dreamId)
+        }
+    }
+
     private suspend fun buyLot(
         auction: Auction,
         bid: Bid
@@ -887,4 +1011,11 @@ private fun Board.invalidateDecks(): Board {
         }
     }
     return copy(cards = newCards, discard = newDiscard)
+}
+
+private fun Board.containsCard(cardId: Int, cardType: BoardCardType): Boolean {
+    val knownCardIds = cards[cardType].orEmpty() +
+            discard[cardType].orEmpty() +
+            listOfNotNull(takenCard?.takeIf { it.type == cardType }?.id)
+    return cardId in knownCardIds
 }

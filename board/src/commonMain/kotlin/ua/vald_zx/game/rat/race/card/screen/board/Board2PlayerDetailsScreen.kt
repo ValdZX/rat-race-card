@@ -223,7 +223,11 @@ fun Board2PlayerDetailsScreen(vm: BoardViewModel, scaffoldState: BottomSheetStat
                 modifier = Modifier.fillMaxWidth().weight(1f),
             ) { page ->
                 when (page) {
-                    0 -> StatePage(player)
+                    0 -> StatePage(
+                        player = player,
+                        selectedDream = state.board.dreamById(player.selectedDreamId),
+                        victoryConditions = state.board.victoryConditions,
+                    )
                     1 -> BusinessListPage(player)
                     2 -> SharesPage(player)
                     3 -> LandPage(player)
