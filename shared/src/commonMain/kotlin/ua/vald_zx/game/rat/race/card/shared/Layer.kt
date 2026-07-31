@@ -8,3 +8,10 @@ enum class BoardLayer(val cellCount: Int, val level: Int, val places: List<Place
 fun Int.toLayer(): BoardLayer {
     return BoardLayer.entries.find { it.level == this } ?: BoardLayer.INNER
 }
+fun BoardLayer.nextPositionOf(type: PlaceType, from: Int): Int {
+    for (step in 1..places.size) {
+        val index = (from + step) % places.size
+        if (places[index] == type) return index
+    }
+    return from
+}

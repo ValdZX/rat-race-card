@@ -98,6 +98,15 @@ sealed class Event {
     data object BidSharesAuctionSuccessBuy : Event()
 
     @Serializable
+    data class HighRiskPlayed(val outcome: InvestmentOutcome, val guess: Int) : Event()
+
+    @Serializable
+    data class MediumRiskPlayed(val outcome: InvestmentOutcome, val even: Boolean) : Event()
+
+    @Serializable
+    data class FundsCapitalized(val profit: Long) : Event()
+
+    @Serializable
     data object CheckState : Event()
 
     @Serializable
@@ -168,6 +177,10 @@ interface RaceRatService {
     suspend fun passLand()
     suspend fun passShares(sharesType: SharesType)
     suspend fun passEstate()
+    suspend fun playHighRiskInvestment(stake: Long, guess: Int)
+    suspend fun playMediumRiskInvestment(stake: Long, even: Boolean)
+    suspend fun investInFund(amount: Long)
+    suspend fun capitalizeFunds()
     suspend fun toDeposit(amount: Long)
     suspend fun repayLoan(amount: Long)
     suspend fun advertiseAuction(auction: Auction)

@@ -371,22 +371,37 @@ class RaceRatServiceImpl(
         } else {
             layer.places.subList(safeCurrent + 1, safeNewPosition + 1)
         }
-        val salaryPosition = if (passedPlaces.contains(PlaceType.Salary)) {
+        val passedSalaryPosition = if (passedPlaces.contains(PlaceType.Salary)) {
+            var pos = safeCurrent + passedPlaces.indexOfLast { it == PlaceType.Salary } + 1
+            if (pos >= placeCount) pos -= placeCount
+            pos
+        } else null
+
+        val salaryPosition = if (passedSalaryPosition != null) {
             if (player.cashFlow() > 0) {
-                var pos = safeCurrent + passedPlaces.indexOfLast { it == PlaceType.Salary } + 1
-                if (pos >= placeCount) pos -= placeCount
-                pos
+                passedSalaryPosition
             } else {
                 takeSalary()
                 null
             }
         } else null
 
+        val startCapitalization = if (passedPlaces.contains(PlaceType.Start) && player.funds.isNotEmpty()) {
+            var pos = safeCurrent + passedPlaces.indexOfLast { it == PlaceType.Start } + 1
+            if (pos >= placeCount) pos -= placeCount
+            StartCapitalization(position = pos, landed = pos == safeNewPosition)
+        } else null
+
         updateBoard {
             copy(moveCount = moveCount + 1, canRoll = false)
         }
         updatePlayer {
-            copy(location = location.copy(position = safeNewPosition), salaryPosition = salaryPosition)
+            copy(
+                location = location.copy(position = safeNewPosition),
+                salaryPosition = salaryPosition,
+                investmentPosition = safeNewPosition.takeIf { layer.places[it] == PlaceType.Salary },
+                startCapitalization = startCapitalization,
+            )
         }
 
         when (val place = layer.places[safeNewPosition]) {
@@ -627,12 +642,12 @@ class RaceRatServiceImpl(
     override suspend fun debugChangePosition(location: PlayerLocation) {
         val layer = location.level.toLayer()
         val position = location.position.coerceIn(0, layer.places.lastIndex)
-        updatePlayer {
-            copy(
-                location = PlayerLocation(position = position, level = layer.level),
-                salaryPosition = null,
-            )
+        if (layer.level != player().location.level) {
+            updatePlayer {
+                copy(location = PlayerLocation(position = position, level = layer.level))
+            }
         }
+        processNewPosition(position)
     }
 
     override suspend fun debugUpdatePlayer(values: DebugPlayerValues) {
@@ -804,6 +819,70 @@ class RaceRatServiceImpl(
         if (playersWithEstate.isEmpty() || playersWithEstate.size == 1 || playersWithEstate == board.processedPlayerIds) {
             nextPlayer()
         }
+    }
+
+    override suspend fun playHighRiskInvestment(stake: Long, guess: Int) {
+        if (guess !in 1..6) return
+        playInvestmentGame(stake, HIGH_RISK_MULTIPLIER, { dice -> dice == guess }) { outcome ->
+            Event.HighRiskPlayed(outcome, guess)
+        }
+    }
+
+    override suspend fun playMediumRiskInvestment(stake: Long, even: Boolean) {
+        playInvestmentGame(stake, MEDIUM_RISK_MULTIPLIER, { dice -> (dice % 2 == 0) == even }) { outcome ->
+            Event.MediumRiskPlayed(outcome, even)
+        }
+    }
+
+    private suspend fun playInvestmentGame(
+        stake: Long,
+        multiplier: Long,
+        isWin: (Int) -> Boolean,
+        event: (InvestmentOutcome) -> Event,
+    ) {
+        val player = player()
+        if (stake <= 0 || player.investmentPosition == null) return
+        val dice = (1..6).random()
+        val payout = if (isWin(dice)) stake * multiplier else 0L
+        updatePlayer {
+            val afterStake = minusCash(stake)
+            if (payout > 0) afterStake.plusCash(payout) else afterStake
+        }
+        consumeInvestment()
+        eventBus.emit(event(InvestmentOutcome(dice = dice, stake = stake, payout = payout)))
+    }
+
+    private suspend fun consumeInvestment() {
+        if (player().salaryPosition != null) takeSalary()
+        updatePlayer { copy(investmentPosition = null) }
+    }
+
+    override suspend fun investInFund(amount: Long) {
+        val player = player()
+        val salaryPosition = player.investmentPosition ?: return
+        if (amount <= 0) return
+        val rate = player.location.level.toLayer().fundRateAtSalary(salaryPosition)
+        updatePlayer {
+            val sameRate = funds.find { it.rate == rate }
+            val newFunds = if (sameRate != null) {
+                funds.replace(sameRate, sameRate.copy(amount = sameRate.amount + amount))
+            } else {
+                funds + Fund(rate = rate, amount = amount)
+            }
+            copy(funds = newFunds).minusCash(amount, isFundBuy = true)
+        }
+        consumeInvestment()
+    }
+
+    override suspend fun capitalizeFunds() {
+        val player = player()
+        val capitalization = player.startCapitalization ?: return
+        val rateOverride = if (capitalization.landed) START_LANDED_RATE else null
+        val (newFunds, profit) = player.funds.capitalize(rateOverride)
+        updatePlayer {
+            copy(funds = newFunds, startCapitalization = null)
+        }
+        eventBus.emit(Event.FundsCapitalized(profit))
     }
 
     override suspend fun toDeposit(amount: Long) {

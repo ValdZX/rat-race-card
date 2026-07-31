@@ -280,4 +280,20 @@
     <string name="online_settings">Online game settings</string>
     <string name="dark_theme">Dark theme</string>
     <string name="player_token_color">Player token color</string>
+    <string name="investments">Investments</string>
+    <string name="high_risk">High risk</string>
+    <string name="medium_risk">Medium risk</string>
+    <string name="low_risk">Low risk</string>
+    <string name="high_risk_hint">Guess the die roll — the stake pays 6x</string>
+    <string name="medium_risk_hint">Guess even or odd — the stake pays 2x</string>
+    <string name="low_risk_hint">Put money into a fund at %1$s%% per lap</string>
+    <string name="stake">Stake</string>
+    <string name="play">Play</string>
+    <string name="even">Even</string>
+    <string name="odd">Odd</string>
+    <string name="take_salary">Take salary</string>
+    <string name="investment_win">The die shows %1$s. You win %2$s</string>
+    <string name="investment_lose">The die shows %1$s. You lost %2$s</string>
+    <string name="funds_capitalized">Funds capitalized: +%1$s</string>
+    <string name="debug_go_to_salary">Go to salary</string>
 </resources>

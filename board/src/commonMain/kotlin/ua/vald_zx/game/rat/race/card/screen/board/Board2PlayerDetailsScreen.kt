@@ -192,9 +192,9 @@ fun Board2PlayerDetailsScreen(vm: BoardViewModel, scaffoldState: BottomSheetStat
                 stringResource(Res.string.land),
                 stringResource(Res.string.realEstate),
             )
-//            if (player.config.hasFunds) {
-//                titles += stringResource(Res.string.funds)
-//            }
+            if (player.config.hasFunds) {
+                titles += stringResource(Res.string.funds)
+            }
             val pagerState = rememberPagerState(pageCount = { titles.size })
             PrimaryScrollableTabRow(
                 selectedTabIndex = pagerState.currentPage,

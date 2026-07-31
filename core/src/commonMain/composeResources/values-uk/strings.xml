@@ -285,4 +285,20 @@
     <string name="online_settings">Налаштування онлайн-гри</string>
     <string name="dark_theme">Темна тема</string>
     <string name="player_token_color">Колір фішки гравця</string>
+    <string name="investments">Інвестиції</string>
+    <string name="high_risk">Високоризикові</string>
+    <string name="medium_risk">Середньоризикові</string>
+    <string name="low_risk">Низькоризикові</string>
+    <string name="high_risk_hint">Вгадай число на кубику — ставка множиться на 6</string>
+    <string name="medium_risk_hint">Вгадай парне чи непарне — ставка подвоюється</string>
+    <string name="low_risk_hint">Покласти гроші у фонд під %1$s%% за коло</string>
+    <string name="stake">Ставка</string>
+    <string name="play">Грати</string>
+    <string name="even">Парне</string>
+    <string name="odd">Непарне</string>
+    <string name="take_salary">Отримати зарплату</string>
+    <string name="investment_win">На кубику %1$s. Виграш %2$s</string>
+    <string name="investment_lose">На кубику %1$s. Ставку %2$s втрачено</string>
+    <string name="funds_capitalized">Фонди капіталізовано: +%1$s</string>
+    <string name="debug_go_to_salary">Перейти на зарплатню</string>
 </resources>

@@ -202,6 +202,22 @@ fun InitPreview(
                             //NOP
                         }
 
+                        override suspend fun playHighRiskInvestment(stake: Long, guess: Int) {
+                            //NOP
+                        }
+
+                        override suspend fun playMediumRiskInvestment(stake: Long, even: Boolean) {
+                            //NOP
+                        }
+
+                        override suspend fun investInFund(amount: Long) {
+                            //NOP
+                        }
+
+                        override suspend fun capitalizeFunds() {
+                            //NOP
+                        }
+
                         override suspend fun toDeposit(amount: Long) {
                             //NOP
                         }

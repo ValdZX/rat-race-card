@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import dev.lennartegb.shadows.boxShadow
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
@@ -106,16 +107,21 @@ fun BoxScope.PlaceContent(
         PlaceType.Salary -> {
             val blurRadius = min(place.size.width, place.size.height) / 5
             val spreadRadius = min(place.size.width, place.size.height) / 15
-            val salaryPosition = state.player.salaryPosition
-            val canTakeSalary = remember(salaryPosition) {
-                salaryPosition != null &&
+            val salaryPosition = state.player.salaryPosition ?: state.player.investmentPosition
+            val investmentPosition = state.player.investmentPosition
+            fun isHere(position: Int?): Boolean {
+                return position != null &&
                         layer.level == state.layer.level &&
                         index == moveTo(
-                    position = salaryPosition,
+                    position = position,
                     cellCount = layer.cellCount,
                     toMove = route.offset
                 )
             }
+
+            val canTakeSalary = isHere(salaryPosition)
+            val canInvest = isHere(investmentPosition)
+            val bottomSheetNavigator = LocalBottomSheetNavigator.current
             Box(
                 Modifier
                     .fillMaxSize()
@@ -129,7 +135,11 @@ fun BoxScope.PlaceContent(
                     .background(place.type.color())
                     .optionalModifier(canTakeSalary) {
                         clickable {
-                            vm.takeSalary()
+                            if (canInvest) {
+                                bottomSheetNavigator.show(SalaryScreen(vm))
+                            } else {
+                                vm.takeSalary()
+                            }
                         }
                     }
             ) {
@@ -312,6 +322,54 @@ fun BoxScope.PlaceContent(
                         tileMode = TileMode.Repeated
                     )
                 )
+            ) {
+                OutlinedText(
+                    text = place.type.text(),
+                    autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),
+                    fontFamily = FontFamily(
+                        Font(
+                            Res.font.Bubbleboddy,
+                            weight = FontWeight.Medium
+                        )
+                    ),
+                    modifier = Modifier.align(Alignment.Center)
+                        .padding(minSide / 14)
+                        .optionalModifier(place.isVertical) {
+                            rotateLayout(Rotation.ROT_90)
+                        },
+                    fillColor = MaterialTheme.colorScheme.onPrimary,
+                    outlineColor = Color(0xFF8A8A8A),
+                    outlineDrawStyle = Stroke(2f),
+                    maxLines = 1
+                )
+            }
+        }
+
+        PlaceType.Start -> {
+            val capitalization = state.player.startCapitalization
+            val canCapitalize = remember(capitalization) {
+                capitalization != null &&
+                        layer.level == state.layer.level &&
+                        index == moveTo(
+                    position = capitalization.position,
+                    cellCount = layer.cellCount,
+                    toMove = route.offset
+                )
+            }
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .optionalModifier(canCapitalize) {
+                        boxShadow(
+                            blurRadius = min(place.size.width, place.size.height) / 5,
+                            spreadRadius = min(place.size.width, place.size.height) / 15,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                    .background(place.type.color())
+                    .optionalModifier(canCapitalize) {
+                        clickable { vm.capitalizeFunds() }
+                    }
             ) {
                 OutlinedText(
                     text = place.type.text(),

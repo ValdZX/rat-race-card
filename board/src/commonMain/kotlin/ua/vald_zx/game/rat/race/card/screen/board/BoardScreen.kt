@@ -176,6 +176,8 @@ class BoardScreen(
         var youDivorcedDialog by remember { mutableStateOf(false) }
         var resignationDialog: Business? by remember { mutableStateOf(null) }
         var depositWithdrawDialog by remember { mutableStateOf(0L) }
+        var investmentResultDialog: Pair<Int, Long>? by remember { mutableStateOf(null) }
+        var capitalizedDialog by remember { mutableStateOf(0L) }
         var loanAddedDialog by remember { mutableStateOf(0L) }
         var simpleDialog by remember { mutableStateOf(Res.string.app_name) }
         var loanOverlimitedDialog by remember { mutableStateOf(false) }
@@ -201,6 +203,20 @@ class BoardScreen(
 
                     is BoardUiAction.ConfirmSellingAllBusiness -> {
                         confirmSellingAllBusinessDialog = event.business
+                    }
+
+                    is BoardUiAction.HighRiskPlayed -> {
+                        investmentResultDialog = event.outcome.dice to event.outcome.payout
+                            .let { if (it > 0) it else -event.outcome.stake }
+                    }
+
+                    is BoardUiAction.MediumRiskPlayed -> {
+                        investmentResultDialog = event.outcome.dice to event.outcome.payout
+                            .let { if (it > 0) it else -event.outcome.stake }
+                    }
+
+                    is BoardUiAction.FundsCapitalized -> {
+                        capitalizedDialog = event.profit
                     }
 
                     is BoardUiAction.DepositWithdraw -> {
@@ -372,6 +388,40 @@ class BoardScreen(
                 onDismissRequest = { simpleDialog = Res.string.app_name },
                 confirmButton = {
                     TextButton(onClick = { simpleDialog = Res.string.app_name }) {
+                        Text(stringResource(Res.string.ok))
+                    }
+                },
+            )
+        }
+        investmentResultDialog?.let { (dice, amount) ->
+            AlertDialog(
+                title = { Text(text = stringResource(Res.string.investments)) },
+                text = {
+                    Text(
+                        text = if (amount > 0) {
+                            stringResource(Res.string.investment_win, dice.toString(), amount.splitDecimal())
+                        } else {
+                            stringResource(Res.string.investment_lose, dice.toString(), (-amount).splitDecimal())
+                        }
+                    )
+                },
+                onDismissRequest = { investmentResultDialog = null },
+                confirmButton = {
+                    TextButton(onClick = { investmentResultDialog = null }) {
+                        Text(stringResource(Res.string.ok))
+                    }
+                },
+            )
+        }
+        if (capitalizedDialog != 0L) {
+            AlertDialog(
+                title = { Text(text = stringResource(Res.string.investments)) },
+                text = {
+                    Text(text = stringResource(Res.string.funds_capitalized, capitalizedDialog.splitDecimal()))
+                },
+                onDismissRequest = { capitalizedDialog = 0 },
+                confirmButton = {
+                    TextButton(onClick = { capitalizedDialog = 0 }) {
                         Text(stringResource(Res.string.ok))
                     }
                 },

@@ -60,6 +60,8 @@ data class Player(
     val config: Config = Config(),
     val isInactive: Boolean = false,
     val salaryPosition: Int? = null,
+    val investmentPosition: Int? = null,
+    val startCapitalization: StartCapitalization? = null,
     val lastTotals: List<Long> = emptyList(),
     val lastCashFlows: List<Long> = emptyList(),
     val speech: PlayerSpeech? = null,

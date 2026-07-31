@@ -7,25 +7,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
+import ua.vald_zx.game.rat.race.card.components.SDetailsField
 import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.amount
 import ua.vald_zx.game.rat.race.card.resources.fund_at
-import ua.vald_zx.game.rat.race.card.resources.withdraw
-import ua.vald_zx.game.rat.race.card.components.SDetailsField
-import ua.vald_zx.game.rat.race.card.screen.board.SellFundScreen
+import ua.vald_zx.game.rat.race.card.resources.funds
 import ua.vald_zx.game.rat.race.card.shared.Player
+import ua.vald_zx.game.rat.race.card.shared.fundAmount
+import ua.vald_zx.game.rat.race.card.splitDecimal
 
 @Composable
 fun FundsPage(player: Player) {
-    val bottomSheetNavigator = LocalBottomSheetNavigator.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
@@ -41,16 +38,20 @@ fun FundsPage(player: Player) {
                         )
                         SDetailsField(
                             name = stringResource(Res.string.amount),
-                            value = fund.amount.toString(),
+                            value = fund.amount.splitDecimal(),
                             modifier = Modifier.weight(1f)
                         )
-                        TextButton(onClick = { bottomSheetNavigator.show(SellFundScreen(fund)) }) {
-                            Text(stringResource(Res.string.withdraw))
-                        }
                     }
                     HorizontalDivider()
                 }
             }
+        }
+        if (player.funds.isNotEmpty()) {
+            SDetailsField(
+                name = stringResource(Res.string.funds),
+                value = player.fundAmount().splitDecimal(),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+            )
         }
     }
 }

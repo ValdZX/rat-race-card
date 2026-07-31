@@ -94,6 +94,9 @@ sealed class BoardUiAction {
     data object BidLandAuctionSuccessBuy : BoardUiAction()
     data object BidSharesAuctionSuccessBuy : BoardUiAction()
     data object ConnectionLost : BoardUiAction()
+    data class HighRiskPlayed(val outcome: InvestmentOutcome, val guess: Int) : BoardUiAction()
+    data class MediumRiskPlayed(val outcome: InvestmentOutcome, val even: Boolean) : BoardUiAction()
+    data class FundsCapitalized(val profit: Long) : BoardUiAction()
     data class Resignation(val business: Business) : BoardUiAction()
     data object DreamOffered : BoardUiAction()
     data class PlayerWon(val playerName: String, val isCurrentPlayer: Boolean) : BoardUiAction()
@@ -222,6 +225,18 @@ class BoardViewModel(
                     }
 
                     is Event.PlayerMessage -> showPlayerMessage(event.playerId, event.text)
+
+                    is Event.HighRiskPlayed -> {
+                        _actions.send(HighRiskPlayed(event.outcome, event.guess))
+                    }
+
+                    is Event.MediumRiskPlayed -> {
+                        _actions.send(MediumRiskPlayed(event.outcome, event.even))
+                    }
+
+                    is Event.FundsCapitalized -> {
+                        _actions.send(FundsCapitalized(event.profit))
+                    }
 
                     is Event.PlayerHadBaby -> {
                         if (event.playerId == _uiState.value.player.id) {
@@ -482,6 +497,30 @@ class BoardViewModel(
             } else {
                 selectCardByNo(cardNo, cardType)
             }
+        }
+    }
+
+    fun playHighRiskInvestment(stake: Long, guess: Int) {
+        safeLaunch {
+            playHighRiskInvestment(stake, guess)
+        }
+    }
+
+    fun playMediumRiskInvestment(stake: Long, even: Boolean) {
+        safeLaunch {
+            playMediumRiskInvestment(stake, even)
+        }
+    }
+
+    fun investInFund(amount: Long) {
+        safeLaunch {
+            investInFund(amount)
+        }
+    }
+
+    fun capitalizeFunds() {
+        safeLaunch {
+            capitalizeFunds()
         }
     }
 

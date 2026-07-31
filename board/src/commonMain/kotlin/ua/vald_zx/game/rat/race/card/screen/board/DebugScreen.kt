@@ -45,6 +45,7 @@ import ua.vald_zx.game.rat.race.card.resources.debug_assets
 import ua.vald_zx.game.rat.race.card.resources.debug_card_auto_move
 import ua.vald_zx.game.rat.race.card.resources.debug_cards
 import ua.vald_zx.game.rat.race.card.resources.debug_finances
+import ua.vald_zx.game.rat.race.card.resources.debug_go_to_salary
 import ua.vald_zx.game.rat.race.card.resources.debug_hide_board_state
 import ua.vald_zx.game.rat.race.card.resources.debug_inner_circle
 import ua.vald_zx.game.rat.race.card.resources.debug_outer_circle
@@ -75,6 +76,7 @@ import ua.vald_zx.game.rat.race.card.shared.DebugPlayerValues
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.dreamById
 import ua.vald_zx.game.rat.race.card.shared.hasPlaceFor
+import ua.vald_zx.game.rat.race.card.shared.nextPositionOf
 import kotlin.math.roundToInt
 
 private val debugJson = Json { prettyPrint = true }
@@ -188,9 +190,18 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
             )
             Button(
                 text = stringResource(Res.string.go_to),
-                enabled = state.currentPlayerIsActive,
+                enabled = state.canRoll,
             ) {
                 vm.debugChangePosition(selectedLayer, selectedPosition)
+            }
+            Button(
+                text = stringResource(Res.string.debug_go_to_salary),
+                enabled = state.canRoll,
+            ) {
+                val from = if (selectedLayer == state.layer) player.location.position else 0
+                val salaryPosition = selectedLayer.nextPositionOf(PlaceType.Salary, from)
+                selectedPosition = salaryPosition
+                vm.debugChangePosition(selectedLayer, salaryPosition)
             }
 
             DebugSectionTitle(stringResource(Res.string.debug_cards))
