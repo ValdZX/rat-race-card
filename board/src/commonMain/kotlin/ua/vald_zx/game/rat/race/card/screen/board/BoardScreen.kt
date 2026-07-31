@@ -1,6 +1,7 @@
 package ua.vald_zx.game.rat.race.card.screen.board
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,14 +18,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.*
 import androidx.constraintlayout.compose.ExperimentalMotionApi
 import cafe.adriel.voyager.core.screen.Screen
@@ -54,6 +61,7 @@ import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.lottieDiceAnimations
 import ua.vald_zx.game.rat.race.card.playCoin
 import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.ArrowUp
 import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
@@ -706,41 +714,14 @@ fun BoardFragment(vm: BoardViewModel) {
 fun BoxScope.Controls(vm: BoardViewModel) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     val state by vm.uiState.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
     Column(
         modifier = Modifier.align(Alignment.TopEnd),
         horizontalAlignment = Alignment.End,
     ) {
-        var isDark by LocalThemeIsDark.current
-        val icon = remember(isDark) {
-            if (isDark) Images.IcLightMode
-            else Images.IcDarkMode
-        }
-        Row {
-            IconButton(
-                onClick = {
-                    isDark = !isDark
-                    coroutineScope.launch {
-                        appKStore.update { it?.copy(theme = isDark) }
-                    }
-                },
-                content = {
-                    Icon(icon, contentDescription = null)
-                }
-            )
-            if (state.currentPlayerIsActive) {
-                TextButton(onClick = {
-                    bottomSheetNavigator.show(DebugScreen(vm))
-                }) { Text(stringResource(Res.string.debug_tools)) }
-            }
-        }
-        if (state.canEnterOuterCircle) {
-            FilledTonalButton(
-                enabled = !state.isProgress,
-                onClick = { vm.enterOuterCircle() },
-            ) {
-                Text(stringResource(Res.string.enter_outer_circle))
-            }
+        if (state.currentPlayerIsActive) {
+            TextButton(onClick = {
+                bottomSheetNavigator.show(DebugScreen(vm))
+            }) { Text(stringResource(Res.string.debug_tools)) }
         }
     }
 }
@@ -761,41 +742,107 @@ fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
             }
         }
     }
-    val size = min(maxWidth, maxHeight) / 6
+    val rollSize = min(maxWidth, maxHeight) / 7
     val infiniteTransition = rememberInfiniteTransition(label = "InfiniteTransition")
     val spreadRadius by infiniteTransition.animateValue(
         initialValue = 0.dp,
-        targetValue = size * 0.3f,
+        targetValue = rollSize * 0.3f,
         animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
         label = "FloatAnimation",
         typeConverter = TwoWayConverter({ AnimationVector(it.value) }, { it.value.dp })
     )
-    Box(modifier = Modifier.align(Alignment.Center), contentAlignment = Alignment.Center) {
-        if (state.canRoll) {
-            Box(
+    val arrowSize = rollSize * 0.7f
+    Row(
+        modifier = Modifier
+            .align(Alignment.Center),
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .size(rollSize),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (state.canRoll) {
+                Box(
+                    modifier = Modifier
+                        .size(rollSize * 0.2f)
+                        .padding(top = rollSize * 0.3f)
+                        .boxShadow(
+                            blurRadius = rollSize * 0.3f,
+                            spreadRadius = spreadRadius,
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                )
+            }
+            Image(
+                painter = rememberLottiePainter(
+                    composition = composition,
+                    progress = animatable::value
+                ),
+                contentDescription = "Lottie animation",
                 modifier = Modifier
-                    .size(size * 0.2f)
-                    .padding(top = size * 0.3f)
-                    .boxShadow(
-                        blurRadius = size * 0.3f,
-                        spreadRadius = spreadRadius,
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
+                    .size(rollSize)
+                    .clickableSingle(enabled = state.canRoll) { vm.rollDice() }
             )
         }
-        Image(
-            painter = rememberLottiePainter(
-                composition = composition,
-                progress = animatable::value
-            ),
-            contentDescription = "Lottie animation",
-            modifier = Modifier
-                .size(size)
-                .clickableSingle(enabled = state.canRoll) { vm.rollDice() }
-        )
+        if (state.canEnterOuterCircle) {
+            RainbowOuterCircleButton(
+                modifier = Modifier
+                    .align(Alignment.Bottom)
+                    .size(arrowSize),
+                enabled = !state.isProgress,
+                onClick = { vm.enterOuterCircle() },
+                contentDescription = stringResource(Res.string.enter_outer_circle),
+            )
+        }
     }
 
+}
+
+@Composable
+private fun RainbowOuterCircleButton(
+    modifier: Modifier,
+    enabled: Boolean,
+    contentDescription: String,
+    onClick: () -> Unit,
+) {
+    val transition = rememberInfiniteTransition(label = "OuterCircleArrow")
+    val gradientOffset by transition.animateFloat(
+        initialValue = -100f,
+        targetValue = 100f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1800, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "OuterCircleArrowGradient",
+    )
+    val arrow = rememberVectorPainter(Images.ArrowUp)
+    Canvas(
+        modifier = modifier
+            .graphicsLayer {
+                alpha = if (enabled) 1f else 0.38f
+                compositingStrategy = CompositingStrategy.Offscreen
+            }
+            .clickableSingle(
+                enabled = enabled,
+                onClickLabel = contentDescription,
+                role = Role.Button,
+                onClick = onClick,
+            )
+    ) {
+        with(arrow) { draw(size) }
+        val unit = size.width / 100f
+        drawRect(
+            brush = Brush.linearGradient(
+                colors = SkittlesRainbow,
+                start = Offset(gradientOffset * unit, 0f),
+                end = Offset((gradientOffset + 100f) * unit, size.height),
+                tileMode = TileMode.Repeated,
+            ),
+            blendMode = BlendMode.SrcIn,
+        )
+    }
 }
 
 
@@ -825,7 +872,6 @@ fun BackSide() {
 fun BoxScope.ColorsSelector(
     colorState: MutableState<Long>,
 ) {
-    val players by players.collectAsState()
     FlowRow(modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 64.dp)) {
         val colors = pointerColors
         LaunchedEffect(colors) {

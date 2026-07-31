@@ -230,6 +230,7 @@ fun Board2PlayerDetailsScreen(vm: BoardViewModel, scaffoldState: BottomSheetStat
                     0 -> StatePage(
                         player = player,
                         selectedDream = state.board.dreamById(player.selectedDreamId),
+                        outerCircleConditions = state.board.outerCircleConditions,
                         victoryConditions = state.board.victoryConditions,
                     )
                     1 -> BusinessListPage(player)

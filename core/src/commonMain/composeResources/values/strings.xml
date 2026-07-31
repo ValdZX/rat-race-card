@@ -246,6 +246,8 @@
     <string name="outer_circle_conditions">Outer circle conditions</string>
     <string name="minimum_cash_flow">Minimum Cash Flow</string>
     <string name="minimum_account_balance">Minimum total account balance</string>
+    <string name="cash_flow_progress">Cash Flow: %1$s / %2$s</string>
+    <string name="account_balance_progress">In accounts: %1$s / %2$s</string>
     <string name="apartment_required">Apartment required</string>
     <string name="car_required">Car required</string>
     <string name="enter_outer_circle">Enter the outer circle</string>

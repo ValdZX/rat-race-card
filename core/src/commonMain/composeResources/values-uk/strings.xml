@@ -251,6 +251,8 @@
     <string name="outer_circle_conditions">Умови переходу на зовнішнє коло</string>
     <string name="minimum_cash_flow">Мінімальний Cash Flow</string>
     <string name="minimum_account_balance">Мінімальна сума на рахунках</string>
+    <string name="cash_flow_progress">Cash Flow: %1$s / %2$s</string>
+    <string name="account_balance_progress">На рахунках: %1$s / %2$s</string>
     <string name="apartment_required">Потрібна куплена квартира</string>
     <string name="car_required">Потрібна куплена машина</string>
     <string name="enter_outer_circle">Перейти на зовнішнє коло</string>

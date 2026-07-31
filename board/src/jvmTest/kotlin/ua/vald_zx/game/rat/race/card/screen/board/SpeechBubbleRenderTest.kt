@@ -16,6 +16,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import java.awt.image.BufferedImage
 import java.io.File
@@ -39,7 +40,8 @@ class SpeechBubbleRenderTest {
         val image = renderBubble(SHORT)
         val scale = image.width.toFloat() / CANVAS_W
         val centerX = image.width / 2
-        val insideTailY = image.bubbleBottom() - (bubbleTailHeight.value * scale / 2).toInt()
+        val tailHeight = (TOKEN / 20f) * bubbleTailHeight
+        val insideTailY = image.bubbleBottom() - (tailHeight * scale / 2).toInt()
 
         assertTrue(
             image.isBubble(centerX, insideTailY),
@@ -111,7 +113,11 @@ class SpeechBubbleRenderTest {
                         .align(Alignment.BottomCenter)
                 ) {
                     Box(Modifier.fillMaxSize().background(Color.White, CircleShape))
-                    SpeechBubble(text = text, modifier = Modifier.align(Alignment.TopCenter))
+                    SpeechBubble(
+                        text = text,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        cellSize = DpSize(TOKEN.dp, TOKEN.dp),
+                    )
                 }
             }
         }

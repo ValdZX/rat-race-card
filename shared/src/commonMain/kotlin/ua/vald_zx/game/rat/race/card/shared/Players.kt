@@ -233,8 +233,9 @@ fun Player.cashFlow(): Long {
     return totalProfit() - totalExpenses()
 }
 
-fun Player.canEnterOuterCircle(conditions: OuterCircleConditions): Boolean {
-    return location.level == BoardLayer.INNER.level &&
+fun Player.canEnterOuterCircle(canRoll: Boolean, conditions: OuterCircleConditions): Boolean {
+    return canRoll
+            && location.level == BoardLayer.INNER.level &&
             cashFlow() >= conditions.minimumCashFlow &&
             (!conditions.apartmentRequired || apartment > 0) &&
             (!conditions.carRequired || cars > 0) &&

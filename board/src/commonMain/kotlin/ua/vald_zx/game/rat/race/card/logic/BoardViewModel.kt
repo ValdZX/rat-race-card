@@ -10,6 +10,7 @@ import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
 import ua.vald_zx.game.rat.race.card.shared.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 
 val players = MutableStateFlow(emptyList<Player>())
 
@@ -23,7 +24,7 @@ data class BoardState(
     val currentPlayerIsActive: Boolean by lazy { player.id == board.activePlayerId }
     val canRoll: Boolean by lazy { board.canRoll && currentPlayerIsActive }
     val canEnterOuterCircle: Boolean by lazy {
-        player.canEnterOuterCircle(board.outerCircleConditions)
+        player.canEnterOuterCircle(canRoll,board.outerCircleConditions)
     }
     val currentDream: Dream? by lazy {
         val place = player.location.level.toLayer().places
@@ -287,7 +288,7 @@ class BoardViewModel(
         }
         safeLaunch(false) {
             while (true) {
-                delay(10000)
+                delay(10000.milliseconds)
                 ping()
             }
         }
@@ -311,7 +312,7 @@ class BoardViewModel(
         val message = PlayerMessage(++nextPlayerMessageId, text)
         _playerMessages.update { it + (playerId to message) }
         viewModelScope.launch {
-            delay((expiresAtEpochMs - Clock.System.now().toEpochMilliseconds()).coerceAtLeast(0))
+            delay((expiresAtEpochMs - Clock.System.now().toEpochMilliseconds()).coerceAtLeast(0).milliseconds)
             _playerMessages.update {
                 if (it[playerId]?.id == message.id) it - playerId else it
             }
@@ -394,14 +395,6 @@ class BoardViewModel(
     fun takeSalary() {
         safeLaunch {
             takeSalary()
-        }
-    }
-
-    fun changePosition(position: Int) {
-        if (uiState.value.currentPlayerIsActive) {
-            safeLaunch {
-                changePosition(position)
-            }
         }
     }
 

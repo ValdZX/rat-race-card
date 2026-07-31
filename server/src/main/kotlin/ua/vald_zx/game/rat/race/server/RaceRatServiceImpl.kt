@@ -871,7 +871,7 @@ class RaceRatServiceImpl(
     override suspend fun enterOuterCircle() {
         val currentPlayer = player()
         val conditions = board().outerCircleConditions
-        if (!currentPlayer.canEnterOuterCircle(conditions)) return
+        if (!currentPlayer.canEnterOuterCircle(true, conditions)) return
         updatePlayer {
             copy(
                 location = PlayerLocation(

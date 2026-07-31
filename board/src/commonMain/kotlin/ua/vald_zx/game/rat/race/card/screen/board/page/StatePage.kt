@@ -36,6 +36,7 @@ val greyScaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturat
 fun StatePage(
     player: Player,
     selectedDream: Dream?,
+    outerCircleConditions: OuterCircleConditions,
     victoryConditions: VictoryConditions,
 ) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(state = rememberScrollState())) {
@@ -108,38 +109,78 @@ fun StatePage(
                 price = player.flight * player.config.flightCost
             )
         }
-        Text(
-            text = stringResource(Res.string.victory_conditions),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-        if (victoryConditions.dreamRequired) {
-            VictoryCondition(
-                completed = player.selectedDreamId != null &&
-                        player.selectedDreamId in player.purchasedDreamIds,
-                text = selectedDream?.name
-                    ?: stringResource(Res.string.choose_dream_on_board),
-            )
+        when (player.location.level.toLayer()) {
+            BoardLayer.INNER -> {
+                Text(
+                    text = stringResource(Res.string.outer_circle_conditions),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+                ProgressCondition(
+                    completed = player.cashFlow() >= outerCircleConditions.minimumCashFlow,
+                    text = stringResource(
+                        Res.string.cash_flow_progress,
+                        player.cashFlow().formatAmount(),
+                        outerCircleConditions.minimumCashFlow.formatAmount(),
+                    ),
+                )
+                if (outerCircleConditions.apartmentRequired) {
+                    ProgressCondition(
+                        completed = player.apartment > 0,
+                        text = stringResource(Res.string.apartment_required),
+                    )
+                }
+                if (outerCircleConditions.carRequired) {
+                    ProgressCondition(
+                        completed = player.cars > 0,
+                        text = stringResource(Res.string.car_required),
+                    )
+                }
+                ProgressCondition(
+                    completed = player.balance() >= outerCircleConditions.minimumAccountBalance,
+                    text = stringResource(
+                        Res.string.account_balance_progress,
+                        player.balance().formatAmount(),
+                        outerCircleConditions.minimumAccountBalance.formatAmount(),
+                    ),
+                )
+            }
+
+            BoardLayer.OUTER -> {
+                Text(
+                    text = stringResource(Res.string.victory_conditions),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+                if (victoryConditions.dreamRequired) {
+                    ProgressCondition(
+                        completed = player.selectedDreamId != null &&
+                                player.selectedDreamId in player.purchasedDreamIds,
+                        text = selectedDream?.name
+                            ?: stringResource(Res.string.choose_dream_on_board),
+                    )
+                }
+                if (victoryConditions.planeRequired) {
+                    ProgressCondition(
+                        completed = player.flight > 0,
+                        text = stringResource(Res.string.plane),
+                    )
+                }
+                if (victoryConditions.estateRequired) {
+                    ProgressCondition(
+                        completed = player.cottage > 0,
+                        text = stringResource(Res.string.estate),
+                    )
+                }
+                ProgressCondition(
+                    completed = player.balance() >= victoryConditions.minimumAccountBalance,
+                    text = stringResource(
+                        Res.string.victory_account_balance_value,
+                        victoryConditions.minimumAccountBalance.splitDecimal(),
+                    ),
+                )
+            }
         }
-        if (victoryConditions.planeRequired) {
-            VictoryCondition(
-                completed = player.flight > 0,
-                text = stringResource(Res.string.plane),
-            )
-        }
-        if (victoryConditions.estateRequired) {
-            VictoryCondition(
-                completed = player.cottage > 0,
-                text = stringResource(Res.string.estate),
-            )
-        }
-        VictoryCondition(
-            completed = player.balance() >= victoryConditions.minimumAccountBalance,
-            text = stringResource(
-                Res.string.victory_account_balance_value,
-                victoryConditions.minimumAccountBalance.formatAmount(),
-            ),
-        )
         DetailsField(
             stringResource(Res.string.active_profit),
             player.activeProfit().toString(),
@@ -169,7 +210,7 @@ fun StatePage(
 }
 
 @Composable
-private fun VictoryCondition(
+private fun ProgressCondition(
     completed: Boolean,
     text: String,
 ) {
