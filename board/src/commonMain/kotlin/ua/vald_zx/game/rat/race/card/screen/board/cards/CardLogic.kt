@@ -5,7 +5,6 @@ import ua.vald_zx.game.rat.race.card.shared.Gender
 import ua.vald_zx.game.rat.race.card.shared.PayerType
 import ua.vald_zx.game.rat.race.card.shared.Player
 
-
 fun Player.needPayExpenses(
     expenses: BoardCard.Expenses,
 ): Boolean {

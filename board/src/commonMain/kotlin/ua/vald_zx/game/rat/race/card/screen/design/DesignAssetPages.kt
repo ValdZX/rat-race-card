@@ -18,10 +18,6 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
-/**
- * Один рядок активу для всіх чотирьох вкладок. Заливка завжди нейтральна,
- * семантику несе ліва планка — інакше список перетворюється на вітраж.
- */
 @Composable
 internal fun AssetRow(
     title: String,
@@ -104,10 +100,6 @@ private fun EmptyState() {
     )
 }
 
-/**
- * Список займає всю висоту сторінки: пейджер центрує вміст, який не заповнив
- * слот, і короткий список від'їжджав на середину замість шапки.
- */
 @Composable
 private fun AssetList(isEmpty: Boolean, content: LazyListScopeContent) {
     if (isEmpty) {

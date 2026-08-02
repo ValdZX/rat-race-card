@@ -7,10 +7,6 @@ import androidx.compose.ui.unit.TextUnit
 import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 
-/**
- * Кнопка дії на лиці карти. Розмір веде від ширини карти, тому обидві мови
- * приймають ті самі одиниці масштабу.
- */
 @Composable
 fun EButton(
     title: String,

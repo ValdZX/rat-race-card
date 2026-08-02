@@ -5,7 +5,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import ua.vald_zx.game.rat.race.card.design.Design
 
-/** Штамп карти в новій мові: латунна печатка. Старий — LegacyCardStamp. */
 @Composable
 internal fun DesignCardStamp(glyph: String, unitTS: TextUnit, unitDp: Dp, id: Int?, glyphSize: Float) {
     Stamp(

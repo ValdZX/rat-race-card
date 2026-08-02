@@ -8,7 +8,6 @@ import ua.vald_zx.game.rat.race.card.screen.InputScreen
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.balance
 
-/** Стара мова погашення кредиту. Нова — DesignAmountSheet. */
 @Composable
 internal fun LegacyRepayCreditScreen(vm: BoardViewModel, player: Player, repayable: Long) {
     InputScreen(

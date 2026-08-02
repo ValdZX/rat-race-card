@@ -26,10 +26,6 @@ import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/**
- * Розкрита клітинка піднімає свій трек над сусіднім, і непрозоре ложе треку
- * накривало колоди. Колоди мусять лишатись видимими при наведенні.
- */
 @OptIn(ExperimentalTestApi::class)
 class DesignDeckLayerTest {
 

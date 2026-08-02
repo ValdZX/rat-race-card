@@ -49,7 +49,6 @@ class DesignProfessionRenderTest {
         }
         waitForIdle()
 
-        // cash flow = 4900 − (1200+600+300+400+160) = 2240
         onNodeWithText("+2 240").assertExists()
         onNodeWithText("−1 200").assertExists()
 

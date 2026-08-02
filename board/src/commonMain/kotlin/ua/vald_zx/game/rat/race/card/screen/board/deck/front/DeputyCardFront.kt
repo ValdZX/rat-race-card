@@ -17,7 +17,6 @@ import ua.vald_zx.game.rat.race.card.components.EButton
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.shared.CardLink
 
-
 @Composable
 fun BoxWithConstraintsScope.DeputyCardFront(
     card: CardLink,

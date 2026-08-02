@@ -68,7 +68,6 @@ class AppActivity : ComponentActivity() {
             .appUpdateInfo
             .addOnSuccessListener { appUpdateInfo ->
                 if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
-                    // If an in-app update is already running, resume the update.
                     appUpdateManager.startUpdateFlowForResult(
                         appUpdateInfo,
                         activityResultLauncher,

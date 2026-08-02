@@ -15,11 +15,6 @@ import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
-/**
- * Спільна рамка лиця карти: одна точка, через яку проходять усі шість колод.
- * Тип несе кольорова капітель зверху й кромка — так карта впізнається ще до
- * того, як гравець прочитав текст.
- */
 @Composable
 fun DesignCardFrame(
     type: BoardCardType,

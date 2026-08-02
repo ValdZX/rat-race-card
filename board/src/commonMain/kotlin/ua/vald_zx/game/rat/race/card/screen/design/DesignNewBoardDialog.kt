@@ -74,8 +74,6 @@ fun DesignNewBoardDialog(
         onDismissAction = onDismiss,
     ) {
         Column(
-            // ponytail: стеля висоти замість вимірювання вікна — форма довша за
-            // будь-який телефон, а Dialog не віддає доступну висоту дітям.
             modifier = Modifier
                 .heightIn(max = 420.dp)
                 .verticalScroll(rememberScrollState()),

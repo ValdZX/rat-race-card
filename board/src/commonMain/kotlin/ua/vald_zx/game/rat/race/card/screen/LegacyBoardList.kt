@@ -42,7 +42,6 @@ import ua.vald_zx.game.rat.race.card.shared.OuterCircleConditions
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.card.shared.VictoryConditions
 
-/** Стара мова списку дощок. Нова — DesignBoardList. */
 @Composable
 internal fun LegacyBoardList(
     boards: List<BoardId>,
@@ -98,7 +97,6 @@ internal fun LegacyBoardList(
         }
 }
 
-/** Стара мова діалогу створення дошки. Нова — DesignNewBoardDialog. */
 @Composable
 internal fun LegacyNewBoardDialog(
     onDismiss: () -> Unit,

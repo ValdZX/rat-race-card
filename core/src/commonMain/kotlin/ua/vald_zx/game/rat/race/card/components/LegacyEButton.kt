@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 
-/** Кнопка карти в старій мові. Нова — DesignEButton. */
 @Composable
 internal fun LegacyEButton(
     title: String,

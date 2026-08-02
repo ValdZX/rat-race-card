@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.VisualTransformation
 
-/** Поле вводу на карті в старій мові. Нова — DesignOutlinedBasicTextField. */
 @Composable
 internal fun LegacyOutlinedBasicTextField(
     value: String,

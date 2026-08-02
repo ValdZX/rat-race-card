@@ -12,10 +12,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
-/**
- * Діалог за макетом: усі кути 28dp, обводка 1dp + світла кромка зверху,
- * скрим без блюру — на Wasm розмиття коштує забагато.
- */
 @Composable
 fun DesignDialog(
     title: String,

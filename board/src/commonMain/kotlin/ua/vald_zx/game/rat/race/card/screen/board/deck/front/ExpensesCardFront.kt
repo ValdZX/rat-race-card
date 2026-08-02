@@ -33,7 +33,6 @@ import ua.vald_zx.game.rat.race.card.screen.board.visualize.getLocal
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.CardLink
 
-
 @Composable
 fun BoxWithConstraintsScope.ExpensesCardFront(
     card: CardLink,

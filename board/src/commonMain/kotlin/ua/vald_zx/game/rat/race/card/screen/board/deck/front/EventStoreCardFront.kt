@@ -35,7 +35,6 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BusinessType
 import ua.vald_zx.game.rat.race.card.shared.CardLink
 
-
 @Composable
 fun BoxWithConstraintsScope.EventStoreCardFront(
     cardLink: CardLink,

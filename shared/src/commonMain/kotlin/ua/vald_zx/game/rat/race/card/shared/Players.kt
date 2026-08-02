@@ -136,7 +136,6 @@ enum class SharesType {
     IT,
 }
 
-
 @Serializable
 data class Shares(
     val type: SharesType,
@@ -146,7 +145,6 @@ data class Shares(
     val price: Long
         get() = count * buyPrice
 }
-
 
 @Serializable
 data class Estate(
@@ -166,7 +164,6 @@ data class Fund(
     val rate: Long,
     val amount: Long,
 )
-
 
 @Serializable
 data class Config(

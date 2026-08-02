@@ -43,7 +43,6 @@ import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.tts
 import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
-
 class RaceRate2Screen : Screen {
 
     @OptIn(
@@ -238,7 +237,6 @@ class RaceRate2Screen : Screen {
                         is RatRace2CardSideEffect.ConfirmDismissal -> {
                             confirmDismissalDialog = effect.business
                         }
-
 
                         is RatRace2CardSideEffect.ConfirmDismissalOnExtention -> {
                             confirmDismissalOnExtentionDialog = effect.extention

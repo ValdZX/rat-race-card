@@ -46,9 +46,6 @@ fun DesignPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     val coroutineScope = rememberCoroutineScope()
 
-    // Висота шторки — частка екрана, а не весь екран: дошка позаду мусить
-    // лишатися видимою. Вкладки беруть решту після шапки, тож довгі списки
-    // скроляться всередині, а не ростуть у висоту й не стрибають між табами.
     val screenHeight = with(LocalDensity.current) {
         LocalWindowInfo.current.containerSize.height.toDp()
     }
@@ -72,8 +69,6 @@ fun DesignPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
     ) {
         Column(Modifier.fillMaxHeight()) {
             SheetHandle()
-            // Один рядок замість двох: у згорнутому стані шторки висота
-            // фіксована, і двоповерхова шапка різала суми.
             Row(
                 modifier = Modifier.height(littleDetailsHeight - 26.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -271,12 +266,6 @@ private fun TabsRow(player: Player, selected: Int, onSelect: (Int) -> Unit) {
     }
 }
 
-/**
- * Пейджер веде стан вкладок сам: клік по чипу гортає його імперативно, а
- * підсвічений чип читається з `currentPage`. Через `LaunchedEffect` це не
- * можна — ефект перезапускає анімацію й забирає жест у списків усередині,
- * тож довгі вкладки переставали скролитись.
- */
 @Composable
 internal fun DesignSheetPages(
     player: Player,

@@ -45,7 +45,6 @@ import ua.vald_zx.game.rat.race.card.shared.dreamById
 import ua.vald_zx.game.rat.race.card.shared.moveTo
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
-
 @Composable
 private fun PlaceType.text(): String {
     return when (this) {
@@ -89,7 +88,6 @@ private fun PlaceType.color(): Color {
         PlaceType.Resignation -> AppTheme.colors.exaltation
     }
 }
-
 
 @Composable
 fun BoxScope.PlaceContent(
@@ -418,7 +416,6 @@ fun BoxScope.PlaceContent(
         }
     }
 }
-
 
 @Composable
 fun BoxScope.Places(

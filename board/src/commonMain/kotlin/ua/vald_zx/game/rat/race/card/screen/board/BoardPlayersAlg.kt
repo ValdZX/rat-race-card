@@ -33,53 +33,51 @@ fun calculatePointerOffset(
         1 -> Pair(0.dp, 0.dp)
 
         2 -> when (index) {
-            0 -> Pair(-offsetX, -offsetY) // Верхній лівий
-            else -> Pair(offsetX, offsetY) // Нижній правий
+            0 -> Pair(-offsetX, -offsetY)
+            else -> Pair(offsetX, offsetY)
         }
 
         3 -> when (index) {
-            0 -> Pair(-offsetX, -offsetY) // Верхній лівий
-            1 -> Pair(0.dp, 0.dp)             // Центр
-            else -> Pair(offsetX, offsetY) // Нижній правий
+            0 -> Pair(-offsetX, -offsetY)
+            1 -> Pair(0.dp, 0.dp)
+            else -> Pair(offsetX, offsetY)
         }
 
         4 -> when (index) {
-            0 -> Pair(-offsetX, -offsetY) // Верхній лівий
-            1 -> Pair(offsetX, -offsetY)  // Верхній правий
-            2 -> Pair(-offsetX, offsetY)  // Нижній лівий
-            else -> Pair(offsetX, offsetY) // Нижній правий
+            0 -> Pair(-offsetX, -offsetY)
+            1 -> Pair(offsetX, -offsetY)
+            2 -> Pair(-offsetX, offsetY)
+            else -> Pair(offsetX, offsetY)
         }
 
         5 -> when (index) {
-            0 -> Pair(-offsetX, -offsetY) // Верхній лівий
-            1 -> Pair(offsetX, -offsetY)  // Верхній правий
-            2 -> Pair(-offsetX, offsetY)  // Нижній лівий
-            3 -> Pair(offsetX, offsetY)  // Нижній правий
-            else -> Pair(0.dp, 0.dp)          // Центр
+            0 -> Pair(-offsetX, -offsetY)
+            1 -> Pair(offsetX, -offsetY)
+            2 -> Pair(-offsetX, offsetY)
+            3 -> Pair(offsetX, offsetY)
+            else -> Pair(0.dp, 0.dp)
         }
 
         6 -> when (index) {
-            0 -> Pair(-offsetX, -offsetY) // Стовпчик 1
+            0 -> Pair(-offsetX, -offsetY)
             1 -> Pair(-offsetX, 0.dp)
             2 -> Pair(-offsetX, offsetY)
-            3 -> Pair(offsetX, -offsetY)  // Стовпчик 2
+            3 -> Pair(offsetX, -offsetY)
             4 -> Pair(offsetX, 0.dp)
             else -> Pair(offsetX, offsetY)
         }
 
         7 -> when (index) {
-            0 -> Pair(-offsetX, -offsetY) // 6 точок як у випадку 6
+            0 -> Pair(-offsetX, -offsetY)
             1 -> Pair(-offsetX, 0.dp)
             2 -> Pair(-offsetX, offsetY)
             3 -> Pair(offsetX, -offsetY)
             4 -> Pair(offsetX, 0.dp)
             5 -> Pair(offsetX, offsetY)
-            else -> Pair(0.dp, 0.dp)          // 7-а точка в центрі
+            else -> Pair(0.dp, 0.dp)
         }
 
         8 -> {
-            // Сітка 3x3 без центральної точки.
-            // "Пропускаємо" центральний індекс (4)
             val adjustedIndex = if (index >= 4) index + 1 else index
             val col = adjustedIndex % 3
             val row = adjustedIndex / 3
@@ -87,16 +85,13 @@ fun calculatePointerOffset(
         }
 
         9 -> {
-            // Повна сітка 3x3
-            val col = index % 3 // 0, 1, 2
-            val row = index / 3 // 0, 1, 2
-            // Перетворюємо індекси (0,1,2) в множники (-1, 0, 1) для зміщення
+            val col = index % 3
+            val row = index / 3
             Pair(offsetX * (col - 1), offsetY * (row - 1))
         }
 
-        else -> Pair(0.dp, 0.dp) // Недосяжний код через валідацію, але компілятор вимагає
+        else -> Pair(0.dp, 0.dp)
     }
-
 
     return Pair(centerX + offset.first, centerY + offset.second)
 }

@@ -13,10 +13,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
 
-/**
- * Рядок-перемикач: увесь рядок клікабельний, бо влучити в перемикач пальцем
- * важче, ніж у смугу тексту.
- */
 @Composable
 fun DesignToggleRow(
     label: String,

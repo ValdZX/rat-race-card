@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -95,7 +96,7 @@ class DesignBoardTracksRenderTest {
                 Box(
                     Modifier
                         .size(760.dp, 520.dp)
-                        .background(Design.scaffold.background)
+                        .background(if (dark) Design.scaffold.background else Color(0xFFFFB370))
                         .testTag("board")
                 ) {
                     StaticTracks(layout.outerRoute, layout.innerRoute, playerLevel)
@@ -120,11 +121,6 @@ class DesignBoardTracksRenderTest {
         DesignTrackForTest(inner, if (playerLevel == inner.layer.level) CellSurface.Tile else CellSurface.Engraved)
     }
 
-    /**
-     * На телефоні клітинка треку ~15dp. Слово там не влазить за жодного кегля,
-     * тому дрібна клітинка живого треку несе піктограму, а неактивний трек
-     * мовчить — на ньому лишаються тільки кутові події.
-     */
     @Test
     fun phoneSizedCellsKeepAReadableLabel() = runComposeUiTest {
         val size = DpSize(360.dp, 420.dp)
@@ -154,4 +150,8 @@ class DesignBoardTracksRenderTest {
 
     @Test
     fun playerOnOuterTrack() = render("outer-live", dark = true, playerLevel = BoardLayer.OUTER.level)
+
+    @Test
+    fun lightBoardBackgroundTransition() =
+        render("light-transition", dark = false, playerLevel = BoardLayer.INNER.level)
 }

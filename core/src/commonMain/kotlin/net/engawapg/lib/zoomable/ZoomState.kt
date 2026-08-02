@@ -1,18 +1,3 @@
-/*
- * Copyright 2022 usuiat
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package net.engawapg.lib.zoomable
 
@@ -39,15 +24,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-/**
- * A state object that manage scale and offset.
- *
- * @param maxScale The maximum scale of the content.
- * @param contentSize Size of content (i.e. image size.) If Zero, the composable layout size will
- * be used as content size.
- * @param velocityDecay The decay animation spec for fling behaviour.
- * @param initialScale The initial scale of the content.
- */
 @Stable
 public class ZoomState(
     public val maxScale: Float = 5f,
@@ -64,47 +40,26 @@ public class ZoomState(
         updateBounds(0.9f, maxScale)
     }
 
-    /**
-     * The scale of the content.
-     */
     public val scale: Float
         get() = _scale.value
 
     private var _offsetX = Animatable(0f)
 
-    /**
-     * The horizontal offset of the content.
-     */
     public val offsetX: Float
         get() = _offsetX.value
 
     private var _offsetY = Animatable(0f)
 
-    /**
-     * The vertical offset of the content.
-     */
     public val offsetY: Float
         get() = _offsetY.value
 
     private var layoutSize = Size.Zero
 
-    /**
-     * Set composable layout size.
-     *
-     * Basically This function is called from [Modifier.zoomable] only.
-     *
-     * @param size The size of composable layout size.
-     */
     public fun setLayoutSize(size: Size) {
         layoutSize = if (size.isUnspecified) Size.Zero else size
         updateFitContentSize()
     }
 
-    /**
-     * Set the content size.
-     *
-     * @param size The content size, for example an image size in pixel.
-     */
     public fun setContentSize(size: Size) {
         contentSize = if (size.isUnspecified) Size.Zero else size
         updateFitContentSize()
@@ -138,9 +93,6 @@ public class ZoomState(
         changeScale(initialScale, Offset(size.width / 2, size.height / 2))
     }
 
-    /**
-     * Reset the scale and the offsets.
-     */
     public suspend fun reset(): Unit = coroutineScope {
         launch { _scale.snapTo(initialScale) }
         _offsetX.updateBounds(0f, 0f)
@@ -158,22 +110,18 @@ public class ZoomState(
     internal fun willChangeOffset(pan: Offset): Boolean {
         var willChange = true
         val ratio = (abs(pan.x) / abs(pan.y))
-        if (ratio > 3) { // Horizontal drag
+        if (ratio > 3) {
             if ((pan.x < 0) && (_offsetX.value == _offsetX.lowerBound)) {
-                // Drag R to L when right edge of the content is shown.
                 willChange = false
             }
             if ((pan.x > 0) && (_offsetX.value == _offsetX.upperBound)) {
-                // Drag L to R when left edge of the content is shown.
                 willChange = false
             }
-        } else if (ratio < 0.33) { // Vertical drag
+        } else if (ratio < 0.33) {
             if ((pan.y < 0) && (_offsetY.value == _offsetY.lowerBound)) {
-                // Drag bottom to top when bottom edge of the content is shown.
                 willChange = false
             }
             if ((pan.y > 0) && (_offsetY.value == _offsetY.upperBound)) {
-                // Drag top to bottom when top edge of the content is shown.
                 willChange = false
             }
         }
@@ -228,15 +176,6 @@ public class ZoomState(
         return Offset(consumedX, consumedY)
     }
 
-    /**
-     * Change the scale with animation.
-     *
-     * Zoom in or out to [targetScale] around the [position].
-     *
-     * @param targetScale The target scale value.
-     * @param position Zoom around this point.
-     * @param animationSpec The animation configuration.
-     */
     public suspend fun changeScale(
         targetScale: Float,
         position: Offset,
@@ -265,13 +204,6 @@ public class ZoomState(
         }
     }
 
-    /**
-     * Toggle the scale between [targetScale] and 1.0f.
-     *
-     * @param targetScale Scale to be set if this function is called when the scale is 1.0f.
-     * @param position Zoom around this point.
-     * @param animationSpec The animation configuration.
-     */
     public suspend fun toggleScale(
         targetScale: Float,
         position: Offset,
@@ -281,17 +213,14 @@ public class ZoomState(
         changeScale(newScale, position, animationSpec)
     }
 
-
     private fun calculateNewOffset(newScale: Float, position: Offset, pan: Offset): Offset {
         val size = fitContentSize * scale
         val newSize = fitContentSize * newScale
         val deltaWidth = newSize.width - size.width
         val deltaHeight = newSize.height - size.height
 
-        // Position with the origin at the left top corner of the content.
         val xInContent = position.x - offsetX + (size.width - layoutSize.width) * 0.5f
         val yInContent = position.y - offsetY + (size.height - layoutSize.height) * 0.5f
-        // Amount of offset change required to zoom around the position.
         val deltaX = (deltaWidth * 0.5f) - (deltaWidth * xInContent / size.width)
         val deltaY = (deltaHeight * 0.5f) - (deltaHeight * yInContent / size.height)
 
@@ -322,13 +251,6 @@ public class ZoomState(
         }
     }
 
-    /**
-     * Animates the centering of content by modifying the offset and scale based on content coordinates.
-     *
-     * @param offset The offset to apply for centering the content.
-     * @param scale The scale to apply for zooming the content.
-     * @param animationSpec AnimationSpec for centering and scaling.
-     */
     public suspend fun centerByContentCoordinate(
         offset: Offset,
         scale: Float = 3f,
@@ -347,7 +269,7 @@ public class ZoomState(
                             .coerceIn(
                                 minimumValue = -boundX,
                                 maximumValue = boundX,
-                            ) // Adjust zoom target position to prevent execute zoom animation to out of content boundaries
+                            )
                     _offsetX.animateTo(fixedTargetOffsetX, animationSpec)
                 },
                 async {
@@ -373,13 +295,6 @@ public class ZoomState(
         }
     }
 
-    /**
-     * Animates the centering of content by modifying the offset and scale based on layout coordinates.
-     *
-     * @param offset The offset to apply for centering the content.
-     * @param scale The scale to apply for zooming the content.
-     * @param animationSpec AnimationSpec for centering and scaling.
-     */
     public suspend fun centerByLayoutCoordinate(
         offset: Offset,
         scale: Float = 3f,
@@ -396,7 +311,7 @@ public class ZoomState(
                             .coerceIn(
                                 minimumValue = -boundX,
                                 maximumValue = boundX,
-                            ) // Adjust zoom target position to prevent execute zoom animation to out of content boundaries
+                            )
                     _offsetX.animateTo(fixedTargetOffsetX, animationSpec)
                 },
                 async {
@@ -422,15 +337,6 @@ public class ZoomState(
     }
 }
 
-/**
- * Creates a [ZoomState] that is remembered across compositions.
- *
- * @param maxScale The maximum scale of the content.
- * @param contentSize Size of content (i.e. image size.) If Zero, the composable layout size will
- * be used as content size.
- * @param velocityDecay The decay animation spec for fling behaviour.
- * @param initialScale The initial scale of the content.
- */
 @Composable
 public fun rememberZoomState(
     maxScale: Float = 5f,

@@ -31,7 +31,6 @@ import ua.vald_zx.game.rat.race.card.screen.board.cards.chanceCards
 import ua.vald_zx.game.rat.race.card.screen.board.page.label
 import ua.vald_zx.game.rat.race.card.shared.*
 
-
 @Composable
 fun BoxWithConstraintsScope.ChanceCardFront(
     cardLink: CardLink,

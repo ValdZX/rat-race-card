@@ -56,7 +56,6 @@ import ua.vald_zx.game.rat.race.card.shared.cashFlow
 import ua.vald_zx.game.rat.race.card.shared.total
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
-
 data class PlayerPointState(
     val position: Int,
     val color: Long,
@@ -169,14 +168,7 @@ fun PlayerPoint(
                 modifier = Modifier,
                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above, 4.dp),
                 tooltip = {
-                    if (pointerState.isCurrentPlayer) {
-//                        CurrentPlayerTooltip(
-//                            pointerState = pointerState,
-//                            vm = vm,
-//                            tooltipState = tooltipState,
-//                            coroutineScope = coroutineScope
-//                        )
-                    } else {
+                    if (!pointerState.isCurrentPlayer) {
                         PlayerTooltip(pointerState, tooltipState, coroutineScope) {
                             bottomSheetNavigator.show(
                                 SendMoneyScreen(

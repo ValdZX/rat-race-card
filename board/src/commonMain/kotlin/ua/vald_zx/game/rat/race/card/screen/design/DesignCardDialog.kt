@@ -21,16 +21,10 @@ import ua.vald_zx.game.rat.race.card.screen.board.deck.front.BoardCardFront
 private const val ENTER_MS = 220
 private const val EXIT_MS = 160
 
-/**
- * Карта в новій мові зʼявляється на місці, а не летить через півекрана:
- * підйом із затемненням за 220 мс замість двосекундного польоту з перевертанням.
- * Стара механіка лишилась у LegacyCardDialog.
- */
 @Composable
 fun BoxWithConstraintsScope.DesignCardDialog(vm: BoardViewModel) {
     val state by vm.uiState.collectAsState()
     val takenCard = state.board.takenCard
-    // Карту тримаємо до кінця анімації виходу, інакше вона зникає ривком.
     var shownCard by remember { mutableStateOf(takenCard) }
     val visible = takenCard != null
     LaunchedEffect(takenCard) {

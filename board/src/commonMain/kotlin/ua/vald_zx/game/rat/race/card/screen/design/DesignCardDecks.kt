@@ -1,6 +1,5 @@
 package ua.vald_zx.game.rat.race.card.screen.design
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -33,7 +32,6 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.*
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
-/** Шар колод над треками; фішки й репліки — ще вище. */
 internal const val DECKS_Z = 2f
 
 @Composable
@@ -43,12 +41,9 @@ fun BoxScope.DesignCardDecks(layout: CardDeckLayout, vm: BoardViewModel) {
         modifier = Modifier
             .align(Alignment.Center)
             .size(layout.size)
-            // Трек із розкритою кліткою піднімається над сусіднім треком, і
-            // без цього його непрозоре ложе накривало колоди.
             .zIndex(DECKS_Z)
     ) {
         layout.slots.forEach { slot ->
-            // Відбій рахує зіграні карти, колода — ті, що лишились у ній.
             val count = if (slot.kind == CardDeckSlotKind.DISCARD) {
                 state.board.discard[slot.type].orEmpty().size
             } else {
@@ -61,6 +56,7 @@ fun BoxScope.DesignCardDecks(layout: CardDeckLayout, vm: BoardViewModel) {
                 modifier = Modifier
                     .offset(slot.offset.x, slot.offset.y)
                     .size(slot.size)
+                    .zIndex(if (canTake) 1f else 0f)
             ) {
                 DeckSlot(
                     type = slot.type,
@@ -88,18 +84,8 @@ internal fun DeckSlot(
     val tone = type.tone()
     val density = LocalDensity.current
     val isDraw = kind == CardDeckSlotKind.DRAW
-    // Макет дає колоді r-xl 22dp, але там вона на пів екрана. На телефоні
-    // слот 35×53dp, і 22dp перетворюють його на пігулку.
-    val shape = if (min(size.width, size.height) >= 56.dp) DesignShapes.xl else DesignShapes.sm
-
-    // «Можна діяти» — цоколь і пульс обводки, без світіння.
-    val transition = rememberInfiniteTransition(label = "DeckAffordance")
-    val pulse by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing)),
-        label = "DeckPulse",
-    )
+    val minSize = min(size.width, size.height)
+    val shape = if (minSize >= 56.dp) DesignShapes.xl else DesignShapes.sm
 
     Box(
         modifier = Modifier
@@ -110,56 +96,66 @@ internal fun DeckSlot(
                 val map = if (isDraw) deckCoordinatesMap else discardPilesCoordinatesMap
                 map.getOrPut(type) { mutableStateOf(offset to size) }.value = offset to size
             }
-            .optionalModifier(actionable) { plinth(colors.scaffold.accentDim, 4.dp, shape) }
-            .clip(shape)
-            .background(if (isDraw && count > 0) tone.fill else colors.scaffold.surface3)
-            .border(
-                width = if (actionable) 2.dp else 1.dp,
-                color = when {
-                    actionable -> colors.scaffold.accent.copy(alpha = 1f - pulse * 0.5f)
-                    isDraw && count > 0 -> tone.edge
-                    else -> colors.scaffold.outline
-                },
-                shape = shape,
-            )
             .optionalModifier(actionable) { clickableSingle(onClick = onClick) },
         contentAlignment = Alignment.Center,
     ) {
-        val ink = if (isDraw && count > 0) colors.scaffold.onFill else colors.scaffold.onSurfaceMuted
-        // Підпис влазить лише у високий слот: на телефоні він з'їдав два рядки,
-        // і цифра — те, заради чого слот і читають — обрізалась.
-        val withLabel = size.height >= 72.dp
-        // Розмір знака веде розмір слота, а не залишок місця в колонці:
-        // інакше він стрибав щоразу, коли змінювалась кількість карт.
-        val iconSize = min(size.width, size.height) * if (withLabel) 0.42f else 0.34f
-        Column(
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
-        ) {
-            Icon(
-                painter = type.icon(),
-                contentDescription = type.shortLabel(),
-                tint = ink,
-                modifier = Modifier.size(iconSize),
+        if (actionable) {
+            DesignActivePulse(
+                shape = shape,
+                anchorColor = tone.edge,
+                maxExpansion = 0.2f,
+                strokeWidth = minSize/40,
             )
-            if (withLabel) {
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .optionalModifier(actionable) { plinth(colors.scaffold.accentDim, 4.dp, shape) }
+                .clip(shape)
+                .background(if (isDraw && count > 0) tone.fill else colors.scaffold.surface3)
+                .border(
+                    width = if (actionable) 2.dp else 1.dp,
+                    color = when {
+                        actionable -> colors.scaffold.accent
+                        isDraw && count > 0 -> tone.edge
+                        else -> colors.scaffold.outline
+                    },
+                    shape = shape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            val ink = if (isDraw && count > 0) colors.scaffold.onFill else colors.scaffold.onSurfaceMuted
+            val withLabel = size.height >= 72.dp
+            val iconSize = minSize * if (withLabel) 0.42f else 0.34f
+            Column(
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+            ) {
+                Icon(
+                    painter = type.icon(),
+                    contentDescription = type.shortLabel(),
+                    tint = ink,
+                    modifier = Modifier.size(iconSize),
+                )
+                if (withLabel) {
+                    Text(
+                        text = type.shortLabel(),
+                        style = Design.type.cellSm,
+                        color = ink,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 Text(
-                    text = type.shortLabel(),
-                    style = Design.type.cellSm,
+                    text = count.toString(),
+                    style = Design.type.monoMeta,
                     color = ink,
-                    textAlign = TextAlign.Center,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    softWrap = false,
                 )
             }
-            Text(
-                text = count.toString(),
-                style = Design.type.monoMeta,
-                color = ink,
-                maxLines = 1,
-                softWrap = false,
-            )
         }
     }
 }

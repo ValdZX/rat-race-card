@@ -36,7 +36,6 @@ import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 @Composable
-/** Стара мова шторки гравця. Нова — DesignPlayerSheet. */
 fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
     val state by vm.uiState.collectAsState()
     val player = state.player

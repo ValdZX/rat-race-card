@@ -1,18 +1,3 @@
-/*
- * Copyright 2022 usuiat
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package net.engawapg.lib.zoomable
 
@@ -40,23 +25,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import kotlinx.coroutines.launch
 
-/**
- * A modifier function that allows content to be zoomable.
- *
- * @param zoomState A [ZoomState] object.
- * @param zoomEnabled specifies if zoom behaviour is enabled or disabled. Even if this is false,
- * [onTap] and [onDoubleTap] will be called.
- * @param enableOneFingerZoom If true, enable one finger zoom gesture, double tap followed by
- * vertical scrolling.
- * @param scrollGesturePropagation specifies when scroll gestures are propagated to the parent
- * composable element.
- * @param onTap will be called when single tap is detected on the element.
- * @param onDoubleTap will be called when double tap is detected on the element. This is a suspend
- * function and called in a coroutine scope. The default is to toggle the scale between 1.0f and
- * 2.5f with animation.
- * @param onLongPress will be called when time elapses without the pointer moving
- * @param mouseWheelZoom specifies mouse wheel zoom behaviour.
- */
 public fun Modifier.zoomable(
     zoomState: ZoomState,
     zoomEnabled: Boolean = true,
@@ -81,18 +49,6 @@ public fun Modifier.zoomable(
     enableNestedScroll = false,
 )
 
-/**
- * A modifier function that allows content to be zoomable and automatically return to its original size when the finger is released.
- *
- * @param zoomState A [ZoomState] object.
- * @param zoomEnabled specifies if zoom behaviour is enabled or disabled. Even if this is false,
- * [onTap] and [onDoubleTap] will be called.
- * @param onTap will be called when single tap is detected on the element.
- * @param onDoubleTap will be called when double tap is detected on the element. This is a suspend
- * function and called in a coroutine scope. The default is to toggle the scale between 1.0f and
- * 2.5f with animation.
- * @param onLongPress will be called when time elapses without the pointer moving
- */
 public fun Modifier.snapBackZoomable(
     zoomState: ZoomState,
     zoomEnabled: Boolean = true,
@@ -112,29 +68,6 @@ public fun Modifier.snapBackZoomable(
     enableNestedScroll = false,
 )
 
-/**
- * A modifier function that allows scrollable content to be zoomable.
- *
- * It can be applied to lazy composable functions such as LazyColumn and LazyRow.
- *
- * It can also be applied in combination with Modifier.verticalScroll for Columns, or
- * Modifier.horizontalScroll for Rows. In these case, please write it before verticalScroll or
- * horizontalScroll in the modifier chain.
- *
- * @param zoomState A [ZoomState] object.
- * @param zoomEnabled specifies if zoom behaviour is enabled or disabled. Even if this is false,
- * [onTap] and [onDoubleTap] will be called.
- * @param enableOneFingerZoom If true, enable one finger zoom gesture, double tap followed by
- * vertical scrolling.
- * @param scrollGesturePropagation specifies when scroll gestures are propagated to the parent
- * composable element.
- * @param onTap will be called when single tap is detected on the element.
- * @param onDoubleTap will be called when double tap is detected on the element. This is a suspend
- * function and called in a coroutine scope. The default is to toggle the scale between 1.0f and
- * 2.5f with animation.
- * @param onLongPress will be called when time elapses without the pointer moving
- * @param mouseWheelZoom specifies mouse wheel zoom behaviour.
- */
 @ExperimentalZoomableApi
 public fun Modifier.zoomableWithScroll(
     zoomState: ZoomState,

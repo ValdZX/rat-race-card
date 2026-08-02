@@ -14,10 +14,6 @@ import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
-/**
- * Один компонент замість шести полів-показників. Тон керує лише лівою планкою
- * і кольором числа — заливка завжди surface2, тому картка не рябіє.
- */
 @Composable
 fun ValueField(
     label: String,
@@ -85,10 +81,6 @@ fun DesignSectionTitle(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/**
- * Латунний жетон «чекає на тебе»: сигнал містить цифру, тому не плутається
- * з «натисни мене».
- */
 @Composable
 fun BrassToken(
     label: String,

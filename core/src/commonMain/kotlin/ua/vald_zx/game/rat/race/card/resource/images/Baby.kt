@@ -521,7 +521,6 @@ val Images.Baby: ImageVector
 @Suppress("ObjectPropertyName")
 private var _Baby: ImageVector? = null
 
-
 @Preview
 @Composable
 private fun Preview() {

@@ -31,7 +31,6 @@ import ua.vald_zx.game.rat.race.card.screen.board.cards.title
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.CardLink
 
-
 @Composable
 fun BoxWithConstraintsScope.ShoppingCardFront(
     card: CardLink,
@@ -109,7 +108,6 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
         }
     }
 }
-
 
 @Preview
 @Composable

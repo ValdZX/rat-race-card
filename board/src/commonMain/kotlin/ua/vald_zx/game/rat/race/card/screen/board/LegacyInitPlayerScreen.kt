@@ -27,7 +27,6 @@ import ua.vald_zx.game.rat.race.card.screen.board.cards.womenProfessionCards
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Gender
 
-/** Стара мова екрана входу в партію. Нова — DesignInitPlayerContent. */
 @Composable
 internal fun LegacyInitPlayerContent(board: Board, colorState: MutableState<Long>) {
     val navigator = LocalNavigator.currentOrThrow

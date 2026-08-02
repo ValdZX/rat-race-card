@@ -13,7 +13,6 @@ import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.NegativeField
 import ua.vald_zx.game.rat.race.card.components.PositiveField
 
-
 @Preview
 @Composable
 fun FieldPreview() {

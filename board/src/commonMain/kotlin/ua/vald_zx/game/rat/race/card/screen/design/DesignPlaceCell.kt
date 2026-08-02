@@ -59,13 +59,8 @@ import ua.vald_zx.game.rat.race.card.components.rotateLayout
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 
-/**
- * П'ять силуетів рамки. Тип клітинки має читатись із 60 см, де кольори
- * сусідніх клітинок уже зливаються, тому форма несе більше за колір.
- */
 enum class CellFamily { Service, Card, Loss, Asset, Life }
 
-/** Живий трек — плитка; неактивний — гравіювання на дошці. */
 enum class CellSurface { Tile, Engraved }
 
 val PlaceType.family: CellFamily
@@ -117,19 +112,23 @@ fun DesignPlaceCell(
     val engraved = surface == CellSurface.Engraved
     val shape = remember(type.family) { CellShape(type.family) }
 
-    // Наведення курсором на десктопі й вебі; тап — на телефоні. Обидва ведуть
-    // в один стан «клітинка в фокусі», який тримає трек.
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     LaunchedEffect(hovered) { onFocusChange?.invoke(hovered, false) }
 
     Box(modifier = modifier, contentAlignment = Alignment.TopEnd) {
+        if (waitingAmount != null) {
+            DesignActivePulse(
+                shape = shape,
+                anchorColor = colors.scaffold.brass,
+                maxExpansion = 0.16f,
+                strokeWidth = 1.5.dp,
+            )
+        }
     Box(
         modifier = Modifier
             .fillMaxSize()
             .optionalModifier(waitingAmount != null) { plinth(colors.scaffold.brass, 3.dp, shape) }
-            // Цоколь на клітинці 15dp не видно, а тінь із власною формою — це
-            // окремий шар на кожну з ~90 клітинок. На телефоні платити за це нічим.
             .optionalModifier(!engraved && !compact) { levelTile(tone.edge, shape) }
             .clip(shape)
             .optionalModifier(!engraved) { background(tone.fill) }
@@ -147,7 +146,6 @@ fun DesignPlaceCell(
                 shape = shape,
             )
             .hoverable(interaction)
-            // Клітинка з дією лишає тап дії; решта тапом розкриває підпис.
             .optionalModifier(onClick != null) { clickableSingle { onClick?.invoke() } }
             .optionalModifier(onClick == null && onFocusChange != null) {
                 clickableSingle { onFocusChange?.invoke(true, true) }
@@ -160,7 +158,6 @@ fun DesignPlaceCell(
             Icon(
                 painter = type.icon(),
                 contentDescription = label,
-                // На неактивному треку знак приглушений: він орієнтир, а не сигнал.
                 tint = if (engraved && !expanded) colors.scaffold.onSurfaceMuted else ink,
                 modifier = modifier,
             )
@@ -184,8 +181,6 @@ fun DesignPlaceCell(
             icon(Modifier.fillMaxSize(0.66f))
         }
     }
-        // Жетон із сумою: сигнал «чекає на тебе» містить цифру,
-        // тому не плутається з «натисни мене».
         if (waitingAmount != null) {
             WaitingToken(waitingAmount, Modifier.offset(x = 6.dp, y = (-8).dp))
         }
@@ -214,10 +209,6 @@ private fun WaitingToken(amount: Long, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * Силует рамки за родиною. Саме форма, а не колір, робить тип упізнаваним,
- * коли клітинка займає 17×34dp і стоїть у щільному ряду.
- */
 private class CellShape(private val family: CellFamily) : Shape {
     override fun createOutline(
         size: Size,
@@ -229,7 +220,6 @@ private class CellShape(private val family: CellFamily) : Shape {
             addRoundRect(RoundRect(0f, 0f, size.width, size.height, CornerRadius(r)))
         }
         val cut = when (family) {
-            // Загнутий кут праворуч угорі
             CellFamily.Card -> {
                 val fold = size.minDimension * 0.28f
                 Path().apply {
@@ -239,7 +229,6 @@ private class CellShape(private val family: CellFamily) : Shape {
                     close()
                 }
             }
-            // Клин, вирізаний із нижньої кромки
             CellFamily.Loss -> {
                 val notch = size.minDimension * 0.36f
                 Path().apply {
@@ -257,20 +246,12 @@ private class CellShape(private val family: CellFamily) : Shape {
     }
 }
 
-/** Нижня межа знака в розкритій пігулці: менше за це він не стає ніколи. */
 internal val expandedIconSize = 24.dp
 
-/** Частка клітинки під знак у згорнутому стані. */
 internal const val COLLAPSED_ICON_FRACTION = 0.66f
 
-/**
- * Скільки в розкритій клітинці займає все, крім підпису: знак, зазор і поля.
- * Живе поруч із самою розкладкою, бо трек рахує від нього ширину — коли це
- * була окрема константа, вони розійшлись і текст обрізало.
- */
 internal fun expandedLabelChrome(iconSize: Dp): Dp = iconSize + 6.dp + 16.dp
 
-/** Кегль розкритого підпису: фіксований і читабельний, клітинка росте під нього. */
 @Composable
 internal fun expandedLabelStyle() = Design.type.cellSm.copy(
     fontWeight = FontWeight.ExtraBold,

@@ -43,7 +43,6 @@ class StatisticsScreen : Screen {
                 val primary = MaterialTheme.colorScheme.primary
                 val tertiary = MaterialTheme.colorScheme.tertiary
                 val cashColor = AppTheme.colors.cash
-                // Localized labels
                 val totalAssetsText = stringResource(Res.string.total_assets)
                 val cashFlowText = stringResource(Res.string.cash_flow)
                 val cashText = stringResource(Res.string.cash)

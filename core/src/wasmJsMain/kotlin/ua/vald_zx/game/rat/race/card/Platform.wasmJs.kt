@@ -23,7 +23,6 @@ actual inline fun <reified T : @Serializable Any> getStore(name: String, default
 }
 
 actual fun share(data: String?) {
-    //nop
 }
 
 private var tts: TextToSpeechInstance? = null

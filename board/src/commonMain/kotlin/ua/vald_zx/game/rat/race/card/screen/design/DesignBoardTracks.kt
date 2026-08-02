@@ -2,7 +2,6 @@ package ua.vald_zx.game.rat.race.card.screen.design
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
@@ -47,20 +46,13 @@ import ua.vald_zx.game.rat.race.card.shared.moveTo
 
 private val trackGap = 1.5.dp
 
-/** Розкрита клітинка лягає над колодами; фішки — ще вище. */
 internal const val FOCUSED_CELL_Z = 10f
 
-/** Нижня межа висоти розкриття: на телефоні два модулі дають менше за рядок. */
 private val minExpandedHeight = 34.dp
 
 private fun Int.onTrack(layout: RouteLayout): Int =
     moveTo(this, layout.layer.cellCount, layout.route.offset)
 
-/**
- * Обидва треки. Живий отримує плитки, минулий або ще недосяжний — гравіювання.
- * Різниця в характері, а не в яскравості: у чорно-білому знімку теж видно,
- * де гравець зараз ходить.
- */
 @Composable
 fun BoxScope.DesignBoardTracks(vm: BoardViewModel, layout: BoardLayout, focus: CellFocus) {
     val state by vm.uiState.collectAsState()
@@ -88,16 +80,6 @@ fun BoxScope.DesignBoardTracks(vm: BoardViewModel, layout: BoardLayout, focus: C
     )
 }
 
-/**
- * Фокус клітинки. Наведення й тап ведуть один стан на всю дошку.
- *
- * Згасання від наведення навмисно відкладене: коли клітинка розкривається,
- * фішка на ній відпливає й виходить з-під вказівника, а курсор на мить
- * лишається без жодного носія наведення. Без відкладення це давало
- * нескінченне «розкрилась — згорнулась». Тап тримається кілька секунд і гасне
- * сам, бо на дошці немає порожнього місця, куди тапнути.
- */
-/** Хто саме тримає фокус: від цього залежить, чи відпливає фішка. */
 enum class FocusSource { Cell, Token, Tap }
 
 @Stable
@@ -109,7 +91,6 @@ class CellFocus {
     private var fromTap by mutableStateOf(false)
     private var pendingRelease by mutableStateOf(false)
 
-    /** Росте на кожну зміну наведення — по ньому перезапускається відкладене згасання. */
     internal var epoch by mutableStateOf(0)
         private set
 
@@ -125,7 +106,6 @@ class CellFocus {
         }
     }
 
-    /** Гасить наведення, якщо його так і не перехопив інший носій. */
     internal fun clearHover() {
         if (pendingRelease && !fromTap) {
             key = null
@@ -144,7 +124,6 @@ class CellFocus {
     internal val awaitsRelease: Boolean get() = pendingRelease
 }
 
-/** Скільки фокус переживає порожнечу між клітинкою й фішкою. */
 private const val HOVER_GRACE_MS = 140L
 
 @Composable
@@ -186,9 +165,6 @@ private fun BoxScope.DesignTrack(
     val bedAlpha by animateFloatAsState(if (live) 1f else 0.55f, label = "TrackBed")
     val level = layout.layer.level
     val expandedBox = expandedCellBox(layout)
-    // Знак у розкритій клітинці — один на весь трек і не менший за найбільший
-    // згорнутий: інакше на великій дошці розкриття виглядало як зменшення,
-    // а знак «за своєю клітинкою» знову робив пігулки різної ширини.
     val expandedIcon = remember(layout, expandedBox) {
         val widest = layout.places.maxOf { minOf(it.place.size.width, it.place.size.height) }
         (widest * COLLAPSED_ICON_FRACTION)
@@ -197,24 +173,23 @@ private fun BoxScope.DesignTrack(
     }
     val focusedIndex = if (live && focus.key?.first == level) focus.key?.second else null
 
-    // Ложе — окремий шар унизу. Разом із клітинками воно піднімалось над
-    // колодами й накривало їх непрозорим прямокутником.
     Box(
         modifier = Modifier
             .align(Alignment.Center)
             .size(layout.size)
             .alpha(bedAlpha)
-            .background(colors.scaffold.surface4)
+            .drawBehind {
+                drawFadedBed(
+                    color = colors.scaffold.surface4,
+                    fade = layout.cellSize.width.toPx(),
+                )
+            }
     )
     Box(
         modifier = Modifier
             .align(Alignment.Center)
             .size(layout.size)
             .alpha(bedAlpha)
-            // Шар клітинок прозорий і лежить на ободі, тому підняття над
-            // колодами їх не ховає — на відміну від ложа, яке лишилось унизу.
-            // Переносити саму розкриту клітинку в інший шар не можна: вона
-            // перестворюється, губить наведення й починає блимати.
             .zIndex(if (focusedIndex != null) FOCUSED_CELL_Z else 0f)
     ) {
         layout.places.forEach { (index, place) ->
@@ -252,14 +227,14 @@ private fun BoxScope.TrackCell(
                 .any { it.onTrack(layout) == index }
     val startHere = onThisLayer && place.type == PlaceType.Start &&
             player.startCapitalization?.position?.onTrack(layout) == index
+    val waitingAmount = when {
+        salaryHere -> player.cashFlow()
+        startHere -> player.fundAmount()
+        else -> null
+    }
 
-    // Клітинка мовчить, поки на неї не навели чи не тапнули: підпис у
-    // 15dp однаково нечитабельний, тому його показує розкриття.
     val label = place.type.shortLabel()
-    // Неактивне коло не розкривається: воно орієнтир, а не місце дії.
     val canExpand = live
-    // Ширину під підпис міряємо, а не вгадуємо: слово мусить лягти в
-    // один рядок за будь-якої довжини й локалі.
     val expandedWidth = remember(label, expanded, expandedIcon) {
         if (!expanded) 0.dp
         else with(density) {
@@ -287,23 +262,14 @@ private fun BoxScope.TrackCell(
         } else {
             null
         },
-        // Цоколь на дрібній клітинці не видно, а тінь із власною формою —
-        // окремий шар на кожну з ~90 клітинок.
         compact = minOf(place.size.width, place.size.height) < 30.dp,
-        waitingAmount = when {
-            salaryHere -> player.cashFlow()
-            startHere -> player.fundAmount()
-            else -> null
-        },
+        waitingAmount = waitingAmount,
         onClick = when {
             salaryHere -> onSalaryClick
             startHere -> onStartClick
             else -> null
         },
         modifier = Modifier
-            // Клітинка росте від свого центру, але не вилазить за трек:
-            // біля краю вона зсувається всередину, інакше підпис
-            // обрізало вікном.
             .offset(
                 x = (place.offset.x + (place.size.width - width) / 2)
                     .coerceIn(0.dp, (layout.size.width - width).coerceAtLeast(0.dp)),
@@ -311,16 +277,10 @@ private fun BoxScope.TrackCell(
                     .coerceIn(0.dp, (layout.size.height - height).coerceAtLeast(0.dp)),
             )
             .size(width, height)
-            // Усередині шару клітинки малюються за порядком, тож без цього
-            // розкриту накривали сусіди справа.
-            .zIndex(if (expanded) 1f else 0f),
+            .zIndex(if (expanded) 2f else if (waitingAmount != null) 1f else 0f),
     )
 }
 
-/**
- * Ложе з краєм, що згасає всередину: від межі треку — прозоро, під смугою
- * клітинок — суцільний колір. Так стик двох фонів ховається під самі клітинки.
- */
 private fun DrawScope.drawFadedBed(color: Color, fade: Float) {
     val w = size.width
     val h = size.height
@@ -351,8 +311,6 @@ private fun DrawScope.drawFadedBed(color: Color, fade: Float) {
         topLeft = Offset(w - edge, edge),
         size = Size(edge, h - edge * 2),
     )
-    // Кути — радіально від внутрішньої точки, інакше на стиках двох градієнтів
-    // лишалися б прозорі квадрати.
     listOf(
         Offset(edge, edge) to Offset(0f, 0f),
         Offset(w - edge, edge) to Offset(w - edge, 0f),
@@ -371,11 +329,6 @@ private fun DrawScope.drawFadedBed(color: Color, fade: Float) {
     }
 }
 
-/**
- * Розкрита клітинка однакова для всього треку: два модулі завширшки й два
- * заввишки. Від власного розміру клітинки вона не залежить — бічна 49×89 і
- * верхня 98×89 це різні клітинки, а задача в них одна.
- */
 @Composable
 internal fun expandedCellBox(layout: RouteLayout) = DpSize(
     width = layout.cellSize.width * 2,

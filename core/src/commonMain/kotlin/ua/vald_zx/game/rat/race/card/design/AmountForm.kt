@@ -25,10 +25,6 @@ import ua.vald_zx.game.rat.race.card.splitDecimal
 private const val MAX_DIGITS = 12
 private const val BACKSPACE = "backspace"
 
-/**
- * Форма вводу суми з макета C. Власна цифрова клавіатура замість системної:
- * пристрій лежить на столі, і системна клавіатура з'їдає пів екрана.
- */
 @Composable
 fun DesignAmountForm(
     title: String,

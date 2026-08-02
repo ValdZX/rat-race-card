@@ -44,7 +44,6 @@ import ua.vald_zx.game.rat.race.card.screen.design.DesignCardBack
 import ua.vald_zx.game.rat.race.card.screen.design.tone
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
-
 @Composable
 fun CardDeck(
     cardType: BoardCardType,

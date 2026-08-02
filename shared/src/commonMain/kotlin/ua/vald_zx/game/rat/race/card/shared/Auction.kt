@@ -2,7 +2,6 @@ package ua.vald_zx.game.rat.race.card.shared
 
 import kotlinx.serialization.Serializable
 
-
 @Serializable
 sealed class Auction {
     @Serializable

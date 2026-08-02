@@ -48,7 +48,7 @@ sealed class BoardCard(val type: BoardCardType) {
         val description: String,
         val price: Long,
         val shopType: ShopType,
-        val credit: String,//TODO
+        val credit: String,
     ) : BoardCard(BoardCardType.Shopping)
 
     @Serializable

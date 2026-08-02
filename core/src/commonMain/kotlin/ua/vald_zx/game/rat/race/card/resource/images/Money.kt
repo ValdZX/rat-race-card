@@ -9,7 +9,6 @@ import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
-
 val Images.Money: ImageVector
     @Composable
     get() {

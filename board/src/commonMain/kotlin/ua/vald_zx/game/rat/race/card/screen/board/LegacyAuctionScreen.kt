@@ -28,7 +28,6 @@ import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Send
 import ua.vald_zx.game.rat.race.card.shared.Auction
 
-/** Стара мова екрана аукціону. Нова — DesignAuctionSheet. */
 @Composable
 internal fun LegacyAuctionScreen(vm: BoardViewModel, auction: Auction) {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current

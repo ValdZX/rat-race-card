@@ -44,13 +44,10 @@ SLOTS = {
     "deck_big_business": ("Колода: великий бізнес", ["factory", "corporate"]),
 }
 
-
 def get(url):
-    # Без свого User-Agent Iconify віддає 403 на дефолтний урлліб.
     request = urllib.request.Request(url, headers={"User-Agent": "rat-race-card-icon-fetch"})
     with urllib.request.urlopen(request, timeout=20) as response:
         return response.read()
-
 
 def search(query, prefix):
     url = f"{API}/search?query={urllib.parse.quote(query)}&prefix={prefix}&limit={PER_QUERY}"
@@ -59,7 +56,6 @@ def search(query, prefix):
     except Exception as error:
         print(f"  ! пошук '{query}' у {prefix}: {error}")
         return []
-
 
 def main():
     os.makedirs(OUT, exist_ok=True)
@@ -92,7 +88,6 @@ def main():
     write_index(report)
     print(f"\nГотово: {OUT}/index.html")
 
-
 def write_index(report):
     parts = [
         "<meta charset='utf-8'><title>Кандидати іконок</title>",
@@ -115,7 +110,6 @@ def write_index(report):
         parts.append("</div>")
     with open(os.path.join(OUT, "index.html"), "w") as handle:
         handle.write("\n".join(parts))
-
 
 if __name__ == "__main__":
     main()

@@ -65,9 +65,8 @@ fun MultiColorSmoothText(
                 durationMillis = duration
                 delayMillis = startIndex * interval / 2
                 var i = 0
-                // set the keyframes from the rainbow with code
-                for (color in rainbow) { // this is the crux  of setting the keyframes
-                    color at i // at is an infix method in the KeyframesSpec class
+                for (color in rainbow) {
+                    color at i
                     i += interval
                 }
             },

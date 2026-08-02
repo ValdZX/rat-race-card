@@ -37,7 +37,6 @@ import ua.vald_zx.game.rat.race.card.screen.board.cards.smallBusinessCards
 import ua.vald_zx.game.rat.race.card.screen.board.cards.title
 import ua.vald_zx.game.rat.race.card.shared.*
 
-
 @Composable
 fun BoxWithConstraintsScope.SmallBusinessCardFront(
     cardLink: CardLink,
@@ -406,7 +405,6 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
     }
 }
 
-
 @Preview
 @Composable
 fun CardSmallFrontPreview() {
@@ -430,7 +428,6 @@ fun CardSmallFrontPreview() {
         }
     }
 }
-
 
 @Preview
 @Composable

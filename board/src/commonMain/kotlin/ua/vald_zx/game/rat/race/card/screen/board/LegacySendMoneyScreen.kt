@@ -6,7 +6,6 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.InputScreen
 
-/** Стара мова переказу грошей у онлайні. Нова — DesignAmountSheet. */
 @Composable
 internal fun LegacySendMoneyScreen(vm: BoardViewModel, playerId: String, playerName: String) {
     InputScreen(

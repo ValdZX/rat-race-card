@@ -39,11 +39,6 @@ import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-/**
- * Довгий список активів у розгорнутій шторці мусить лишатися досяжним.
- * Регресія, яку ловить тест: коли пейджером керували через LaunchedEffect,
- * LazyColumn усередині втрачав дію прокрутки — вміст просто обрізало.
- */
 @OptIn(ExperimentalTestApi::class)
 class DesignPlayerSheetScrollTest {
 
@@ -95,7 +90,6 @@ class DesignPlayerSheetScrollTest {
         onNodeWithText("Бізнес №12").assertExists()
     }
 
-    /** Пейджер центрує вміст, що не заповнив слот — короткий список мусить лишатися вгорі. */
     @Test
     fun shortAssetListStaysAtTheTop() = runComposeUiTest {
         val twoBusinesses = player.copy(businesses = player.businesses.take(2))

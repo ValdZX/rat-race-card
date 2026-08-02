@@ -58,7 +58,6 @@ class DesignCardFrameRenderTest {
         }
         waitForIdle()
 
-        // капітель кожної карти підписана типом колоди
         onNodeWithText("Chance!").assertExists()
 
         val image = onNodeWithTag("cards").captureToImage().toAwtImage()

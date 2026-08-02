@@ -5,7 +5,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 
-/** Штамп карти в старій мові: чорний квадрат. Новий — DesignCardStamp. */
 @Composable
 internal fun LegacyCardStamp(glyph: String, unitTS: TextUnit, unitDp: Dp, id: Int?, glyphSize: Float) {
     Stamp(

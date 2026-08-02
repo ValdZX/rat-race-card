@@ -15,7 +15,6 @@ import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import kotlin.time.Clock
 
-
 @Composable
 fun InitPreview(
     content: @Composable () -> Unit
@@ -33,11 +32,9 @@ fun InitPreview(
                         }
 
                         override suspend fun ping() {
-                            //nop
                         }
 
                         override suspend fun connectionIsValid() {
-                            //nop
                         }
 
                         override suspend fun getBoards(): List<BoardId> = emptyList()
@@ -83,159 +80,123 @@ fun InitPreview(
                         }
 
                         override suspend fun sendMoney(receiverId: String, amount: Long) {
-                            //NOP
                         }
 
                         override suspend fun sendMessage(text: String) {
-                            //NOP
                         }
 
                         override suspend fun rollDice() {
-                            //NOP
                         }
 
                         override suspend fun next() {
-                            //NOP
                         }
 
                         override suspend fun takeCard(cardType: BoardCardType) {
-                            //NOP
                         }
 
                         override suspend fun takeSalary() {
-                            //NOP
                         }
 
                         override suspend fun buyBusiness(business: Business) {
-                            //NOP
                         }
 
                         override suspend fun dismissalConfirmed(business: Business) {
-                            //NOP
                         }
 
                         override suspend fun sellingAllBusinessConfirmed(business: Business) {
-                            //NOP
                         }
 
                         override suspend fun minusCash(price: Long) {
-                            //NOP
                         }
 
                         override suspend fun buyThing(card: BoardCard.Shopping) {
-                            //NOP
                         }
 
                         override suspend fun changePosition(position: Int) {
-                            //NOP
                         }
 
                         override suspend fun debugChangePosition(location: PlayerLocation) {
-                            //NOP
                         }
 
                         override suspend fun debugUpdatePlayer(values: DebugPlayerValues) {
-                            //NOP
                         }
 
                         override suspend fun buyEstate(card: Estate) {
-                            //NOP
                         }
 
                         override suspend fun buyLand(land: Land) {
-                            //NOP
                         }
 
                         override suspend fun randomJob(card: BoardCard.Chance.RandomJob) {
-                            //NOP
                         }
 
                         override suspend fun buyShares(shares: Shares, totalCount: Long) {
-                            //NOP
                         }
 
                         override suspend fun selectCardByNo(cardId: Int, cardType: BoardCardType) {
-                            //NOP
                         }
 
                         override suspend fun debugMoveToAndSelectCard(
                             cardId: Int,
                             cardType: BoardCardType
                         ) {
-                            //NOP
                         }
 
                         override suspend fun extendBusiness(
                             business: Business,
                             card: BoardCard.EventStore.BusinessExtending
                         ) {
-                            //NOP
                         }
 
                         override suspend fun sellLands(area: Long, priceOfUnit: Long) {
-                            //NOP
                         }
 
                         override suspend fun sellShares(
                             card: BoardCard.EventStore.Shares,
                             count: Long
                         ) {
-                            //NOP
                         }
 
                         override suspend fun sellEstate(
                             card: List<Estate>,
                             price: Long
                         ) {
-                            //NOP
                         }
 
                         override suspend fun passLand() {
-                            //NOP
                         }
 
                         override suspend fun passShares(sharesType: SharesType) {
-                            //NOP
                         }
 
                         override suspend fun passEstate() {
-                            //NOP
                         }
 
                         override suspend fun playHighRiskInvestment(stake: Long, guess: Int) {
-                            //NOP
                         }
 
                         override suspend fun playMediumRiskInvestment(stake: Long, even: Boolean) {
-                            //NOP
                         }
 
                         override suspend fun investInFund(amount: Long) {
-                            //NOP
                         }
 
                         override suspend fun capitalizeFunds() {
-                            //NOP
                         }
 
                         override suspend fun toDeposit(amount: Long) {
-                            //NOP
                         }
 
                         override suspend fun repayLoan(amount: Long) {
-                            //NOP
                         }
 
                         override suspend fun advertiseAuction(auction: Auction) {
-                            //NOP
                         }
 
                         override suspend fun sellBid(bid: Bid) {
-                            //NOP
                         }
 
                         override suspend fun makeBid(price: Long, count: Long) {
-                            //NOP
                         }
 
                         override suspend fun enterOuterCircle() = Unit

@@ -7,11 +7,6 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 
-/**
- * Знак клітинки. У комірку 15dp слово не влазить за жодного кегля, тому тип
- * несе піктограма. SVG лежать у composeResources як є — вони на
- * `fill="currentColor"`, тож перефарбовуються тоном комірки.
- */
 @Composable
 fun PlaceType.icon(): Painter = painterResource(
     when (this) {
@@ -35,10 +30,6 @@ fun PlaceType.icon(): Painter = painterResource(
     }
 )
 
-/**
- * Знак колоди. Та сама мова, що й у клітинках: колода й поле одного роду
- * несуть однакову піктограму, три рівні бізнесу різняться своїм знаком.
- */
 @Composable
 fun BoardCardType.icon(): Painter = painterResource(
     when (this) {

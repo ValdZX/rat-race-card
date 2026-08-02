@@ -1,12 +1,10 @@
 package ua.vald_zx.game.rat.race.card.screen.design
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,10 +21,6 @@ import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.Player
 
-/**
- * «Це ти» — подвійне кільце й підпис, без accent і без руху: ідентичність не мигає.
- * «Твоя черга» несе окремий носій — пульс обводки, і тільки для активного гравця.
- */
 @Composable
 fun DesignPlayerToken(
     player: Player,
@@ -40,15 +34,6 @@ fun DesignPlayerToken(
     val playerColor = remember(player.attrs.color) { Color(player.attrs.color) }
     val ringWidth = min(spotSize.width, spotSize.height) * 0.09f
 
-    val transition = rememberInfiniteTransition(label = "ActiveTurn")
-    val turnRing by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing)),
-        label = "TurnRing",
-    )
-    val activeRing = if (isActivePlayer) (1f + turnRing * 0.35f) else 1f
-
     Box(
         modifier = modifier
             .size(spotSize)
@@ -56,11 +41,12 @@ fun DesignPlayerToken(
         contentAlignment = Alignment.Center,
     ) {
         if (isActivePlayer) {
-            Box(
-                Modifier
-                    .size(spotSize * activeRing)
-                    .clip(DesignShapes.full)
-                    .border(ringWidth * 0.6f, colors.scaffold.accent.copy(alpha = 1f - turnRing), DesignShapes.full)
+            DesignActivePulse(
+                shape = DesignShapes.full,
+                anchorColor = playerColor,
+                maxExpansion = 1f,
+                strokeWidth = ringWidth * 0.72f,
+                modifier = Modifier.size(spotSize * 0.82f),
             )
         }
         Box(

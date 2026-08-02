@@ -12,10 +12,6 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.design.DesignAmountSheet
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
-/**
- * Переказ грошей іншому гравцеві. Онлайн-двійник спільного `SendScreen`:
- * офлайн-режим лишається на ньому, тому нова мова сюди не протікає.
- */
 class SendMoneyScreen(
     private val vm: BoardViewModel,
     private val playerId: String,

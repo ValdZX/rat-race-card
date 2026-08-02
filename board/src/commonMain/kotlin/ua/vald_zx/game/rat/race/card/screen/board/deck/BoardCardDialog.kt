@@ -37,10 +37,6 @@ fun BoxWithConstraintsScope.CardDialog(vm: BoardViewModel) {
     }
 }
 
-/**
- * Стара мова: карта летить від колоди до центру й перевертається через
- * MotionLayout. Нова — DesignCardDialog.
- */
 @OptIn(ExperimentalMotionApi::class)
 @Composable
 private fun BoxWithConstraintsScope.LegacyCardDialog(vm: BoardViewModel) {

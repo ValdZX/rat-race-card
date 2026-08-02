@@ -4,7 +4,6 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.SharesType
 
 val eventStoreCards = mapOf(
-    // Акції (Shares) — 45 шт.
     1 to BoardCard.EventStore.Shares(
         sharesType = SharesType.ShchHP,
         description = "Нафтогаз виграв суд у Газпрому в Стокгольмському арбітражі. Акції «Шевченка-ГазПром» стрімко злітають вгору на фоні ейфорії.",
@@ -26,12 +25,12 @@ val eventStoreCards = mapOf(
         price = 1100
     ),
     5 to BoardCard.EventStore.Shares(
-        sharesType = SharesType.IT, // Новий тип, але якщо його немає в SharesType, замінити на CST
+        sharesType = SharesType.IT,
         description = "Український стартап з розпізнавання облич купують американці. Акції IT-компанії «Revechat» дорожчають у 10 разів.",
         price = 3000
     ),
     6 to BoardCard.EventStore.Shares(
-        sharesType = SharesType.AGRO, // Новий тип, але якщо його немає в SharesType, замінити на GC
+        sharesType = SharesType.AGRO,
         description = "Незважаючи на посуху, «Агрохолдинг Мрія» збирає рекордний врожай завдяки новим технологіям. Інвестори в захваті.",
         price = 750
     ),
@@ -231,7 +230,6 @@ val eventStoreCards = mapOf(
         price = 2900
     ),
 
-    // Земля (Land) — 20 шт.
     46 to BoardCard.EventStore.Land(
         description = "Будівництво метро на Виноградар. Земля на околицях Києва різко злітає в ціні.",
         price = 18000
@@ -313,7 +311,6 @@ val eventStoreCards = mapOf(
         price = 13000
     ),
 
-    // Нерухомість (Estate) — 15 шт.
     66 to BoardCard.EventStore.Estate(
         description = "Бум заміської нерухомості. Кожен хоче мати свій бункер. Ваш будинок під Києвом тепер коштує шалені гроші.",
         price = 170000
@@ -375,7 +372,6 @@ val eventStoreCards = mapOf(
         price = 105000
     ),
 
-    // Розширення бізнесу (BusinessExtending) — 20 шт.
     81 to BoardCard.EventStore.BusinessExtending(
         description = "Ваша кав'ярня біля метро стала популярною. Черги зранку. Час розширюватись! Прибутковість зростає.",
         profit = 1500

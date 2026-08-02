@@ -4,7 +4,6 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.SharesType
 
 val chanceCards = mapOf(
-    // RandomJob (1-30) - 30 карт
     1 to BoardCard.Chance.RandomJob(
         "На трасі Київ-Одеса зламався фургон з ковбасою. Водій просить допомогти перевантажити товар в іншу машину. Платить готівкою на місці.",
         200
@@ -126,7 +125,6 @@ val chanceCards = mapOf(
         300
     ),
 
-    // Land (31-60) - 30 карт
     31 to BoardCard.Chance.Land(
         name = "Гектари під Житомиром",
         description = "Місцевий колгосп-банкрут розпродає земельні паї. Можна викупити клаптик біля лісу, де ростуть найкращі гриби в області.",
@@ -308,7 +306,6 @@ val chanceCards = mapOf(
         area = 14
     ),
 
-    // Shares (61-95) - 35 карт
     61 to BoardCard.Chance.Shares(
         description = "Нова IT-компанія з Харкова розробляє додаток для розпізнавання облич. Інвестори потрібні для масштабування.",
         price = 80,
@@ -520,7 +517,6 @@ val chanceCards = mapOf(
         sharesType = SharesType.GC
     ),
 
-    // Estate (96-120) - 25 карт
     96 to BoardCard.Chance.Estate(
         name = "Хрущовка на Русанівці",
         description = "Маленька, але затишна квартира з видом на озеро. Сусіди тихі, але іноді сваряться через парковку.",

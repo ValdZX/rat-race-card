@@ -2,10 +2,6 @@ package ua.vald_zx.game.rat.race.card.design
 
 import androidx.compose.runtime.Composable
 
-/**
- * Ергономічний доступ до токенів нової мови. Самі токени постачає `AppTheme` —
- * єдина тема застосунку, тож окремо обгортати екрани не треба.
- */
 object Design {
     val colors: DesignColors
         @Composable get() = LocalDesignColors.current

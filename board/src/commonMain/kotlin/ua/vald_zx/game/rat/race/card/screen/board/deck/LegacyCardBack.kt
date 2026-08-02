@@ -12,7 +12,6 @@ import androidx.compose.ui.unit.min
 import ua.vald_zx.game.rat.race.card.screen.board.visualize.color
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
-/** Стара сорочка карти. Нова — DesignCardBack. */
 @Composable
 internal fun LegacyCardBack(card: BoardCardType, size: DpSize, isVertical: Boolean, modifier: Modifier) {
     val rounding = min(size.width, size.height) / 16

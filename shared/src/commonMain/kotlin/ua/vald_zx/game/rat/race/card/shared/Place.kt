@@ -26,7 +26,6 @@ sealed class PlaceType(val name: String, val isBig: Boolean = false) {
     data object Resignation : PlaceType("Exaltation")
 }
 
-
 val inPlaces = listOf(
     PlaceType.Salary,
     PlaceType.Start,

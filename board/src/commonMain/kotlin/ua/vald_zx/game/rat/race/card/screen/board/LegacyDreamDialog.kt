@@ -11,7 +11,6 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.Dream
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
-/** Стара мова пропозиції мрії. Нова — DesignDreamDialog. */
 @Composable
 internal fun LegacyDreamDialog(
     vm: BoardViewModel,

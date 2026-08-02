@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.design.DesignShapes
 
-/** Поле вводу на карті в новій мові. Стара — LegacyOutlinedBasicTextField. */
 @Composable
 internal fun DesignOutlinedBasicTextField(
     value: String,

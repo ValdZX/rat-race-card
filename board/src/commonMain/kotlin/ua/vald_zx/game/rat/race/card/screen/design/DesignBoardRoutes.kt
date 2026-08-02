@@ -10,7 +10,6 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.BoardLayout
 import ua.vald_zx.game.rat.race.card.screen.board.PlayerMessages
 
-/** Нова мова дошки: треки, колоди, фішки. Стара — LegacyBoardRoutes. */
 @Composable
 fun BoxScope.DesignBoardRoutes(layout: BoardLayout, vm: BoardViewModel) {
     val focus = rememberCellFocus()

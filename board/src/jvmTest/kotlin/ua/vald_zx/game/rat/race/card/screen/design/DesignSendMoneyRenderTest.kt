@@ -30,7 +30,6 @@ class DesignSendMoneyRenderTest {
         designV2Enabled.value = false
     }
 
-    /** У прев'ю-гравця нуль готівки, тому переказ мусить бути заблокований із поясненням. */
     @Test
     fun sendingMoreThanYouHaveIsRefused() = runComposeUiTest {
         designV2Enabled.value = true

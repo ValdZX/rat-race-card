@@ -6,7 +6,6 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.PayerType
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
-
 @Composable
 fun BoardCardType.color(): Color {
     return when (this) {

@@ -15,17 +15,10 @@ import ua.vald_zx.game.rat.race.card.design.LocalDesignTypography
 import ua.vald_zx.game.rat.race.card.design.designTypography
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 
-
 val Primary = Color(0xFFA2FF82)
 
 val LocalThemeIsDark = compositionLocalOf { mutableStateOf(true) }
 
-/**
- * Єдина тема застосунку. Ставиться один раз у `App()` і сама вирішує, якою
- * палітрою жити: стара мова тримається на [AppColors], нова — на
- * `Design.*`. Обидва набори надаються завжди, тому екрани не обгортаються
- * темою повторно.
- */
 @Composable
 fun AppTheme(
     forceDark: Boolean? = null,

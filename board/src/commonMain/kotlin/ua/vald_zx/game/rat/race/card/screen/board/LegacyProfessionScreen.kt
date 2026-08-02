@@ -25,7 +25,6 @@ import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import kotlin.uuid.Uuid
 
-/** Стара мова екрана професії. Нова — DesignProfessionContent. */
 @Composable
 internal fun LegacyProfessionContent(card: ProfessionCard, onNext: () -> Unit) {
         Column(

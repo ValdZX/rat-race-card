@@ -6,7 +6,6 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.InputScreen
 
-/** Стара мова поповнення депозиту. Нова — DesignAmountSheet. */
 @Composable
 internal fun LegacyToDepositScreen(vm: BoardViewModel, cash: Long) {
     InputScreen(

@@ -18,7 +18,6 @@ import ua.vald_zx.game.rat.race.card.shared.fundRateAtSalary
 import ua.vald_zx.game.rat.race.card.shared.toLayer
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
-/** Стара мова екрана зарплати й інвестицій. Нова — DesignSalarySheet. */
 @Composable
 internal fun LegacySalaryScreen(vm: BoardViewModel) {
         val state by vm.uiState.collectAsState()

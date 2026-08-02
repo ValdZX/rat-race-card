@@ -52,7 +52,6 @@ data class Fund(
     val amount: Long,
 )
 
-
 @Serializable
 data class Config(
     val depositRate: Long = 2,

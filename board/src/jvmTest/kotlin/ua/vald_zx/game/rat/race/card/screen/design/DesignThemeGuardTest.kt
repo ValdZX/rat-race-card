@@ -15,11 +15,6 @@ import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import kotlin.test.Test
 
-/**
- * AppTheme постачає типографіку нової мови через CompositionLocal без дефолту.
- * Якщо якийсь екран опиниться поза темою — піддерево тихо помирає, саме так
- * одного разу зникла вся дошка. Ці перевірки ловлять такий пропуск.
- */
 @OptIn(ExperimentalTestApi::class)
 class DesignThemeGuardTest {
 
@@ -34,7 +29,6 @@ class DesignThemeGuardTest {
         }
         waitForIdle()
         onNodeWithTag("cell").assertIsDisplayed()
-        // Клітинка мовчить: підпис живе лише в описі знака, поки її не розкрили.
         onNodeWithText("Salary").assertDoesNotExist()
         onNodeWithContentDescription("Salary", useUnmergedTree = true).assertExists()
     }

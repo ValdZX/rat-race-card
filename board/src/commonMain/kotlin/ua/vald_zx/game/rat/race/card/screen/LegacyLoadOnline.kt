@@ -13,7 +13,6 @@ import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.connection_failed
 import ua.vald_zx.game.rat.race.card.resources.retry_connection
 
-/** Стара мова екрана зʼєднання. Нова — DesignLoadOnline. */
 @Composable
 internal fun LegacyLoadOnline(failed: Boolean, onRetry: () -> Unit) {
     Box(

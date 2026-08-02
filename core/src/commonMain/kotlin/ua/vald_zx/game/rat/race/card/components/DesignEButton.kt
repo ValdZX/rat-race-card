@@ -7,7 +7,6 @@ import androidx.compose.ui.unit.TextUnit
 import ua.vald_zx.game.rat.race.card.design.DesignButton
 import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
 
-/** Кнопка карти в новій мові. Стара — LegacyEButton. */
 @Composable
 internal fun DesignEButton(
     title: String,

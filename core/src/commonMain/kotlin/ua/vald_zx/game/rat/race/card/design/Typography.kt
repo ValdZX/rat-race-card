@@ -24,9 +24,6 @@ private fun interfaceFamily() = FontFamily(
     Font(Res.font.Montserrat_ExtraBold, FontWeight.ExtraBold),
 )
 
-// ponytail: Archivo Narrow і JetBrains Mono ще не додані в composeResources —
-// підписи клітинок і суми тимчасово рендеряться Montserrat. Щоб увімкнути,
-// поклади ttf у core/src/commonMain/composeResources/font і поверни тут родини.
 @Composable
 private fun cellFamily() = interfaceFamily()
 

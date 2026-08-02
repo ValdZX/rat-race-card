@@ -67,7 +67,6 @@ class DesignNewBoardDialogRenderTest {
         }
         waitForIdle()
 
-        // порожня назва — створення заблоковане
         onNodeWithText("Create Table").performClick()
         assertNull(created)
 

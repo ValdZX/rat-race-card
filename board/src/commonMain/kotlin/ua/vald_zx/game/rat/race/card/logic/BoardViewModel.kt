@@ -108,7 +108,6 @@ class BoardViewModel(
     private val serviceProvider: () -> RaceRatService
 ) : ViewModel() {
 
-
     private val _uiState = MutableStateFlow(BoardState(false, board, player))
     val uiState: StateFlow<BoardState> = _uiState.asStateFlow()
 

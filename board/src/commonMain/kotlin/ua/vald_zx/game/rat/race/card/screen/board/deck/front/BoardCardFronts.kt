@@ -21,7 +21,6 @@ import ua.vald_zx.game.rat.race.card.screen.board.visualize.color
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.CardLink
 
-
 @Composable
 fun BoxWithConstraintsScope.BoardCardFront(
     card: CardLink,
@@ -70,14 +69,6 @@ fun BoxWithConstraintsScope.BoardCardFront(
     }
 }
 
-
-
-
-
-/**
- * Рамка лиця карти. Нова мова — DesignCardFrame з капітеллю типу,
- * стара — LegacyCardFrame. Вміст карт спільний для обох.
- */
 @Composable
 private fun CardFrame(
     type: BoardCardType,

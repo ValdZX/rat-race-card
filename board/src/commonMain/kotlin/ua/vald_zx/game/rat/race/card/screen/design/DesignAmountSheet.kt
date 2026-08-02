@@ -7,10 +7,6 @@ import ua.vald_zx.game.rat.race.card.design.DesignAmountForm
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
-/**
- * Обгортка над DesignAmountForm для онлайн-шторок: тримає локалізацію
- * і підказку «доступно / лишиться», однакову для всіх грошових форм.
- */
 @Composable
 fun DesignAmountSheet(
     title: String,

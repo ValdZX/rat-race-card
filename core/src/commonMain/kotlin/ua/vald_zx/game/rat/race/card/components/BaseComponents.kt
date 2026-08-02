@@ -146,7 +146,6 @@ fun RainbowButton(
     )
 }
 
-
 @Composable
 fun DetailsField(
     name: String,
@@ -475,7 +474,6 @@ fun Modifier.rotateLayout(rotation: Rotation): Modifier {
     } then rotate(rotation.degrees)
 }
 
-
 enum class Rotation(val degrees: Float) {
     ROT_0(0f),
     ROT_90(90f),
@@ -483,8 +481,6 @@ enum class Rotation(val degrees: Float) {
     ROT_270(270f),
 }
 
-
-/** Swap horizontal and vertical constraints */
 private fun Constraints.transpose(): Constraints {
     return copy(
         minWidth = minHeight,
@@ -691,7 +687,6 @@ fun SilverBackground(modifier: Modifier) {
         val centerRightBottom = Offset(width, height)
         val farthestRadius = hypot(width, height)
 
-        // Нижній градієнт (відтінки сірого, зліва зверху)
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -710,7 +705,6 @@ fun SilverBackground(modifier: Modifier) {
                 )
         )
 
-        // Верхній градієнт (світло-сірий до прозорого, справа знизу)
         Box(
             modifier = Modifier
                 .matchParentSize()

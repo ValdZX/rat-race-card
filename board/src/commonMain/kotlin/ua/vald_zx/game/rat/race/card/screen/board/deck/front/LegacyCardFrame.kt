@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.screen.board.visualize.color
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
-/** Стара рамка лиця карти: обводка кольором типу. Нова — DesignCardFrame. */
 @Composable
 internal fun LegacyCardFrame(
     type: BoardCardType,

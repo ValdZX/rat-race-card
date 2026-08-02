@@ -31,6 +31,7 @@ class DesignCardDecksRenderTest {
 
     @Test
     fun everyDeckTypeRendersWithToneLabelAndCount() = runComposeUiTest {
+        mainClock.autoAdvance = false
         setContent {
             AppTheme(forceDark = true) {
                 Column(
@@ -71,6 +72,7 @@ class DesignCardDecksRenderTest {
                 }
             }
         }
+        mainClock.advanceTimeBy(640)
         waitForIdle()
         val image = onNodeWithTag("decks").captureToImage().toAwtImage()
         File("build").mkdirs()

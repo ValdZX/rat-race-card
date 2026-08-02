@@ -36,10 +36,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/**
- * Фішка на розкритій клітинці мусить лишатись видимою й натисканою, тому вона
- * відпливає вбік від підпису. До фіксу розкриття ховало фішки цілком.
- */
 @OptIn(ExperimentalTestApi::class, androidx.compose.material.ExperimentalMaterialApi::class)
 class DesignTokenFloatTest {
 
@@ -61,8 +57,6 @@ class DesignTokenFloatTest {
         waitForIdle()
         val before = tokenBounds()
 
-        // Наводимось на вільний край клітинки: сама фішка лежить над нею й
-        // перехоплює вказівник у своєму пʼятні.
         val hoverPoint = Offset(
             x = (board.width - layout.outerRoute.size.width).value / 2 +
                     place.place.offset.x.value + 4f,
@@ -77,8 +71,6 @@ class DesignTokenFloatTest {
         assertTrue(after.top != before.top, "фішка не відпливла з розкритої клітинки")
         assertTrue(after.top >= 0.dp && after.bottom <= board.height, "фішка виїхала за дошку")
 
-        // Переводимо вказівник на саму фішку: клітинка мусить лишитись
-        // розкритою, а фішка — на місці, інакше її нічим натиснути.
         val token = Offset(
             x = (after.left + after.right).value / 2,
             y = (after.top + after.bottom).value / 2,
@@ -114,7 +106,6 @@ class DesignTokenFloatTest {
             waitForIdle()
         }
 
-    /** Позиція гравця мапиться на індекс клітинки треку. */
     private fun hoveredPlace(layout: ua.vald_zx.game.rat.race.card.screen.board.BoardLayout) =
         layout.outerRoute.places.first {
             it.index == moveTo(
@@ -124,10 +115,6 @@ class DesignTokenFloatTest {
             )
         }
 
-    /**
-     * Сусідня фішка не має накривати підпис розкритої клітинки: пігулка ширша
-     * за клітинку, тому сусіди відпливають разом із нею.
-     */
     @Test
     fun neighbourTokenDoesNotCoverTheLabel() = runComposeUiTest {
         val layout = calculateBoardLayout(board, isVertical = false)!!
@@ -175,10 +162,6 @@ class DesignTokenFloatTest {
         )
     }
 
-    /**
-     * Наведення прямо на фішку: клітинка розкривається, але сама фішка лишається
-     * під курсором. Якби вона відпливла, наведення злетіло б і почалось блимання.
-     */
     @Test
     fun hoveringTheTokenItselfKeepsItUnderTheCursor() = runComposeUiTest {
         val layout = showBoard()
@@ -197,7 +180,6 @@ class DesignTokenFloatTest {
         assertEquals(home, tokenBounds(), "фішка втекла з-під курсора — саме з цього починалось блимання")
     }
 
-    /** Фішка — єдиний клікабельний вузол над треком, клітинки в цьому тесті без дій. */
     private fun ComposeUiTest.tokenBounds() =
         onAllNodes(hasClickAction()).onLast().getBoundsInRoot()
 

@@ -38,13 +38,9 @@ fun BoxScope.DesignPlayerTokens(vm: BoardViewModel, layout: RouteLayout, focus: 
             },
         )
     }
-    // Один шар. Розкладати фішки по двох шарах не можна: при зміні фокуса
-    // фішка переїжджає між ними, перестворюється, губить наведення — і
-    // починається те саме блимання.
     TokenLayer(vm, layout, focus) { messageDialog = true }
 }
 
-/** Скільки сусідніх клітинок накриває розкрита пігулка — вони теж відпливають. */
 private const val COVERED_NEIGHBOURS = 1
 
 @Composable
@@ -72,17 +68,9 @@ private fun BoxScope.TokenLayer(
                 index,
                 count,
             )
-            // Наведення на фішку тримає ту саму клітинку розкритою. Без цього
-            // фішка перехоплювала вказівник, клітинка згорталась, фішка їхала
-            // назад — і натиснути її було нічим.
             val interaction = remember { MutableInteractionSource() }
             val tokenHovered by interaction.collectIsHoveredAsState()
             LaunchedEffect(tokenHovered) { focus.set(cellKey, tokenHovered, FocusSource.Token) }
-            // Чи відпливати — вирішується один раз на розкриття й далі не
-            // змінюється. Інакше фішка, з якої почалось наведення, тікала
-            // з-під курсора, фокус гаснув, вона поверталась — і так без кінця.
-            // Сусідні фішки відпливають теж: пігулка ширша за клітинку й
-            // інакше вони затуляли б підпис.
             val floats = remember(focus.key) {
                 val focused = focus.key
                 when {
@@ -94,7 +82,6 @@ private fun BoxScope.TokenLayer(
             val shift = expandedBox.height / 2 + layout.cellSize.height / 2 + 4.dp
             val floatBy = when {
                 !floats -> 0.dp
-                // Угору, якщо є куди: біля верхнього краю треку відпливаємо вниз.
                 place.offset.y > shift -> -shift
                 else -> shift
             }
@@ -106,7 +93,6 @@ private fun BoxScope.TokenLayer(
                 isActivePlayer = pointerState.isActivePlayer,
                 spotSize = layout.cellSize,
                 modifier = Modifier.offset(x, y).hoverable(interaction),
-                // Як і на старій дошці: своя фішка — повідомлення, чужа — переказ.
                 onClick = if (pointerState.isCurrentPlayer) {
                     onOwnToken
                 } else {

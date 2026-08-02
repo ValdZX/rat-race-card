@@ -17,10 +17,6 @@ import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.design.DesignShapes
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 
-/**
- * Кутовий штамп карти: літера роду й номер. У новій мові — латунна печатка,
- * у старій — чорний квадрат.
- */
 @Composable
 fun CardStamp(
     glyph: String,

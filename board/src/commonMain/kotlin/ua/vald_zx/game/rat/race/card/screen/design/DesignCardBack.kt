@@ -23,11 +23,6 @@ import ua.vald_zx.game.rat.race.card.components.rotateLayout
 import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
-/**
- * Нова сорочка карти: тон колоди й кромка, як у слоті. Стара — LegacyCardBack.
- * Без комікс-обводки тексту й Bubbleboddy — макет обидва прибирає: заливка
- * фіксованої світлоти плюс єдиний onFill читаються краще за fill+stroke.
- */
 @Composable
 fun DesignCardBack(card: BoardCardType, size: DpSize, isVertical: Boolean, modifier: Modifier) {
     val trueHeight = min(size.width, size.height)
@@ -48,7 +43,6 @@ fun DesignCardBack(card: BoardCardType, size: DpSize, isVertical: Boolean, modif
                 textAlign = TextAlign.Center,
             ),
             autoSize = TextAutoSize.StepBased(minFontSize = 6.sp, maxFontSize = 22.sp),
-            // Слово не рвемо: сорочка вертикальна, і перенос дає «Chan / ce!».
             maxLines = 1,
             softWrap = false,
             modifier = Modifier

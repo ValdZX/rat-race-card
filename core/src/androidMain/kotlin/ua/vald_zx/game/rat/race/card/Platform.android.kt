@@ -57,7 +57,6 @@ actual fun share(data: String?) {
     activity.startActivity(Intent.createChooser(shareIntent, appLabel))
 }
 
-
 private var tts: TextToSpeechInstance? = null
 actual suspend fun getTts(): TextToSpeechInstance? {
     if (tts != null) return tts

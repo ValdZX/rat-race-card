@@ -40,7 +40,7 @@ fun String.splitDecimal(step: Int = 3, divider: String = " "): String {
     return reverseResult.reverse().toString().trim { it <= ' ' }
 }
 
-val dateFullDotsFormat = LocalDateTime.Format { //dd.MM.yyyy HH:mm:ss
+val dateFullDotsFormat = LocalDateTime.Format {
     day(); char('.'); monthNumber(); char('.'); year(); char(' ')
     hour(); char(':'); minute(); char(':'); second()
 }

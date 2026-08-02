@@ -388,7 +388,6 @@ class BoardScreen(
             )
         }
 
-
         if (simpleDialog != Res.string.app_name) {
             AlertDialog(
                 text = { Text(text = stringResource(simpleDialog)) },
@@ -885,7 +884,6 @@ private fun RainbowOuterCircleButton(
     }
 }
 
-
 @Composable
 fun BackSide() {
     Box(
@@ -957,7 +955,6 @@ private fun Modifier.rotateOnDrag(
                             rotY.snapTo(dRotY)
                         }
                     }
-                    //region Restore animation
                     launch {
                         awaitAll(
                             async {
@@ -974,7 +971,6 @@ private fun Modifier.rotateOnDrag(
                             }
                         )
                     }
-                    //endregion
                 }
             }
         }

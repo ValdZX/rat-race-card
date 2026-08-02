@@ -31,10 +31,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/**
- * Клітинки на дошці мовчать, а підпис показує розкриття — наведенням курсора
- * або тапом. Розкрита клітинка мусить вмістити слово в один рядок.
- */
 @OptIn(ExperimentalTestApi::class)
 class DesignCellExpandTest {
 
@@ -52,7 +48,7 @@ class DesignCellExpandTest {
         val place = layout.innerRoute.places.first { it.place.type.name == "Chance" }.place
         val center = cellCenter(layout.innerRoute.size, place)
 
-        onNodeWithTag("board").performClick() // тап повз клітинку нічого не робить
+        onNodeWithTag("board").performClick()
         onNodeWithText("Chance!").assertDoesNotExist()
 
         tapCell(center)
@@ -82,20 +78,13 @@ class DesignCellExpandTest {
         onNodeWithText("Chance!").assertExists()
 
         onNodeWithTag("board").performMouseInput { moveTo(Offset(size.width.value / 2, size.height.value / 2)) }
-        // Згасання відкладене навмисно — щоб фішка встигла перехопити наведення.
         mainClock.advanceTimeBy(300)
         waitForIdle()
         onNodeWithText("Chance!").assertDoesNotExist()
     }
 
-    /**
-     * Бічна й верхня клітинки одного типу мусять розкриватись однаково:
-     * задача в них одна, орієнтація в треку — випадковість розкладки.
-     */
     @Test
     fun verticalAndHorizontalCellsExpandToTheSameBox() = runComposeUiTest {
-        // Великий екран: саме там бічна клітинка 49×89 проти верхньої 98×89,
-        // і на телефоні різниця не проявляється — усі клітинки дрібніші за рядок.
         val layout = showBoard(liveOuter = true, board = DpSize(960.dp, 700.dp))
         val chances = layout.outerRoute.places.filter { it.place.type.name == "Chance" }
         val vertical = chances.first { it.place.isVertical }.place
@@ -114,10 +103,6 @@ class DesignCellExpandTest {
         assertEquals(verticalSize, horizontalSize, "розкриті клітинки різного розміру")
     }
 
-    /**
-     * На весь екран знак у пігулці більший, і місця під підпис лишається менше.
-     * Порівнюємо з еталонним написом без обмежень: якщо вузол вужчий — обрізало.
-     */
     @Test
     fun expandedLabelIsNotTruncatedOnALargeBoard() = runComposeUiTest {
         val board = DpSize(960.dp, 700.dp)
@@ -152,7 +137,6 @@ class DesignCellExpandTest {
         )
     }
 
-    /** Знак при розкритті не має зменшуватись — на великій дошці саме так і було. */
     @Test
     fun expandedIconIsNotSmallerThanCollapsed() = runComposeUiTest {
         val board = DpSize(960.dp, 700.dp)
@@ -184,7 +168,6 @@ class DesignCellExpandTest {
             .getBoundsInRoot()
             .let { it.right - it.left }
 
-    /** Неактивне коло — орієнтир, а не місце дії: воно не розкривається. */
     @Test
     fun engravedRingDoesNotExpand() = runComposeUiTest {
         val layout = showBoard()
@@ -200,7 +183,6 @@ class DesignCellExpandTest {
         onNodeWithText("Chance!").assertDoesNotExist()
     }
 
-    /** Клітинка біля краю треку розкривається всередину, а не за екран. */
     @Test
     fun expandedCellStaysInsideTheTrack() = runComposeUiTest {
         val layout = showBoard()
@@ -222,7 +204,6 @@ class DesignCellExpandTest {
         assertTrue(labelRight <= bounds.right, "підпис виїхав за екран")
     }
 
-    /** Трек відцентрований у дошці, тому зсув клітинки треба перевести в корінь. */
     private fun cellCenter(trackSize: DpSize, place: Place, board: DpSize = size) = Offset(
         x = (board.width - trackSize.width).value / 2 + place.offset.x.value + place.size.width.value / 2,
         y = (board.height - trackSize.height).value / 2 + place.offset.y.value + place.size.height.value / 2,

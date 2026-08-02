@@ -43,12 +43,10 @@ fun GenderSelector(
     animationSpec: AnimationSpec<Float> = tween(400, easing = LinearEasing),
     onGenderChange: (newGender: Gender) -> Unit
 ) {
-    // Arrange the gender options in a horizontal row
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Female gender option
         GenderOption(
             shape = FemaleShape,
             style = femaleStyle,
@@ -58,7 +56,6 @@ fun GenderSelector(
                 .size(iconSize)
                 .clickableGenderOption(Gender.FEMALE, onGenderChange)
         )
-        // Male gender option
         GenderOption(
             shape = MaleShape,
             style = maleStyle,
@@ -90,7 +87,6 @@ fun GenderOption(
     modifier: Modifier = Modifier,
     animationSpec: AnimationSpec<Float> = tween(400, easing = LinearEasing)
 ) {
-    // Animate the progress of the selection
     val progress by animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
         animationSpec = animationSpec
@@ -99,26 +95,18 @@ fun GenderOption(
     Canvas(
         modifier = modifier.size(48.dp)
     ) {
-        // Turn the shape into an outline
         val outline = shape.createOutline(size, layoutDirection, this)
-        // Create a path from the outline
         val path = Path().apply { addOutline(outline) }
 
-        // Calculate the diagonal of the Canvas size
         val diagonal = sqrt(size.width.pow(2) + size.height.pow(2))
-        // Calculate the radius of the fill circle based on the selection progress
         val radius = diagonal * progress
-        // Determine the center of the fill effect based on the effectOrigin
         val circleCenter = Offset(
             x = size.width * style.effectOrigin.pivotFractionX,
             y = size.height * style.effectOrigin.pivotFractionY
         )
 
-        // Clip the drawing area to the shape path
         clipPath(path) {
-            // Draw the background color
             drawRect(style.backgroundColor)
-            // Draw the fill circle
             drawCircle(
                 color = style.fillColor,
                 radius = radius,
@@ -145,10 +133,8 @@ object FemaleShape : Shape {
         val scale = size.minDimension / 24f
 
         val path = Path().apply {
-            // Head
             addOval(Rect(Offset(12.0f * scale, 4.0f * scale), 2.0f * scale))
 
-            // Body and limbs
             moveTo(16.45f * scale, 14.63f * scale)
             lineTo(13.93f * scale, 8.31f * scale)
             cubicTo(13.61f * scale, 7.52f * scale, 12.85f * scale, 7.01f * scale, 12.0f * scale, 7.0f * scale)
@@ -176,10 +162,8 @@ object MaleShape : Shape {
         val scale = size.minDimension / 24f
 
         val path = Path().apply {
-            // Head
             addOval(Rect(Offset(12f * scale, 4f * scale), 2f * scale))
 
-            // Body and limbs
             moveTo(14.0f * scale, 7.0f * scale)
             lineTo(10.0f * scale, 7.0f * scale)
             cubicTo(8.9f * scale, 7.0f * scale, 8.0f * scale, 7.9f * scale, 8.0f * scale, 9.0f * scale)

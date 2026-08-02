@@ -10,7 +10,6 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.coroutines.launch
 
-
 private class FocusSelectAllElementNode(
     private var textFieldValueState: MutableState<TextFieldValue>
 ) : Modifier.Node(), FocusEventModifierNode {
