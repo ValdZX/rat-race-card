@@ -196,9 +196,9 @@ private fun BalanceRow(player: Player) {
             color = colors.scaffold.brass,
         )
         AmountBlock(
-            label = stringResource(Res.string.cash),
-            amount = player.cash,
-            color = colors.scaffold.onSurface,
+            label = stringResource(Res.string.cash_flow),
+            amount = player.cashFlow(),
+            color = if (player.cashFlow() >= 0) Design.semantic.positive.edge else Design.semantic.negative.edge,
         )
     }
 }

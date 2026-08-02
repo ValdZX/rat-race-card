@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.min
 import androidx.constraintlayout.compose.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import ua.vald_zx.game.rat.race.card.screen.design.DesignCardScrim
+import ua.vald_zx.game.rat.race.card.screen.design.DesignCardDialog
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.isVertical
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
@@ -28,9 +28,22 @@ import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 
 const val cardMoveAnimationDuration = 2000
 
-@OptIn(ExperimentalMotionApi::class)
 @Composable
 fun BoxWithConstraintsScope.CardDialog(vm: BoardViewModel) {
+    if (designV2Enabled.value) {
+        DesignCardDialog(vm)
+    } else {
+        LegacyCardDialog(vm)
+    }
+}
+
+/**
+ * Стара мова: карта летить від колоди до центру й перевертається через
+ * MotionLayout. Нова — DesignCardDialog.
+ */
+@OptIn(ExperimentalMotionApi::class)
+@Composable
+private fun BoxWithConstraintsScope.LegacyCardDialog(vm: BoardViewModel) {
     val state by vm.uiState.collectAsState()
     val takenCard = state.board.takenCard
     var showDialog by remember { mutableStateOf(false) }
@@ -185,10 +198,6 @@ fun BoxWithConstraintsScope.CardDialog(vm: BoardViewModel) {
 
                     }
                 }
-            }
-            // Затемнення — деталь нової мови; стара показувала карту без нього.
-            if (designV2Enabled.value) {
-                DesignCardScrim(progress)
             }
             MotionLayout(
                 modifier = Modifier.fillMaxSize(),

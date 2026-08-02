@@ -328,7 +328,7 @@ internal fun SpeechBubble(
 }
 
 @Composable
-private fun SendMessageDialog(
+internal fun SendMessageDialog(
     onDismiss: () -> Unit,
     onSend: (String) -> Unit,
 ) {

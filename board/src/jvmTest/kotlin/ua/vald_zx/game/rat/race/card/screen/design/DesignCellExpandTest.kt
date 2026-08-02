@@ -3,6 +3,7 @@ package ua.vald_zx.game.rat.race.card.screen.design
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toAwtImage
@@ -12,6 +13,8 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
@@ -25,6 +28,7 @@ import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
@@ -78,14 +82,150 @@ class DesignCellExpandTest {
         onNodeWithText("Chance!").assertExists()
 
         onNodeWithTag("board").performMouseInput { moveTo(Offset(size.width.value / 2, size.height.value / 2)) }
+        // Згасання відкладене навмисно — щоб фішка встигла перехопити наведення.
+        mainClock.advanceTimeBy(300)
         waitForIdle()
         onNodeWithText("Chance!").assertDoesNotExist()
     }
 
+    /**
+     * Бічна й верхня клітинки одного типу мусять розкриватись однаково:
+     * задача в них одна, орієнтація в треку — випадковість розкладки.
+     */
+    @Test
+    fun verticalAndHorizontalCellsExpandToTheSameBox() = runComposeUiTest {
+        // Великий екран: саме там бічна клітинка 49×89 проти верхньої 98×89,
+        // і на телефоні різниця не проявляється — усі клітинки дрібніші за рядок.
+        val layout = showBoard(liveOuter = true, board = DpSize(960.dp, 700.dp))
+        val chances = layout.outerRoute.places.filter { it.place.type.name == "Chance" }
+        val vertical = chances.first { it.place.isVertical }.place
+        val horizontal = chances.first { !it.place.isVertical }.place
+
+        tapCell(cellCenter(layout.outerRoute.size, vertical, DpSize(960.dp, 700.dp)))
+        waitForIdle()
+        val verticalBox = onNodeWithText("Chance!").getBoundsInRoot()
+        val verticalSize = (verticalBox.right - verticalBox.left) to (verticalBox.bottom - verticalBox.top)
+
+        tapCell(cellCenter(layout.outerRoute.size, horizontal, DpSize(960.dp, 700.dp)))
+        waitForIdle()
+        val horizontalBox = onNodeWithText("Chance!").getBoundsInRoot()
+        val horizontalSize = (horizontalBox.right - horizontalBox.left) to (horizontalBox.bottom - horizontalBox.top)
+
+        assertEquals(verticalSize, horizontalSize, "розкриті клітинки різного розміру")
+    }
+
+    /**
+     * На весь екран знак у пігулці більший, і місця під підпис лишається менше.
+     * Порівнюємо з еталонним написом без обмежень: якщо вузол вужчий — обрізало.
+     */
+    @Test
+    fun expandedLabelIsNotTruncatedOnALargeBoard() = runComposeUiTest {
+        val board = DpSize(960.dp, 700.dp)
+        val layout = calculateBoardLayout(board, isVertical = false)!!
+        val place = layout.outerRoute.places.first { it.place.type.name == "Bankruptcy" }.place
+        setContent {
+            AppTheme(forceDark = false) {
+                Box(Modifier.size(board).background(Design.scaffold.background).testTag("board")) {
+                    val focus = rememberCellFocus()
+                    DesignTrackForTest(layout.outerRoute, CellSurface.Tile, focus)
+                    BasicText(
+                        text = "\u200BBankruptcy",
+                        style = expandedLabelStyle(),
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.testTag("reference"),
+                    )
+                }
+            }
+        }
+        waitForIdle()
+        val reference = onNodeWithTag("reference").getBoundsInRoot().let { it.right - it.left }
+
+        tapCell(cellCenter(layout.outerRoute.size, place, board))
+        waitForIdle()
+
+        val label = onNodeWithText("Bankruptcy", useUnmergedTree = true).getBoundsInRoot()
+        val shown = label.right - label.left
+        assertTrue(
+            shown >= reference,
+            "підпис обрізано: показано $shown, а повний напис $reference",
+        )
+    }
+
+    /** Знак при розкритті не має зменшуватись — на великій дошці саме так і було. */
+    @Test
+    fun expandedIconIsNotSmallerThanCollapsed() = runComposeUiTest {
+        val board = DpSize(960.dp, 700.dp)
+        val layout = calculateBoardLayout(board, isVertical = false)!!
+        val place = layout.outerRoute.places.first { it.place.type.name == "Bankruptcy" }.place
+        setContent {
+            AppTheme(forceDark = false) {
+                Box(Modifier.size(board).background(Design.scaffold.background).testTag("board")) {
+                    DesignTrackForTest(layout.outerRoute, CellSurface.Tile, rememberCellFocus())
+                }
+            }
+        }
+        waitForIdle()
+        val collapsed = iconWidth("Bankruptcy")
+
+        tapCell(cellCenter(layout.outerRoute.size, place, board))
+        waitForIdle()
+        val expanded = iconWidth("Bankruptcy")
+
+        assertTrue(
+            expanded >= collapsed,
+            "знак зменшився при розкритті: було $collapsed, стало $expanded",
+        )
+    }
+
+    private fun ComposeUiTest.iconWidth(label: String) =
+        onAllNodesWithContentDescription(label, useUnmergedTree = true)
+            .onFirst()
+            .getBoundsInRoot()
+            .let { it.right - it.left }
+
+    /** Неактивне коло — орієнтир, а не місце дії: воно не розкривається. */
+    @Test
+    fun engravedRingDoesNotExpand() = runComposeUiTest {
+        val layout = showBoard()
+        val place = layout.outerRoute.places.first { it.place.type.name == "Chance" }.place
+        val center = cellCenter(layout.outerRoute.size, place)
+
+        onNodeWithTag("board").performMouseInput { moveTo(center) }
+        waitForIdle()
+        onNodeWithText("Chance!").assertDoesNotExist()
+
+        tapCell(center)
+        waitForIdle()
+        onNodeWithText("Chance!").assertDoesNotExist()
+    }
+
+    /** Клітинка біля краю треку розкривається всередину, а не за екран. */
+    @Test
+    fun expandedCellStaysInsideTheTrack() = runComposeUiTest {
+        val layout = showBoard()
+        val place = layout.innerRoute.places
+            .maxBy { it.place.offset.x.value }.place
+        val center = cellCenter(layout.innerRoute.size, place)
+
+        tapCell(center)
+        waitForIdle()
+
+        val trackLeft = (size.width - layout.innerRoute.size.width) / 2
+        val bounds = onNodeWithTag("board").getBoundsInRoot()
+        val label = onNodeWithText(place.type.name, useUnmergedTree = true, substring = true)
+        val labelRight = label.getBoundsInRoot().right
+        assertTrue(
+            labelRight <= trackLeft + layout.innerRoute.size.width,
+            "розкрита клітинка вилізла за трек: $labelRight > ${trackLeft + layout.innerRoute.size.width}",
+        )
+        assertTrue(labelRight <= bounds.right, "підпис виїхав за екран")
+    }
+
     /** Трек відцентрований у дошці, тому зсув клітинки треба перевести в корінь. */
-    private fun cellCenter(trackSize: DpSize, place: Place) = Offset(
-        x = (size.width - trackSize.width).value / 2 + place.offset.x.value + place.size.width.value / 2,
-        y = (size.height - trackSize.height).value / 2 + place.offset.y.value + place.size.height.value / 2,
+    private fun cellCenter(trackSize: DpSize, place: Place, board: DpSize = size) = Offset(
+        x = (board.width - trackSize.width).value / 2 + place.offset.x.value + place.size.width.value / 2,
+        y = (board.height - trackSize.height).value / 2 + place.offset.y.value + place.size.height.value / 2,
     )
 
     private fun ComposeUiTest.tapCell(point: Offset) {
@@ -96,13 +236,22 @@ class DesignCellExpandTest {
         }
     }
 
-    private fun ComposeUiTest.showBoard() =
-        calculateBoardLayout(size, isVertical = true)!!.also { layout ->
+    private fun ComposeUiTest.showBoard(liveOuter: Boolean = false, board: DpSize = size) =
+        calculateBoardLayout(board, isVertical = board.height > board.width)!!.also { layout ->
             setContent {
                 AppTheme(forceDark = false) {
-                    Box(Modifier.size(size).background(Design.scaffold.background).testTag("board")) {
-                        DesignTrackForTest(layout.outerRoute, CellSurface.Engraved)
-                        DesignTrackForTest(layout.innerRoute, CellSurface.Tile)
+                    Box(Modifier.size(board).background(Design.scaffold.background).testTag("board")) {
+                        val focus = rememberCellFocus()
+                        DesignTrackForTest(
+                            layout.outerRoute,
+                            if (liveOuter) CellSurface.Tile else CellSurface.Engraved,
+                            focus,
+                        )
+                        DesignTrackForTest(
+                            layout.innerRoute,
+                            if (liveOuter) CellSurface.Engraved else CellSurface.Tile,
+                            focus,
+                        )
                     }
                 }
             }

@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
@@ -32,6 +33,9 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.*
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
+/** Шар колод над треками; фішки й репліки — ще вище. */
+internal const val DECKS_Z = 2f
+
 @Composable
 fun BoxScope.DesignCardDecks(layout: CardDeckLayout, vm: BoardViewModel) {
     val state by vm.uiState.collectAsState()
@@ -39,9 +43,17 @@ fun BoxScope.DesignCardDecks(layout: CardDeckLayout, vm: BoardViewModel) {
         modifier = Modifier
             .align(Alignment.Center)
             .size(layout.size)
+            // Трек із розкритою кліткою піднімається над сусіднім треком, і
+            // без цього його непрозоре ложе накривало колоди.
+            .zIndex(DECKS_Z)
     ) {
         layout.slots.forEach { slot ->
-            val count = state.board.cards[slot.type].orEmpty().size
+            // Відбій рахує зіграні карти, колода — ті, що лишились у ній.
+            val count = if (slot.kind == CardDeckSlotKind.DISCARD) {
+                state.board.discard[slot.type].orEmpty().size
+            } else {
+                state.board.cards[slot.type].orEmpty().size
+            }
             val canTake = slot.kind == CardDeckSlotKind.DRAW &&
                     state.board.canTakeCard.contains(slot.type) &&
                     state.currentPlayerIsActive
@@ -76,7 +88,9 @@ internal fun DeckSlot(
     val tone = type.tone()
     val density = LocalDensity.current
     val isDraw = kind == CardDeckSlotKind.DRAW
-    val shape = DesignShapes.sm
+    // Макет дає колоді r-xl 22dp, але там вона на пів екрана. На телефоні
+    // слот 35×53dp, і 22dp перетворюють його на пігулку.
+    val shape = if (min(size.width, size.height) >= 56.dp) DesignShapes.xl else DesignShapes.sm
 
     // «Можна діяти» — цоколь і пульс обводки, без світіння.
     val transition = rememberInfiniteTransition(label = "DeckAffordance")
@@ -112,32 +126,40 @@ internal fun DeckSlot(
         contentAlignment = Alignment.Center,
     ) {
         val ink = if (isDraw && count > 0) colors.scaffold.onFill else colors.scaffold.onSurfaceMuted
-        val roomy = min(size.width, size.height) > 34.dp
+        // Підпис влазить лише у високий слот: на телефоні він з'їдав два рядки,
+        // і цифра — те, заради чого слот і читають — обрізалась.
+        val withLabel = size.height >= 72.dp
+        // Розмір знака веде розмір слота, а не залишок місця в колонці:
+        // інакше він стрибав щоразу, коли змінювалась кількість карт.
+        val iconSize = min(size.width, size.height) * if (withLabel) 0.42f else 0.34f
         Column(
-            modifier = Modifier.padding(4.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
         ) {
             Icon(
                 painter = type.icon(),
                 contentDescription = type.shortLabel(),
                 tint = ink,
-                modifier = Modifier.weight(1f, fill = false).aspectRatio(1f),
+                modifier = Modifier.size(iconSize),
             )
-            if (roomy) {
+            if (withLabel) {
                 Text(
                     text = type.shortLabel(),
                     style = Design.type.cellSm,
                     color = ink,
                     textAlign = TextAlign.Center,
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    text = count.toString(),
-                    style = Design.type.monoMeta,
-                    color = ink,
-                )
             }
+            Text(
+                text = count.toString(),
+                style = Design.type.monoMeta,
+                color = ink,
+                maxLines = 1,
+                softWrap = false,
+            )
         }
     }
 }

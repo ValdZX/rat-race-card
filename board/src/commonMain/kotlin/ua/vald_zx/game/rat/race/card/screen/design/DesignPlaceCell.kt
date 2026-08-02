@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -46,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ua.vald_zx.game.rat.race.card.components.Rotation
@@ -104,6 +107,7 @@ fun DesignPlaceCell(
     label: String? = null,
     compact: Boolean = false,
     expanded: Boolean = false,
+    expandedIcon: Dp = expandedIconSize,
     waitingAmount: Long? = null,
     onFocusChange: ((focused: Boolean, byTap: Boolean) -> Unit)? = null,
     onClick: (() -> Unit)? = null,
@@ -111,7 +115,6 @@ fun DesignPlaceCell(
     val colors = Design.colors
     val tone = type.tone()
     val engraved = surface == CellSurface.Engraved
-    val markerColor = if (engraved) colors.scaffold.outlineStrong else tone.edge
     val shape = remember(type.family) { CellShape(type.family) }
 
     // Наведення курсором на десктопі й вебі; тап — на телефоні. Обидва ведуть
@@ -149,10 +152,7 @@ fun DesignPlaceCell(
             .optionalModifier(onClick == null && onFocusChange != null) {
                 clickableSingle { onFocusChange?.invoke(true, true) }
             }
-            .drawBehind {
-                if (engraved) drawHatch(colors.scaffold.outlineStrong)
-                drawFamilyMarker(type.family, markerColor, engraved)
-            },
+,
         contentAlignment = Alignment.Center,
     ) {
         val ink = if (engraved) colors.scaffold.onSurface else colors.scaffold.onFill
@@ -171,7 +171,7 @@ fun DesignPlaceCell(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
             ) {
-                icon(Modifier.fillMaxHeight(0.7f).aspectRatio(1f))
+                icon(Modifier.size(expandedIcon))
                 Text(
                     text = label,
                     style = expandedLabelStyle(),
@@ -213,114 +213,6 @@ private fun WaitingToken(amount: Long, modifier: Modifier = Modifier) {
         )
     }
 }
-
-private fun DrawScope.drawFamilyMarker(family: CellFamily, color: Color, engraved: Boolean) {
-    val unit = size.minDimension
-    val stroke = if (engraved) unit * 0.05f else unit * 0.07f
-    val alpha = if (engraved) 0.9f else 0.55f
-    when (family) {
-        // Смуга-капітель зверху
-        CellFamily.Service -> drawRect(
-            color = color,
-            topLeft = Offset(0f, 0f),
-            size = Size(size.width, unit * 0.16f),
-            alpha = alpha,
-        )
-
-        // Внутрішня рамка (загнутий кут — у самій формі)
-        CellFamily.Card -> {
-            val inset = unit * 0.16f
-            drawRect(
-                color = color,
-                topLeft = Offset(inset, inset),
-                size = Size(size.width - inset * 2, size.height - inset * 2),
-                style = Stroke(width = stroke * 0.6f),
-                alpha = alpha,
-            )
-        }
-
-        // Виїмка — у самій формі; тут лише лінія-підсічка над нею
-        CellFamily.Loss -> drawLine(
-            color = color,
-            start = Offset(unit * 0.16f, size.height * 0.62f),
-            end = Offset(size.width - unit * 0.16f, size.height * 0.62f),
-            strokeWidth = stroke * 0.5f,
-            alpha = alpha,
-        )
-
-        // Стовпчики + верхня лінія-горизонт
-        CellFamily.Asset -> {
-            val barWidth = unit * 0.13f
-            val gap = unit * 0.09f
-            val baseY = size.height * 0.82f
-            val startX = size.width / 2 - (barWidth * 3 + gap * 2) / 2
-            listOf(0.28f, 0.46f, 0.64f).forEachIndexed { index, heightFactor ->
-                val x = startX + index * (barWidth + gap)
-                drawRect(
-                    color = color,
-                    topLeft = Offset(x, baseY - size.height * heightFactor * 0.6f),
-                    size = Size(barWidth, size.height * heightFactor * 0.6f),
-                    alpha = alpha,
-                )
-            }
-            drawLine(
-                color = color,
-                start = Offset(unit * 0.14f, size.height * 0.2f),
-                end = Offset(size.width - unit * 0.14f, size.height * 0.2f),
-                strokeWidth = stroke * 0.5f,
-                alpha = alpha,
-            )
-        }
-
-        // Куполоподібний низ + кільця
-        CellFamily.Life -> {
-            val radius = unit * 0.3f
-            drawCircle(
-                color = color,
-                radius = radius,
-                center = Offset(size.width / 2, size.height * 0.55f),
-                style = Stroke(width = stroke * 0.5f),
-                alpha = alpha,
-            )
-            drawCircle(
-                color = color,
-                radius = radius * 0.5f,
-                center = Offset(size.width / 2, size.height * 0.55f),
-                style = Stroke(width = stroke * 0.5f),
-                alpha = alpha,
-            )
-            drawArc(
-                color = color,
-                startAngle = 0f,
-                sweepAngle = 180f,
-                useCenter = false,
-                topLeft = Offset(0f, size.height - unit * 0.24f),
-                size = Size(size.width, unit * 0.24f),
-                style = Stroke(width = stroke * 0.5f),
-                alpha = alpha,
-            )
-        }
-    }
-}
-
-/** Штрих 135° — гравіювання неактивного треку. */
-private fun DrawScope.drawHatch(color: Color) {
-    val step = 7.dp.toPx()
-    clipRect {
-        var x = -size.height
-        while (x < size.width + size.height) {
-            drawLine(
-                color = color,
-                start = Offset(x, size.height),
-                end = Offset(x + size.height, 0f),
-                strokeWidth = 1f,
-                alpha = 0.35f,
-            )
-            x += step
-        }
-    }
-}
-
 
 /**
  * Силует рамки за родиною. Саме форма, а не колір, робить тип упізнаваним,
@@ -364,6 +256,19 @@ private class CellShape(private val family: CellFamily) : Shape {
         return Outline.Generic(path)
     }
 }
+
+/** Нижня межа знака в розкритій пігулці: менше за це він не стає ніколи. */
+internal val expandedIconSize = 24.dp
+
+/** Частка клітинки під знак у згорнутому стані. */
+internal const val COLLAPSED_ICON_FRACTION = 0.66f
+
+/**
+ * Скільки в розкритій клітинці займає все, крім підпису: знак, зазор і поля.
+ * Живе поруч із самою розкладкою, бо трек рахує від нього ширину — коли це
+ * була окрема константа, вони розійшлись і текст обрізало.
+ */
+internal fun expandedLabelChrome(iconSize: Dp): Dp = iconSize + 6.dp + 16.dp
 
 /** Кегль розкритого підпису: фіксований і читабельний, клітинка росте під нього. */
 @Composable
