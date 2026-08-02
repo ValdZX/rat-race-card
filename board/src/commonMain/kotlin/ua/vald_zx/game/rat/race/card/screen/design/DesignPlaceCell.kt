@@ -1,9 +1,6 @@
 package ua.vald_zx.game.rat.race.card.screen.design
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -104,17 +101,13 @@ fun DesignPlaceCell(
     expanded: Boolean = false,
     expandedIcon: Dp = expandedIconSize,
     waitingAmount: Long? = null,
-    onFocusChange: ((focused: Boolean, byTap: Boolean) -> Unit)? = null,
+    onTap: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
     val colors = Design.colors
     val tone = type.tone()
     val engraved = surface == CellSurface.Engraved
     val shape = remember(type.family) { CellShape(type.family) }
-
-    val interaction = remember { MutableInteractionSource() }
-    val hovered by interaction.collectIsHoveredAsState()
-    LaunchedEffect(hovered) { onFocusChange?.invoke(hovered, false) }
 
     Box(modifier = modifier, contentAlignment = Alignment.TopEnd) {
         if (waitingAmount != null) {
@@ -132,6 +125,9 @@ fun DesignPlaceCell(
             .optionalModifier(!engraved && !compact) { levelTile(tone.edge, shape) }
             .clip(shape)
             .optionalModifier(!engraved) { background(tone.fill) }
+            .optionalModifier(engraved) {
+                drawBehind { drawHatch(colors.scaffold.outlineStrong) }
+            }
             .border(
                 width = when {
                     waitingAmount != null -> 2.dp
@@ -145,12 +141,10 @@ fun DesignPlaceCell(
                 },
                 shape = shape,
             )
-            .hoverable(interaction)
             .optionalModifier(onClick != null) { clickableSingle { onClick?.invoke() } }
-            .optionalModifier(onClick == null && onFocusChange != null) {
-                clickableSingle { onFocusChange?.invoke(true, true) }
-            }
-,
+            .optionalModifier(onClick == null && onTap != null) {
+                clickableSingle { onTap?.invoke() }
+            },
         contentAlignment = Alignment.Center,
     ) {
         val ink = if (engraved) colors.scaffold.onSurface else colors.scaffold.onFill
@@ -206,6 +200,23 @@ private fun WaitingToken(amount: Long, modifier: Modifier = Modifier) {
             maxLines = 1,
             softWrap = false,
         )
+    }
+}
+
+private fun DrawScope.drawHatch(color: Color) {
+    val step = 7.dp.toPx()
+    clipRect {
+        var x = -size.height
+        while (x < size.width + size.height) {
+            drawLine(
+                color = color,
+                start = Offset(x, size.height),
+                end = Offset(x + size.height, 0f),
+                strokeWidth = 1f,
+                alpha = 0.35f,
+            )
+            x += step
+        }
     }
 }
 

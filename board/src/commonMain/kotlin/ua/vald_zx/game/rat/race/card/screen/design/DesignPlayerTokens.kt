@@ -1,23 +1,21 @@
 package ua.vald_zx.game.rat.race.card.screen.design
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.zIndex
+import kotlin.math.abs
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.RouteLayout
@@ -51,7 +49,8 @@ private fun BoxScope.TokenLayer(
     onOwnToken: () -> Unit,
 ) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
-    val expandedBox = expandedCellBox(layout)
+    val state by vm.uiState.collectAsState()
+    val live = state.player.location.level == layout.layer.level
     Box(
         modifier = Modifier
             .align(Alignment.Center)
@@ -59,7 +58,6 @@ private fun BoxScope.TokenLayer(
             .zIndex(FOCUSED_CELL_Z + 1f)
     ) {
         forEachPlayerPoint(vm, layout) { pointerState, places, index, count ->
-            val cellKey = layout.layer.level to pointerState.position
             val place = places.getValue(pointerState.position)
             val target = calculatePointerOffset(
                 layout.cellSize.width,
@@ -68,31 +66,20 @@ private fun BoxScope.TokenLayer(
                 index,
                 count,
             )
-            val interaction = remember { MutableInteractionSource() }
-            val tokenHovered by interaction.collectIsHoveredAsState()
-            LaunchedEffect(tokenHovered) { focus.set(cellKey, tokenHovered, FocusSource.Token) }
-            val floats = remember(focus.key) {
-                val focused = focus.key
-                when {
-                    focused == null || focused.first != layout.layer.level -> false
-                    focused == cellKey -> focus.source != FocusSource.Token
-                    else -> kotlin.math.abs(focused.second - pointerState.position) <= COVERED_NEIGHBOURS
-                }
-            }
-            val shift = expandedBox.height / 2 + layout.cellSize.height / 2 + 4.dp
-            val floatBy = when {
-                !floats -> 0.dp
-                place.offset.y > shift -> -shift
-                else -> shift
-            }
-            val x by animateDpAsState(target.first, label = "TokenX")
-            val y by animateDpAsState(target.second + floatBy, label = "TokenY")
+            val focused = focus.key
+            val stepsAside = live && focused != null &&
+                    focused.first == layout.layer.level &&
+                    abs(focused.second - pointerState.position) <= COVERED_NEIGHBOURS
+            val openBox = focus.expandedBox ?: expandedCellBox(layout)
+            val floatBy = if (stepsAside) tokenFloat(layout, place, openBox) else DpOffset.Zero
+            val x by animateDpAsState(target.first + floatBy.x, label = "TokenX")
+            val y by animateDpAsState(target.second + floatBy.y, label = "TokenY")
             DesignPlayerToken(
                 player = pointerState.player,
                 isCurrentPlayer = pointerState.isCurrentPlayer,
                 isActivePlayer = pointerState.isActivePlayer,
                 spotSize = layout.cellSize,
-                modifier = Modifier.offset(x, y).hoverable(interaction),
+                modifier = Modifier.offset(x, y),
                 onClick = if (pointerState.isCurrentPlayer) {
                     onOwnToken
                 } else {

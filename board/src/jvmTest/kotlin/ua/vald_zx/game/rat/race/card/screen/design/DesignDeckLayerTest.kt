@@ -38,8 +38,13 @@ class DesignDeckLayerTest {
         val slotSize = DpSize(60.dp, 60.dp)
         setContent {
             AppTheme(forceDark = true) {
-                Box(Modifier.size(size).background(Design.scaffold.background).testTag("board")) {
-                    val focus = rememberCellFocus()
+                val focus = rememberCellFocus()
+                Box(
+                    Modifier.size(size)
+                        .background(Design.scaffold.background)
+                        .cellFocusTracking(listOf(layout.innerRoute, layout.outerRoute), focus)
+                        .testTag("board")
+                ) {
                     DesignTrackForTest(layout.outerRoute, CellSurface.Engraved, focus)
                     DesignTrackForTest(layout.innerRoute, CellSurface.Tile, focus)
                     Box(

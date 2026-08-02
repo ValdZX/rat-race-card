@@ -33,6 +33,7 @@ import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.math.hypot
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -58,9 +59,9 @@ class DesignTokenFloatTest {
         val before = tokenBounds()
 
         val hoverPoint = Offset(
-            x = (board.width - layout.outerRoute.size.width).value / 2 +
+            x = (board.width - layout.innerRoute.size.width).value / 2 +
                     place.place.offset.x.value + 4f,
-            y = (board.height - layout.outerRoute.size.height).value / 2 +
+            y = (board.height - layout.innerRoute.size.height).value / 2 +
                     place.place.offset.y.value + place.place.size.height.value / 2,
         )
         onNodeWithTag("board").performMouseInput { moveTo(hoverPoint) }
@@ -68,7 +69,7 @@ class DesignTokenFloatTest {
         val after = tokenBounds()
 
         capture()
-        assertTrue(after.top != before.top, "фішка не відпливла з розкритої клітинки")
+        assertTrue(after != before, "фішка не відпливла з розкритої клітинки")
         assertTrue(after.top >= 0.dp && after.bottom <= board.height, "фішка виїхала за дошку")
 
         val token = Offset(
@@ -83,22 +84,27 @@ class DesignTokenFloatTest {
 
     private fun ComposeUiTest.showBoard() =
         calculateBoardLayout(board, isVertical = false)!!.also { layout ->
-            val standsOn = layout.outerRoute.places.first { it.place.type.name == "Bankruptcy" }
+            val standsOn = layout.innerRoute.places.first { it.place.type.name == "Bankruptcy" }
             players.value = listOf(
                 Player(
                     id = "2",
                     boardId = "b",
                     attrs = PlayerAttributes(0xFF3355AA, 0),
-                    location = PlayerLocation(position = standsOn.index, level = layout.outerRoute.layer.level),
+                    location = PlayerLocation(position = standsOn.index, level = layout.innerRoute.layer.level),
                 )
             )
             setContent {
                 InitPreviewWithVm { vm ->
                     BottomSheetNavigator {
-                        Box(Modifier.size(board).background(Design.scaffold.background).testTag("board")) {
-                            val focus = rememberCellFocus()
-                            DesignTrackForTest(layout.outerRoute, CellSurface.Tile, focus)
-                            DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus)
+                        val focus = rememberCellFocus()
+                        Box(
+                            Modifier.size(board)
+                                .background(Design.scaffold.background)
+                                .cellFocusTracking(listOf(layout.innerRoute), focus)
+                                .testTag("board")
+                        ) {
+                            DesignTrackForTest(layout.innerRoute, CellSurface.Tile, focus)
+                            DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus)
                         }
                     }
                 }
@@ -107,34 +113,39 @@ class DesignTokenFloatTest {
         }
 
     private fun hoveredPlace(layout: ua.vald_zx.game.rat.race.card.screen.board.BoardLayout) =
-        layout.outerRoute.places.first {
+        layout.innerRoute.places.first {
             it.index == moveTo(
-                layout.outerRoute.places.first { p -> p.place.type.name == "Bankruptcy" }.index,
-                layout.outerRoute.layer.cellCount,
-                layout.outerRoute.route.offset,
+                layout.innerRoute.places.first { p -> p.place.type.name == "Bankruptcy" }.index,
+                layout.innerRoute.layer.cellCount,
+                layout.innerRoute.route.offset,
             )
         }
 
     @Test
     fun neighbourTokenDoesNotCoverTheLabel() = runComposeUiTest {
         val layout = calculateBoardLayout(board, isVertical = false)!!
-        val target = layout.outerRoute.places.first { it.place.type.name == "Bankruptcy" }
-        val neighbour = layout.outerRoute.places.first { it.index == target.index + 1 }
+        val target = layout.innerRoute.places.first { it.place.type.name == "Bankruptcy" }
+        val neighbour = layout.innerRoute.places.first { it.index == target.index + 1 }
         players.value = listOf(neighbour.index).map { position ->
             Player(
                 id = "3",
                 boardId = "b",
                 attrs = PlayerAttributes(NEIGHBOUR_COLOR, 0),
-                location = PlayerLocation(position = position, level = layout.outerRoute.layer.level),
+                location = PlayerLocation(position = position, level = layout.innerRoute.layer.level),
             )
         }
         setContent {
             InitPreviewWithVm { vm ->
                 BottomSheetNavigator {
-                    Box(Modifier.size(board).background(Design.scaffold.background).testTag("board")) {
-                        val focus = rememberCellFocus()
-                        DesignTrackForTest(layout.outerRoute, CellSurface.Tile, focus)
-                        DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus)
+                    val focus = rememberCellFocus()
+                    Box(
+                        Modifier.size(board)
+                            .background(Design.scaffold.background)
+                            .cellFocusTracking(listOf(layout.innerRoute), focus)
+                            .testTag("board")
+                    ) {
+                        DesignTrackForTest(layout.innerRoute, CellSurface.Tile, focus)
+                        DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus)
                     }
                 }
             }
@@ -142,14 +153,14 @@ class DesignTokenFloatTest {
         waitForIdle()
         val tokenHome = tokenBounds()
 
-        val shown = layout.outerRoute.places.first {
-            it.index == moveTo(target.index, layout.outerRoute.layer.cellCount, layout.outerRoute.route.offset)
+        val shown = layout.innerRoute.places.first {
+            it.index == moveTo(target.index, layout.innerRoute.layer.cellCount, layout.innerRoute.route.offset)
         }
         onNodeWithTag("board").performMouseInput {
             moveTo(
                 Offset(
-                    x = (board.width - layout.outerRoute.size.width).value / 2 + shown.place.offset.x.value + 4f,
-                    y = (board.height - layout.outerRoute.size.height).value / 2 +
+                    x = (board.width - layout.innerRoute.size.width).value / 2 + shown.place.offset.x.value + 4f,
+                    y = (board.height - layout.innerRoute.size.height).value / 2 +
                             shown.place.offset.y.value + shown.place.size.height.value / 2,
                 )
             )
@@ -157,13 +168,140 @@ class DesignTokenFloatTest {
         waitForIdle()
 
         assertTrue(
-            tokenBounds().top != tokenHome.top,
+            tokenBounds() != tokenHome,
             "сусідня фішка лишилась на місці й накриває підпис",
         )
     }
 
     @Test
-    fun hoveringTheTokenItselfKeepsItUnderTheCursor() = runComposeUiTest {
+    fun tokenOnAVerticalStripClearsTheOpenedCell() = runComposeUiTest {
+        val layout = calculateBoardLayout(board, isVertical = false)!!
+        val route = layout.innerRoute
+        val standsOn = route.places.first {
+            !it.place.location.side.isHorizontal && it.place.type.name == "Shopping"
+        }
+        players.value = listOf(
+            Player(
+                id = "5",
+                boardId = "b",
+                attrs = PlayerAttributes(NEIGHBOUR_COLOR, 0),
+                location = PlayerLocation(position = standsOn.index, level = route.layer.level),
+            )
+        )
+        setContent {
+            InitPreviewWithVm { vm ->
+                BottomSheetNavigator {
+                    val focus = rememberCellFocus()
+                    Box(
+                        Modifier.size(board)
+                            .background(Design.scaffold.background)
+                            .cellFocusTracking(listOf(route), focus)
+                            .testTag("board")
+                    ) {
+                        DesignTrackForTest(route, CellSurface.Tile, focus)
+                        DesignPlayerTokens(vm = vm, layout = route, focus = focus)
+                    }
+                }
+            }
+        }
+        waitForIdle()
+
+        val shown = route.places.first {
+            it.index == moveTo(standsOn.index, route.layer.cellCount, route.route.offset)
+        }
+        onNodeWithTag("board").performMouseInput {
+            moveTo(
+                Offset(
+                    x = (board.width - route.size.width).value / 2 +
+                            shown.place.offset.x.value + shown.place.size.width.value / 2,
+                    y = (board.height - route.size.height).value / 2 +
+                            shown.place.offset.y.value + shown.place.size.height.value / 2,
+                )
+            )
+        }
+        mainClock.advanceTimeBy(600)
+        waitForIdle()
+
+        val label = onNodeWithText("Shopping", useUnmergedTree = true).getBoundsInRoot()
+        val token = tokenBounds()
+        assertTrue(
+            token.left >= label.right || token.right <= label.left ||
+                    token.top >= label.bottom || token.bottom <= label.top,
+            "фішка $token накрила підпис розкритої клітинки $label",
+        )
+    }
+
+    @Test
+    fun everyTokenStepsTowardTheBoardCentre() {
+        val layout = calculateBoardLayout(board, isVertical = false)!!
+        listOf(layout.outerRoute, layout.innerRoute).forEach { route ->
+            val centreX = route.size.width / 2
+            val centreY = route.size.height / 2
+            route.places.forEach { (index, place) ->
+                val float = tokenFloat(route, place, expandedCellBox(route))
+                val fromX = place.offset.x + place.size.width / 2 - centreX
+                val fromY = place.offset.y + place.size.height / 2 - centreY
+                val moved = hypot((fromX + float.x).value, (fromY + float.y).value)
+                assertTrue(
+                    moved < hypot(fromX.value, fromY.value),
+                    "клітинка $index на ${route.layer}: фішка пішла від центру дошки, а не до нього",
+                )
+            }
+        }
+    }
+
+    @Test
+    fun tokensStayPutOnTheInactiveRing() = runComposeUiTest {
+        val layout = calculateBoardLayout(board, isVertical = false)!!
+        val standsOn = layout.outerRoute.places.first { it.place.type.name == "Bankruptcy" }
+        players.value = listOf(
+            Player(
+                id = "4",
+                boardId = "b",
+                attrs = PlayerAttributes(NEIGHBOUR_COLOR, 0),
+                location = PlayerLocation(position = standsOn.index, level = layout.outerRoute.layer.level),
+            )
+        )
+        setContent {
+            InitPreviewWithVm { vm ->
+                BottomSheetNavigator {
+                    val focus = rememberCellFocus()
+                    Box(
+                        Modifier.size(board)
+                            .background(Design.scaffold.background)
+                            .cellFocusTracking(listOf(layout.outerRoute), focus)
+                            .testTag("board")
+                    ) {
+                        DesignTrackForTest(layout.outerRoute, CellSurface.Engraved, focus)
+                        DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus)
+                    }
+                }
+            }
+        }
+        waitForIdle()
+        val home = tokenBounds()
+
+        val shown = layout.outerRoute.places.first {
+            it.index == moveTo(standsOn.index, layout.outerRoute.layer.cellCount, layout.outerRoute.route.offset)
+        }
+        onNodeWithTag("board").performMouseInput {
+            moveTo(
+                Offset(
+                    x = (board.width - layout.outerRoute.size.width).value / 2 +
+                            shown.place.offset.x.value + shown.place.size.width.value / 2,
+                    y = (board.height - layout.outerRoute.size.height).value / 2 +
+                            shown.place.offset.y.value + shown.place.size.height.value / 2,
+                )
+            )
+        }
+        mainClock.advanceTimeBy(600)
+        waitForIdle()
+
+        assertEquals(home, tokenBounds(), "фішка рушила через наведення на неактивне коло")
+    }
+
+    @Test
+    fun hoveringTheTokenItselfSettlesInsteadOfBlinking() = runComposeUiTest {
         val layout = showBoard()
         waitForIdle()
         val home = tokenBounds()
@@ -175,9 +313,13 @@ class DesignTokenFloatTest {
         onNodeWithTag("board").performMouseInput { moveTo(center) }
         mainClock.advanceTimeBy(600)
         waitForIdle()
+        val settled = tokenBounds()
+
+        mainClock.advanceTimeBy(600)
+        waitForIdle()
 
         onNodeWithText("Bankruptcy", useUnmergedTree = true).assertExists()
-        assertEquals(home, tokenBounds(), "фішка втекла з-під курсора — саме з цього починалось блимання")
+        assertEquals(settled, tokenBounds(), "фішка й далі стрибає — саме з цього починалось блимання")
     }
 
     private fun ComposeUiTest.tokenBounds() =

@@ -110,8 +110,13 @@ class DesignCellExpandTest {
         val place = layout.outerRoute.places.first { it.place.type.name == "Bankruptcy" }.place
         setContent {
             AppTheme(forceDark = false) {
-                Box(Modifier.size(board).background(Design.scaffold.background).testTag("board")) {
-                    val focus = rememberCellFocus()
+                val focus = rememberCellFocus()
+                Box(
+                    Modifier.size(board)
+                        .background(Design.scaffold.background)
+                        .cellFocusTracking(listOf(layout.outerRoute), focus)
+                        .testTag("board")
+                ) {
                     DesignTrackForTest(layout.outerRoute, CellSurface.Tile, focus)
                     BasicText(
                         text = "\u200BBankruptcy",
@@ -144,8 +149,14 @@ class DesignCellExpandTest {
         val place = layout.outerRoute.places.first { it.place.type.name == "Bankruptcy" }.place
         setContent {
             AppTheme(forceDark = false) {
-                Box(Modifier.size(board).background(Design.scaffold.background).testTag("board")) {
-                    DesignTrackForTest(layout.outerRoute, CellSurface.Tile, rememberCellFocus())
+                val focus = rememberCellFocus()
+                Box(
+                    Modifier.size(board)
+                        .background(Design.scaffold.background)
+                        .cellFocusTracking(listOf(layout.outerRoute), focus)
+                        .testTag("board")
+                ) {
+                    DesignTrackForTest(layout.outerRoute, CellSurface.Tile, focus)
                 }
             }
         }
@@ -221,8 +232,13 @@ class DesignCellExpandTest {
         calculateBoardLayout(board, isVertical = board.height > board.width)!!.also { layout ->
             setContent {
                 AppTheme(forceDark = false) {
-                    Box(Modifier.size(board).background(Design.scaffold.background).testTag("board")) {
-                        val focus = rememberCellFocus()
+                    val focus = rememberCellFocus()
+                    Box(
+                        Modifier.size(board)
+                            .background(Design.scaffold.background)
+                            .cellFocusTracking(listOf(layout.innerRoute, layout.outerRoute), focus)
+                            .testTag("board")
+                    ) {
                         DesignTrackForTest(
                             layout.outerRoute,
                             if (liveOuter) CellSurface.Tile else CellSurface.Engraved,

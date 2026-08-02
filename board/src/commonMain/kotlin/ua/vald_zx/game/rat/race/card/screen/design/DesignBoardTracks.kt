@@ -22,11 +22,18 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import kotlinx.coroutines.delay
@@ -38,6 +45,7 @@ import ua.vald_zx.game.rat.race.card.screen.board.BoardLayout
 import ua.vald_zx.game.rat.race.card.screen.board.Place
 import ua.vald_zx.game.rat.race.card.screen.board.RouteLayout
 import ua.vald_zx.game.rat.race.card.screen.board.SalaryScreen
+import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.cashFlow
@@ -80,68 +88,138 @@ fun BoxScope.DesignBoardTracks(vm: BoardViewModel, layout: BoardLayout, focus: C
     )
 }
 
-enum class FocusSource { Cell, Token, Tap }
-
 @Stable
 class CellFocus {
-    var key by mutableStateOf<Pair<Int, Int>?>(null)
-        private set
-    var source by mutableStateOf(FocusSource.Cell)
-        private set
-    private var fromTap by mutableStateOf(false)
-    private var pendingRelease by mutableStateOf(false)
+    private var hovered by mutableStateOf<Pair<Int, Int>?>(null)
+    private var tapped by mutableStateOf<Pair<Int, Int>?>(null)
 
-    internal var epoch by mutableStateOf(0)
+    internal var tapCount by mutableStateOf(0)
         private set
 
-    fun set(key: Pair<Int, Int>, focused: Boolean, source: FocusSource) {
-        epoch++
-        if (focused) {
-            this.key = key
-            this.source = source
-            fromTap = source == FocusSource.Tap
-            pendingRelease = false
-        } else if (this.key == key && !fromTap) {
-            pendingRelease = true
-        }
+    var expandedBox by mutableStateOf<DpSize?>(null)
+        private set
+
+    val key: Pair<Int, Int>? get() = hovered ?: tapped
+
+    internal fun reportExpandedBox(size: DpSize) {
+        expandedBox = size
     }
 
-    internal fun clearHover() {
-        if (pendingRelease && !fromTap) {
-            key = null
-            pendingRelease = false
-        }
+    internal fun hover(cell: Pair<Int, Int>?) {
+        hovered = cell
+    }
+
+    fun tap(cell: Pair<Int, Int>) {
+        tapped = cell
+        tapCount++
     }
 
     internal fun releaseTap() {
-        if (fromTap) {
-            key = null
-            fromTap = false
-        }
+        tapped = null
     }
-
-    internal val holdsTap: Boolean get() = fromTap && key != null
-    internal val awaitsRelease: Boolean get() = pendingRelease
 }
 
-private const val HOVER_GRACE_MS = 140L
+private const val TAP_HOLD_MS = 2500L
 
 @Composable
 fun rememberCellFocus(): CellFocus {
     val focus = remember { CellFocus() }
-    LaunchedEffect(focus.key, focus.holdsTap) {
-        if (focus.holdsTap) {
-            delay(2500)
+    LaunchedEffect(focus.tapCount) {
+        if (focus.tapCount > 0) {
+            delay(TAP_HOLD_MS)
             focus.releaseTap()
         }
     }
-    LaunchedEffect(focus.epoch) {
-        if (focus.awaitsRelease) {
-            delay(HOVER_GRACE_MS)
-            focus.clearHover()
+    return focus
+}
+
+fun Modifier.cellFocusTracking(routes: List<RouteLayout>, focus: CellFocus): Modifier =
+    pointerInput(routes) {
+        awaitPointerEventScope {
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                if (event.changes.any { it.pressed }) continue
+                val point = event.changes.firstOrNull()?.position
+                focus.hover(
+                    if (event.type == PointerEventType.Exit || point == null) {
+                        null
+                    } else {
+                        routes.firstNotNullOfOrNull {
+                            heldCell(it, point, size, focus.key, focus.expandedBox ?: expandedCellBox(it))
+                        } ?: routes.firstNotNullOfOrNull { cellUnder(it, point, size) }
+                    }
+                )
+            }
         }
     }
-    return focus
+
+internal fun Density.heldCell(
+    route: RouteLayout,
+    point: Offset,
+    boardSize: IntSize,
+    held: Pair<Int, Int>?,
+    openBox: DpSize = expandedCellBox(route),
+): Pair<Int, Int>? {
+    if (held?.first != route.layer.level) return null
+    val place = route.places.firstOrNull { it.index == held.second }?.place ?: return null
+    val local = toLocal(route, point, boardSize)
+    return held.takeIf { focusBounds(route, place, openBox).holds(local.first, local.second) }
+}
+
+internal fun Density.cellUnder(
+    route: RouteLayout,
+    point: Offset,
+    boardSize: IntSize,
+): Pair<Int, Int>? {
+    val local = toLocal(route, point, boardSize)
+    return route.places
+        .firstOrNull { cellBounds(route, it.place, it.place.size).holds(local.first, local.second) }
+        ?.let { route.layer.level to it.index }
+}
+
+private fun Density.toLocal(route: RouteLayout, point: Offset, boardSize: IntSize) = Pair(
+    (point.x - (boardSize.width - route.size.width.toPx()) / 2f).toDp(),
+    (point.y - (boardSize.height - route.size.height.toPx()) / 2f).toDp(),
+)
+
+private fun DpRect.holds(x: Dp, y: Dp) = x >= left && x < right && y >= top && y < bottom
+
+internal fun cellBounds(layout: RouteLayout, place: Place, size: DpSize): DpRect {
+    val left = (place.offset.x + (place.size.width - size.width) / 2)
+        .coerceIn(0.dp, (layout.size.width - size.width).coerceAtLeast(0.dp))
+    val top = (place.offset.y + (place.size.height - size.height) / 2)
+        .coerceIn(0.dp, (layout.size.height - size.height).coerceAtLeast(0.dp))
+    return DpRect(left, top, left + size.width, top + size.height)
+}
+
+internal fun tokenFloat(layout: RouteLayout, place: Place, openBox: DpSize): DpOffset {
+    val fromCenterX = place.offset.x + place.size.width / 2 - layout.size.width / 2
+    val fromCenterY = place.offset.y + place.size.height / 2 - layout.size.height / 2
+    return if (place.location.side.isHorizontal) {
+        val shift = openBox.height / 2 + layout.cellSize.height / 2 + 4.dp
+        DpOffset(0.dp, if (fromCenterY > 0.dp) -shift else shift)
+    } else {
+        val shift = openBox.width / 2 + layout.cellSize.width / 2 + 4.dp
+        DpOffset(if (fromCenterX > 0.dp) -shift else shift, 0.dp)
+    }
+}
+
+private fun parkedTokenBounds(layout: RouteLayout, place: Place, openBox: DpSize): DpRect {
+    val float = tokenFloat(layout, place, openBox)
+    val left = place.offset.x + (place.size.width - layout.cellSize.width) / 2 + float.x
+    val top = place.offset.y + (place.size.height - layout.cellSize.height) / 2 + float.y
+    return DpRect(left, top, left + layout.cellSize.width, top + layout.cellSize.height)
+}
+
+private fun focusBounds(layout: RouteLayout, place: Place, openBox: DpSize): DpRect {
+    val expanded = cellBounds(layout, place, openBox)
+    val parked = parkedTokenBounds(layout, place, openBox)
+    return DpRect(
+        left = minOf(expanded.left, parked.left),
+        top = minOf(expanded.top, parked.top),
+        right = maxOf(expanded.right, parked.right),
+        bottom = maxOf(expanded.bottom, parked.bottom),
+    )
 }
 
 @Composable
@@ -161,6 +239,7 @@ private fun BoxScope.DesignTrack(
     onStartClick: (() -> Unit)?,
 ) {
     val colors = Design.colors
+    val blendBedEdges = layout.layer != BoardLayer.OUTER
     val live = surface == CellSurface.Tile
     val bedAlpha by animateFloatAsState(if (live) 1f else 0.55f, label = "TrackBed")
     val level = layout.layer.level
@@ -179,10 +258,11 @@ private fun BoxScope.DesignTrack(
             .size(layout.size)
             .alpha(bedAlpha)
             .drawBehind {
-                drawFadedBed(
-                    color = colors.scaffold.surface4,
-                    fade = layout.cellSize.width.toPx(),
-                )
+                if (blendBedEdges) {
+                    drawBlendedBed(colors.scaffold.surface4, layout.cellSize.width.toPx())
+                } else {
+                    drawRect(colors.scaffold.surface4)
+                }
             }
     )
     Box(
@@ -241,24 +321,27 @@ private fun BoxScope.TrackCell(
             measurer.measure(label, labelStyle).size.width.toDp()
         } + expandedLabelChrome(expandedIcon)
     }
+    val openBox = DpSize(maxOf(expandedBox.width, expandedWidth), expandedBox.height)
+    LaunchedEffect(expanded, openBox) {
+        if (expanded) focus.reportExpandedBox(openBox)
+    }
     val width by animateDpAsState(
-        targetValue = if (expanded) maxOf(expandedBox.width, expandedWidth) else place.size.width - trackGap,
+        targetValue = if (expanded) openBox.width else place.size.width - trackGap,
         label = "CellWidth",
     )
     val height by animateDpAsState(
         targetValue = if (expanded) expandedBox.height else place.size.height - trackGap,
         label = "CellHeight",
     )
+    val bounds = cellBounds(layout, place, DpSize(width, height))
     DesignPlaceCell(
         type = place.type,
         surface = surface,
         label = label,
         expanded = expanded,
         expandedIcon = expandedIcon,
-        onFocusChange = if (canExpand) {
-            { focused, byTap ->
-                focus.set(level to index, focused, if (byTap) FocusSource.Tap else FocusSource.Cell)
-            }
+        onTap = if (canExpand) {
+            { focus.tap(level to index) }
         } else {
             null
         },
@@ -270,18 +353,13 @@ private fun BoxScope.TrackCell(
             else -> null
         },
         modifier = Modifier
-            .offset(
-                x = (place.offset.x + (place.size.width - width) / 2)
-                    .coerceIn(0.dp, (layout.size.width - width).coerceAtLeast(0.dp)),
-                y = (place.offset.y + (place.size.height - height) / 2)
-                    .coerceIn(0.dp, (layout.size.height - height).coerceAtLeast(0.dp)),
-            )
+            .offset(bounds.left, bounds.top)
             .size(width, height)
             .zIndex(if (expanded) 2f else if (waitingAmount != null) 1f else 0f),
     )
 }
 
-private fun DrawScope.drawFadedBed(color: Color, fade: Float) {
+private fun DrawScope.drawBlendedBed(color: Color, fade: Float) {
     val w = size.width
     val h = size.height
     val edge = fade.coerceAtMost(minOf(w, h) / 2f)
@@ -289,47 +367,47 @@ private fun DrawScope.drawFadedBed(color: Color, fade: Float) {
         drawRect(color)
         return
     }
-    drawRect(color, topLeft = Offset(edge, edge), size = Size(w - edge * 2, h - edge * 2))
-    val transparent = Color.Transparent
+    val clear = color.copy(alpha = 0f)
     drawRect(
-        brush = Brush.verticalGradient(listOf(transparent, color), 0f, edge),
+        brush = Brush.verticalGradient(listOf(clear, color), 0f, edge),
         topLeft = Offset(edge, 0f),
         size = Size(w - edge * 2, edge),
     )
     drawRect(
-        brush = Brush.verticalGradient(listOf(color, transparent), h - edge, h),
+        brush = Brush.verticalGradient(listOf(color, clear), h - edge, h),
         topLeft = Offset(edge, h - edge),
         size = Size(w - edge * 2, edge),
     )
     drawRect(
-        brush = Brush.horizontalGradient(listOf(transparent, color), 0f, edge),
+        brush = Brush.horizontalGradient(listOf(clear, color), 0f, edge),
         topLeft = Offset(0f, edge),
         size = Size(edge, h - edge * 2),
     )
     drawRect(
-        brush = Brush.horizontalGradient(listOf(color, transparent), w - edge, w),
+        brush = Brush.horizontalGradient(listOf(color, clear), w - edge, w),
         topLeft = Offset(w - edge, edge),
         size = Size(edge, h - edge * 2),
     )
     listOf(
-        Offset(edge, edge) to Offset(0f, 0f),
+        Offset(edge, edge) to Offset.Zero,
         Offset(w - edge, edge) to Offset(w - edge, 0f),
         Offset(edge, h - edge) to Offset(0f, h - edge),
         Offset(w - edge, h - edge) to Offset(w - edge, h - edge),
     ).forEach { (center, corner) ->
         drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(color, transparent),
-                center = center,
-                radius = edge,
-            ),
+            brush = Brush.radialGradient(listOf(color, clear), center = center, radius = edge),
             topLeft = corner,
             size = Size(edge, edge),
         )
     }
+    val seamGuard = 1f
+    drawRect(
+        color = color,
+        topLeft = Offset(edge - seamGuard, edge - seamGuard),
+        size = Size(w - (edge - seamGuard) * 2, h - (edge - seamGuard) * 2),
+    )
 }
 
-@Composable
 internal fun expandedCellBox(layout: RouteLayout) = DpSize(
     width = layout.cellSize.width * 2,
     height = maxOf(minExpandedHeight, layout.cellSize.height * 2),
