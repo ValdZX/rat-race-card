@@ -27,6 +27,9 @@ fun DesignTextField(
     placeholder: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
 ) {
     val colors = Design.colors
     val type = Design.type
@@ -46,7 +49,9 @@ fun DesignTextField(
         BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
-                singleLine = true,
+                singleLine = singleLine,
+                minLines = minLines,
+                maxLines = maxLines,
                 textStyle = type.subtitle.copy(color = colors.scaffold.onSurface),
                 cursorBrush = SolidColor(colors.scaffold.accent),
                 keyboardOptions = keyboardOptions,
@@ -58,7 +63,7 @@ fun DesignTextField(
                         if (focused) Modifier.plinth(colors.scaffold.accentDim, 4.dp, DesignShapes.md)
                         else Modifier
                     )
-                    .height(60.dp)
+                    .heightIn(min = if (singleLine) 60.dp else 104.dp)
                     .clip(DesignShapes.md)
                     .background(colors.scaffold.surface2)
                     .border(
@@ -68,8 +73,8 @@ fun DesignTextField(
                     ),
                 decorationBox = { inner ->
                     Box(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                        contentAlignment = Alignment.CenterStart,
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 14.dp),
+                        contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
                     ) {
                         if (value.isEmpty() && placeholder != null) {
                             Text(placeholder, style = type.subtitle, color = colors.scaffold.onSurfaceMuted)

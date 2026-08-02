@@ -17,6 +17,7 @@ import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.components.ExtendedButton
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
+import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
@@ -73,41 +74,35 @@ fun FundsPage(state: RatRace2CardState) {
             }
         }
         if (capitalizationConfirm) {
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.capitalization)) },
-                text = { Text(text = stringResource(Res.string.capitalization_total, state.capitalization().toString())) },
+            DesignMessageDialog(
+                title = stringResource(Res.string.capitalization),
+                message = stringResource(Res.string.capitalization_total, state.capitalization().toString()),
                 onDismissRequest = { capitalizationConfirm = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            raceRate2store.dispatch(RatRace2CardAction.CapitalizeFunds)
-                            capitalizationConfirm = false
-                        }
-                    ) { Text(stringResource(Res.string.capitalize)) }
+                confirmLabel = stringResource(Res.string.capitalize),
+                onConfirm = {
+                    raceRate2store.dispatch(RatRace2CardAction.CapitalizeFunds)
+                    capitalizationConfirm = false
                 },
-                dismissButton = {
-                    TextButton(onClick = { capitalizationConfirm = false }) { Text(stringResource(Res.string.cancel)) }
-                }
+                dismissLabel = stringResource(Res.string.cancel),
+                onDismissAction = { capitalizationConfirm = false },
             )
         }
         if (capitalizationStarConfirm) {
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.capitalization)) },
-                text = { Text(text = stringResource(Res.string.capitalization_amount, state.config.fundStartRate.toString(), state.capitalizationStart().toString())) },
+            DesignMessageDialog(
+                title = stringResource(Res.string.capitalization),
+                message = stringResource(
+                    Res.string.capitalization_amount,
+                    state.config.fundStartRate.toString(),
+                    state.capitalizationStart().toString(),
+                ),
                 onDismissRequest = { capitalizationStarConfirm = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            raceRate2store.dispatch(RatRace2CardAction.CapitalizeStarsFunds)
-                            capitalizationStarConfirm = false
-                        }
-                    ) { Text(stringResource(Res.string.capitalize)) }
+                confirmLabel = stringResource(Res.string.capitalize),
+                onConfirm = {
+                    raceRate2store.dispatch(RatRace2CardAction.CapitalizeStarsFunds)
+                    capitalizationStarConfirm = false
                 },
-                dismissButton = {
-                    TextButton(onClick = {
-                        capitalizationStarConfirm = false
-                    }) { Text(stringResource(Res.string.cancel)) }
-                }
+                dismissLabel = stringResource(Res.string.cancel),
+                onDismissAction = { capitalizationStarConfirm = false },
             )
         }
     }

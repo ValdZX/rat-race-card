@@ -24,6 +24,7 @@ import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
@@ -114,24 +115,18 @@ class SettingsScreen : Screen {
                         resetDialog = true
                     }
                     if (resetDialog) {
-                        AlertDialog(
-                            title = { Text(text = stringResource(Res.string.confirm_reset)) },
-                            text = { Text(text = stringResource(Res.string.reset_data_warning)) },
+                        DesignMessageDialog(
+                            title = stringResource(Res.string.confirm_reset),
+                            message = stringResource(Res.string.reset_data_warning),
                             onDismissRequest = { resetDialog = false },
-                            confirmButton = {
-                                TextButton(
-                                    onClick = {
-                                        navigator?.popUntil { screen -> screen is RaceRate2Screen }
-                                        navigator?.replace(PersonCard2Screen())
-                                        resetDialog = false
-                                    }
-                                ) { Text(stringResource(Res.string.yes)) }
+                            confirmLabel = stringResource(Res.string.yes),
+                            onConfirm = {
+                                navigator?.popUntil { screen -> screen is RaceRate2Screen }
+                                navigator?.replace(PersonCard2Screen())
+                                resetDialog = false
                             },
-                            dismissButton = {
-                                TextButton(onClick = {
-                                    resetDialog = false
-                                }) { Text(stringResource(Res.string.cancel)) }
-                            }
+                            dismissLabel = stringResource(Res.string.cancel),
+                            onDismissAction = { resetDialog = false },
                         )
                     }
                     Row(

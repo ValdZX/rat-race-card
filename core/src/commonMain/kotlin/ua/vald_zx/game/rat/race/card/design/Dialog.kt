@@ -14,7 +14,7 @@ import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun DesignDialog(
-    title: String,
+    title: String?,
     onDismissRequest: () -> Unit,
     confirmLabel: String,
     onConfirm: () -> Unit,
@@ -42,11 +42,13 @@ fun DesignDialog(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(
-                text = title,
-                style = Design.type.title,
-                color = colors.scaffold.onSurface,
-            )
+            if (title != null) {
+                Text(
+                    text = title,
+                    style = Design.type.title,
+                    color = colors.scaffold.onSurface,
+                )
+            }
             content()
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
@@ -70,5 +72,37 @@ fun DesignDialog(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun DesignMessageDialog(
+    message: String,
+    onDismissRequest: () -> Unit,
+    confirmLabel: String,
+    onConfirm: () -> Unit,
+    confirmEnabled: Boolean = true,
+    confirmDisabledReason: String? = null,
+    title: String? = null,
+    dismissLabel: String? = null,
+    onDismissAction: (() -> Unit)? = null,
+    dismissOnBackOrOutside: Boolean = true,
+) {
+    DesignDialog(
+        title = title,
+        onDismissRequest = onDismissRequest,
+        confirmLabel = confirmLabel,
+        onConfirm = onConfirm,
+        confirmEnabled = confirmEnabled,
+        confirmDisabledReason = confirmDisabledReason,
+        dismissLabel = dismissLabel,
+        onDismissAction = onDismissAction,
+        dismissOnBackOrOutside = dismissOnBackOrOutside,
+    ) {
+        Text(
+            text = message,
+            style = Design.type.body,
+            color = Design.colors.scaffold.onSurfaceMuted,
+        )
     }
 }

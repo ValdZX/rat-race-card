@@ -26,6 +26,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.components.*
+import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction.ExtendBusiness
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardSideEffect
@@ -301,204 +302,125 @@ class RaceRate2Screen : Screen {
                 }.launchIn(this)
             }
             if (salaryApproveDialog) {
-                AlertDialog(
-                    title = { Text(text = stringResource(Res.string.profit)) },
-                    text = {
-                        Text(
-                            text = stringResource(
-                                Res.string.income_with_assets_and_loans,
-                                state.cashFlow().splitDecimal()
-                            )
-                        )
-                    },
+                DesignMessageDialog(
+                    title = stringResource(Res.string.profit),
+                    message = stringResource(
+                        Res.string.income_with_assets_and_loans,
+                        state.cashFlow().splitDecimal(),
+                    ),
                     onDismissRequest = { salaryApproveDialog = false },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                raceRate2store.dispatch(RatRace2CardAction.GetSalaryApproved)
-                                salaryApproveDialog = false
-                            }
-                        ) { Text(stringResource(Res.string.receive)) }
+                    confirmLabel = stringResource(Res.string.receive),
+                    onConfirm = {
+                        raceRate2store.dispatch(RatRace2CardAction.GetSalaryApproved)
+                        salaryApproveDialog = false
                     },
-                    dismissButton = {
-                        TextButton(onClick = {
-                            salaryApproveDialog = false
-                        }) { Text(stringResource(Res.string.cancel)) }
-                    }
+                    dismissLabel = stringResource(Res.string.cancel),
+                    onDismissAction = { salaryApproveDialog = false },
                 )
             }
             if (confirmDismissalDialog != null) {
-                AlertDialog(
-                    title = { Text(text = stringResource(Res.string.fire_from_job)) },
-                    text = {
-                        Text(
-                            text = stringResource(
-                                Res.string.lose_job_on_second_business_with_salary,
-                                state.playerCard.salary.toString()
-                            )
-                        )
-                    },
+                DesignMessageDialog(
+                    title = stringResource(Res.string.fire_from_job),
+                    message = stringResource(
+                        Res.string.lose_job_on_second_business_with_salary,
+                        state.playerCard.salary.toString(),
+                    ),
                     onDismissRequest = { confirmDismissalDialog = null },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                raceRate2store.dispatch(
-                                    RatRace2CardAction.DismissalConfirmed(
-                                        confirmDismissalDialog!!
-                                    )
-                                )
-                                confirmDismissalDialog = null
-                            }
-                        ) { Text(stringResource(Res.string.resign)) }
+                    confirmLabel = stringResource(Res.string.resign),
+                    onConfirm = {
+                        raceRate2store.dispatch(
+                            RatRace2CardAction.DismissalConfirmed(confirmDismissalDialog!!)
+                        )
+                        confirmDismissalDialog = null
                     },
-                    dismissButton = {
-                        TextButton(onClick = {
-                            confirmDismissalDialog = null
-                        }) { Text(stringResource(Res.string.cancel)) }
-                    }
+                    dismissLabel = stringResource(Res.string.cancel),
+                    onDismissAction = { confirmDismissalDialog = null },
                 )
             }
             if (confirmDismissalOnExtentionDialog != null) {
-                AlertDialog(
-                    title = { Text(text = stringResource(Res.string.fire_from_job)) },
-                    text = {
-                        Text(
-                            text = stringResource(
-                                Res.string.lose_job_on_second_business_with_salary,
-                                state.playerCard.salary.toString()
+                DesignMessageDialog(
+                    title = stringResource(Res.string.fire_from_job),
+                    message = stringResource(
+                        Res.string.lose_job_on_second_business_with_salary,
+                        state.playerCard.salary.toString(),
+                    ),
+                    onDismissRequest = { confirmDismissalOnExtentionDialog = null },
+                    confirmLabel = stringResource(Res.string.resign),
+                    onConfirm = {
+                        raceRate2store.dispatch(
+                            RatRace2CardAction.DismissalConfirmedOnExtention(
+                                confirmDismissalOnExtentionDialog!!
                             )
                         )
+                        confirmDismissalOnExtentionDialog = null
                     },
-                    onDismissRequest = { confirmDismissalOnExtentionDialog = null },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                raceRate2store.dispatch(
-                                    RatRace2CardAction.DismissalConfirmedOnExtention(
-                                        confirmDismissalOnExtentionDialog!!
-                                    )
-                                )
-                                confirmDismissalOnExtentionDialog = null
-                            }
-                        ) { Text(stringResource(Res.string.resign)) }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = {
-                            confirmDismissalOnExtentionDialog = null
-                        }) { Text(stringResource(Res.string.cancel)) }
-                    }
+                    dismissLabel = stringResource(Res.string.cancel),
+                    onDismissAction = { confirmDismissalOnExtentionDialog = null },
                 )
             }
             if (confirmFiredDialog) {
-                AlertDialog(
-                    title = { Text(text = stringResource(Res.string.fire_from_job)) },
-                    text = {
-                        Text(
-                            text = stringResource(
-                                Res.string.fired_lose_income_amount,
-                                state.playerCard.salary.toString()
-                            )
-                        )
-                    },
+                DesignMessageDialog(
+                    title = stringResource(Res.string.fire_from_job),
+                    message = stringResource(
+                        Res.string.fired_lose_income_amount,
+                        state.playerCard.salary.toString(),
+                    ),
                     onDismissRequest = { confirmFiredDialog = false },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                raceRate2store.dispatch(RatRace2CardAction.FiredConfirmed)
-                                confirmFiredDialog = false
-                            }
-                        ) { Text(stringResource(Res.string.resign)) }
+                    confirmLabel = stringResource(Res.string.resign),
+                    onConfirm = {
+                        raceRate2store.dispatch(RatRace2CardAction.FiredConfirmed)
+                        confirmFiredDialog = false
                     },
-                    dismissButton = {
-                        TextButton(onClick = { confirmFiredDialog = false }) { Text(stringResource(Res.string.cancel)) }
-                    }
+                    dismissLabel = stringResource(Res.string.cancel),
+                    onDismissAction = { confirmFiredDialog = false },
                 )
             }
             if (confirmSellingAllBusinessDialog != null) {
-                AlertDialog(
-                    title = { Text(text = stringResource(Res.string.buy_business_title)) },
-                    text = {
-                        Text(
-                            text = stringResource(
-                                Res.string.need_sell_all_businesses_with_sum,
-                                state.business.sumOf { it.price }.toString()
-                            )
-                        )
-                    },
+                DesignMessageDialog(
+                    title = stringResource(Res.string.buy_business_title),
+                    message = stringResource(
+                        Res.string.need_sell_all_businesses_with_sum,
+                        state.business.sumOf { it.price }.toString(),
+                    ),
                     onDismissRequest = { confirmSellingAllBusinessDialog = null },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                raceRate2store.dispatch(
-                                    RatRace2CardAction.SellingAllBusinessConfirmed(
-                                        confirmSellingAllBusinessDialog!!
-                                    )
-                                )
-                                confirmSellingAllBusinessDialog = null
-                            }
-                        ) { Text(stringResource(Res.string.buy)) }
+                    confirmLabel = stringResource(Res.string.buy),
+                    onConfirm = {
+                        raceRate2store.dispatch(
+                            RatRace2CardAction.SellingAllBusinessConfirmed(confirmSellingAllBusinessDialog!!)
+                        )
+                        confirmSellingAllBusinessDialog = null
                     },
-                    dismissButton = {
-                        TextButton(onClick = {
-                            confirmSellingAllBusinessDialog = null
-                        }) { Text(stringResource(Res.string.cancel)) }
-                    }
+                    dismissLabel = stringResource(Res.string.cancel),
+                    onDismissAction = { confirmSellingAllBusinessDialog = null },
                 )
             }
             if (depositWithdrawDialog != 0L) {
-                AlertDialog(
-                    title = { Text(text = stringResource(Res.string.attention)) },
-                    text = {
-                        Text(
-                            text = stringResource(
-                                Res.string.not_enough_cash_taken_from_deposit,
-                                depositWithdrawDialog.toString()
-                            )
-                        )
-                    },
+                DesignMessageDialog(
+                    title = stringResource(Res.string.attention),
+                    message = stringResource(
+                        Res.string.not_enough_cash_taken_from_deposit,
+                        depositWithdrawDialog.toString(),
+                    ),
                     onDismissRequest = { depositWithdrawDialog = 0 },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                depositWithdrawDialog = 0
-                            }
-                        ) { Text(stringResource(Res.string.ok)) }
-                    },
+                    confirmLabel = stringResource(Res.string.ok),
+                    onConfirm = { depositWithdrawDialog = 0 },
                 )
             }
             if (loanAddedDialog != 0L) {
-                AlertDialog(
-                    title = { Text(text = stringResource(Res.string.attention)) },
-                    text = {
-                        Text(
-                            text = stringResource(Res.string.not_enough_cash_loan_taken, loanAddedDialog.toString())
-                        )
-                    },
+                DesignMessageDialog(
+                    title = stringResource(Res.string.attention),
+                    message = stringResource(Res.string.not_enough_cash_loan_taken, loanAddedDialog.toString()),
                     onDismissRequest = { loanAddedDialog = 0 },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                loanAddedDialog = 0
-                            }
-                        ) { Text(stringResource(Res.string.ok)) }
-                    },
+                    confirmLabel = stringResource(Res.string.ok),
+                    onConfirm = { loanAddedDialog = 0 },
                 )
             }
             if (receivedCashDialog != 0L) {
-                AlertDialog(
-                    text = {
-                        Text(
-                            text = stringResource(Res.string.cash_received_amount, receivedCashDialog.toString())
-                        )
-                    },
+                DesignMessageDialog(
+                    message = stringResource(Res.string.cash_received_amount, receivedCashDialog.toString()),
                     onDismissRequest = { receivedCashDialog = 0 },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                receivedCashDialog = 0
-                            }
-                        ) { Text(stringResource(Res.string.ok)) }
-                    },
+                    confirmLabel = stringResource(Res.string.ok),
+                    onConfirm = { receivedCashDialog = 0 },
                 )
             }
         }

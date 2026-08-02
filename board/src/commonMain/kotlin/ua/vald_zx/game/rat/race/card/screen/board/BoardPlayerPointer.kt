@@ -43,6 +43,8 @@ import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
+import ua.vald_zx.game.rat.race.card.design.DesignDialog
+import ua.vald_zx.game.rat.race.card.design.DesignTextField
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.max
 import ua.vald_zx.game.rat.race.card.resource.Images
@@ -325,32 +327,23 @@ internal fun SendMessageDialog(
     onSend: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
-    AlertDialog(
+    DesignDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.send_message)) },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it.take(160) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = false,
-                maxLines = 3,
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onSend(text.trim()) },
-                enabled = text.isNotBlank(),
-            ) {
-                Text(stringResource(Res.string.send))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(Res.string.cancel))
-            }
-        }
-    )
+        title = stringResource(Res.string.send_message),
+        confirmLabel = stringResource(Res.string.send),
+        confirmEnabled = text.isNotBlank(),
+        onConfirm = { onSend(text.trim()) },
+        dismissLabel = stringResource(Res.string.cancel),
+        onDismissAction = onDismiss,
+    ) {
+        DesignTextField(
+            value = text,
+            onValueChange = { text = it.take(160) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = false,
+            maxLines = 3,
+        )
+    }
 }
 
 @Composable

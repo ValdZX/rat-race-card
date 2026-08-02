@@ -57,6 +57,8 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
+import ua.vald_zx.game.rat.race.card.design.DesignShapes
 import ua.vald_zx.game.rat.race.card.screen.design.DesignActivePulse
 import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDialog
 import ua.vald_zx.game.rat.race.card.screen.design.DesignPlayerSheet
@@ -171,36 +173,39 @@ class BoardScreen(
             }
             val reconnecting = state.connectionState as? BoardConnectionState.Reconnecting
             if (reconnecting != null) {
+                val designColors = Design.colors
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.42f))
+                        .background(designColors.scaffold.shadow.copy(alpha = 0.62f))
                         .clickable(onClick = {}),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        tonalElevation = 8.dp,
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp)
+                            .widthIn(max = 380.dp)
+                            .clip(DesignShapes.dialog)
+                            .background(designColors.scaffold.surface1)
+                            .border(1.dp, designColors.scaffold.outline, DesignShapes.dialog)
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            CircularProgressIndicator()
-                            Text(
-                                text = stringResource(
-                                    Res.string.reconnecting_to_server,
-                                    reconnecting.attempt,
-                                ),
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                            Text(
-                                text = stringResource(Res.string.reconnecting_to_server_hint),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        CircularProgressIndicator(color = designColors.scaffold.accent)
+                        Text(
+                            text = stringResource(
+                                Res.string.reconnecting_to_server,
+                                reconnecting.attempt,
+                            ),
+                            style = Design.type.subtitle,
+                            color = designColors.scaffold.onSurface,
+                        )
+                        Text(
+                            text = stringResource(Res.string.reconnecting_to_server_hint),
+                            style = Design.type.body,
+                            color = designColors.scaffold.onSurfaceMuted,
+                        )
                     }
                 }
             }
@@ -214,23 +219,17 @@ class BoardScreen(
         }
 
         if (exitRequested.value) {
-            AlertDialog(
-                title = { Text(stringResource(Res.string.confirm_leave_board)) },
-                text = { Text(stringResource(Res.string.leave_board_warning)) },
+            DesignMessageDialog(
+                title = stringResource(Res.string.confirm_leave_board),
+                message = stringResource(Res.string.leave_board_warning),
                 onDismissRequest = { exitRequested.value = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            exitRequested.value = false
-                            navigator.returnToBoardList()
-                        }
-                    ) { Text(stringResource(Res.string.exit)) }
+                confirmLabel = stringResource(Res.string.exit),
+                onConfirm = {
+                    exitRequested.value = false
+                    navigator.returnToBoardList()
                 },
-                dismissButton = {
-                    TextButton(onClick = { exitRequested.value = false }) {
-                        Text(stringResource(Res.string.cancel))
-                    }
-                },
+                dismissLabel = stringResource(Res.string.cancel),
+                onDismissAction = { exitRequested.value = false },
             )
         }
 
@@ -377,402 +376,254 @@ class BoardScreen(
             }
         }
         if (serverRequestFailedDialog) {
-            AlertDialog(
+            DesignMessageDialog(
                 onDismissRequest = { serverRequestFailedDialog = false },
-                title = { Text(stringResource(Res.string.connection_failed)) },
-                text = { Text(stringResource(Res.string.server_request_failed)) },
-                confirmButton = {
-                    TextButton(onClick = { serverRequestFailedDialog = false }) {
-                        Text(stringResource(Res.string.ok))
-                    }
-                },
+                title = stringResource(Res.string.connection_failed),
+                message = stringResource(Res.string.server_request_failed),
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { serverRequestFailedDialog = false },
             )
         }
         confirmDismissalDialog?.let { business ->
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.fire_from_job)) },
-                text = {
-                    Text(
-                        text = stringResource(
-                            Res.string.lose_job_on_second_business_with_salary,
-                            state.player.card.salary.toString()
-                        )
-                    )
-                },
+            DesignMessageDialog(
+                title = stringResource(Res.string.fire_from_job),
+                message = stringResource(
+                    Res.string.lose_job_on_second_business_with_salary,
+                    state.player.card.salary.toString(),
+                ),
                 onDismissRequest = { confirmDismissalDialog = null },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            vm.dismissalConfirmed(business)
-                            confirmDismissalDialog = null
-                        }
-                    ) { Text(stringResource(Res.string.resign)) }
+                confirmLabel = stringResource(Res.string.resign),
+                onConfirm = {
+                    vm.dismissalConfirmed(business)
+                    confirmDismissalDialog = null
                 },
-                dismissButton = {
-                    TextButton(onClick = {
-                        vm.pass()
-                        confirmDismissalDialog = null
-                    }) { Text(stringResource(Res.string.cancel)) }
-                }
+                dismissLabel = stringResource(Res.string.cancel),
+                onDismissAction = {
+                    vm.pass()
+                    confirmDismissalDialog = null
+                },
             )
         }
         firedDialog?.let { business ->
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.fire_from_job)) },
-                text = {
-                    Text(
-                        text = stringResource(
-                            Res.string.lose_job_on_second_business_with_salary,
-                            business.profit.toString()
-                        )
-                    )
-                },
-                onDismissRequest = { confirmDismissalDialog = null },
-                confirmButton = {
-                    TextButton(onClick = { confirmDismissalDialog = null }) {
-                        Text(stringResource(Res.string.ok))
-                    }
-                }
+            DesignMessageDialog(
+                title = stringResource(Res.string.fire_from_job),
+                message = stringResource(
+                    Res.string.lose_job_on_second_business_with_salary,
+                    business.profit.toString(),
+                ),
+                onDismissRequest = { firedDialog = null },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { firedDialog = null },
             )
         }
         confirmSellingAllBusinessDialog?.let { business ->
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.buy_business_title)) },
-                text = {
-                    Text(
-                        text = stringResource(
-                            Res.string.need_sell_all_businesses_with_sum,
-                            state.player.businesses.sumOf { it.price }.toString()
-                        )
-                    )
-                },
+            DesignMessageDialog(
+                title = stringResource(Res.string.buy_business_title),
+                message = stringResource(
+                    Res.string.need_sell_all_businesses_with_sum,
+                    state.player.businesses.sumOf { it.price }.toString(),
+                ),
                 onDismissRequest = { confirmSellingAllBusinessDialog = null },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            vm.sellingAllBusinessConfirmed(business)
-                            confirmSellingAllBusinessDialog = null
-                        }
-                    ) { Text(stringResource(Res.string.buy)) }
+                confirmLabel = stringResource(Res.string.buy),
+                onConfirm = {
+                    vm.sellingAllBusinessConfirmed(business)
+                    confirmSellingAllBusinessDialog = null
                 },
-                dismissButton = {
-                    TextButton(onClick = {
-                        vm.pass()
-                        confirmSellingAllBusinessDialog = null
-                    }) { Text(stringResource(Res.string.cancel)) }
-                }
+                dismissLabel = stringResource(Res.string.cancel),
+                onDismissAction = {
+                    vm.pass()
+                    confirmSellingAllBusinessDialog = null
+                },
             )
         }
 
         if (simpleDialog != Res.string.app_name) {
-            AlertDialog(
-                text = { Text(text = stringResource(simpleDialog)) },
+            DesignMessageDialog(
+                message = stringResource(simpleDialog),
                 onDismissRequest = { simpleDialog = Res.string.app_name },
-                confirmButton = {
-                    TextButton(onClick = { simpleDialog = Res.string.app_name }) {
-                        Text(stringResource(Res.string.ok))
-                    }
-                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { simpleDialog = Res.string.app_name },
             )
         }
         investmentResultDialog?.let { (dice, amount) ->
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.investments)) },
-                text = {
-                    Text(
-                        text = if (amount > 0) {
-                            stringResource(Res.string.investment_win, dice.toString(), amount.splitDecimal())
-                        } else {
-                            stringResource(Res.string.investment_lose, dice.toString(), (-amount).splitDecimal())
-                        }
-                    )
+            DesignMessageDialog(
+                title = stringResource(Res.string.investments),
+                message = if (amount > 0) {
+                    stringResource(Res.string.investment_win, dice.toString(), amount.splitDecimal())
+                } else {
+                    stringResource(Res.string.investment_lose, dice.toString(), (-amount).splitDecimal())
                 },
                 onDismissRequest = { investmentResultDialog = null },
-                confirmButton = {
-                    TextButton(onClick = { investmentResultDialog = null }) {
-                        Text(stringResource(Res.string.ok))
-                    }
-                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { investmentResultDialog = null },
             )
         }
         if (capitalizedDialog != 0L) {
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.investments)) },
-                text = {
-                    Text(text = stringResource(Res.string.funds_capitalized, capitalizedDialog.splitDecimal()))
-                },
+            DesignMessageDialog(
+                title = stringResource(Res.string.investments),
+                message = stringResource(Res.string.funds_capitalized, capitalizedDialog.splitDecimal()),
                 onDismissRequest = { capitalizedDialog = 0 },
-                confirmButton = {
-                    TextButton(onClick = { capitalizedDialog = 0 }) {
-                        Text(stringResource(Res.string.ok))
-                    }
-                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { capitalizedDialog = 0 },
             )
         }
         if (depositWithdrawDialog != 0L) {
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.attention)) },
-                text = {
-                    Text(
-                        text = stringResource(
-                            Res.string.not_enough_cash_taken_from_deposit,
-                            depositWithdrawDialog.toString()
-                        )
-                    )
-                },
+            DesignMessageDialog(
+                title = stringResource(Res.string.attention),
+                message = stringResource(
+                    Res.string.not_enough_cash_taken_from_deposit,
+                    depositWithdrawDialog.toString(),
+                ),
                 onDismissRequest = { depositWithdrawDialog = 0 },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            depositWithdrawDialog = 0
-                        }
-                    ) { Text(stringResource(Res.string.ok)) }
-                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { depositWithdrawDialog = 0 },
             )
         }
         if (loanAddedDialog != 0L) {
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.attention)) },
-                text = {
-                    Text(
-                        text = stringResource(Res.string.not_enough_cash_loan_taken, loanAddedDialog.toString())
-                    )
-                },
+            DesignMessageDialog(
+                title = stringResource(Res.string.attention),
+                message = stringResource(Res.string.not_enough_cash_loan_taken, loanAddedDialog.toString()),
                 onDismissRequest = { loanAddedDialog = 0 },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            loanAddedDialog = 0
-                        }
-                    ) { Text(stringResource(Res.string.ok)) }
-                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { loanAddedDialog = 0 },
             )
         }
         if (loanOverlimitedDialog) {
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.attention)) },
-                text = {
-                    Text(
-                        text = stringResource(Res.string.limitOverload, state.board.loanLimit)
-                    )
-                },
+            DesignMessageDialog(
+                title = stringResource(Res.string.attention),
+                message = stringResource(Res.string.limitOverload, state.board.loanLimit),
                 onDismissRequest = { loanOverlimitedDialog = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            navigator.returnToBoardList()
-                            navigator.push(InitPlayerScreen(board))
-                            loanOverlimitedDialog = false
-                        }
-                    ) { Text(stringResource(Res.string.yes)) }
+                confirmLabel = stringResource(Res.string.yes),
+                onConfirm = {
+                    navigator.returnToBoardList()
+                    navigator.push(InitPlayerScreen(board))
+                    loanOverlimitedDialog = false
                 },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            navigator.returnToBoardList()
-                            MainScope().launch {
-                                appKStore.update {
-                                    it?.copy(clientUuid = "")
-                                }
-                            }
-                            loanOverlimitedDialog = false
+                dismissLabel = stringResource(Res.string.no),
+                onDismissAction = {
+                    navigator.returnToBoardList()
+                    MainScope().launch {
+                        appKStore.update {
+                            it?.copy(clientUuid = "")
                         }
-                    ) { Text(stringResource(Res.string.no)) }
-                }
+                    }
+                    loanOverlimitedDialog = false
+                },
             )
         }
         val receivedCash = receivedCashDialog
         if (receivedCash != null) {
             val player = players.collectAsState().value.find { it.id == receivedCash.receiverId }
-            AlertDialog(
-                text = {
-                    Text(
-                        text = stringResource(
-                            Res.string.cash_received_amount,
-                            player?.card?.name ?: "Incognito",
-                            receivedCash.amount
-                        )
-                    )
-                },
+            DesignMessageDialog(
+                message = stringResource(
+                    Res.string.cash_received_amount,
+                    player?.card?.name ?: "Incognito",
+                    receivedCash.amount,
+                ),
                 onDismissRequest = { receivedCashDialog = null },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            receivedCashDialog = null
-                        }
-                    ) { Text(stringResource(Res.string.great)) }
-                },
+                confirmLabel = stringResource(Res.string.great),
+                onConfirm = { receivedCashDialog = null },
             )
         }
         bankruptBusinessDialog?.let { business ->
-            AlertDialog(
-                text = {
-                    Text(
-                        text = stringResource(Res.string.business_bankruptcy, business.name, business.profit.toString())
-                    )
-                },
+            DesignMessageDialog(
+                message = stringResource(
+                    Res.string.business_bankruptcy,
+                    business.name,
+                    business.profit.toString(),
+                ),
                 onDismissRequest = { bankruptBusinessDialog = null },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            bankruptBusinessDialog = null
-                        }
-                    ) { Text(stringResource(Res.string.ok)) }
-                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { bankruptBusinessDialog = null },
             )
         }
         if (congratulationsWithBabyDialog) {
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.сongratulations)) },
-                text = {
-                    Text(text = stringResource(Res.string.congratulationsWithBaby))
-                },
+            DesignMessageDialog(
+                title = stringResource(Res.string.сongratulations),
+                message = stringResource(Res.string.congratulationsWithBaby),
                 onDismissRequest = { congratulationsWithBabyDialog = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            congratulationsWithBabyDialog = false
-                        }
-                    ) { Text(stringResource(Res.string.great)) }
-                },
+                confirmLabel = stringResource(Res.string.great),
+                onConfirm = { congratulationsWithBabyDialog = false },
             )
         }
         if (congratulationsWithMarriageDialog) {
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.сongratulations)) },
-                text = {
-                    Text(text = stringResource(Res.string.congratulationsWithMarriage))
-                },
+            DesignMessageDialog(
+                title = stringResource(Res.string.сongratulations),
+                message = stringResource(Res.string.congratulationsWithMarriage),
                 onDismissRequest = { congratulationsWithMarriageDialog = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            congratulationsWithMarriageDialog = false
-                        }
-                    ) { Text(stringResource(Res.string.great)) }
-                },
+                confirmLabel = stringResource(Res.string.great),
+                onConfirm = { congratulationsWithMarriageDialog = false },
             )
         }
         if (youDivorcedDialog) {
-            AlertDialog(
-                text = {
-                    Text(text = stringResource(Res.string.youDivorced))
-                },
+            DesignMessageDialog(
+                message = stringResource(Res.string.youDivorced),
                 onDismissRequest = { youDivorcedDialog = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            youDivorcedDialog = false
-                        }
-                    ) { Text(stringResource(Res.string.ok)) }
-                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { youDivorcedDialog = false },
             )
         }
         playerDivorcedDialog?.let { playerName ->
-            AlertDialog(
-                text = {
-                    Text(stringResource(Res.string.playerDivorced, playerName))
-                },
+            DesignMessageDialog(
+                message = stringResource(Res.string.playerDivorced, playerName),
                 onDismissRequest = { playerDivorcedDialog = null },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            playerDivorcedDialog = null
-                        }
-                    ) { Text(stringResource(Res.string.ok)) }
-                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { playerDivorcedDialog = null },
             )
         }
         playerHadBabyDialog?.let { (playerName, babies) ->
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.kids)) },
-                text = {
-                    Text(stringResource(Res.string.playerHadBaby, playerName, babies))
-                },
+            DesignMessageDialog(
+                title = stringResource(Res.string.kids),
+                message = stringResource(Res.string.playerHadBaby, playerName, babies),
                 onDismissRequest = { playerHadBabyDialog = null },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            playerHadBabyDialog = null
-                        }
-                    ) { Text(stringResource(Res.string.ok)) }
-                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { playerHadBabyDialog = null },
             )
         }
         playerMarriedDialog?.let { playerName ->
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.marriage)) },
-                text = {
-                    Text(stringResource(Res.string.playerMarried, playerName))
-                },
+            DesignMessageDialog(
+                title = stringResource(Res.string.marriage),
+                message = stringResource(Res.string.playerMarried, playerName),
                 onDismissRequest = { playerMarriedDialog = null },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            playerMarriedDialog = null
-                        }
-                    ) { Text(stringResource(Res.string.ok)) }
-                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { playerMarriedDialog = null },
             )
         }
         resignationDialog?.let { business ->
-            AlertDialog(
-                text = {
-                    Text(stringResource(Res.string.resignation, business.profit))
-                },
+            DesignMessageDialog(
+                message = stringResource(Res.string.resignation, business.profit),
                 onDismissRequest = { resignationDialog = null },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            resignationDialog = null
-                        }
-                    ) { Text(stringResource(Res.string.ok)) }
-                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { resignationDialog = null },
             )
         }
         if (dreamOfferedDialog) {
             val dream = state.currentDream
             val canPay = dream != null && state.canPay(dream.price)
-            if (designV2Enabled.value) {
-                DesignDreamDialog(
-                    dream = dream,
-                    canPay = canPay,
-                    onBuy = {
-                        vm.buyDream()
-                        dreamOfferedDialog = false
-                    },
-                    onPass = {
-                        vm.pass()
-                        dreamOfferedDialog = false
-                    },
-                )
-            } else {
-                LegacyDreamDialog(
-                    vm = vm,
-                    dream = dream,
-                    canPay = canPay,
-                    onDone = { dreamOfferedDialog = false },
-                )
-            }
+            DesignDreamDialog(
+                dream = dream,
+                canPay = canPay,
+                onBuy = {
+                    vm.buyDream()
+                    dreamOfferedDialog = false
+                },
+                onPass = {
+                    vm.pass()
+                    dreamOfferedDialog = false
+                },
+            )
         }
         victoryDialog?.let { victory ->
-            AlertDialog(
-                title = { Text(stringResource(Res.string.victory)) },
-                text = {
-                    Text(
-                        if (victory.isCurrentPlayer) {
-                            stringResource(Res.string.you_won)
-                        } else {
-                            stringResource(Res.string.player_won, victory.playerName)
-                        }
-                    )
+            DesignMessageDialog(
+                title = stringResource(Res.string.victory),
+                message = if (victory.isCurrentPlayer) {
+                    stringResource(Res.string.you_won)
+                } else {
+                    stringResource(Res.string.player_won, victory.playerName)
                 },
                 onDismissRequest = { victoryDialog = null },
-                confirmButton = {
-                    TextButton(onClick = { victoryDialog = null }) {
-                        Text(stringResource(Res.string.great))
-                    }
-                },
+                confirmLabel = stringResource(Res.string.great),
+                onConfirm = { victoryDialog = null },
             )
         }
     }

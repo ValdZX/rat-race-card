@@ -1,8 +1,5 @@
 package ua.vald_zx.game.rat.race.card.screen.board
 
-import androidx.compose.material3.Text
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +17,7 @@ import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.AppDataStorageBean
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.designV2Enabled
+import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.di.RaceRatConnection
 import ua.vald_zx.game.rat.race.card.screen.design.DesignProfessionContent
 import ua.vald_zx.game.rat.race.card.resources.*
@@ -104,20 +102,14 @@ class ProfessionScreen(
             )
         }
         if (joinFailed) {
-            AlertDialog(
+            DesignMessageDialog(
                 onDismissRequest = { joinFailed = false },
-                title = { Text(stringResource(Res.string.connection_failed)) },
-                text = { Text(stringResource(Res.string.server_request_failed)) },
-                confirmButton = {
-                    TextButton(onClick = join) {
-                        Text(stringResource(Res.string.retry_connection))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { joinFailed = false }) {
-                        Text(stringResource(Res.string.cancel))
-                    }
-                },
+                title = stringResource(Res.string.connection_failed),
+                message = stringResource(Res.string.server_request_failed),
+                confirmLabel = stringResource(Res.string.retry_connection),
+                onConfirm = join,
+                dismissLabel = stringResource(Res.string.cancel),
+                onDismissAction = { joinFailed = false },
             )
         }
     }

@@ -14,6 +14,7 @@ import io.ktor.util.*
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
@@ -74,15 +75,12 @@ class ImportScreen : Screen {
         }
 
         if (invalidData) {
-            AlertDialog(
-                title = { Text(text = stringResource(Res.string.import_data)) },
-                text = {
-                    Text(text = stringResource(Res.string.wrong_import_data))
-                },
+            DesignMessageDialog(
+                title = stringResource(Res.string.import_data),
+                message = stringResource(Res.string.wrong_import_data),
                 onDismissRequest = { invalidData = false },
-                confirmButton = {
-                    TextButton(onClick = { invalidData = false }) { Text(stringResource(Res.string.ok)) }
-                }
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { invalidData = false },
             )
         }
     }
