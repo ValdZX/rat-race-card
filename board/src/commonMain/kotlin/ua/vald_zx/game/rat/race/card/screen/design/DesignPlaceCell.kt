@@ -111,12 +111,7 @@ fun DesignPlaceCell(
 
     Box(modifier = modifier, contentAlignment = Alignment.TopEnd) {
         if (waitingAmount != null) {
-            DesignActivePulse(
-                shape = shape,
-                anchorColor = colors.scaffold.brass,
-                maxExpansion = 0.16f,
-                strokeWidth = 1.5.dp,
-            )
+            DesignActivePulse(shape = shape, color = colors.scaffold.brass)
         }
     Box(
         modifier = Modifier

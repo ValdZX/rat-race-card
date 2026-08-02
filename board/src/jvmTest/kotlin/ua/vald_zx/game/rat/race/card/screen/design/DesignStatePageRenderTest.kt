@@ -11,7 +11,11 @@ import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.design.Design
@@ -20,6 +24,8 @@ import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 import java.io.File
 import javax.imageio.ImageIO
+import kotlinx.datetime.LocalDateTime
+import ua.vald_zx.game.rat.race.card.shared.Board
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -50,7 +56,7 @@ class DesignStatePageRenderTest {
                         .testTag("page")
                         .padding(16.dp)
                 ) {
-                    DesignPlayerStatePageForTest(player)
+                    DesignPlayerStatePageForTest(player, previewBoard)
                 }
             }
         }
@@ -66,4 +72,51 @@ class DesignStatePageRenderTest {
 
     @Test
     fun renderLight() = render(dark = false, name = "light")
+
+    @Test
+    fun statePageScrollsDownToTheLastFigure() = runComposeUiTest {
+        setContent {
+            AppTheme(forceDark = true) {
+                Column(
+                    Modifier
+                        .size(400.dp, 300.dp)
+                        .background(Design.scaffold.surface1)
+                        .testTag("page")
+                ) {
+                    DesignPlayerStatePageForTest(player, previewBoard)
+                }
+            }
+        }
+        waitForIdle()
+        val hiddenAtStart = onNodeWithText("Total Expenses").getBoundsInRoot()
+        assertTrue(
+            hiddenAtStart.bottom - hiddenAtStart.top == 0.dp,
+            "тест не має сенсу: останнє поле й так у видимій частині",
+        )
+
+        repeat(4) {
+            onNodeWithTag("page").performTouchInput {
+                swipeUp(startY = bottom - 4f, endY = top + 4f, durationMillis = 200)
+            }
+            waitForIdle()
+        }
+        val shown = onNodeWithText("Total Expenses").getBoundsInRoot()
+        ImageIO.write(
+            onNodeWithTag("page").captureToImage().toAwtImage(),
+            "png",
+            File("build/design-state-scrolled.png"),
+        )
+
+        assertTrue(shown.bottom - shown.top > 0.dp, "сторінка стану не скролиться")
+        assertTrue(shown.bottom <= 300.dp, "останнє поле так і не доїхало у видиму частину")
+    }
 }
+
+private val previewBoard = Board(
+    id = "b",
+    name = "b",
+    loanLimit = 0,
+    businessLimit = 0,
+    createDateTime = LocalDateTime(2026, 1, 1, 0, 0),
+    cards = emptyMap(),
+)

@@ -100,17 +100,11 @@ internal fun DeckSlot(
         contentAlignment = Alignment.Center,
     ) {
         if (actionable) {
-            DesignActivePulse(
-                shape = shape,
-                anchorColor = tone.edge,
-                maxExpansion = 0.2f,
-                strokeWidth = minSize/40,
-            )
+            DesignActivePulse(shape = shape, color = tone.edge)
         }
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .optionalModifier(actionable) { plinth(colors.scaffold.accentDim, 4.dp, shape) }
                 .clip(shape)
                 .background(if (isDraw && count > 0) tone.fill else colors.scaffold.surface3)
                 .border(

@@ -4,8 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.platform.testTag
@@ -34,13 +34,14 @@ class DesignActiveElementsRenderTest {
         mainClock.autoAdvance = false
         setContent {
             AppTheme(forceDark = false) {
-                Row(
+                Box(
                     modifier = Modifier
+                        .size(400.dp, 160.dp)
                         .background(Design.scaffold.surface4)
-                        .padding(32.dp)
                         .testTag("active-elements"),
-                    horizontalArrangement = Arrangement.spacedBy(40.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(40.dp)) {
                     val tokenSize = DpSize(64.dp, 64.dp)
                     Box(Modifier.size(tokenSize)) {
                         DesignPlayerToken(
@@ -71,6 +72,7 @@ class DesignActiveElementsRenderTest {
                         onClick = {},
                         modifier = Modifier.size(72.dp, 82.dp),
                     )
+                }
                 }
             }
         }

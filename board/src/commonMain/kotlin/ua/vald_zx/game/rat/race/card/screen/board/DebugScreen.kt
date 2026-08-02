@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,8 +31,10 @@ import com.sebastianneubauer.jsontree.JsonTree
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
-import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.design.DesignButton
+import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.apartment
@@ -114,7 +116,8 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
         BottomSheetContainer {
             Text(
                 text = stringResource(Res.string.debug_tools),
-                style = MaterialTheme.typography.headlineSmall,
+                style = Design.type.title,
+                color = Design.scaffold.onSurface,
             )
 
             DebugSectionTitle(stringResource(Res.string.debug_finances))
@@ -132,8 +135,9 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
             DebugCounter(stringResource(Res.string.debug_pets), animals) { animals = it }
 
             val financeValues = listOf(cash, deposit, loan).map { it.value.text.toLongOrNull() }
-            Button(
+            DesignButton(
                 text = stringResource(Res.string.debug_apply_changes),
+                modifier = Modifier.fillMaxWidth(),
                 enabled = financeValues.all { it != null } && state.currentPlayerIsActive,
             ) {
                 vm.debugUpdatePlayer(
@@ -160,6 +164,7 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
                 items(BoardLayer.entries) { layer ->
                     FilterChip(
                         selected = selectedLayer == layer,
+                        colors = debugChipColors(),
                         onClick = {
                             selectedLayer = layer
                             selectedPosition = if (layer == state.layer) {
@@ -188,14 +193,17 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
                 position = selectedPosition,
                 onPositionChanged = { selectedPosition = it },
             )
-            Button(
+            DesignButton(
                 text = stringResource(Res.string.go_to),
+                modifier = Modifier.fillMaxWidth(),
                 enabled = state.canRoll,
             ) {
                 vm.debugChangePosition(selectedLayer, selectedPosition)
             }
-            Button(
+            DesignButton(
                 text = stringResource(Res.string.debug_go_to_salary),
+                modifier = Modifier.fillMaxWidth(),
+                kind = DesignButtonKind.Tonal,
                 enabled = state.canRoll,
             ) {
                 val from = if (selectedLayer == state.layer) player.location.position else 0
@@ -220,7 +228,8 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
                 Text(
                     text = stringResource(Res.string.debug_card_auto_move),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = Design.type.body,
+                    color = Design.scaffold.onSurfaceMuted,
                 )
             }
             LazyRow(
@@ -230,6 +239,7 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
                 items(availableCardTypes) { cardType ->
                     FilterChip(
                         selected = selectedCardType == cardType,
+                        colors = debugChipColors(),
                         onClick = {
                             selectedCardType = cardType
                             selectedCardId = decks.getValue(cardType).keys.minOrNull() ?: 1
@@ -258,36 +268,44 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
                 Text(
                     text = it.debugDescription(),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = Design.type.body,
+                    color = Design.scaffold.onSurfaceMuted,
                 )
             }
-            Button(
+            DesignButton(
                 text = stringResource(Res.string.select_action),
+                modifier = Modifier.fillMaxWidth(),
                 enabled = selectedCard != null && state.currentPlayerIsActive,
             ) {
                 vm.selectCardByNo(selectedCardId, selectedCardType)
                 bottomSheetNavigator.hide()
             }
 
-            HorizontalDivider()
-            TextButton(onClick = { showBoardState = !showBoardState }) {
-                Text(
-                    stringResource(
-                        if (showBoardState) {
-                            Res.string.debug_hide_board_state
-                        } else {
-                            Res.string.debug_show_board_state
-                        }
-                    )
-                )
-            }
+            HorizontalDivider(color = Design.scaffold.outline)
+            DesignButton(
+                text = stringResource(
+                    if (showBoardState) {
+                        Res.string.debug_hide_board_state
+                    } else {
+                        Res.string.debug_show_board_state
+                    }
+                ),
+                kind = DesignButtonKind.Text,
+                onClick = { showBoardState = !showBoardState },
+            )
             if (showBoardState) {
                 val boardText = remember(state.board) {
                     debugJson.encodeToString(state.board)
                 }
                 JsonTree(
                     json = boardText,
-                    onLoading = { Text(text = "Loading...") },
+                    onLoading = {
+                        Text(
+                            text = "Loading...",
+                            style = Design.type.body,
+                            color = Design.scaffold.onSurfaceMuted,
+                        )
+                    },
                 )
             }
         }
@@ -297,10 +315,14 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
 @Composable
 private fun DebugSectionTitle(text: String) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+        HorizontalDivider(
+            modifier = Modifier.padding(top = 8.dp),
+            color = Design.scaffold.outline,
+        )
         Text(
             text = text,
-            style = MaterialTheme.typography.titleMedium,
+            style = Design.type.subtitle,
+            color = Design.scaffold.onSurface,
             modifier = Modifier.padding(top = 8.dp),
         )
     }
@@ -317,25 +339,39 @@ private fun DebugCounter(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label)
+        Text(text = label, style = Design.type.body, color = Design.scaffold.onSurface)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                enabled = value > 0,
-                onClick = { onValueChanged((value - 1).coerceAtLeast(0)) },
-            ) {
-                Text("−", style = MaterialTheme.typography.titleLarge)
+            StepperButton("−", enabled = value > 0) {
+                onValueChanged((value - 1).coerceAtLeast(0))
             }
             Text(
                 text = value.toString(),
-                style = MaterialTheme.typography.titleMedium,
+                style = Design.type.amountMd,
+                color = Design.scaffold.onSurface,
             )
-            IconButton(
-                enabled = value < Long.MAX_VALUE,
-                onClick = { onValueChanged(value + 1) },
-            ) {
-                Text("+", style = MaterialTheme.typography.titleLarge)
+            StepperButton("+", enabled = value < Long.MAX_VALUE) {
+                onValueChanged(value + 1)
             }
         }
+    }
+}
+
+@Composable
+private fun debugChipColors() = FilterChipDefaults.filterChipColors(
+    containerColor = Design.scaffold.surface2,
+    labelColor = Design.scaffold.onSurfaceMuted,
+    selectedContainerColor = Design.scaffold.accent,
+    selectedLabelColor = Design.scaffold.onAccent,
+)
+
+@Composable
+private fun StepperButton(glyph: String, enabled: Boolean, onClick: () -> Unit) {
+    IconButton(enabled = enabled, onClick = onClick) {
+        Text(
+            text = glyph,
+            style = Design.type.amountMd,
+            color = if (enabled) Design.scaffold.accent else Design.scaffold.onSurfaceMuted,
+        )
     }
 }
 
@@ -354,13 +390,21 @@ private fun PositionSelector(
     }
     Text(
         text = "#$position / $lastPosition · $placeName",
-        style = MaterialTheme.typography.titleSmall,
+        style = Design.type.label,
+        color = Design.scaffold.onSurface,
     )
     Slider(
         value = position.toFloat(),
         onValueChange = { onPositionChanged(it.roundToInt().coerceIn(0, lastPosition)) },
         valueRange = 0f..lastPosition.toFloat(),
         steps = (lastPosition - 1).coerceAtLeast(0),
+        colors = SliderDefaults.colors(
+            thumbColor = Design.scaffold.accent,
+            activeTrackColor = Design.scaffold.accentDim,
+            inactiveTrackColor = Design.scaffold.surface3,
+            activeTickColor = Design.scaffold.onAccent,
+            inactiveTickColor = Design.scaffold.outlineStrong,
+        ),
     )
     ValueSelector(
         value = position,
@@ -384,17 +428,14 @@ private fun ValueSelector(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(enabled = previousEnabled, onClick = onPrevious) {
-            Text("−", style = MaterialTheme.typography.titleLarge)
-        }
+        StepperButton("−", enabled = previousEnabled, onClick = onPrevious)
         Text(
             text = "#$value",
-            style = MaterialTheme.typography.titleMedium,
+            style = Design.type.amountMd,
+            color = Design.scaffold.onSurface,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
-        IconButton(enabled = nextEnabled, onClick = onNext) {
-            Text("+", style = MaterialTheme.typography.titleLarge)
-        }
+        StepperButton("+", enabled = nextEnabled, onClick = onNext)
     }
 }
 

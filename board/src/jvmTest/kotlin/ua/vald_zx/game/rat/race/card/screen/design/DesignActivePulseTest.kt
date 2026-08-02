@@ -1,28 +1,41 @@
 package ua.vald_zx.game.rat.race.card.screen.design
 
-import androidx.compose.ui.graphics.Color
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 class DesignActivePulseTest {
 
-    private val palette = listOf(Color.Red, Color.Yellow, Color.Green, Color.Blue)
-
     @Test
-    fun rotatedPaletteKeepsAClosedMulticolorSweep() {
-        val rotated = rotatePulsePalette(palette, 0.37f)
-
-        assertEquals(palette.size + 1, rotated.size)
-        assertEquals(rotated.first(), rotated.last())
-        assertNotEquals(rotated[0], rotated[1])
+    fun ringStartsFlushWithTheElementAndFullyOpaque() {
+        assertEquals(0f, pulseSpreadFraction(0f))
+        assertEquals(1f, pulseAlpha(0f))
     }
 
     @Test
-    fun colorCycleReturnsToItsStartingPoint() {
-        assertEquals(
-            rotatePulsePalette(palette, 0f),
-            rotatePulsePalette(palette, 1f),
-        )
+    fun ringFadesOutExactlyWhenItReachesFullSpread() {
+        val last = 0.69f
+        assertTrue(pulseSpreadFraction(last) > 0.09f, "кільце не встигає вирости до кінця видимої фази")
+        assertTrue(pulseAlpha(last) < 0.05f, "кільце ще помітне там, де дизайн уже прозорий")
+    }
+
+    @Test
+    fun ringRestsForTheTailOfTheCycle() {
+        listOf(0.7f, 0.85f, 1f).forEach { progress ->
+            assertEquals(0f, pulseSpreadFraction(progress), "хвіст циклу має бути паузою")
+            assertEquals(0f, pulseAlpha(progress), "хвіст циклу має бути паузою")
+        }
+    }
+
+    @Test
+    fun ringOnlyEverGrows() {
+        var previous = -1f
+        var progress = 0f
+        while (progress < 0.7f) {
+            val spread = pulseSpreadFraction(progress)
+            assertTrue(spread >= previous, "кільце смикнулось назад на $progress")
+            previous = spread
+            progress += 0.01f
+        }
     }
 }

@@ -43,10 +43,9 @@ fun DesignPlayerToken(
         if (isActivePlayer) {
             DesignActivePulse(
                 shape = DesignShapes.full,
-                anchorColor = playerColor,
-                maxExpansion = 1f,
-                strokeWidth = ringWidth * 0.72f,
+                color = playerColor,
                 modifier = Modifier.size(spotSize * 0.82f),
+                spreadFraction = TokenPulseSpreadFraction,
             )
         }
         Box(

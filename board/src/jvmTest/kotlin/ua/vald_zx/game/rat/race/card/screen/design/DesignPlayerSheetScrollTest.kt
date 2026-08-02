@@ -29,6 +29,8 @@ import com.composables.core.BottomSheet
 import com.composables.core.rememberBottomSheetState
 import ua.vald_zx.game.rat.race.card.screen.board.ContentExpanded
 import ua.vald_zx.game.rat.race.card.screen.board.HalfExpanded
+import kotlinx.datetime.LocalDateTime
+import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Business
 import ua.vald_zx.game.rat.race.card.shared.BusinessType
 import ua.vald_zx.game.rat.race.card.shared.Player
@@ -70,7 +72,7 @@ class DesignPlayerSheetScrollTest {
                             Spacer(Modifier.height(160.dp))
                             val pagerState = rememberPagerState(pageCount = { 5 })
                             LaunchedEffect(Unit) { pagerState.scrollToPage(1) }
-                            DesignSheetPages(player, pagerState, Modifier.weight(1f))
+                            DesignSheetPages(player, previewBoard, pagerState, Modifier.weight(1f))
                         }
                     }
                 }
@@ -101,6 +103,7 @@ class DesignPlayerSheetScrollTest {
                     LaunchedEffect(Unit) { pagerState.scrollToPage(1) }
                     DesignSheetPages(
                         twoBusinesses,
+                        previewBoard,
                         pagerState,
                         Modifier.weight(1f).testTag("pages"),
                     )
@@ -126,3 +129,12 @@ class DesignPlayerSheetScrollTest {
         ImageIO.write(image, "png", File(target))
     }
 }
+
+private val previewBoard = Board(
+    id = "b",
+    name = "b",
+    loanLimit = 0,
+    businessLimit = 0,
+    createDateTime = LocalDateTime(2026, 1, 1, 0, 0),
+    cards = emptyMap(),
+)

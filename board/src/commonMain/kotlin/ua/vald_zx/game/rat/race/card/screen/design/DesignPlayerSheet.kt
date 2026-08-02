@@ -30,6 +30,16 @@ import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
+import ua.vald_zx.game.rat.race.card.resource.images.Fly
+import ua.vald_zx.game.rat.race.card.resource.images.Yacht
+import ua.vald_zx.game.rat.race.card.resource.images.Estate
+import ua.vald_zx.game.rat.race.card.resource.images.Flat
+import ua.vald_zx.game.rat.race.card.resource.images.Car
+import ua.vald_zx.game.rat.race.card.resource.images.Baby
+import ua.vald_zx.game.rat.race.card.resource.images.Mariage
+import ua.vald_zx.game.rat.race.card.resource.images.Work
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.verticalScroll
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.*
 import ua.vald_zx.game.rat.race.card.screen.board.page.*
@@ -83,7 +93,7 @@ fun DesignPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
             TabsRow(player, pagerState.currentPage) { page ->
                 coroutineScope.launch { pagerState.animateScrollToPage(page) }
             }
-            DesignSheetPages(player, pagerState, Modifier.weight(1f))
+            DesignSheetPages(player, state.board, pagerState, Modifier.weight(1f))
         }
         Box(
             modifier = Modifier
@@ -269,6 +279,7 @@ private fun TabsRow(player: Player, selected: Int, onSelect: (Int) -> Unit) {
 @Composable
 internal fun DesignSheetPages(
     player: Player,
+    board: Board,
     pagerState: PagerState,
     modifier: Modifier = Modifier,
 ) {
@@ -279,7 +290,7 @@ internal fun DesignSheetPages(
             .padding(bottom = 8.dp),
     ) { page ->
         when (page) {
-            0 -> DesignStatePage(player)
+            0 -> DesignStatePage(player, board)
             1 -> DesignBusinessPage(player)
             2 -> DesignSharesPage(player)
             3 -> DesignLandPage(player)
@@ -290,12 +301,23 @@ internal fun DesignSheetPages(
 }
 
 @Composable
-internal fun DesignPlayerStatePageForTest(player: Player) = DesignStatePage(player)
+internal fun DesignPlayerStatePageForTest(player: Player, board: Board) = DesignStatePage(player, board)
 
 @Composable
-private fun DesignStatePage(player: Player) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxSize()) {
+private fun DesignStatePage(player: Player, board: Board) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+    ) {
+        PossessionsGrid(player)
+        ConditionsBlock(player, board)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ValueField(
+                label = stringResource(Res.string.cash),
+                amount = player.cash,
+                tone = Design.semantic.cash,
+                modifier = Modifier.weight(1f),
+            )
             ValueField(
                 label = stringResource(Res.string.cash_flow),
                 amount = player.cashFlow(),
@@ -303,19 +325,12 @@ private fun DesignStatePage(player: Player) {
                 signed = true,
                 modifier = Modifier.weight(1f),
             )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ValueField(
                 label = stringResource(Res.string.deposit),
                 amount = player.deposit,
                 tone = Design.semantic.cash,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ValueField(
-                label = stringResource(Res.string.active_profit),
-                amount = player.totalProfit(),
-                tone = Design.semantic.business,
-                signed = true,
                 modifier = Modifier.weight(1f),
             )
             ValueField(
@@ -327,9 +342,26 @@ private fun DesignStatePage(player: Player) {
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ValueField(
-                label = stringResource(Res.string.total_expenses),
-                amount = -player.totalExpenses(),
-                tone = Design.semantic.expenses,
+                label = stringResource(Res.string.active_profit),
+                amount = player.activeProfit(),
+                tone = Design.semantic.business,
+                signed = true,
+                modifier = Modifier.weight(1f),
+            )
+            ValueField(
+                label = stringResource(Res.string.passive_profit),
+                amount = player.passiveProfit(),
+                tone = Design.semantic.business,
+                signed = true,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ValueField(
+                label = stringResource(Res.string.total_profit),
+                amount = player.totalProfit(),
+                tone = Design.semantic.positive,
+                signed = true,
                 modifier = Modifier.weight(1f),
             )
             ValueField(
@@ -339,5 +371,190 @@ private fun DesignStatePage(player: Player) {
                 modifier = Modifier.weight(1f),
             )
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ValueField(
+                label = stringResource(Res.string.credit_expenses),
+                amount = -player.creditExpenses(),
+                tone = Design.semantic.negative,
+                modifier = Modifier.weight(1f),
+            )
+            ValueField(
+                label = stringResource(Res.string.total_expenses),
+                amount = -player.totalExpenses(),
+                tone = Design.semantic.expenses,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PossessionsGrid(player: Player) {
+    val config = player.config
+    val items = listOf(
+        Possession(stringResource(Res.string.work), Images.Work, player.card.salary, 0, player.businesses.any { it.type == BusinessType.WORK }),
+        Possession(stringResource(Res.string.marriage), Images.Mariage, 0, 0, player.isMarried),
+        Possession(stringResource(Res.string.kids), Images.Baby, player.babies * config.babyCost, player.babies, player.babies > 0),
+        Possession(stringResource(Res.string.car), Images.Car, player.cars * config.carCost, player.cars, player.cars > 0),
+        Possession(stringResource(Res.string.apartment), Images.Flat, player.apartment * config.apartmentCost, player.apartment, player.apartment > 0),
+        Possession(stringResource(Res.string.estate), Images.Estate, player.cottage * config.cottageCost, player.cottage, player.cottage > 0),
+        Possession(stringResource(Res.string.yacht), Images.Yacht, player.yacht * config.yachtCost, player.yacht, player.yacht > 0),
+        Possession(stringResource(Res.string.plane), Images.Fly, player.flight * config.flightCost, player.flight, player.flight > 0),
+    )
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items.forEach { PossessionTile(it) }
+    }
+}
+
+private data class Possession(
+    val label: String,
+    val icon: ImageVector,
+    val price: Long,
+    val count: Long,
+    val owned: Boolean,
+)
+
+@Composable
+private fun PossessionTile(possession: Possession) {
+    val colors = Design.colors
+    val ink = if (possession.owned) colors.scaffold.onSurface else colors.scaffold.onSurfaceMuted
+    Column(
+        modifier = Modifier
+            .width(80.dp)
+            .clip(DesignShapes.sm)
+            .background(if (possession.owned) colors.scaffold.surface2 else colors.scaffold.surface1)
+            .border(
+                width = 1.dp,
+                color = if (possession.owned) colors.scaffold.accentDim else colors.scaffold.outline,
+                shape = DesignShapes.sm,
+            )
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Icon(
+            imageVector = possession.icon,
+            contentDescription = possession.label,
+            tint = ink,
+            modifier = Modifier.size(24.dp),
+        )
+        Text(
+            text = if (possession.count > 0) "${possession.label} ×${possession.count}" else possession.label,
+            style = Design.type.micro,
+            color = ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (possession.price != 0L) {
+            Text(
+                text = possession.price.splitDecimal(),
+                style = Design.type.monoMeta,
+                color = if (possession.owned) colors.scaffold.brass else colors.scaffold.onSurfaceMuted,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ConditionsBlock(player: Player, board: Board) {
+    when (player.location.level.toLayer()) {
+        BoardLayer.INNER -> {
+            val conditions = board.outerCircleConditions
+            ConditionsCard(stringResource(Res.string.outer_circle_conditions)) {
+                Condition(
+                    done = player.cashFlow() >= conditions.minimumCashFlow,
+                    text = stringResource(
+                        Res.string.cash_flow_progress,
+                        player.cashFlow().splitDecimal(),
+                        conditions.minimumCashFlow.splitDecimal(),
+                    ),
+                )
+                if (conditions.apartmentRequired) {
+                    Condition(player.apartment > 0, stringResource(Res.string.apartment_required))
+                }
+                if (conditions.carRequired) {
+                    Condition(player.cars > 0, stringResource(Res.string.car_required))
+                }
+                Condition(
+                    done = player.balance() >= conditions.minimumAccountBalance,
+                    text = stringResource(
+                        Res.string.account_balance_progress,
+                        player.balance().splitDecimal(),
+                        conditions.minimumAccountBalance.splitDecimal(),
+                    ),
+                )
+            }
+        }
+
+        BoardLayer.OUTER -> {
+            val conditions = board.victoryConditions
+            ConditionsCard(stringResource(Res.string.victory_conditions)) {
+                if (conditions.dreamRequired) {
+                    Condition(
+                        done = player.selectedDreamId != null &&
+                                player.selectedDreamId in player.purchasedDreamIds,
+                        text = board.dreamById(player.selectedDreamId)?.name
+                            ?: stringResource(Res.string.choose_dream_on_board),
+                    )
+                }
+                if (conditions.planeRequired) {
+                    Condition(player.flight > 0, stringResource(Res.string.plane))
+                }
+                if (conditions.estateRequired) {
+                    Condition(player.cottage > 0, stringResource(Res.string.estate))
+                }
+                Condition(
+                    done = player.balance() >= conditions.minimumAccountBalance,
+                    text = stringResource(
+                        Res.string.victory_account_balance_value,
+                        conditions.minimumAccountBalance.splitDecimal(),
+                    ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConditionsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
+    val colors = Design.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(DesignShapes.md)
+            .background(colors.scaffold.surface2)
+            .border(1.dp, colors.scaffold.outline, DesignShapes.md)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        content = {
+            Text(text = title, style = Design.type.label, color = colors.scaffold.onSurface)
+            content()
+        },
+    )
+}
+
+@Composable
+private fun Condition(done: Boolean, text: String) {
+    val colors = Design.colors
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = if (done) "✓" else "○",
+            style = Design.type.body,
+            color = if (done) colors.scaffold.accent else colors.scaffold.onSurfaceMuted,
+        )
+        Text(
+            text = text,
+            style = Design.type.body,
+            color = if (done) colors.scaffold.onSurface else colors.scaffold.onSurfaceMuted,
+        )
     }
 }

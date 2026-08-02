@@ -54,6 +54,8 @@ import org.koin.core.parameter.parametersOf
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.designV2Enabled
+import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.screen.design.DesignActivePulse
 import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDialog
 import ua.vald_zx.game.rat.race.card.screen.design.DesignPlayerSheet
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
@@ -765,6 +767,9 @@ fun BoxScope.Controls(vm: BoardViewModel) {
     }
 }
 
+private const val DICE_BODY_FRACTION = 0.53f
+private const val DICE_BODY_DROP = 0.16f
+
 @Composable
 fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
     val state by vm.uiState.collectAsState()
@@ -782,14 +787,6 @@ fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
         }
     }
     val rollSize = min(maxWidth, maxHeight) / 7
-    val infiniteTransition = rememberInfiniteTransition(label = "InfiniteTransition")
-    val spreadRadius by infiniteTransition.animateValue(
-        initialValue = 0.dp,
-        targetValue = rollSize * 0.3f,
-        animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
-        label = "FloatAnimation",
-        typeConverter = TwoWayConverter({ AnimationVector(it.value) }, { it.value.dp })
-    )
     val arrowSize = rollSize * 0.7f
     Row(
         modifier = Modifier
@@ -802,17 +799,17 @@ fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
             contentAlignment = Alignment.Center,
         ) {
             if (state.canRoll) {
-                Box(
-                    modifier = Modifier
-                        .size(rollSize * 0.2f)
-                        .padding(top = rollSize * 0.3f)
-                        .boxShadow(
-                            blurRadius = rollSize * 0.3f,
-                            spreadRadius = spreadRadius,
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                )
+                if (designV2Enabled.value) {
+                    DesignActivePulse(
+                        shape = RoundedCornerShape(rollSize * DICE_BODY_FRACTION * 0.29f),
+                        color = Design.scaffold.accentDim,
+                        modifier = Modifier
+                            .size(rollSize * DICE_BODY_FRACTION)
+                            .offset(y = rollSize * DICE_BODY_DROP),
+                    )
+                } else {
+                    LegacyDiceGlow(rollSize)
+                }
             }
             Image(
                 painter = rememberLottiePainter(

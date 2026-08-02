@@ -10,11 +10,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,6 +35,10 @@ import ua.vald_zx.game.rat.race.card.AppDataStorageBean
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.design.DesignButton
+import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
+import ua.vald_zx.game.rat.race.card.design.DesignToggleRow
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.resources.Res
@@ -72,67 +73,66 @@ class OnlineSettingsScreen(private val vm: BoardViewModel) : Screen {
             ) {
                 Text(
                     text = stringResource(Res.string.online_settings),
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = Design.type.title,
+                    color = Design.scaffold.onSurface,
                 )
                 IconButton(onClick = { bottomSheetNavigator.hide() }) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = stringResource(Res.string.online_settings),
+                        tint = Design.scaffold.onSurfaceMuted,
                     )
                 }
             }
 
-            SettingsRow(label = stringResource(Res.string.dark_theme)) {
-                Switch(
-                    checked = isDark,
-                    onCheckedChange = { enabled ->
-                        isDark = enabled
-                        coroutineScope.launch {
-                            appKStore.update { stored ->
-                                (stored ?: AppDataStorageBean("", null)).copy(theme = enabled)
-                            }
+            DesignToggleRow(
+                label = stringResource(Res.string.dark_theme),
+                checked = isDark,
+                onCheckedChange = { enabled ->
+                    isDark = enabled
+                    coroutineScope.launch {
+                        appKStore.update { stored ->
+                            (stored ?: AppDataStorageBean("", null)).copy(theme = enabled)
                         }
-                    },
-                )
-            }
+                    }
+                },
+            )
 
-            SettingsRow(label = stringResource(Res.string.new_design)) {
-                Switch(
-                    checked = designV2Enabled.value,
-                    onCheckedChange = { enabled ->
-                        designV2Enabled.value = enabled
-                        coroutineScope.launch {
-                            appKStore.update { stored ->
-                                (stored ?: AppDataStorageBean("", null)).copy(designV2 = enabled)
-                            }
+            DesignToggleRow(
+                label = stringResource(Res.string.new_design),
+                checked = designV2Enabled.value,
+                onCheckedChange = { enabled ->
+                    designV2Enabled.value = enabled
+                    coroutineScope.launch {
+                        appKStore.update { stored ->
+                            (stored ?: AppDataStorageBean("", null)).copy(designV2 = enabled)
                         }
-                    },
-                )
-            }
+                    }
+                },
+            )
 
             val language = Locale.current.language
             SettingsRow(label = stringResource(Res.string.language)) {
-                OutlinedButton(
+                DesignButton(
+                    text = if (language.startsWith("uk", ignoreCase = true)) "Українська" else "English",
+                    kind = DesignButtonKind.Tonal,
+                    height = 40.dp,
                     onClick = {
                         LocaleUpdater.updateLocale(
                             if (language.startsWith("uk", ignoreCase = true)) "en" else "uk"
                         )
-                    }
-                ) {
-                    Text(
-                        if (language.startsWith("uk", ignoreCase = true)) {
-                            "Українська"
-                        } else {
-                            "English"
-                        }
-                    )
-                }
+                    },
+                )
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                color = Design.scaffold.outline,
+            )
             Text(
                 text = stringResource(Res.string.player_token_color),
-                style = MaterialTheme.typography.titleMedium,
+                style = Design.type.subtitle,
+                color = Design.scaffold.onSurface,
                 modifier = Modifier.fillMaxWidth(),
             )
             val usedColors = allPlayers
@@ -174,7 +174,11 @@ private fun SettingsRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label)
+        Text(
+            text = label,
+            style = Design.type.body,
+            color = Design.scaffold.onSurface,
+        )
         content()
     }
 }
