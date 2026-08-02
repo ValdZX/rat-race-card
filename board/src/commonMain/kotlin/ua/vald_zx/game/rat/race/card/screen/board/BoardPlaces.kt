@@ -240,7 +240,7 @@ fun BoxScope.PlaceContent(
             val isPurchased = dream?.id?.let { it in state.board.purchasedDreamIds } == true
             val isSelected = dream?.id == state.player.selectedDreamId
             val allPlayers by players.collectAsState()
-            val selectors = allPlayers.filter { it.selectedDreamId == dream?.id }
+            val selectors = allPlayers.filter { !it.isInactive && it.selectedDreamId == dream?.id }
             Box(
                 Modifier
                     .fillMaxSize()
@@ -506,8 +506,14 @@ internal fun forEachPlayerPoint(
     val placeMap = remember(layout.places) {
         layout.places.associate { it.index to it.place }
     }
-    val points = remember(players, layout, state.board.activePlayerId, state.player.id) {
-        players.filter { layout.layer.level == it.location.level }.map {
+    val points = remember(
+        players,
+        layout,
+        state.board.activePlayerId,
+        state.board.playerIds,
+        state.player.id,
+    ) {
+        players.filter { !it.isInactive && layout.layer.level == it.location.level }.map {
             PlayerPointState(
                 position = moveTo(it.location.position, layout.layer.cellCount, layout.route.offset),
                 color = it.attrs.color,

@@ -209,6 +209,9 @@
     <string name="exit">Exit</string>
     <string name="confirm_leave_board">Leave the board?</string>
     <string name="leave_board_warning">Are you sure you want to leave the current board?</string>
+    <string name="reconnecting_to_server">Restoring connection… Attempt %1$d</string>
+    <string name="reconnecting_to_server_hint">The game will continue automatically after reconnecting.</string>
+    <string name="server_request_failed">The request could not be confirmed. After reconnecting, check the game state before retrying.</string>
     <string name="land_name">Name of land</string>
     <string name="area">Area</string>
     <string name="priceOfUnit">Price per square meter</string>

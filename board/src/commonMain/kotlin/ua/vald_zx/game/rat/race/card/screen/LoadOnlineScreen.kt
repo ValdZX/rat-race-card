@@ -1,18 +1,16 @@
 package ua.vald_zx.game.rat.race.card.screen
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.github.aakira.napier.Napier
-import io.ktor.client.*
-import kotlinx.coroutines.*
-import org.koin.compose.getKoin
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeout
+import kotlin.time.Duration.Companion.seconds
+import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.designV2Enabled
-import ua.vald_zx.game.rat.race.card.di.getRaceRatService
+import ua.vald_zx.game.rat.race.card.di.RaceRatConnection
 import ua.vald_zx.game.rat.race.card.screen.design.DesignLoadOnline
 
 class LoadOnlineScreen : Screen {
@@ -20,24 +18,23 @@ class LoadOnlineScreen : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val invalidServerState = remember { mutableStateOf(false) }
-        val koin = getKoin()
-        fun connectToService() {
-            val handler = CoroutineExceptionHandler { _, t ->
-                Napier.e("Invalid server", t)
-                val service = koin.get<HttpClient>().getRaceRatService()
-                koin.declare(service, allowOverride = true)
+        val connection = koinInject<RaceRatConnection>()
+        var retryKey by remember { mutableIntStateOf(0) }
+        LaunchedEffect(retryKey) {
+            invalidServerState.value = false
+            try {
+                withTimeout(20.seconds) { connection.reconnect().getBoards() }
+                navigator.replace(BoardListScreen())
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Throwable) {
+                Napier.e("Server connection failed", error)
                 invalidServerState.value = true
             }
-            CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
-                navigator.replace(BoardListScreen())
-            }
-        }
-        LaunchedEffect(Unit) {
-            connectToService()
         }
         val retry = {
-            connectToService()
             invalidServerState.value = false
+            retryKey += 1
         }
         if (designV2Enabled.value) {
             DesignLoadOnline(

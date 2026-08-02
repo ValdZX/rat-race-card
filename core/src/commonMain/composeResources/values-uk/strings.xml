@@ -214,6 +214,9 @@
     <string name="exit">Вийти</string>
     <string name="confirm_leave_board">Вийти з борди?</string>
     <string name="leave_board_warning">Ви впевнені, що хочете вийти з поточної борди?</string>
+    <string name="reconnecting_to_server">Відновлення зв’язку… Спроба %1$d</string>
+    <string name="reconnecting_to_server_hint">Гра продовжиться автоматично після перепідключення.</string>
+    <string name="server_request_failed">Не вдалося підтвердити виконання запиту. Після відновлення зв’язку перевірте стан гри перед повторною дією.</string>
     <string name="land_name">Назва земельного участку</string>
     <string name="area">Площа</string>
     <string name="priceOfUnit">Ціна за сотку</string>

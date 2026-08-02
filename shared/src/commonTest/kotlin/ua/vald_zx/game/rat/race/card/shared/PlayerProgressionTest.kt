@@ -25,13 +25,13 @@ class PlayerProgressionTest {
             ),
         )
 
-        assertTrue(eligiblePlayer.canEnterOuterCircle(OuterCircleConditions()))
-        assertFalse(eligiblePlayer.copy(cars = 0).canEnterOuterCircle(OuterCircleConditions()))
-        assertFalse(eligiblePlayer.copy(apartment = 0).canEnterOuterCircle(OuterCircleConditions()))
-        assertFalse(eligiblePlayer.copy(deposit = 99_999).canEnterOuterCircle(OuterCircleConditions()))
+        assertTrue(eligiblePlayer.canEnterOuterCircle(canRoll = true, conditions = OuterCircleConditions()))
+        assertFalse(eligiblePlayer.copy(cars = 0).canEnterOuterCircle(canRoll = true, conditions = OuterCircleConditions()))
+        assertFalse(eligiblePlayer.copy(apartment = 0).canEnterOuterCircle(canRoll = true, conditions = OuterCircleConditions()))
+        assertFalse(eligiblePlayer.copy(deposit = 99_999).canEnterOuterCircle(canRoll = true, conditions = OuterCircleConditions()))
         assertFalse(
             eligiblePlayer.copy(businesses = emptyList())
-                .canEnterOuterCircle(OuterCircleConditions())
+                .canEnterOuterCircle(canRoll = true, conditions = OuterCircleConditions())
         )
     }
 
@@ -51,7 +51,8 @@ class PlayerProgressionTest {
 
         assertTrue(
             player.canEnterOuterCircle(
-                OuterCircleConditions(
+                canRoll = true,
+                conditions = OuterCircleConditions(
                     apartmentRequired = false,
                     carRequired = false,
                 )
@@ -76,7 +77,7 @@ class PlayerProgressionTest {
             ),
         )
 
-        assertFalse(player.canEnterOuterCircle(OuterCircleConditions()))
+        assertFalse(player.canEnterOuterCircle(canRoll = true, conditions = OuterCircleConditions()))
     }
 
     @Test

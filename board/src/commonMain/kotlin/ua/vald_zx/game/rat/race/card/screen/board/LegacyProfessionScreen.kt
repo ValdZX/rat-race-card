@@ -32,6 +32,7 @@ import kotlin.uuid.Uuid
 @Composable
 internal fun LegacyProfessionContent(
     card: ProfessionCard,
+    isLoading: Boolean,
     onBack: () -> Unit,
     onNext: () -> Unit,
 ) {
@@ -84,6 +85,10 @@ internal fun LegacyProfessionContent(
                 stringResource(Res.string.phone), card.phone.toString(),
                 color = MaterialTheme.colorScheme.tertiary
             )
-            Button(stringResource(Res.string.next)) { onNext() }
+            Button(
+                text = stringResource(if (isLoading) Res.string.connecting_to_server else Res.string.next),
+                enabled = !isLoading,
+                onClick = onNext,
+            )
         }
 }

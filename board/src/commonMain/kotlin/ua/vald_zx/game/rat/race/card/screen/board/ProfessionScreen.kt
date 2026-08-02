@@ -1,32 +1,34 @@
 package ua.vald_zx.game.rat.race.card.screen.board
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import io.github.aakira.napier.Napier
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
+import ua.vald_zx.game.rat.race.card.AppDataStorageBean
 import ua.vald_zx.game.rat.race.card.appKStore
-import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.designV2Enabled
+import ua.vald_zx.game.rat.race.card.di.RaceRatConnection
 import ua.vald_zx.game.rat.race.card.screen.design.DesignProfessionContent
-import ua.vald_zx.game.rat.race.card.components.DetailsField
-import ua.vald_zx.game.rat.race.card.launchWithHandler
 import ua.vald_zx.game.rat.race.card.resources.*
-import ua.vald_zx.game.rat.race.card.screen.BoardListScreen
-import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.PlayerCard
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
-import ua.vald_zx.game.rat.race.card.shared.RaceRatService
+import org.koin.compose.koinInject
 import kotlin.uuid.Uuid
+import kotlin.time.Duration.Companion.seconds
 
 class ProfessionScreen(
     private val board: Board,
@@ -37,46 +39,85 @@ class ProfessionScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val service = koinInject<RaceRatService>()
+        val connection = koinInject<RaceRatConnection>()
+        val coroutineScope = rememberCoroutineScope()
+        var isJoining by remember { mutableStateOf(false) }
+        var joinFailed by remember { mutableStateOf(false) }
         val join = {
-            launchWithHandler({
-                navigator.popUntil { it is BoardListScreen }
-                navigator.replace(LoadOnlineScreen())
-            }) {
-                val helloUuid = appKStore.get()?.clientUuid.orEmpty().ifEmpty {
-                    Uuid.random().toString().apply {
-                        appKStore.update { it?.copy(clientUuid = this) }
+            if (!isJoining) {
+                val shouldReconnect = joinFailed
+                isJoining = true
+                joinFailed = false
+                coroutineScope.launch {
+                    try {
+                        val helloUuid = appKStore.get()?.clientUuid.orEmpty().ifEmpty {
+                            Uuid.random().toString().apply {
+                                appKStore.update { stored ->
+                                    (stored ?: AppDataStorageBean("", null)).copy(clientUuid = this)
+                                }
+                            }
+                        }
+                        val player = withTimeout(20.seconds) {
+                            val service = if (shouldReconnect) connection.reconnect() else connection.service()
+                            val instance = service.hello(helloUuid, board.id)
+                            instance.player ?: service.makePlayer(
+                                uuid = helloUuid,
+                                color = color,
+                                card = PlayerCard(
+                                    name = playerName,
+                                    gender = card.gender,
+                                    profession = card.name,
+                                    salary = card.salary,
+                                    rent = card.rent,
+                                    food = card.food,
+                                    cloth = card.cloth,
+                                    transport = card.transport,
+                                    phone = card.phone,
+                                ),
+                            )
+                        }
+                        navigator.replace(BoardScreen(board, player))
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (error: Throwable) {
+                        Napier.e("Creating player failed", error)
+                        joinFailed = true
+                    } finally {
+                        isJoining = false
                     }
                 }
-                val player = service.makePlayer(
-                    uuid = helloUuid,
-                    color = color,
-                    card = PlayerCard(
-                        name = playerName,
-                        gender = card.gender,
-                        profession = card.name,
-                        salary = card.salary,
-                        rent = card.rent,
-                        food = card.food,
-                        cloth = card.cloth,
-                        transport = card.transport,
-                        phone = card.phone,
-                    ),
-                )
-                navigator.replace(BoardScreen(board, player))
             }
         }
         if (designV2Enabled.value) {
             DesignProfessionContent(
                 card = card,
+                isLoading = isJoining,
                 onBack = { navigator.pop() },
                 onNext = join,
             )
         } else {
             LegacyProfessionContent(
                 card = card,
+                isLoading = isJoining,
                 onBack = { navigator.pop() },
                 onNext = join,
+            )
+        }
+        if (joinFailed) {
+            AlertDialog(
+                onDismissRequest = { joinFailed = false },
+                title = { Text(stringResource(Res.string.connection_failed)) },
+                text = { Text(stringResource(Res.string.server_request_failed)) },
+                confirmButton = {
+                    TextButton(onClick = join) {
+                        Text(stringResource(Res.string.retry_connection))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { joinFailed = false }) {
+                        Text(stringResource(Res.string.cancel))
+                    }
+                },
             )
         }
     }

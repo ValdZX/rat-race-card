@@ -69,6 +69,18 @@ data class Player(
     val purchasedDreamIds: Set<String> = emptySet(),
 )
 
+fun Player.isActiveOn(board: Board): Boolean {
+    return !isInactive && id in board.playerIds
+}
+
+fun Board.isActivePlayer(player: Player): Boolean {
+    return activePlayerId == player.id && player.isActiveOn(this)
+}
+
+fun Board.activePlayers(players: Iterable<Player>): List<Player> {
+    return players.filter { player -> player.isActiveOn(this) }
+}
+
 @Serializable
 data class DebugPlayerValues(
     val cash: Long,

@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.*
@@ -62,6 +63,7 @@ import ua.vald_zx.game.rat.race.card.screen.design.DesignPlayerSheet
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction
+import ua.vald_zx.game.rat.race.card.logic.BoardConnectionState
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.lottieDiceAnimations
@@ -72,7 +74,6 @@ import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.screen.BoardListScreen
-import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDialog
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
@@ -168,6 +169,41 @@ class BoardScreen(
             }) {
                 Box(modifier = Modifier.statusBarsPadding())
             }
+            val reconnecting = state.connectionState as? BoardConnectionState.Reconnecting
+            if (reconnecting != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.42f))
+                        .clickable(onClick = {}),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        tonalElevation = 8.dp,
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            CircularProgressIndicator()
+                            Text(
+                                text = stringResource(
+                                    Res.string.reconnecting_to_server,
+                                    reconnecting.attempt,
+                                ),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                text = stringResource(Res.string.reconnecting_to_server_hint),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
             IconButton(
                 modifier = Modifier.align(Alignment.TopStart).statusBarsPadding(),
                 onClick = ::requestExit,
@@ -218,6 +254,7 @@ class BoardScreen(
         var receivedCashDialog by remember { mutableStateOf<BoardUiAction.ReceivedCash?>(null) }
         var dreamOfferedDialog by remember { mutableStateOf(false) }
         var victoryDialog by remember { mutableStateOf<BoardUiAction.PlayerWon?>(null) }
+        var serverRequestFailedDialog by remember { mutableStateOf(false) }
         LaunchedEffect(state.canBuyDream) {
             if (state.canBuyDream) {
                 dreamOfferedDialog = true
@@ -309,11 +346,6 @@ class BoardScreen(
                         loanOverlimitedDialog = true
                     }
 
-                    BoardUiAction.ConnectionLost -> {
-                        navigator.returnToBoardList()
-                        navigator.replace(LoadOnlineScreen())
-                    }
-
                     BoardUiAction.BidBusinessAuctionSuccessBuy -> {
                         simpleDialog = Res.string.bidBusinessAuctionSuccessBuy
                     }
@@ -337,8 +369,24 @@ class BoardScreen(
                     is BoardUiAction.PlayerWon -> {
                         victoryDialog = event
                     }
+
+                    BoardUiAction.ServerRequestFailed -> {
+                        serverRequestFailedDialog = true
+                    }
                 }
             }
+        }
+        if (serverRequestFailedDialog) {
+            AlertDialog(
+                onDismissRequest = { serverRequestFailedDialog = false },
+                title = { Text(stringResource(Res.string.connection_failed)) },
+                text = { Text(stringResource(Res.string.server_request_failed)) },
+                confirmButton = {
+                    TextButton(onClick = { serverRequestFailedDialog = false }) {
+                        Text(stringResource(Res.string.ok))
+                    }
+                },
+            )
         }
         confirmDismissalDialog?.let { business ->
             AlertDialog(

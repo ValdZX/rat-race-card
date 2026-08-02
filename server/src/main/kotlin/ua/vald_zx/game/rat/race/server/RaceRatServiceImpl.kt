@@ -32,6 +32,7 @@ private fun playerMutex(playerId: String): Mutex = playerMutexes.getOrPut(player
 class RaceRatServiceImpl(
     private val uuidStateProvider: MutableStateFlow<String>,
     private val scope: CoroutineScope,
+    private val connectionIdentified: (String) -> Unit = {},
 ) : RaceRatService, CoroutineScope by scope {
 
     private var boardIdState = MutableStateFlow("")
@@ -101,6 +102,7 @@ class RaceRatServiceImpl(
         val board = Storage.getBoard(boardId)
         boardSelected(board)
         uuidStateProvider.value = helloUuid
+        connectionIdentified(helloUuid)
         if (board.playerIds.contains(playerId)) {
             checkStatusJobs[playerId]?.cancel()
             updatePlayer { copy(isInactive = false) }
@@ -163,6 +165,7 @@ class RaceRatServiceImpl(
     ): Player {
         val board = board()
         uuidStateProvider.value = uuid
+        connectionIdentified(uuid)
         val newPlayer = Player(
             id = playerId,
             boardId = board.id,
@@ -268,9 +271,9 @@ class RaceRatServiceImpl(
     }
 
     private suspend fun invalidateNextPlayer(activePlayerId: String) {
-        val playerIds = board().playerIds
+        val board = board()
         val active = Storage.getPlayerOrNull(activePlayerId)
-        if (activePlayerId.isEmpty() || !playerIds.contains(activePlayerId) || active == null || active.isInactive) {
+        if (activePlayerId.isEmpty() || active == null || !active.isActiveOn(board)) {
             nextPlayer()
         }
     }
@@ -798,8 +801,8 @@ class RaceRatServiceImpl(
 
     override suspend fun passLand() {
         val board = board()
-        val playersWithLands = board.players().filter { it.landList.isNotEmpty() }.map { it.id }.toSet()
-        if (playersWithLands.isEmpty() || playersWithLands.size == 1 || playersWithLands == board.processedPlayerIds) {
+        val playersWithLands = board.activePlayers(board.players()).filter { it.landList.isNotEmpty() }.map { it.id }.toSet()
+        if (playersWithLands.size <= 1 || board.processedPlayerIds.containsAll(playersWithLands)) {
             nextPlayer()
         }
     }
@@ -807,16 +810,18 @@ class RaceRatServiceImpl(
     override suspend fun passShares(sharesType: SharesType) {
         val board = board()
         val playersWithShares =
-            board.players().filter { player -> player.sharesList.any { it.type == sharesType } }.map { it.id }.toSet()
-        if (playersWithShares.isEmpty() || playersWithShares.size == 1 || playersWithShares == board.processedPlayerIds) {
+            board.activePlayers(board.players()).filter { player -> player.sharesList.any { it.type == sharesType } }
+                .map { it.id }.toSet()
+        if (playersWithShares.size <= 1 || board.processedPlayerIds.containsAll(playersWithShares)) {
             nextPlayer()
         }
     }
 
     override suspend fun passEstate() {
         val board = board()
-        val playersWithEstate = board.players().filter { it.estateList.isNotEmpty() }.map { it.id }.toSet()
-        if (playersWithEstate.isEmpty() || playersWithEstate.size == 1 || playersWithEstate == board.processedPlayerIds) {
+        val playersWithEstate = board.activePlayers(board.players()).filter { it.estateList.isNotEmpty() }
+            .map { it.id }.toSet()
+        if (playersWithEstate.size <= 1 || board.processedPlayerIds.containsAll(playersWithEstate)) {
             nextPlayer()
         }
     }
@@ -1037,7 +1042,7 @@ class RaceRatServiceImpl(
 }
 
 suspend fun nextPlayer(board: Board) {
-    val activePlayers = Storage.players(board.id).filter { player -> !player.isInactive }
+    val activePlayers = board.activePlayers(Storage.players(board.id))
     if (activePlayers.isEmpty()) return
     val playerIds = activePlayers.map { it.id }
     val activePlayerIndex = playerIds.indexOf(board.activePlayerId)

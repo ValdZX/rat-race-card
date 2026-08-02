@@ -11,18 +11,27 @@ import ua.vald_zx.game.rat.race.card.shared.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 val players = MutableStateFlow(emptyList<Player>())
+private val SERVER_REQUEST_TIMEOUT = 20.seconds
+private val PING_TIMEOUT = 10.seconds
 
 data class BoardState(
     val isProgress: Boolean,
     val board: Board,
     val player: Player,
+    val connectionState: BoardConnectionState = BoardConnectionState.Connected,
 ) {
     val layer: BoardLayer = player.location.level.toLayer()
     val color: Long = player.attrs.color
-    val currentPlayerIsActive: Boolean by lazy { player.id == board.activePlayerId }
-    val canRoll: Boolean by lazy { board.canRoll && currentPlayerIsActive }
+    val currentPlayerIsConnected: Boolean by lazy { player.isActiveOn(board) }
+    val currentPlayerIsActive: Boolean by lazy {
+        currentPlayerIsConnected && board.isActivePlayer(player)
+    }
+    val canRoll: Boolean by lazy {
+        board.canRoll && currentPlayerIsActive && connectionState == BoardConnectionState.Connected
+    }
     val canEnterOuterCircle: Boolean by lazy {
         player.canEnterOuterCircle(canRoll,board.outerCircleConditions)
     }
@@ -46,6 +55,7 @@ data class BoardState(
     }
 
     fun canMakeBid(): Boolean {
+        if (!currentPlayerIsConnected || connectionState != BoardConnectionState.Connected) return false
         val auction = board.auction ?: return false
         return when (auction) {
             is Auction.BusinessAuction -> {
@@ -65,6 +75,11 @@ data class BoardState(
             }
         }
     }
+}
+
+sealed interface BoardConnectionState {
+    data object Connected : BoardConnectionState
+    data class Reconnecting(val attempt: Int) : BoardConnectionState
 }
 
 data class PlayerMessage(
@@ -93,19 +108,21 @@ sealed class BoardUiAction {
     data object BidEstateAuctionSuccessBuy : BoardUiAction()
     data object BidLandAuctionSuccessBuy : BoardUiAction()
     data object BidSharesAuctionSuccessBuy : BoardUiAction()
-    data object ConnectionLost : BoardUiAction()
     data class HighRiskPlayed(val outcome: InvestmentOutcome, val guess: Int) : BoardUiAction()
     data class MediumRiskPlayed(val outcome: InvestmentOutcome, val even: Boolean) : BoardUiAction()
     data class FundsCapitalized(val profit: Long) : BoardUiAction()
     data class Resignation(val business: Business) : BoardUiAction()
     data object DreamOffered : BoardUiAction()
+    data object ServerRequestFailed : BoardUiAction()
     data class PlayerWon(val playerName: String, val isCurrentPlayer: Boolean) : BoardUiAction()
 }
 
 class BoardViewModel(
     board: Board,
     player: Player,
-    private val serviceProvider: () -> RaceRatService
+    private val serviceProvider: () -> RaceRatService,
+    private val reconnectService: () -> RaceRatService = serviceProvider,
+    private val clientUuidProvider: suspend () -> String = { "" },
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BoardState(false, board, player))
@@ -117,35 +134,67 @@ class BoardViewModel(
     private val _playerMessages = MutableStateFlow<Map<String, PlayerMessage>>(emptyMap())
     val playerMessages: StateFlow<Map<String, PlayerMessage>> = _playerMessages.asStateFlow()
     private var nextPlayerMessageId = 0L
+    private var observationJob: Job? = null
+    private var pingJob: Job? = null
+    private var reconnectJob: Job? = null
 
     private fun safeLaunch(
         needProgress: Boolean = true,
+        notifyFailure: Boolean = true,
+        useTimeout: Boolean = true,
         block: suspend RaceRatService.(CoroutineContext) -> Unit
     ): Job {
-        return viewModelScope.launch(Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, t ->
+        return viewModelScope.launch(Dispatchers.Default + CoroutineExceptionHandler { _, t ->
             Napier.e("Invalid server", t)
-            viewModelScope.launch {
-                _actions.send(ConnectionLost)
+            if (notifyFailure) {
+                viewModelScope.launch { _actions.send(ServerRequestFailed) }
             }
+            beginReconnect()
         }, block = {
-            if (needProgress) _uiState.update { it.copy(isProgress = true) }
-            serviceProvider().block(coroutineContext)
-            if (needProgress) _uiState.update { it.copy(isProgress = false) }
+            try {
+                if (needProgress) _uiState.update { it.copy(isProgress = true) }
+                val service = serviceProvider()
+                if (useTimeout) {
+                    withTimeout(SERVER_REQUEST_TIMEOUT) { service.block(coroutineContext) }
+                } else {
+                    service.block(coroutineContext)
+                }
+            } finally {
+                if (needProgress) _uiState.update { it.copy(isProgress = false) }
+            }
         })
     }
 
     fun init(player: Player) {
-        safeLaunch(false) {
+        observeGame(player)
+        startPing()
+    }
+
+    private fun observeGame(player: Player) {
+        observationJob?.cancel()
+        observationJob = safeLaunch(
+            needProgress = false,
+            notifyFailure = false,
+            useTimeout = false,
+        ) {
             val actualPlayers = getPlayers()
             players.value = actualPlayers
             val actualBoard = getBoard()
-            _uiState.update { it.copy(board = actualBoard, player = player) }
+            val actualPlayer = actualPlayers.find { it.id == player.id } ?: getPlayer()
+            _uiState.update {
+                it.copy(
+                    board = actualBoard,
+                    player = actualPlayer,
+                    connectionState = BoardConnectionState.Connected,
+                    isProgress = false,
+                )
+            }
             actualBoard.winnerId?.let { winnerId ->
                 actualPlayers.find { it.id == winnerId }?.let { winner ->
                     _actions.send(
                         PlayerWon(
                             playerName = winner.card.name,
-                            isCurrentPlayer = winner.id == player.id,
+                            isCurrentPlayer = winner.id == actualPlayer.id,
                         )
                     )
                 }
@@ -299,13 +348,84 @@ class BoardViewModel(
                     }
                 }
             }
+            error("Server event stream completed")
         }
-        safeLaunch(false) {
+    }
+
+    private fun startPing() {
+        if (pingJob?.isActive == true) return
+        pingJob = viewModelScope.launch(Dispatchers.Default) {
             while (true) {
                 delay(10000.milliseconds)
-                ping()
+                if (_uiState.value.connectionState == BoardConnectionState.Connected) {
+                    try {
+                        withTimeout(PING_TIMEOUT) { serviceProvider().ping() }
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (error: Throwable) {
+                        Napier.e("Server ping failed", error)
+                        beginReconnect()
+                    }
+                }
             }
         }
+    }
+
+    private fun beginReconnect() {
+        viewModelScope.launch {
+            if (reconnectJob?.isActive == true) return@launch
+            observationJob?.cancel()
+            pingJob?.cancel()
+            reconnectJob = viewModelScope.launch(Dispatchers.Default) reconnect@{
+                var attempt = 1
+                while (isActive) {
+                    _uiState.update {
+                        it.copy(
+                            isProgress = true,
+                            connectionState = BoardConnectionState.Reconnecting(attempt),
+                        )
+                    }
+                    if (attempt > 1) {
+                        delay(reconnectDelay(attempt).milliseconds)
+                    }
+                    try {
+                        val (recoveredPlayer, actualBoard, actualPlayers) = withTimeout(SERVER_REQUEST_TIMEOUT) {
+                            val service = reconnectService()
+                            val instance = service.hello(
+                                helloUuid = clientUuidProvider(),
+                                boardId = _uiState.value.board.id,
+                            )
+                            val recoveredPlayer = instance.player ?: error("Player session was not restored")
+                            Triple(recoveredPlayer, service.getBoard(), service.getPlayers())
+                        }
+                        players.value = actualPlayers
+                        _uiState.update {
+                            it.copy(
+                                board = actualBoard,
+                                player = actualPlayers.find { player -> player.id == recoveredPlayer.id }
+                                    ?: recoveredPlayer,
+                                connectionState = BoardConnectionState.Connected,
+                                isProgress = false,
+                            )
+                        }
+                        reconnectJob = null
+                        observeGame(recoveredPlayer)
+                        startPing()
+                        return@reconnect
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (error: Throwable) {
+                        Napier.e("Reconnect attempt $attempt failed", error)
+                        attempt += 1
+                    }
+                }
+            }
+        }
+    }
+
+    private fun reconnectDelay(attempt: Int): Long {
+        val multiplier = 1 shl (attempt - 2).coerceIn(0, 4)
+        return minOf(1_000L * multiplier, 15_000L)
     }
 
     private fun invalidatePlayers(playerIds: Set<String>) {

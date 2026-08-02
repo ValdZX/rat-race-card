@@ -22,6 +22,7 @@ import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.server.data.Env
 import ua.vald_zx.game.rat.race.server.data.Storage
 import ua.vald_zx.game.rat.race.server.data.generateStableDbId
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -31,7 +32,8 @@ import kotlin.uuid.Uuid
 
 val checkStatusFlow = MutableSharedFlow<String>()
 private val instanceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-val checkStatusJobs = mutableMapOf<String, Job>()
+val checkStatusJobs = ConcurrentHashMap<String, Job>()
+private val connectionIdsByUuid = ConcurrentHashMap<String, MutableSet<String>>()
 
 private const val STATUS_SWEEP_INTERVAL = 60
 private const val INACTIVITY_GRACE_MS = 5000L
@@ -76,21 +78,21 @@ private suspend fun runStatusSweep() {
         players.forEach { player ->
             if (!player.isInactive) {
                 checkStatusJobs[player.id] = instanceScope.launch {
-                    delay(INACTIVITY_GRACE_MS.milliseconds)
-                    val current = Storage.getPlayerOrNull(player.id) ?: return@launch
-                    if (!current.isInactive) {
-                        Storage.updatePlayer(current.copy(isInactive = true))
+                    try {
+                        delay(INACTIVITY_GRACE_MS.milliseconds)
+                        markPlayerInactive(player.id)
+                    } finally {
+                        checkStatusJobs.remove(player.id, coroutineContext.job)
                     }
-                    checkStatusJobs.remove(player.id)
                 }
             }
         }
     }
 }
 
-private val globalEventBusMap = mutableMapOf<String, MutableSharedFlow<GlobalEvent>>()
+private val globalEventBusMap = ConcurrentHashMap<String, MutableSharedFlow<GlobalEvent>>()
 fun getGlobalEventBus(boardId: String): MutableSharedFlow<GlobalEvent> {
-    return globalEventBusMap.getOrPut(boardId) { MutableSharedFlow() }
+    return globalEventBusMap.computeIfAbsent(boardId) { MutableSharedFlow() }
 }
 
 private suspend fun runBoardCleanup() {
@@ -124,8 +126,13 @@ fun Application.module() {
             }
             val uuidStateProvider = MutableStateFlow("")
             val connectionScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            val connectionId = Uuid.random().toString()
             registerService<RaceRatService> {
-                RaceRatServiceImpl(uuidStateProvider, connectionScope)
+                RaceRatServiceImpl(
+                    uuidStateProvider = uuidStateProvider,
+                    scope = connectionScope,
+                    connectionIdentified = { uuid -> registerConnection(uuid, connectionId) },
+                )
             }
             registerService<RaceRatCardService> {
                 RaceRatCardServiceImpl(connectionScope)
@@ -133,7 +140,10 @@ fun Application.module() {
             closeReason.invokeOnCompletion {
                 instanceScope.launch {
                     try {
-                        handleDisconnect(uuidStateProvider.value)
+                        val uuid = uuidStateProvider.value
+                        if (unregisterConnection(uuid, connectionId)) {
+                            handleDisconnect(uuid)
+                        }
                     } finally {
                         connectionScope.cancel()
                     }
@@ -143,23 +153,51 @@ fun Application.module() {
     }
 }
 
+private fun registerConnection(uuid: String, connectionId: String) {
+    if (uuid.isEmpty()) return
+    connectionIdsByUuid.compute(uuid) { _, current ->
+        (current ?: ConcurrentHashMap.newKeySet()).apply { add(connectionId) }
+    }
+}
+
+private fun unregisterConnection(uuid: String, connectionId: String): Boolean {
+    if (uuid.isEmpty()) return false
+    var hasActiveConnections = false
+    connectionIdsByUuid.compute(uuid) { _, current ->
+        current?.apply { remove(connectionId) }
+            ?.takeIf { remaining -> remaining.isNotEmpty() }
+            ?.also { hasActiveConnections = true }
+    }
+    return !hasActiveConnections
+}
+
 private suspend fun handleDisconnect(uuid: String) {
     if (uuid.isEmpty()) return
     Storage.boards().forEach { board ->
         val playerId = generateStableDbId(board.id, uuid)
         if (!board.playerIds.contains(playerId)) return@forEach
-        val player = Storage.getPlayerOrNull(playerId) ?: return@forEach
-        if (player.isInactive) return@forEach
+        checkStatusJobs.remove(playerId)?.cancel()
+        markPlayerInactive(playerId)
+    }
+}
 
-        val inactivePlayer = player.copy(isInactive = true)
-        Storage.updatePlayer(inactivePlayer)
-        getGlobalEventBus(board.id).emit(GlobalEvent.PlayerChanged(inactivePlayer))
+private suspend fun markPlayerInactive(playerId: String) {
+    val player = Storage.getPlayerOrNull(playerId) ?: return
+    if (player.isInactive) return
+    val inactivePlayer = player.copy(isInactive = true)
+    Storage.updatePlayer(inactivePlayer)
+    getGlobalEventBus(player.boardId).emit(GlobalEvent.PlayerChanged(inactivePlayer))
 
-        val freshBoard = Storage.getBoardOrNull(board.id) ?: return@forEach
-        val activePlayer = Storage.getPlayerOrNull(freshBoard.activePlayerId)
-        if (activePlayer == null || activePlayer.isInactive) {
-            nextPlayer(freshBoard)
-        }
+    val board = Storage.getBoardOrNull(player.boardId) ?: return
+    val sanitizedBoard = board.copy(
+        bidList = board.bidList.filterNot { bid -> bid.playerId == playerId },
+        processedPlayerIds = board.processedPlayerIds - playerId,
+    )
+    if (sanitizedBoard != board) {
+        Storage.updateBoard(sanitizedBoard)
+    }
+    if (sanitizedBoard.activePlayerId == playerId) {
+        nextPlayer(sanitizedBoard)
     }
 }
 

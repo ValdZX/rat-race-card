@@ -102,6 +102,7 @@ fun DesignInitPlayerContent(
 @Composable
 fun DesignProfessionContent(
     card: ProfessionCard,
+    isLoading: Boolean = false,
     onBack: () -> Unit = {},
     onNext: () -> Unit,
 ) {
@@ -131,7 +132,8 @@ fun DesignProfessionContent(
 
         Spacer(Modifier.height(4.dp))
         DesignButton(
-            text = stringResource(Res.string.next),
+            text = stringResource(if (isLoading) Res.string.connecting_to_server else Res.string.next),
+            enabled = !isLoading,
             modifier = Modifier.fillMaxWidth(),
             height = 52.dp,
             onClick = onNext,
