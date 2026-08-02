@@ -44,6 +44,7 @@ class InitPlayerScreen(private val board: Board) : Screen {
                 onNameChange = { designName = it },
                 gender = designGender,
                 onGenderChange = { designGender = it },
+                onBack = { navigator.pop() },
                 onNext = {
                     coroutineScope.launch {
                         val card = when (designGender) {
@@ -62,7 +63,11 @@ class InitPlayerScreen(private val board: Board) : Screen {
                 },
             )
         } else {
-            LegacyInitPlayerContent(board = board, colorState = colorState)
+            LegacyInitPlayerContent(
+                board = board,
+                colorState = colorState,
+                onBack = { navigator.pop() },
+            )
         }
     }
 }

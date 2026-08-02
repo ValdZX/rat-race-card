@@ -29,7 +29,7 @@ class LoadOnlineScreen : Screen {
                 invalidServerState.value = true
             }
             CoroutineScope(Dispatchers.Main + SupervisorJob()).launch(handler) {
-                navigator.push(BoardListScreen())
+                navigator.replace(BoardListScreen())
             }
         }
         LaunchedEffect(Unit) {
@@ -40,9 +40,17 @@ class LoadOnlineScreen : Screen {
             invalidServerState.value = false
         }
         if (designV2Enabled.value) {
-            DesignLoadOnline(failed = invalidServerState.value, onRetry = retry)
+            DesignLoadOnline(
+                failed = invalidServerState.value,
+                onBack = { navigator.pop() },
+                onRetry = retry,
+            )
         } else {
-            LegacyLoadOnline(failed = invalidServerState.value, onRetry = retry)
+            LegacyLoadOnline(
+                failed = invalidServerState.value,
+                onBack = { navigator.pop() },
+                onRetry = retry,
+            )
         }
     }
 }

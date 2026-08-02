@@ -121,7 +121,8 @@ class SettingsScreen : Screen {
                             confirmButton = {
                                 TextButton(
                                     onClick = {
-                                        navigator?.replaceAll(PersonCard2Screen())
+                                        navigator?.popUntil { screen -> screen is RaceRate2Screen }
+                                        navigator?.replace(PersonCard2Screen())
                                         resetDialog = false
                                     }
                                 ) { Text(stringResource(Res.string.yes)) }

@@ -22,13 +22,19 @@ import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
 import ua.vald_zx.game.rat.race.card.resources.*
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.screen.board.cards.menProfessionCards
 import ua.vald_zx.game.rat.race.card.screen.board.cards.womenProfessionCards
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Gender
 
 @Composable
-internal fun LegacyInitPlayerContent(board: Board, colorState: MutableState<Long>) {
+internal fun LegacyInitPlayerContent(
+    board: Board,
+    colorState: MutableState<Long>,
+    onBack: () -> Unit,
+) {
     val navigator = LocalNavigator.currentOrThrow
     val coroutineScope = rememberCoroutineScope()
         Column(
@@ -40,6 +46,12 @@ internal fun LegacyInitPlayerContent(board: Board, colorState: MutableState<Long
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            IconButton(
+                modifier = Modifier.align(Alignment.Start),
+                onClick = onBack,
+            ) {
+                Icon(Images.Back, contentDescription = null)
+            }
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 ColorsSelector(colorState)
             }

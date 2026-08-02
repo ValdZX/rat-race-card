@@ -3,6 +3,8 @@ package ua.vald_zx.game.rat.race.card.screen.board
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,6 +20,8 @@ import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.DetailsField
 import ua.vald_zx.game.rat.race.card.launchWithHandler
 import ua.vald_zx.game.rat.race.card.resources.*
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.PlayerCard
@@ -26,7 +30,11 @@ import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import kotlin.uuid.Uuid
 
 @Composable
-internal fun LegacyProfessionContent(card: ProfessionCard, onNext: () -> Unit) {
+internal fun LegacyProfessionContent(
+    card: ProfessionCard,
+    onBack: () -> Unit,
+    onNext: () -> Unit,
+) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -35,6 +43,12 @@ internal fun LegacyProfessionContent(card: ProfessionCard, onNext: () -> Unit) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            IconButton(
+                modifier = Modifier.align(Alignment.Start),
+                onClick = onBack,
+            ) {
+                Icon(Images.Back, contentDescription = null)
+            }
             Text(
                 text = stringResource(Res.string.work),
                 style = MaterialTheme.typography.titleSmall,

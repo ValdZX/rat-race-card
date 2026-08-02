@@ -20,6 +20,7 @@ import ua.vald_zx.game.rat.race.card.screen.design.DesignProfessionContent
 import ua.vald_zx.game.rat.race.card.components.DetailsField
 import ua.vald_zx.game.rat.race.card.launchWithHandler
 import ua.vald_zx.game.rat.race.card.resources.*
+import ua.vald_zx.game.rat.race.card.screen.BoardListScreen
 import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.PlayerCard
@@ -38,7 +39,10 @@ class ProfessionScreen(
         val navigator = LocalNavigator.currentOrThrow
         val service = koinInject<RaceRatService>()
         val join = {
-            launchWithHandler({ navigator.replaceAll(LoadOnlineScreen()) }) {
+            launchWithHandler({
+                navigator.popUntil { it is BoardListScreen }
+                navigator.replace(LoadOnlineScreen())
+            }) {
                 val helloUuid = appKStore.get()?.clientUuid.orEmpty().ifEmpty {
                     Uuid.random().toString().apply {
                         appKStore.update { it?.copy(clientUuid = this) }
@@ -59,13 +63,21 @@ class ProfessionScreen(
                         phone = card.phone,
                     ),
                 )
-                navigator.push(BoardScreen(board, player))
+                navigator.replace(BoardScreen(board, player))
             }
         }
         if (designV2Enabled.value) {
-            DesignProfessionContent(card = card, onNext = join)
+            DesignProfessionContent(
+                card = card,
+                onBack = { navigator.pop() },
+                onNext = join,
+            )
         } else {
-            LegacyProfessionContent(card = card, onNext = join)
+            LegacyProfessionContent(
+                card = card,
+                onBack = { navigator.pop() },
+                onNext = join,
+            )
         }
     }
 }

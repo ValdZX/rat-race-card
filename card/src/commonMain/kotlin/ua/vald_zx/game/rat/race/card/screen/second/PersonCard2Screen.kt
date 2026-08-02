@@ -72,7 +72,7 @@ class EditPersonCardScreen : Screen {
             )
             ProfessionCardForm(state.playerCard) {
                 raceRate2store.dispatch(RatRace2CardAction.EditFillProfessionCardRat(it))
-                navigator?.popUntilRoot()
+                navigator?.popUntil { screen -> screen is RaceRate2Screen }
             }
         }
     }

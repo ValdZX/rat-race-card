@@ -309,8 +309,6 @@ private fun DesignStatePage(player: Player, board: Board) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
     ) {
-        PossessionsGrid(player)
-        ConditionsBlock(player, board)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ValueField(
                 label = stringResource(Res.string.cash),
@@ -385,6 +383,8 @@ private fun DesignStatePage(player: Player, board: Board) {
                 modifier = Modifier.weight(1f),
             )
         }
+        PossessionsGrid(player)
+        ConditionsBlock(player, board)
     }
 }
 
@@ -401,12 +401,14 @@ private fun PossessionsGrid(player: Player) {
         Possession(stringResource(Res.string.yacht), Images.Yacht, player.yacht * config.yachtCost, player.yacht, player.yacht > 0),
         Possession(stringResource(Res.string.plane), Images.Fly, player.flight * config.flightCost, player.flight, player.flight > 0),
     )
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        items.forEach { PossessionTile(it) }
+    SectionCard(stringResource(Res.string.status)) {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items.forEach { PossessionTile(it) }
+        }
     }
 }
 
@@ -466,7 +468,7 @@ private fun ConditionsBlock(player: Player, board: Board) {
     when (player.location.level.toLayer()) {
         BoardLayer.INNER -> {
             val conditions = board.outerCircleConditions
-            ConditionsCard(stringResource(Res.string.outer_circle_conditions)) {
+            SectionCard(stringResource(Res.string.outer_circle_conditions)) {
                 Condition(
                     done = player.cashFlow() >= conditions.minimumCashFlow,
                     text = stringResource(
@@ -494,7 +496,7 @@ private fun ConditionsBlock(player: Player, board: Board) {
 
         BoardLayer.OUTER -> {
             val conditions = board.victoryConditions
-            ConditionsCard(stringResource(Res.string.victory_conditions)) {
+            SectionCard(stringResource(Res.string.victory_conditions)) {
                 if (conditions.dreamRequired) {
                     Condition(
                         done = player.selectedDreamId != null &&
@@ -522,16 +524,16 @@ private fun ConditionsBlock(player: Player, board: Board) {
 }
 
 @Composable
-private fun ConditionsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
+private fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     val colors = Design.colors
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(DesignShapes.md)
+            .clip(DesignShapes.lg)
             .background(colors.scaffold.surface2)
-            .border(1.dp, colors.scaffold.outline, DesignShapes.md)
+            .border(1.dp, colors.scaffold.outline, DesignShapes.lg)
             .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         content = {
             Text(text = title, style = Design.type.label, color = colors.scaffold.onSurface)
             content()

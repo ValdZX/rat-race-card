@@ -37,6 +37,7 @@ import androidx.constraintlayout.compose.ExperimentalMotionApi
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -102,6 +103,11 @@ class BoardScreen(
 ) : Screen {
 
     override val key: ScreenKey = "Board2Screen"
+    private val exitRequested = mutableStateOf(false)
+
+    fun requestExit() {
+        exitRequested.value = true
+    }
 
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
@@ -164,12 +170,31 @@ class BoardScreen(
             }
             IconButton(
                 modifier = Modifier.align(Alignment.TopStart).statusBarsPadding(),
-                onClick = { navigator.popUntil { screen ->
-                    screen is BoardListScreen
-                } },
+                onClick = ::requestExit,
                 content = {
                     Icon(Images.Back, contentDescription = null)
                 }
+            )
+        }
+
+        if (exitRequested.value) {
+            AlertDialog(
+                title = { Text(stringResource(Res.string.confirm_leave_board)) },
+                text = { Text(stringResource(Res.string.leave_board_warning)) },
+                onDismissRequest = { exitRequested.value = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            exitRequested.value = false
+                            navigator.returnToBoardList()
+                        }
+                    ) { Text(stringResource(Res.string.exit)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { exitRequested.value = false }) {
+                        Text(stringResource(Res.string.cancel))
+                    }
+                },
             )
         }
 
@@ -285,7 +310,8 @@ class BoardScreen(
                     }
 
                     BoardUiAction.ConnectionLost -> {
-                        navigator.push(LoadOnlineScreen())
+                        navigator.returnToBoardList()
+                        navigator.replace(LoadOnlineScreen())
                     }
 
                     BoardUiAction.BidBusinessAuctionSuccessBuy -> {
@@ -486,7 +512,7 @@ class BoardScreen(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            navigator.popUntilRoot()
+                            navigator.returnToBoardList()
                             navigator.push(InitPlayerScreen(board))
                             loanOverlimitedDialog = false
                         }
@@ -495,7 +521,7 @@ class BoardScreen(
                 dismissButton = {
                     TextButton(
                         onClick = {
-                            navigator.popUntilRoot()
+                            navigator.returnToBoardList()
                             MainScope().launch {
                                 appKStore.update {
                                     it?.copy(clientUuid = "")
@@ -701,6 +727,12 @@ class BoardScreen(
                 },
             )
         }
+    }
+}
+
+private fun Navigator.returnToBoardList() {
+    if (!popUntil { it is BoardListScreen }) {
+        replaceAll(BoardListScreen())
     }
 }
 

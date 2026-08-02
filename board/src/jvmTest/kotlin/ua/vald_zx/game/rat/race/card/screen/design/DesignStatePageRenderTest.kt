@@ -74,7 +74,7 @@ class DesignStatePageRenderTest {
     fun renderLight() = render(dark = false, name = "light")
 
     @Test
-    fun statePageScrollsDownToTheLastFigure() = runComposeUiTest {
+    fun statePageScrollsDownToTheLastBlock() = runComposeUiTest {
         setContent {
             AppTheme(forceDark = true) {
                 Column(
@@ -88,7 +88,7 @@ class DesignStatePageRenderTest {
             }
         }
         waitForIdle()
-        val hiddenAtStart = onNodeWithText("Total Expenses").getBoundsInRoot()
+        val hiddenAtStart = onNodeWithText("Outer circle conditions").getBoundsInRoot()
         assertTrue(
             hiddenAtStart.bottom - hiddenAtStart.top == 0.dp,
             "тест не має сенсу: останнє поле й так у видимій частині",
@@ -100,7 +100,7 @@ class DesignStatePageRenderTest {
             }
             waitForIdle()
         }
-        val shown = onNodeWithText("Total Expenses").getBoundsInRoot()
+        val shown = onNodeWithText("Outer circle conditions").getBoundsInRoot()
         ImageIO.write(
             onNodeWithTag("page").captureToImage().toAwtImage(),
             "png",

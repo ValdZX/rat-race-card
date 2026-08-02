@@ -7,6 +7,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +23,8 @@ import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.resources.*
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.screen.board.ColorsSelector
 import ua.vald_zx.game.rat.race.card.shared.Gender
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
@@ -33,6 +37,7 @@ fun DesignInitPlayerContent(
     onNameChange: (String) -> Unit,
     gender: Gender,
     onGenderChange: (Gender) -> Unit,
+    onBack: () -> Unit,
     onNext: () -> Unit,
 ) {
     val colors = Design.colors
@@ -46,12 +51,20 @@ fun DesignInitPlayerContent(
         verticalArrangement = Arrangement.spacedBy(14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = stringResource(Res.string.player_name_label),
-            style = Design.type.title,
-            color = colors.scaffold.onSurface,
-            modifier = Modifier.align(Alignment.Start),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Images.Back, contentDescription = null)
+            }
+            Text(
+                text = stringResource(Res.string.player_name_label),
+                style = Design.type.title,
+                color = colors.scaffold.onSurface,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             ColorsSelector(colorState)
         }
@@ -87,7 +100,11 @@ fun DesignInitPlayerContent(
 }
 
 @Composable
-fun DesignProfessionContent(card: ProfessionCard, onNext: () -> Unit) {
+fun DesignProfessionContent(
+    card: ProfessionCard,
+    onBack: () -> Unit = {},
+    onNext: () -> Unit,
+) {
     val colors = Design.colors
     val expenses = card.rent + card.food + card.cloth + card.transport + card.phone
     val cashFlow = card.salary - expenses
@@ -100,6 +117,9 @@ fun DesignProfessionContent(card: ProfessionCard, onNext: () -> Unit) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        IconButton(onClick = onBack) {
+            Icon(Images.Back, contentDescription = null)
+        }
         ProfessionHeader(card, cashFlow)
 
         DesignSectionTitle(stringResource(Res.string.expenses))

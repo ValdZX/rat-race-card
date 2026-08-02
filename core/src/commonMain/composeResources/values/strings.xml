@@ -207,6 +207,8 @@
     <string name="realEstate">Real estate</string>
     <string name="land">Land</string>
     <string name="exit">Exit</string>
+    <string name="confirm_leave_board">Leave the board?</string>
+    <string name="leave_board_warning">Are you sure you want to leave the current board?</string>
     <string name="land_name">Name of land</string>
     <string name="area">Area</string>
     <string name="priceOfUnit">Price per square meter</string>

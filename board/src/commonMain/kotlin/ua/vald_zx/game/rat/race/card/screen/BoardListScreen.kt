@@ -39,7 +39,7 @@ class BoardListScreen : Screen {
             }.launchIn(this)
         }
         val openBoard: (BoardId) -> Unit = { board ->
-            launchWithHandler({ navigator.push(LoadOnlineScreen()) }) {
+            launchWithHandler({ navigator.replace(LoadOnlineScreen()) }) {
                 val service = koin.get<RaceRatService>()
                 val helloUuid = appKStore.get()?.clientUuid.orEmpty()
                 val instance = service.hello(helloUuid, board.id)
@@ -54,7 +54,7 @@ class BoardListScreen : Screen {
         }
         val createBoard: (String, Long, Long, Boolean, OuterCircleConditions, VictoryConditions) -> Unit =
             { name, loanLimit, businessLimit, transportBonus, outerCircle, victory ->
-                launchWithHandler({ navigator.push(LoadOnlineScreen()) }) {
+                launchWithHandler({ navigator.replace(LoadOnlineScreen()) }) {
                     val board = service.createBoard(
                         name = name,
                         loanLimit = loanLimit,

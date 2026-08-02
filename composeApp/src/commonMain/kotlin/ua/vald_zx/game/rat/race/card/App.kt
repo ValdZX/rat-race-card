@@ -26,6 +26,7 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.screen.SelectTypeScreen
+import ua.vald_zx.game.rat.race.card.screen.board.BoardScreen
 import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.RaceRate2Screen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -57,7 +58,17 @@ internal fun App() {
 
 @Composable
 private fun FullApp() {
-    Navigator(SelectTypeScreen()) {
+    Navigator(
+        screen = SelectTypeScreen(),
+        onBackPressed = { screen ->
+            if (screen is BoardScreen) {
+                screen.requestExit()
+                false
+            } else {
+                true
+            }
+        },
+    ) {
         LocalinaApp {
             AppTheme {
                 var isDarkTheme by LocalThemeIsDark.current

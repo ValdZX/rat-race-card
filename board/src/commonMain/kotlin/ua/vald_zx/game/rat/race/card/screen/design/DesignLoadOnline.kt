@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,11 +15,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.design.*
+import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resources.*
 
 @Composable
 fun DesignLoadOnline(
     failed: Boolean,
+    onBack: () -> Unit = {},
     onRetry: () -> Unit,
 ) {
     val colors = Design.colors
@@ -29,6 +34,12 @@ fun DesignLoadOnline(
             .padding(24.dp),
         contentAlignment = Alignment.Center,
     ) {
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.TopStart),
+        ) {
+            Icon(Images.Back, contentDescription = null)
+        }
         Column(
             modifier = Modifier
                 .widthIn(max = 360.dp)
