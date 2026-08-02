@@ -21,6 +21,7 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.components.EButton
+import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
 import ua.vald_zx.game.rat.race.card.components.OutlinedBasicTextField
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
@@ -82,37 +83,16 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                 text = stringResource(Res.string.realEstate),
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
-                lineHeight = unitTS * 12,
+                lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,
             )
-            Column(
-                modifier = Modifier
-                    .background(Color.Black)
-                    .size(unitDp * 40),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "#${cardLink.id}",
-                    color = Color.White,
-                    fontSize = unitTS * 10,
-                    lineHeight = unitTS * 7,
-                    modifier = Modifier.align(Alignment.End)
-                )
-                Text(
-                    text = "H",
-                    color = Color.White,
-                    fontSize = unitTS * 20,
-                    lineHeight = unitTS * 17,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            CardStamp(glyph = "H", unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 20f)
         }
         Text(
             modifier = Modifier.padding(top = smallPadding),
             text = card.description,
             fontSize = unitTS * 12,
-            lineHeight = unitTS * 10,
+            lineHeight = unitTS * 16,
         )
         Row(
             modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
@@ -151,6 +131,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                         unitDp = unitDp,
                     )
                     EButton(
+                        kind = DesignButtonKind.Filled,
                         enabled = !state.isProgress,
                         onClick = { bottomSheetNavigator.show(EstateSelectScreen(vm, card.price)) },
                         title = stringResource(Res.string.sell),
@@ -190,37 +171,16 @@ private fun BoxWithConstraintsScope.LandCardFront(
                 text = stringResource(Res.string.land),
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
-                lineHeight = unitTS * 12,
+                lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,
             )
-            Column(
-                modifier = Modifier
-                    .background(Color.Black)
-                    .size(unitDp * 40),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "#${cardLink.id}",
-                    color = Color.White,
-                    fontSize = unitTS * 10,
-                    lineHeight = unitTS * 7,
-                    modifier = Modifier.align(Alignment.End)
-                )
-                Text(
-                    text = stringResource(Res.string.land_short),
-                    color = Color.White,
-                    fontSize = unitTS * 20,
-                    lineHeight = unitTS * 17,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            CardStamp(glyph = stringResource(Res.string.land_short), unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 20f)
         }
         Text(
             modifier = Modifier.padding(top = smallPadding),
             text = card.description,
             fontSize = unitTS * 12,
-            lineHeight = unitTS * 10,
+            lineHeight = unitTS * 16,
         )
         Text(
             modifier = Modifier.padding(top = padding).align(Alignment.CenterHorizontally),
@@ -251,6 +211,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
                     unitDp = unitDp,
                 )
                 EButton(
+                    kind = DesignButtonKind.Filled,
                     enabled = !state.isProgress,
                     onClick = { bottomSheetNavigator.show(SellLandScreen(vm, card.price)) },
                     title = stringResource(Res.string.sell),
@@ -289,37 +250,16 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 text = stringResource(Res.string.shares),
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
-                lineHeight = unitTS * 12,
+                lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,
             )
-            Column(
-                modifier = Modifier
-                    .background(Color.Black)
-                    .size(unitDp * 40),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "#${cardLink.id}",
-                    color = Color.White,
-                    fontSize = unitTS * 10,
-                    lineHeight = unitTS * 7,
-                    modifier = Modifier.align(Alignment.End)
-                )
-                Text(
-                    text = card.sharesType.label(),
-                    color = Color.White,
-                    fontSize = unitTS * 15,
-                    lineHeight = unitTS * 15,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            CardStamp(glyph = card.sharesType.label(), unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 15f)
         }
         Text(
             modifier = Modifier.padding(top = smallPadding),
             text = card.description,
             fontSize = unitTS * 12,
-            lineHeight = unitTS * 10,
+            lineHeight = unitTS * 16,
         )
         Text(
             modifier = Modifier.padding(top = padding).align(Alignment.CenterHorizontally),
@@ -382,6 +322,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                     )
                 }
                 EButton(
+                    kind = DesignButtonKind.Filled,
                     enabled = !state.isProgress,
                     onClick = { vm.sellShares(card, count) },
                     title = stringResource(Res.string.sell),
@@ -420,37 +361,16 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
                 text = stringResource(Res.string.business_expansion),
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
-                lineHeight = unitTS * 12,
+                lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,
             )
-            Column(
-                modifier = Modifier
-                    .background(Color.Black)
-                    .size(unitDp * 40),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "#${cardLink.id}",
-                    color = Color.White,
-                    fontSize = unitTS * 10,
-                    lineHeight = unitTS * 7,
-                    modifier = Modifier.align(Alignment.End)
-                )
-                Text(
-                    text = stringResource(Res.string.business_expansion_short),
-                    color = Color.White,
-                    fontSize = unitTS * 15,
-                    lineHeight = unitTS * 15,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            CardStamp(glyph = stringResource(Res.string.business_expansion_short), unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 15f)
         }
         Text(
             modifier = Modifier.padding(top = smallPadding),
             text = card.description,
             fontSize = unitTS * 12,
-            lineHeight = unitTS * 10,
+            lineHeight = unitTS * 16,
         )
         val state by vm.uiState.collectAsState()
         val randomSmallBusiness =
@@ -484,6 +404,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 EButton(
+                    kind = DesignButtonKind.Filled,
                     enabled = !state.isProgress,
                     modifier = Modifier,
                     onClick = { vm.extendBusiness(randomSmallBusiness, card) },

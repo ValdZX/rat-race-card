@@ -19,7 +19,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
+import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.screen.design.DesignBoardRoutes
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 @Composable
@@ -61,30 +63,11 @@ private fun BoxScope.BoardRoutes(
     layout: BoardLayout,
     vm: BoardViewModel,
 ) {
-    Places(
-        layout = layout.outerRoute,
-        vm = vm,
-    )
-
-    Places(
-        layout = layout.innerRoute,
-        vm = vm,
-    )
-
-    CardDecks(
-        layout = layout.cardDecks,
-        vm = vm,
-    )
-
-    PlayerMessages(
-        layout = layout.outerRoute,
-        vm = vm,
-    )
-
-    PlayerMessages(
-        layout = layout.innerRoute,
-        vm = vm,
-    )
+    if (designV2Enabled.value) {
+        DesignBoardRoutes(layout = layout, vm = vm)
+    } else {
+        LegacyBoardRoutes(layout = layout, vm = vm)
+    }
 }
 
 private fun boardBackgroundBrush(

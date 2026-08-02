@@ -26,6 +26,7 @@ import ua.vald_zx.game.rat.race.card.resources.auction
 import ua.vald_zx.game.rat.race.card.resources.buy
 import ua.vald_zx.game.rat.race.card.resources.close
 import ua.vald_zx.game.rat.race.card.components.EButton
+import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
@@ -57,37 +58,16 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                     text = card.type.title,
                     modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                     fontSize = unitTS * 14,
-                    lineHeight = unitTS * 12,
+                    lineHeight = unitTS * 19,
                     fontWeight = FontWeight.Bold,
                 )
-                Column(
-                    modifier = Modifier
-                        .background(Color.Black)
-                        .size(unitDp * 40),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "#${cardLink.id}",
-                        color = Color.White,
-                        fontSize = unitTS * 10,
-                        lineHeight = unitTS * 7,
-                        modifier = Modifier.align(Alignment.End)
-                    )
-                    Text(
-                        text = "МБ",
-                        color = Color.White,
-                        fontSize = unitTS * 20,
-                        lineHeight = unitTS * 17,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+                CardStamp(glyph = "МБ", unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 20f)
             }
             Text(
                 modifier = Modifier.padding(top = smallPadding),
                 text = card.description,
                 fontSize = unitTS * 12,
-                lineHeight = unitTS * 10,
+                lineHeight = unitTS * 16,
             )
             Row(
                 modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
@@ -136,6 +116,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                         unitDp = unitDp,
                     )
                     EButton(
+                        kind = DesignButtonKind.Filled,
                         modifier = Modifier,
                         enabled = !state.isProgress && state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {
@@ -200,28 +181,16 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                     text = card.type.title,
                     modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                     fontSize = unitTS * 14,
-                    lineHeight = unitTS * 12,
+                    lineHeight = unitTS * 19,
                     fontWeight = FontWeight.Bold,
                 )
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black)
-                        .size(unitDp * 40),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "СБ",
-                        color = Color.White,
-                        fontSize = unitTS * 20,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+                CardStamp(glyph = "СБ", unitTS = unitTS, unitDp = unitDp, glyphSize = 20f)
             }
             Text(
                 modifier = Modifier.padding(top = smallPadding),
                 text = card.description,
                 fontSize = unitTS * 12,
-                lineHeight = unitTS * 10,
+                lineHeight = unitTS * 16,
             )
             Row(
                 modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
@@ -270,6 +239,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                         unitDp = unitDp,
                     )
                     EButton(
+                        kind = DesignButtonKind.Filled,
                         enabled = !state.isProgress && state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {
                             vm.buyBusiness(
@@ -333,28 +303,16 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                     text = card.type.title,
                     modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                     fontSize = unitTS * 14,
-                    lineHeight = unitTS * 12,
+                    lineHeight = unitTS * 19,
                     fontWeight = FontWeight.Bold,
                 )
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black)
-                        .size(unitDp * 40),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "ВБ",
-                        color = Color.White,
-                        fontSize = unitTS * 20,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+                CardStamp(glyph = "ВБ", unitTS = unitTS, unitDp = unitDp, glyphSize = 20f)
             }
             Text(
                 modifier = Modifier.padding(top = smallPadding),
                 text = card.description,
                 fontSize = unitTS * 12,
-                lineHeight = unitTS * 10,
+                lineHeight = unitTS * 16,
             )
             Row(
                 modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
@@ -403,6 +361,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                         unitDp = unitDp,
                     )
                     EButton(
+                        kind = DesignButtonKind.Filled,
                         modifier = Modifier,
                         enabled = !state.isProgress && state.canPay(card.price) && state.canBuyBusiness(),
                         onClick = {

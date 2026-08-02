@@ -301,4 +301,20 @@
     <string name="investment_lose">На кубику %1$s. Ставку %2$s втрачено</string>
     <string name="funds_capitalized">Фонди капіталізовано: +%1$s</string>
     <string name="debug_go_to_salary">Перейти на зарплатню</string>
+    <string name="new_design">Новий дизайн (бета)</string>
+    <string name="you">ТИ</string>
+    <string name="cell">клітинка</string>
+    <string name="available">доступно</string>
+    <string name="remainder">лишиться</string>
+    <string name="all_in">Усе</string>
+    <string name="not_enough_money">Більше за доступне</string>
+    <string name="no_assets">Тут поки порожньо</string>
+    <string name="enter_name_first">спершу введи ім'я</string>
+    <string name="online_game">Онлайн-гра</string>
+    <string name="no_tables_yet">Партій ще немає — створи першу</string>
+    <string name="fill_all_fields">Заповни всі поля</string>
+    <string name="connecting_to_server">Зʼєднання із сервером</string>
+    <string name="tax_inspection">Податкова</string>
+    <string name="child">Дитина</string>
+    <string name="love">Кохання</string>
 </resources>

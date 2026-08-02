@@ -494,7 +494,7 @@ fun BoxScope.PlayerMessages(
 }
 
 @Composable
-private fun forEachPlayerPoint(
+internal fun forEachPlayerPoint(
     vm: BoardViewModel,
     layout: RouteLayout,
     content: @Composable (

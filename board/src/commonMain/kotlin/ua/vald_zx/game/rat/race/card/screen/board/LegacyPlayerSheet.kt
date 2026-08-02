@@ -36,7 +36,8 @@ import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 @Composable
-fun Board2PlayerDetailsScreen(vm: BoardViewModel, scaffoldState: BottomSheetState) {
+/** Стара мова шторки гравця. Нова — DesignPlayerSheet. */
+fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
     val state by vm.uiState.collectAsState()
     val player = state.player
     val bottomSheetNavigator = LocalBottomSheetNavigator.current

@@ -36,12 +36,14 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.AppDataStorageBean
 import ua.vald_zx.game.rat.race.card.appKStore
+import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.dark_theme
 import ua.vald_zx.game.rat.race.card.resources.language
+import ua.vald_zx.game.rat.race.card.resources.new_design
 import ua.vald_zx.game.rat.race.card.resources.online_settings
 import ua.vald_zx.game.rat.race.card.resources.player_token_color
 import ua.vald_zx.game.rat.race.card.shared.pointerColors
@@ -88,6 +90,20 @@ class OnlineSettingsScreen(private val vm: BoardViewModel) : Screen {
                         coroutineScope.launch {
                             appKStore.update { stored ->
                                 (stored ?: AppDataStorageBean("", null)).copy(theme = enabled)
+                            }
+                        }
+                    },
+                )
+            }
+
+            SettingsRow(label = stringResource(Res.string.new_design)) {
+                Switch(
+                    checked = designV2Enabled.value,
+                    onCheckedChange = { enabled ->
+                        designV2Enabled.value = enabled
+                        coroutineScope.launch {
+                            appKStore.update { stored ->
+                                (stored ?: AppDataStorageBean("", null)).copy(designV2 = enabled)
                             }
                         }
                     },

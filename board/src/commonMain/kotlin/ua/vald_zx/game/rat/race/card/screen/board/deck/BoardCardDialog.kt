@@ -13,6 +13,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.constraintlayout.compose.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import ua.vald_zx.game.rat.race.card.screen.design.DesignCardScrim
+import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.isVertical
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.max
@@ -181,6 +185,10 @@ fun BoxWithConstraintsScope.CardDialog(vm: BoardViewModel) {
 
                     }
                 }
+            }
+            // Затемнення — деталь нової мови; стара показувала карту без нього.
+            if (designV2Enabled.value) {
+                DesignCardScrim(progress)
             }
             MotionLayout(
                 modifier = Modifier.fillMaxSize(),

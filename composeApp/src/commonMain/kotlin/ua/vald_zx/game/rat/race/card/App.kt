@@ -66,6 +66,7 @@ private fun FullApp() {
                     val storage = appKStore.get()
                     val systemIsDark = storage?.theme ?: isDarkTheme
                     isDarkTheme = systemIsDark
+                    designV2Enabled.value = storage?.designV2 ?: false
                 }
                 CurrentScreen()
             }

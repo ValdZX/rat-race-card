@@ -6,6 +6,7 @@ import app.lexilabs.basic.sound.SoundByte
 import app.lexilabs.basic.sound.play
 import io.github.aakira.napier.Napier
 import io.github.alexzhirkevich.compottie.LottieComposition
+import androidx.compose.runtime.mutableStateOf
 import io.github.xxfast.kstore.KStore
 import kotlinx.serialization.Serializable
 import nl.marc_apps.tts.TextToSpeechInstance
@@ -18,7 +19,10 @@ var lottieDiceAnimations: Map<Int, LottieComposition> = emptyMap()
 data class AppDataStorageBean(
     val clientUuid: String,
     val theme: Boolean?,
+    val designV2: Boolean = false,
 )
+
+val designV2Enabled = mutableStateOf(false)
 
 var storageKeyPrefix = ""
 

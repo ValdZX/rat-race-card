@@ -50,7 +50,6 @@ import ua.vald_zx.game.rat.race.card.resource.images.Bow
 import ua.vald_zx.game.rat.race.card.resource.images.RatPlayer1
 import ua.vald_zx.game.rat.race.card.resource.images.Send
 import ua.vald_zx.game.rat.race.card.resources.*
-import ua.vald_zx.game.rat.race.card.screen.SendScreen
 import ua.vald_zx.game.rat.race.card.shared.Gender
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.cashFlow
@@ -180,12 +179,12 @@ fun PlayerPoint(
                     } else {
                         PlayerTooltip(pointerState, tooltipState, coroutineScope) {
                             bottomSheetNavigator.show(
-                                SendScreen(
-                                    pointerState.player.id,
-                                    pointerState.player.card.name
-                                ) { id, price ->
-                                    vm.sendMoney(id, price)
-                                })
+                                SendMoneyScreen(
+                                    vm = vm,
+                                    playerId = pointerState.player.id,
+                                    playerName = pointerState.player.card.name,
+                                )
+                            )
                         }
                     }
                 },

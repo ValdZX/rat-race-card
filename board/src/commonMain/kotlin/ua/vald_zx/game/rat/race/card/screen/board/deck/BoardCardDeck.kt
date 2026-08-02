@@ -32,12 +32,16 @@ import ua.vald_zx.game.rat.race.card.components.OutlinedText
 import ua.vald_zx.game.rat.race.card.components.Rotation
 import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.components.rotateLayout
+import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.isVertical
 import ua.vald_zx.game.rat.race.card.logic.BoardState
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.deckCoordinatesMap
 import ua.vald_zx.game.rat.race.card.screen.board.discardPilesCoordinatesMap
 import ua.vald_zx.game.rat.race.card.screen.board.visualize.color
+import ua.vald_zx.game.rat.race.card.screen.design.DesignCardBack
+import ua.vald_zx.game.rat.race.card.screen.design.tone
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
 
@@ -114,19 +118,20 @@ fun BoardCardBack(
     isVertical: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val rounding = min(size.width, size.height) / 16
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .clip(RoundedCornerShape(rounding))
-            .background(card.color())
-    ) {
-        BoardCardText(card, size, isVertical)
+    if (designV2Enabled.value) {
+        DesignCardBack(card, size, isVertical, modifier)
+    } else {
+        LegacyCardBack(card, size, isVertical, modifier)
     }
 }
 
 @Composable
-fun BoxScope.BoardCardText(card: BoardCardType, size: DpSize, isVertical: Boolean) {
+fun BoxScope.BoardCardText(
+    card: BoardCardType,
+    size: DpSize,
+    isVertical: Boolean,
+    outlineColor: Color? = null,
+) {
     val min = min(size.width, size.height)
     OutlinedText(
         text = when (card) {
@@ -151,8 +156,8 @@ fun BoxScope.BoardCardText(card: BoardCardType, size: DpSize, isVertical: Boolea
             .optionalModifier(isVertical) {
                 rotateLayout(Rotation.ROT_90)
             },
-        fillColor = MaterialTheme.colorScheme.onPrimary,
-        outlineColor = Color(0xFF8A8A8A),
+        fillColor = if (outlineColor != null) Design.scaffold.onFill else MaterialTheme.colorScheme.onPrimary,
+        outlineColor = outlineColor ?: Color(0xFF8A8A8A),
         outlineDrawStyle = Stroke(min.value / 30f),
         maxLines = 1
     )

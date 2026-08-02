@@ -53,6 +53,9 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.appKStore
+import ua.vald_zx.game.rat.race.card.designV2Enabled
+import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDialog
+import ua.vald_zx.game.rat.race.card.screen.design.DesignPlayerSheet
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction
@@ -121,7 +124,11 @@ class BoardScreen(
                         sheetContentSize.value = with(density) { size.height.toDp() }
                         scaffoldState.invalidateDetents()
                     }) {
-                        Board2PlayerDetailsScreen(vm, scaffoldState)
+                        if (designV2Enabled.value) {
+                            DesignPlayerSheet(vm, scaffoldState)
+                        } else {
+                            LegacyPlayerSheet(vm, scaffoldState)
+                        }
                     }
                 }
             }
@@ -154,7 +161,7 @@ class BoardScreen(
                 Box(modifier = Modifier.statusBarsPadding())
             }
             IconButton(
-                modifier = Modifier.align(Alignment.TopStart),
+                modifier = Modifier.align(Alignment.TopStart).statusBarsPadding(),
                 onClick = { navigator.popUntil { screen ->
                     screen is BoardListScreen
                 } },
@@ -650,45 +657,28 @@ class BoardScreen(
         }
         if (dreamOfferedDialog) {
             val dream = state.currentDream
-            AlertDialog(
-                title = { Text(stringResource(Res.string.dream_offer_title)) },
-                text = {
-                    Column {
-                        Text(
-                            dream?.let {
-                                stringResource(
-                                    Res.string.dream_offer_message,
-                                    it.name,
-                                    it.price.splitDecimal(),
-                                )
-                            }.orEmpty()
-                        )
-                        dream?.description?.let { Text(it) }
-                    }
-                },
-                onDismissRequest = {},
-                confirmButton = {
-                    TextButton(
-                        enabled = dream != null && state.canPay(dream.price),
-                        onClick = {
-                            vm.buyDream()
-                            dreamOfferedDialog = false
-                        },
-                    ) {
-                        Text(stringResource(Res.string.buy))
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            vm.pass()
-                            dreamOfferedDialog = false
-                        },
-                    ) {
-                        Text(stringResource(Res.string.pass))
-                    }
-                },
-            )
+            val canPay = dream != null && state.canPay(dream.price)
+            if (designV2Enabled.value) {
+                DesignDreamDialog(
+                    dream = dream,
+                    canPay = canPay,
+                    onBuy = {
+                        vm.buyDream()
+                        dreamOfferedDialog = false
+                    },
+                    onPass = {
+                        vm.pass()
+                        dreamOfferedDialog = false
+                    },
+                )
+            } else {
+                LegacyDreamDialog(
+                    vm = vm,
+                    dream = dream,
+                    canPay = canPay,
+                    onDone = { dreamOfferedDialog = false },
+                )
+            }
         }
         victoryDialog?.let { victory ->
             AlertDialog(

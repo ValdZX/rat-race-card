@@ -24,6 +24,7 @@ import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.not_for_me
 import ua.vald_zx.game.rat.race.card.resources.pay
 import ua.vald_zx.game.rat.race.card.components.EButton
+import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.cards.expensesCards
@@ -53,28 +54,16 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
                     modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                     text = card.description,
                     fontSize = unitTS * 12,
-                    lineHeight = unitTS * 10,
+                    lineHeight = unitTS * 16,
                 )
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black)
-                        .size(unitDp * 40),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "НВ",
-                        color = Color.White,
-                        fontSize = unitTS * 20,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+                CardStamp(glyph = "НВ", unitTS = unitTS, unitDp = unitDp, glyphSize = 20f)
             }
             Text(
                 modifier = Modifier.padding(top = padding).fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 text = card.priceTitle,
                 fontSize = unitTS * 14,
-                lineHeight = unitTS * 12,
+                lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,
             )
             Text(
@@ -82,12 +71,13 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
                 textAlign = TextAlign.Center,
                 text = card.payer.getLocal(),
                 fontSize = unitTS * 12,
-                lineHeight = unitTS * 10,
+                lineHeight = unitTS * 16,
             )
             val state by vm.uiState.collectAsState()
             if (state.currentPlayerIsActive) {
                 if (vm.uiState.value.player.needPayExpenses(card)) {
                     EButton(
+                        kind = DesignButtonKind.Filled,
                         enabled = !state.isProgress,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         onClick = { vm.sideExpenses(card.price) },

@@ -296,4 +296,20 @@
     <string name="investment_lose">The die shows %1$s. You lost %2$s</string>
     <string name="funds_capitalized">Funds capitalized: +%1$s</string>
     <string name="debug_go_to_salary">Go to salary</string>
+    <string name="new_design">New design (beta)</string>
+    <string name="you">YOU</string>
+    <string name="cell">cell</string>
+    <string name="available">available</string>
+    <string name="remainder">left</string>
+    <string name="all_in">All</string>
+    <string name="not_enough_money">More than available</string>
+    <string name="no_assets">Nothing here yet</string>
+    <string name="enter_name_first">enter your name</string>
+    <string name="online_game">Online game</string>
+    <string name="no_tables_yet">No tables yet — create the first one</string>
+    <string name="fill_all_fields">Fill in every field</string>
+    <string name="connecting_to_server">Connecting to the server</string>
+    <string name="tax_inspection">Tax audit</string>
+    <string name="child">Child</string>
+    <string name="love">Love</string>
 </resources>

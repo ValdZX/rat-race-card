@@ -13,7 +13,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
+import androidx.compose.ui.unit.Dp
+import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.screen.design.DesignCardFrame
 import ua.vald_zx.game.rat.race.card.screen.board.visualize.color
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.CardLink
@@ -29,16 +32,8 @@ fun BoxWithConstraintsScope.BoardCardFront(
     val height = minHeight
     val scaleX = size.width / width
     val rounding = min(width, height) / 16
-    BoxWithConstraints(
-        modifier = Modifier
-            .graphicsLayer(
-                scaleX = scaleX,
-                scaleY = 1f
-            )
-            .clip(RoundedCornerShape(rounding))
-            .border(2.dp, card.type.color(), RoundedCornerShape(rounding))
-            .background(MaterialTheme.colorScheme.background)
-    ) {
+    val frameModifier = Modifier.graphicsLayer(scaleX = scaleX, scaleY = 1f)
+    CardFrame(card.type, rounding, frameModifier) {
         when (card.type) {
             BoardCardType.Chance -> {
                 ChanceCardFront(card, vm)
@@ -77,3 +72,24 @@ fun BoxWithConstraintsScope.BoardCardFront(
 
 
 
+
+
+/**
+ * Рамка лиця карти. Нова мова — DesignCardFrame з капітеллю типу,
+ * стара — LegacyCardFrame. Вміст карт спільний для обох.
+ */
+@Composable
+private fun CardFrame(
+    type: BoardCardType,
+    rounding: Dp,
+    modifier: Modifier,
+    content: @Composable BoxWithConstraintsScope.() -> Unit,
+) {
+    if (designV2Enabled.value) {
+        DesignCardFrame(type = type, modifier = modifier) {
+            BoxWithConstraints(content = content)
+        }
+    } else {
+        LegacyCardFrame(type = type, rounding = rounding, modifier = modifier, content = content)
+    }
+}

@@ -19,6 +19,8 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.Button
+import ua.vald_zx.game.rat.race.card.designV2Enabled
+import ua.vald_zx.game.rat.race.card.screen.design.DesignInitPlayerContent
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
 import ua.vald_zx.game.rat.race.card.resources.*
@@ -33,61 +35,34 @@ class InitPlayerScreen(private val board: Board) : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val coroutineScope = rememberCoroutineScope()
         val colorState = remember { mutableStateOf(0L) }
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                ColorsSelector(colorState)
-            }
-            var playerName by remember { mutableStateOf("") }
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(Res.string.player_name_label)) },
-                value = playerName,
-                onValueChange = { playerName = it },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            )
-            var currentGender by remember { mutableStateOf(Gender.MALE) }
-            GenderSelector(
-                selected = currentGender,
-                iconSize = 100.dp,
-                femaleStyle = GenderOptionStyle.FemaleDefault.copy(
-                    effectOrigin = TransformOrigin(1f, 0.5f),
-                    fillColor = Color(colorState.value)
-                ),
-                maleStyle = GenderOptionStyle.MaleDefault.copy(
-                    effectOrigin = TransformOrigin(0f, 0.5f),
-                    fillColor = Color(colorState.value)
-                ),
-                onGenderChange = {
-                    currentGender = it
-                }
-            )
-            Button(
-                stringResource(Res.string.next),
-                enabled = playerName.isNotEmpty(),
-            ) {
-                coroutineScope.launch {
-                    val card = when (currentGender) {
-                        Gender.MALE -> menProfessionCards.random()
-                        Gender.FEMALE -> womenProfessionCards.random()
-                    }
-                    navigator.push(
-                        ProfessionScreen(
-                            board = board,
-                            card = card,
-                            playerName = playerName,
-                            color = colorState.value,
+        var designName by remember { mutableStateOf("") }
+        var designGender by remember { mutableStateOf(Gender.MALE) }
+        if (designV2Enabled.value) {
+            DesignInitPlayerContent(
+                colorState = colorState,
+                playerName = designName,
+                onNameChange = { designName = it },
+                gender = designGender,
+                onGenderChange = { designGender = it },
+                onNext = {
+                    coroutineScope.launch {
+                        val card = when (designGender) {
+                            Gender.MALE -> menProfessionCards.random()
+                            Gender.FEMALE -> womenProfessionCards.random()
+                        }
+                        navigator.push(
+                            ProfessionScreen(
+                                board = board,
+                                card = card,
+                                playerName = designName,
+                                color = colorState.value,
+                            )
                         )
-                    )
-                }
-            }
+                    }
+                },
+            )
+        } else {
+            LegacyInitPlayerContent(board = board, colorState = colorState)
         }
     }
 }

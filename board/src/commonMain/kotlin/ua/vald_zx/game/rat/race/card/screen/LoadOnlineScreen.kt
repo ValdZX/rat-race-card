@@ -1,28 +1,19 @@
 package ua.vald_zx.game.rat.race.card.screen
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.github.aakira.napier.Napier
 import io.ktor.client.*
 import kotlinx.coroutines.*
-import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
-import ua.vald_zx.game.rat.race.card.resources.Res
-import ua.vald_zx.game.rat.race.card.resources.connection_failed
-import ua.vald_zx.game.rat.race.card.resources.retry_connection
-import ua.vald_zx.game.rat.race.card.components.Button
+import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.di.getRaceRatService
+import ua.vald_zx.game.rat.race.card.screen.design.DesignLoadOnline
 
 class LoadOnlineScreen : Screen {
     @Composable
@@ -44,23 +35,14 @@ class LoadOnlineScreen : Screen {
         LaunchedEffect(Unit) {
             connectToService()
         }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(16.dp),
-        ) {
-            if (invalidServerState.value) {
-                Column(modifier = Modifier.align(Alignment.Center)) {
-                    Text(stringResource(Res.string.connection_failed))
-                    Button(stringResource(Res.string.retry_connection)) {
-                        connectToService()
-                        invalidServerState.value = false
-                    }
-                }
-            } else {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
+        val retry = {
+            connectToService()
+            invalidServerState.value = false
+        }
+        if (designV2Enabled.value) {
+            DesignLoadOnline(failed = invalidServerState.value, onRetry = retry)
+        } else {
+            LegacyLoadOnline(failed = invalidServerState.value, onRetry = retry)
         }
     }
 }

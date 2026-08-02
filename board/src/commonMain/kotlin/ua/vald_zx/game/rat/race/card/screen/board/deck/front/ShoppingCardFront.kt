@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.max
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.components.EButton
+import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
@@ -52,28 +53,16 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                     text = card.type.title,
                     modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                     fontSize = unitTS * 14,
-                    lineHeight = unitTS * 12,
+                    lineHeight = unitTS * 19,
                     fontWeight = FontWeight.Bold,
                 )
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black)
-                        .size(unitDp * 40),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(Res.string.vp_short),
-                        color = Color.White,
-                        fontSize = unitTS * 20,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+                CardStamp(glyph = stringResource(Res.string.vp_short), unitTS = unitTS, unitDp = unitDp, glyphSize = 20f)
             }
             Text(
                 modifier = Modifier.padding(top = smallPadding),
                 text = card.description,
                 fontSize = unitTS * 12,
-                lineHeight = unitTS * 10,
+                lineHeight = unitTS * 16,
             )
             Text(
                 stringResource(Res.string.full_price),
@@ -92,7 +81,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                 modifier = Modifier.padding(top = smallPadding),
                 text = card.credit,
                 fontSize = unitTS * 12,
-                lineHeight = unitTS * 10,
+                lineHeight = unitTS * 16,
             )
             val state by vm.uiState.collectAsState()
             if (state.currentPlayerIsActive) {
@@ -108,6 +97,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                         unitDp = unitDp,
                     )
                     EButton(
+                        kind = DesignButtonKind.Filled,
                         onClick = { vm.buy(card) },
                         enabled = !state.isProgress && state.canPay(card.price),
                         title = stringResource(Res.string.buy),

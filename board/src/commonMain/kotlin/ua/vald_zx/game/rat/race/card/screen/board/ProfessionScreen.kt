@@ -15,6 +15,8 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.Button
+import ua.vald_zx.game.rat.race.card.designV2Enabled
+import ua.vald_zx.game.rat.race.card.screen.design.DesignProfessionContent
 import ua.vald_zx.game.rat.race.card.components.DetailsField
 import ua.vald_zx.game.rat.race.card.launchWithHandler
 import ua.vald_zx.game.rat.race.card.resources.*
@@ -35,74 +37,35 @@ class ProfessionScreen(
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val service = koinInject<RaceRatService>()
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = stringResource(Res.string.work),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-            DetailsField(
-                name = card.name,
-                value = card.salary.toString(),
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = stringResource(Res.string.expenses),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.tertiary
-            )
-            DetailsField(
-                stringResource(Res.string.rent), card.rent.toString(),
-                color = MaterialTheme.colorScheme.tertiary
-            )
-            DetailsField(
-                stringResource(Res.string.food), card.food.toString(),
-                color = MaterialTheme.colorScheme.tertiary
-            )
-            DetailsField(
-                stringResource(Res.string.cloth), card.cloth.toString(),
-                color = MaterialTheme.colorScheme.tertiary
-            )
-            DetailsField(
-                stringResource(Res.string.transport), card.transport.toString(),
-                color = MaterialTheme.colorScheme.tertiary
-            )
-            DetailsField(
-                stringResource(Res.string.phone), card.phone.toString(),
-                color = MaterialTheme.colorScheme.tertiary
-            )
-            Button(stringResource(Res.string.next)) {
-                launchWithHandler({ navigator.replaceAll(LoadOnlineScreen()) }) {
-                    val helloUuid = appKStore.get()?.clientUuid.orEmpty().ifEmpty {
-                        Uuid.random().toString().apply {
-                            appKStore.update { it?.copy(clientUuid = this) }
-                        }
+        val join = {
+            launchWithHandler({ navigator.replaceAll(LoadOnlineScreen()) }) {
+                val helloUuid = appKStore.get()?.clientUuid.orEmpty().ifEmpty {
+                    Uuid.random().toString().apply {
+                        appKStore.update { it?.copy(clientUuid = this) }
                     }
-                    val player = service.makePlayer(
-                        uuid = helloUuid,
-                        color = color,
-                        card = PlayerCard(
-                            name = playerName,
-                            gender = card.gender,
-                            profession = card.name,
-                            salary = card.salary,
-                            rent = card.rent,
-                            food = card.food,
-                            cloth = card.cloth,
-                            transport = card.transport,
-                            phone = card.phone,
-                        ),
-                    )
-                    navigator.push(BoardScreen(board, player))
                 }
+                val player = service.makePlayer(
+                    uuid = helloUuid,
+                    color = color,
+                    card = PlayerCard(
+                        name = playerName,
+                        gender = card.gender,
+                        profession = card.name,
+                        salary = card.salary,
+                        rent = card.rent,
+                        food = card.food,
+                        cloth = card.cloth,
+                        transport = card.transport,
+                        phone = card.phone,
+                    ),
+                )
+                navigator.push(BoardScreen(board, player))
             }
+        }
+        if (designV2Enabled.value) {
+            DesignProfessionContent(card = card, onNext = join)
+        } else {
+            LegacyProfessionContent(card = card, onNext = join)
         }
     }
 }

@@ -3,6 +3,7 @@ package ua.vald_zx.game.rat.race.card.components
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -42,6 +43,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
+import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.design.DesignShapes
+import ua.vald_zx.game.rat.race.card.designV2Enabled
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -735,27 +739,9 @@ fun OutlinedBasicTextField(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(12.dp),
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        singleLine = true,
-        modifier = modifier,
-        textStyle = MaterialTheme.typography.bodyLarge.copy(
-            color = MaterialTheme.colorScheme.onSurface
-        ),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-    ) { innerTextField ->
-        OutlinedTextFieldDefaults.DecorationBox(
-            value = value,
-            innerTextField = innerTextField,
-            enabled = true,
-            singleLine = true,
-            interactionSource = interactionSource,
-            visualTransformation = VisualTransformation.None,
-            contentPadding = contentPadding,
-            label = label
-        )
+    if (designV2Enabled.value) {
+        DesignOutlinedBasicTextField(value, onValueChange, label, modifier, contentPadding)
+    } else {
+        LegacyOutlinedBasicTextField(value, onValueChange, label, modifier, contentPadding)
     }
 }

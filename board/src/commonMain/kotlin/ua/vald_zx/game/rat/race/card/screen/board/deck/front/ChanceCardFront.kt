@@ -21,6 +21,7 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.components.EButton
+import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
 import ua.vald_zx.game.rat.race.card.components.OutlinedBasicTextField
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
@@ -77,37 +78,16 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                 text = stringResource(Res.string.realEstate),
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
-                lineHeight = unitTS * 12,
+                lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,
             )
-            Column(
-                modifier = Modifier
-                    .background(Color.Black)
-                    .size(unitDp * 40),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "#${cardLink.id}",
-                    color = Color.White,
-                    fontSize = unitTS * 10,
-                    lineHeight = unitTS * 7,
-                    modifier = Modifier.align(Alignment.End)
-                )
-                Text(
-                    text = "H",
-                    color = Color.White,
-                    fontSize = unitTS * 20,
-                    lineHeight = unitTS * 17,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            CardStamp(glyph = "H", unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 20f)
         }
         Text(
             modifier = Modifier.padding(top = smallPadding),
             text = card.description,
             fontSize = unitTS * 12,
-            lineHeight = unitTS * 10,
+            lineHeight = unitTS * 16,
         )
         Row(
             modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
@@ -145,6 +125,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                     unitDp = unitDp,
                 )
                 EButton(
+                    kind = DesignButtonKind.Filled,
                     onClick = { vm.buy(card) },
                     title = stringResource(Res.string.buy),
                     enabled = !state.isProgress && state.canPay(card.price),
@@ -194,37 +175,16 @@ private fun BoxWithConstraintsScope.LandCardFront(
                 text = "Земля",
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
-                lineHeight = unitTS * 12,
+                lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,
             )
-            Column(
-                modifier = Modifier
-                    .background(Color.Black)
-                    .size(unitDp * 40),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "#${cardLink.id}",
-                    color = Color.White,
-                    fontSize = unitTS * 10,
-                    lineHeight = unitTS * 7,
-                    modifier = Modifier.align(Alignment.End)
-                )
-                Text(
-                    text = "З",
-                    color = Color.White,
-                    fontSize = unitTS * 20,
-                    lineHeight = unitTS * 17,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            CardStamp(glyph = "З", unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 20f)
         }
         Text(
             modifier = Modifier.padding(top = smallPadding),
             text = card.description,
             fontSize = unitTS * 12,
-            lineHeight = unitTS * 10,
+            lineHeight = unitTS * 16,
         )
         Row(
             modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
@@ -288,6 +248,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
                     unitDp = unitDp,
                 )
                 EButton(
+                    kind = DesignButtonKind.Filled,
                     enabled = !state.isProgress,
                     onClick = { vm.buy(card) },
                     title = stringResource(Res.string.buy),
@@ -338,37 +299,16 @@ private fun BoxWithConstraintsScope.RandomJobCardFront(
                 text = "Випадковий заробіток",
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
-                lineHeight = unitTS * 12,
+                lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,
             )
-            Column(
-                modifier = Modifier
-                    .background(Color.Black)
-                    .size(unitDp * 40),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "#${cardLink.id}",
-                    color = Color.White,
-                    fontSize = unitTS * 10,
-                    lineHeight = unitTS * 7,
-                    modifier = Modifier.align(Alignment.End)
-                )
-                Text(
-                    text = "ВЗ",
-                    color = Color.White,
-                    fontSize = unitTS * 20,
-                    lineHeight = unitTS * 17,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            CardStamp(glyph = "ВЗ", unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 20f)
         }
         Text(
             modifier = Modifier.padding(top = smallPadding),
             text = card.description,
             fontSize = unitTS * 12,
-            lineHeight = unitTS * 10,
+            lineHeight = unitTS * 16,
         )
         Text(
             card.profit.formatAmount(),
@@ -384,6 +324,7 @@ private fun BoxWithConstraintsScope.RandomJobCardFront(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 EButton(
+                    kind = DesignButtonKind.Filled,
                     enabled = !state.isProgress,
                     onClick = { vm.randomJob(card) },
                     title = stringResource(Res.string.ok),
@@ -414,37 +355,16 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 text = "Акції",
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
-                lineHeight = unitTS * 12,
+                lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,
             )
-            Column(
-                modifier = Modifier
-                    .background(Color.Black)
-                    .size(unitDp * 40),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "#${cardLink.id}",
-                    color = Color.White,
-                    fontSize = unitTS * 10,
-                    lineHeight = unitTS * 7,
-                    modifier = Modifier.align(Alignment.End)
-                )
-                Text(
-                    text = card.sharesType.label(),
-                    color = Color.White,
-                    fontSize = unitTS * 13,
-                    lineHeight = unitTS * 14,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            CardStamp(glyph = card.sharesType.label(), unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 13f)
         }
         Text(
             modifier = Modifier.padding(top = smallPadding),
             text = card.description,
             fontSize = unitTS * 12,
-            lineHeight = unitTS * 10,
+            lineHeight = unitTS * 16,
         )
         Row(
             modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
@@ -520,6 +440,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                     ),
                 )
                 EButton(
+                    kind = DesignButtonKind.Filled,
                     onClick = { vm.buyShares(card, count) },
                     enabled = !state.isProgress && count > 0 && state.canPay(card.price * count),
                     title = stringResource(Res.string.buy),
