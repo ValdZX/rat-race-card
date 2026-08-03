@@ -31,6 +31,7 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
 import ua.vald_zx.game.rat.race.card.components.SmoothRainbowText
+import ua.vald_zx.game.rat.race.card.design.DesignIconDrift
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.raceRate2KStore
@@ -60,13 +61,14 @@ class SelectTypeScreen : Screen {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(screenBackground())
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(24.dp),
+                .background(screenBackground()),
             contentAlignment = Alignment.Center
         ) {
+            DesignIconDrift(Modifier.matchParentSize())
             Column(
                 modifier = Modifier
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(24.dp)
                     .widthIn(max = 440.dp)
                     .verticalScroll(rememberScrollState())
                     .padding(bottom = 16.dp),

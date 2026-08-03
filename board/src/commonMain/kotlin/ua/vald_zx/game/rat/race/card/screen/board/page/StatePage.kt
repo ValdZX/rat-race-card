@@ -234,7 +234,9 @@ fun StateItem(
     onClick: (() -> Unit)? = null,
 ) {
     Box(
-        modifier = Modifier.padding(top = 8.dp)
+        modifier = Modifier
+            .padding(top = 8.dp)
+            .size(72.dp)
             .clip(RoundedCornerShape(8.dp))
             .composed {
                 onClick?.let { clickable(onClick = onClick) } ?: this
@@ -249,7 +251,9 @@ fun StateItem(
             imageVector = imageVector,
             contentDescription = null,
             colorFilter = if (enabled) null else greyScaleFilter,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(40.dp)
         )
         if (count > 1) {
             Text(

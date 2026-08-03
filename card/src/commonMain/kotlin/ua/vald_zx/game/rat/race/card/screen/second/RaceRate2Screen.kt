@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -188,6 +189,7 @@ class RaceRate2Screen : Screen {
                         selectedTabIndex = pagerState.currentPage,
                         edgePadding = 0.dp,
                         minTabWidth = 0.dp,
+                        containerColor = Color.Transparent,
                         modifier = Modifier.align(Alignment.CenterHorizontally).wrapContentWidth(),
                     ) {
                         titles.forEachIndexed { index, title ->
