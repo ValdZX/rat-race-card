@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.card.shared
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -18,7 +19,7 @@ enum class BoardCardType {
 data class CardLink(val type: BoardCardType, val id: Int)
 
 @Serializable
-sealed class BoardCard(val type: BoardCardType) {
+sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
     @Serializable
     data class SmallBusiness(
         val name: String,
@@ -77,11 +78,22 @@ sealed class BoardCard(val type: BoardCardType) {
             val description: String,
             val profit: Long
         ) : EventStore()
+
+        @Serializable
+        data class Reelection(
+            val description: String,
+        ) : EventStore()
+
+        @Serializable
+        data class Announcement(
+            val description: String,
+        ) : EventStore()
     }
 
     @Serializable
     data class Deputy(
         val description: String,
+        val corrupt: Boolean,
     ) : BoardCard(BoardCardType.Deputy)
 
     @Serializable
@@ -113,6 +125,23 @@ sealed class BoardCard(val type: BoardCardType) {
             val name: String,
             val description: String,
             val price: Long
+        ) : Chance()
+
+        @Serializable
+        data class CorruptBusiness(
+            val description: String,
+            val price: Long,
+            val profit: Long,
+            val oneTimeProfit: Long,
+            val deputies: Int,
+        ) : Chance()
+
+        @Serializable
+        data class CorruptLand(
+            val description: String,
+            val price: Long,
+            val area: Long,
+            val deputies: Int,
         ) : Chance()
     }
 

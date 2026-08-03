@@ -67,6 +67,7 @@ data class Player(
     val speech: PlayerSpeech? = null,
     val selectedDreamId: String? = null,
     val purchasedDreamIds: Set<String> = emptySet(),
+    val deputies: Int = 0,
 )
 
 fun Player.isActiveOn(board: Board): Boolean {

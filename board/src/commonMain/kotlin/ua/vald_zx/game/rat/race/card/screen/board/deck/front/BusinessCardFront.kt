@@ -31,6 +31,7 @@ import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.screen.board.cards.cardOf
 import ua.vald_zx.game.rat.race.card.screen.board.AuctionScreen
 import ua.vald_zx.game.rat.race.card.screen.design.LocalAuctionPanelToggle
 import ua.vald_zx.game.rat.race.card.screen.board.cards.bigBusinessCards
@@ -44,8 +45,9 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
     cardLink: CardLink,
     vm: BoardViewModel,
 ) {
-    remember(cardLink.id) {
-        smallBusinessCards[cardLink.id]
+    val state by vm.uiState.collectAsState()
+    remember(cardLink.id, state.board.generatedCards) {
+        state.board.cardOf(cardLink) as? BoardCard.SmallBusiness
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)
@@ -167,8 +169,9 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
     cardLink: CardLink,
     vm: BoardViewModel,
 ) {
-    remember(cardLink.id) {
-        mediumBusinessCards[cardLink.id]
+    val state by vm.uiState.collectAsState()
+    remember(cardLink.id, state.board.generatedCards) {
+        state.board.cardOf(cardLink) as? BoardCard.MediumBusiness
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)
@@ -289,8 +292,9 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
     cardLink: CardLink,
     vm: BoardViewModel,
 ) {
-    remember(cardLink.id) {
-        bigBusinessCards[cardLink.id]
+    val state by vm.uiState.collectAsState()
+    remember(cardLink.id, state.board.generatedCards) {
+        state.board.cardOf(cardLink) as? BoardCard.BigBusiness
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)

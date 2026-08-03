@@ -134,6 +134,7 @@ interface RaceRatService {
         outerCircleConditions: OuterCircleConditions = OuterCircleConditions(),
         victoryConditions: VictoryConditions = VictoryConditions(),
         transportMovementBonusEnabled: Boolean = true,
+        generation: BoardGeneration = BoardGeneration(),
     ): Board
 
     suspend fun updateAttributes(attrs: PlayerAttributes)
@@ -154,6 +155,11 @@ interface RaceRatService {
     suspend fun rollDice()
     suspend fun next()
     suspend fun takeCard(cardType: BoardCardType)
+    suspend fun buyDeputy()
+    suspend fun buyCorruptBusiness(card: BoardCard.Chance.CorruptBusiness)
+    suspend fun buyCorruptLand(card: BoardCard.Chance.CorruptLand)
+    suspend fun reelection()
+    suspend fun skipDeputies()
     suspend fun takeSalary()
     suspend fun buyBusiness(business: Business)
 

@@ -51,6 +51,7 @@ fun InitPreview(
                             outerCircleConditions: OuterCircleConditions,
                             victoryConditions: VictoryConditions,
                             transportMovementBonusEnabled: Boolean,
+                            generation: BoardGeneration,
                         ): Board {
                             error("Not for preview")
                         }
@@ -92,6 +93,21 @@ fun InitPreview(
                         }
 
                         override suspend fun takeCard(cardType: BoardCardType) {
+                        }
+
+                        override suspend fun buyDeputy() {
+                        }
+
+                        override suspend fun buyCorruptBusiness(card: BoardCard.Chance.CorruptBusiness) {
+                        }
+
+                        override suspend fun buyCorruptLand(card: BoardCard.Chance.CorruptLand) {
+                        }
+
+                        override suspend fun reelection() {
+                        }
+
+                        override suspend fun skipDeputies() {
                         }
 
                         override suspend fun takeSalary() {

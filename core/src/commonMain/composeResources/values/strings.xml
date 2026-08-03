@@ -320,4 +320,21 @@
     <string name="child">Child</string>
     <string name="love">Love</string>
     <string name="player_turn_now">Now moving</string>
+    <string name="deputy_short">DEP</string>
+    <string name="deputy_bought">The deputy is yours. He is in your pocket and ready to push a corrupt deal through.</string>
+    <string name="deputies_owned">Bought deputies: %1$d</string>
+    <string name="deputy_buy_more">Buy for %1$s</string>
+    <string name="corrupt_business">Corruption deal</string>
+    <string name="corrupt_land">Corrupt land</string>
+    <string name="one_time_profit">One-time profit</string>
+    <string name="deputies_required">Deputies needed</string>
+    <string name="deputies_of">%1$d of %2$d</string>
+    <string name="reelection">Re-elections</string>
+    <string name="market_news">News</string>
+    <string name="skip_deputies">Walk past</string>
+    <string name="generated_deck">Generated deck</string>
+    <string name="generate_cards">Generate cards</string>
+    <string name="world_theme">Theme</string>
+    <string name="world_locality">Place</string>
+    <string name="world_epoch">Epoch</string>
 </resources>

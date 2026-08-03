@@ -24,6 +24,8 @@ import kotlin.uuid.Uuid
 
 internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
+private const val CORRUPT_NAME_LENGTH = 48
+
 private val boardMutexes = ConcurrentHashMap<String, Mutex>()
 private val playerMutexes = ConcurrentHashMap<String, Mutex>()
 private fun boardMutex(boardId: String): Mutex = boardMutexes.getOrPut(boardId) { Mutex() }
@@ -141,7 +143,11 @@ class RaceRatServiceImpl(
         outerCircleConditions: OuterCircleConditions,
         victoryConditions: VictoryConditions,
         transportMovementBonusEnabled: Boolean,
+        generation: BoardGeneration,
     ): Board {
+        val world = generation.copy(
+            seed = if (generation.seed != 0L) generation.seed else Clock.System.now().toEpochMilliseconds()
+        )
         val board = Board(
             name = name,
             loanLimit = loanLimit,
@@ -152,6 +158,8 @@ class RaceRatServiceImpl(
             outerCircleConditions = outerCircleConditions,
             victoryConditions = victoryConditions,
             transportMovementBonusEnabled = transportMovementBonusEnabled,
+            generation = world,
+            generatedCards = BoardGenerator(world).generate(decks),
         )
         Storage.newBoard(board)
         boardSelected(board)
@@ -227,22 +235,77 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun takeCard(cardType: BoardCardType) {
+        if (cardType == BoardCardType.Deputy) {
+            buyDeputy()
+            return
+        }
         val card = board().cards[cardType]?.randomOrNull() ?: return
         selectCard(card, cardType)
     }
 
-    private suspend fun selectCard(cardId: Int, cardType: BoardCardType) {
-        updateBoard {
-            val newCards = cards.toMutableMap()
-            newCards[cardType] = newCards[cardType].orEmpty() - cardId
-            copy(
-                cards = newCards,
-                takenCard = CardLink(cardType, cardId),
-                sharesCount = null,
-                canTakeCard = emptyList(),
-                processedPlayerIds = emptySet(),
-            )
+    override suspend fun buyCorruptBusiness(card: BoardCard.Chance.CorruptBusiness) {
+        if (player().deputies < card.deputies) return
+        updatePlayer {
+            val hired = copy(deputies = deputies - card.deputies)
+            if (card.oneTimeProfit > 0) {
+                hired.minusCash(card.price).plusCash(card.oneTimeProfit)
+            } else {
+                hired.copy(
+                    businesses = businesses + Business(
+                        type = BusinessType.CORRUPTION,
+                        name = card.description.take(CORRUPT_NAME_LENGTH),
+                        price = card.price,
+                        profit = card.profit,
+                    )
+                ).minusCash(card.price)
+            }
         }
+        nextPlayer()
+    }
+
+    override suspend fun buyCorruptLand(card: BoardCard.Chance.CorruptLand) {
+        if (player().deputies < card.deputies) return
+        updatePlayer {
+            copy(
+                deputies = deputies - card.deputies,
+                landList = landList + Land(
+                    name = card.description.take(CORRUPT_NAME_LENGTH),
+                    area = card.area,
+                    price = card.price,
+                ),
+            ).minusCash(card.price)
+        }
+        nextPlayer()
+    }
+
+    override suspend fun reelection() {
+        val board = board()
+        board.players().filter { it.deputies > 0 }.forEach { player ->
+            val released = player.copy(deputies = 0)
+            Storage.updatePlayer(released)
+            globalEventBus.emit(GlobalEvent.PlayerChanged(released))
+        }
+        nextPlayer()
+    }
+
+    override suspend fun skipDeputies() {
+        if (board().activePlayerId != playerId) return
+        nextPlayer()
+    }
+
+    override suspend fun buyDeputy() {
+        if (board().activePlayerId != playerId) return
+        updateBoard { discardPileB() }
+        val cardId = board().cards[BoardCardType.Deputy]?.randomOrNull() ?: return
+        updatePlayer {
+            val hired = if (cardId in corruptDeputyIds) deputies + 1 else deputies
+            copy(deputies = hired).minusCash(DEPUTY_CARD_PRICE)
+        }
+        selectCard(cardId, BoardCardType.Deputy)
+    }
+
+    private suspend fun selectCard(cardId: Int, cardType: BoardCardType) {
+        updateBoard { takeFromDeck(cardId, cardType) }
     }
 
     override suspend fun selectCardByNo(cardId: Int, cardType: BoardCardType) {
@@ -1071,7 +1134,19 @@ suspend fun nextPlayer(board: Board) {
     }
 }
 
-private fun Board.discardPileB(): Board {
+internal fun Board.takeFromDeck(cardId: Int, cardType: BoardCardType): Board {
+    val newCards = cards.toMutableMap()
+    newCards[cardType] = newCards[cardType].orEmpty() - cardId
+    return copy(
+        cards = newCards,
+        takenCard = CardLink(cardType, cardId),
+        sharesCount = null,
+        canTakeCard = emptyList(),
+        processedPlayerIds = emptySet(),
+    )
+}
+
+internal fun Board.discardPileB(): Board {
     val card = takenCard ?: return this
     val newDiscard = discard.toMutableMap()
     newDiscard[card.type] = newDiscard[card.type].orEmpty() + card.id

@@ -31,6 +31,7 @@ import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.screen.board.cards.cardOf
 import ua.vald_zx.game.rat.race.card.screen.board.AuctionScreen
 import ua.vald_zx.game.rat.race.card.screen.design.LocalAuctionPanelToggle
 import ua.vald_zx.game.rat.race.card.screen.board.cards.chanceCards
@@ -42,8 +43,9 @@ fun BoxWithConstraintsScope.ChanceCardFront(
     cardLink: CardLink,
     vm: BoardViewModel,
 ) {
-    remember(cardLink.id) {
-        chanceCards[cardLink.id]
+    val state by vm.uiState.collectAsState()
+    remember(cardLink.id, state.board.generatedCards) {
+        state.board.cardOf(cardLink) as? BoardCard.Chance
     }?.let { chanceCard ->
         when (chanceCard) {
             is BoardCard.Chance.Estate -> {
@@ -60,6 +62,14 @@ fun BoxWithConstraintsScope.ChanceCardFront(
 
             is BoardCard.Chance.Shares -> {
                 SharesCardFront(cardLink, chanceCard, vm)
+            }
+
+            is BoardCard.Chance.CorruptBusiness -> {
+                CorruptBusinessCardFront(cardLink, chanceCard, vm)
+            }
+
+            is BoardCard.Chance.CorruptLand -> {
+                CorruptLandCardFront(cardLink, chanceCard, vm)
             }
         }
     }

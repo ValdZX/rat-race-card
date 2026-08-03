@@ -58,7 +58,7 @@ class DesignNewBoardDialogRenderTest {
                 ) {
                     DesignNewBoardDialog(
                         onDismiss = {},
-                        onCreate = { name, loan, business, bonus, outer, victory ->
+                        onCreate = { name, loan, business, bonus, outer, victory, _ ->
                             created = Created(name, loan, business, bonus, outer, victory)
                         },
                     )
@@ -99,7 +99,7 @@ class DesignNewBoardDialogRenderTest {
                         .testTag("dialog")
                         .padding(12.dp)
                 ) {
-                    DesignNewBoardDialog(onDismiss = {}, onCreate = { _, _, _, _, _, _ -> })
+                    DesignNewBoardDialog(onDismiss = {}, onCreate = { _, _, _, _, _, _, _ -> })
                 }
             }
         }

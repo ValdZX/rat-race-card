@@ -31,6 +31,7 @@ import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.screen.board.cards.cardOf
 import ua.vald_zx.game.rat.race.card.screen.board.EstateSelectScreen
 import ua.vald_zx.game.rat.race.card.screen.board.SellLandScreen
 import ua.vald_zx.game.rat.race.card.screen.board.cards.eventStoreCards
@@ -45,8 +46,9 @@ fun BoxWithConstraintsScope.EventStoreCardFront(
     cardLink: CardLink,
     vm: BoardViewModel,
 ) {
-    remember(cardLink.id) {
-        eventStoreCards[cardLink.id]
+    val state by vm.uiState.collectAsState()
+    remember(cardLink.id, state.board.generatedCards) {
+        state.board.cardOf(cardLink) as? BoardCard.EventStore
     }?.let { eventCard ->
         when (eventCard) {
             is BoardCard.EventStore.Estate -> {
@@ -63,6 +65,14 @@ fun BoxWithConstraintsScope.EventStoreCardFront(
 
             is BoardCard.EventStore.BusinessExtending -> {
                 BusinessExtendingCardFront(cardLink, eventCard, vm)
+            }
+
+            is BoardCard.EventStore.Reelection -> {
+                ReelectionCardFront(cardLink, eventCard, vm)
+            }
+
+            is BoardCard.EventStore.Announcement -> {
+                AnnouncementCardFront(cardLink, eventCard, vm)
             }
         }
     }

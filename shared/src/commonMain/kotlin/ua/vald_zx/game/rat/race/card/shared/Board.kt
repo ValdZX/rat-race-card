@@ -40,7 +40,11 @@ data class Board(
     val winnerId: String? = null,
     val dreams: List<Dream> = ratRaceDreams,
     val purchasedDreamIds: Set<String> = emptySet(),
+    val generation: BoardGeneration = BoardGeneration(),
+    val generatedCards: Map<BoardCardType, Map<Int, BoardCard>> = emptyMap(),
 )
+
+fun Board.cardOrNull(link: CardLink): BoardCard? = generatedCards[link.type]?.get(link.id)
 
 @Serializable
 data class OuterCircleConditions(

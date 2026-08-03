@@ -63,6 +63,16 @@ data class BoardState(
         return canBuy(price) && hasBusinessSlot
     }
 
+    fun canBuyCorrupt(price: Long, deputies: Int): Boolean {
+        return canBuy(price) && player.deputies >= deputies
+    }
+
+    val canSkipDeputies: Boolean
+        get() = currentPlayerIsActive &&
+                !isProgress &&
+                board.takenCard == null &&
+                board.canTakeCard == listOf(BoardCardType.Deputy)
+
     fun canMakeBid(): Boolean {
         if (!currentPlayerIsConnected || connectionState != BoardConnectionState.Connected) return false
         val auction = board.auction ?: return false
@@ -548,6 +558,36 @@ class BoardViewModel(
     fun changePlayerColor(value: Long) {
         safeLaunch(false) {
             updateAttributes(uiState.value.player.attrs.copy(color = value))
+        }
+    }
+
+    fun buyDeputy() {
+        safeLaunch {
+            buyDeputy()
+        }
+    }
+
+    fun buyCorrupt(card: BoardCard.Chance.CorruptBusiness) {
+        safeLaunch {
+            buyCorruptBusiness(card)
+        }
+    }
+
+    fun buyCorrupt(card: BoardCard.Chance.CorruptLand) {
+        safeLaunch {
+            buyCorruptLand(card)
+        }
+    }
+
+    fun reelection() {
+        safeLaunch {
+            reelection()
+        }
+    }
+
+    fun skipDeputies() {
+        safeLaunch {
+            skipDeputies()
         }
     }
 

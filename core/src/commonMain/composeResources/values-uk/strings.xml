@@ -325,4 +325,21 @@
     <string name="child">Дитина</string>
     <string name="love">Кохання</string>
     <string name="player_turn_now">Зараз ходить</string>
+    <string name="deputy_short">ДЕП</string>
+    <string name="deputy_bought">Депутат ваш. Він у кишені й готовий проштовхнути корупційну оборудку.</string>
+    <string name="deputies_owned">Підкуплених депутатів: %1$d</string>
+    <string name="deputy_buy_more">Купити за %1$s</string>
+    <string name="corrupt_business">Корупційна оборудка</string>
+    <string name="corrupt_land">Корупційна земля</string>
+    <string name="one_time_profit">Разовий прибуток</string>
+    <string name="deputies_required">Потрібно депутатів</string>
+    <string name="deputies_of">%1$d з %2$d</string>
+    <string name="reelection">Перевибори</string>
+    <string name="market_news">Новини</string>
+    <string name="skip_deputies">Пройти повз</string>
+    <string name="generated_deck">Згенерована колода</string>
+    <string name="generate_cards">Генерувати картки</string>
+    <string name="world_theme">Тематика</string>
+    <string name="world_locality">Місцевість</string>
+    <string name="world_epoch">Епоха</string>
 </resources>

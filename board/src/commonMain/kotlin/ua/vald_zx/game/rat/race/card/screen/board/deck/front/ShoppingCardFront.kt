@@ -26,9 +26,11 @@ import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.screen.board.cards.cardOf
 import ua.vald_zx.game.rat.race.card.screen.board.cards.shoppingCards
 import ua.vald_zx.game.rat.race.card.screen.board.cards.title
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
+import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.CardLink
 
 @Composable
@@ -37,8 +39,9 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
     vm: BoardViewModel,
 ) {
 
-    remember(card.id) {
-        shoppingCards[card.id]
+    val state by vm.uiState.collectAsState()
+    remember(card.id, state.board.generatedCards) {
+        state.board.cardOf(card) as? BoardCard.Shopping
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)

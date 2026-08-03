@@ -465,11 +465,15 @@ private fun BoardCard.debugDescription(): String {
         is BoardCard.EventStore.Land -> description
         is BoardCard.EventStore.Estate -> description
         is BoardCard.EventStore.BusinessExtending -> description
+        is BoardCard.EventStore.Reelection -> description
+        is BoardCard.EventStore.Announcement -> description
         is BoardCard.Deputy -> description
         is BoardCard.Chance.RandomJob -> description
         is BoardCard.Chance.Land -> "$name · $description"
         is BoardCard.Chance.Shares -> description
         is BoardCard.Chance.Estate -> "$name · $description"
+        is BoardCard.Chance.CorruptBusiness -> description
+        is BoardCard.Chance.CorruptLand -> description
         is BoardCard.Expenses -> description
     }
 }

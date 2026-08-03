@@ -13,6 +13,7 @@ import ua.vald_zx.game.rat.race.card.components.AmountTransformation
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.getDigits
 import ua.vald_zx.game.rat.race.card.resources.*
+import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.OuterCircleConditions
 import ua.vald_zx.game.rat.race.card.shared.VictoryConditions
 
@@ -26,6 +27,7 @@ fun DesignNewBoardDialog(
         transportMovementBonusEnabled: Boolean,
         outerCircleConditions: OuterCircleConditions,
         victoryConditions: VictoryConditions,
+        generation: BoardGeneration,
     ) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
@@ -40,6 +42,10 @@ fun DesignNewBoardDialog(
     var dreamRequired by remember { mutableStateOf(true) }
     var planeRequired by remember { mutableStateOf(true) }
     var estateRequired by remember { mutableStateOf(true) }
+    var generateCards by remember { mutableStateOf(false) }
+    var theme by remember { mutableStateOf("") }
+    var locality by remember { mutableStateOf("") }
+    var epoch by remember { mutableStateOf("") }
 
     val amounts = listOf(loanLimit, businessLimit, minimumCashFlow, minimumAccountBalance, victoryAccountBalance)
     val complete = name.isNotBlank() && amounts.none { it.isEmpty() }
@@ -67,6 +73,12 @@ fun DesignNewBoardDialog(
                     planeRequired = planeRequired,
                     estateRequired = estateRequired,
                     minimumAccountBalance = victoryAccountBalance.toLong(),
+                ),
+                BoardGeneration(
+                    enabled = generateCards,
+                    theme = theme.trim(),
+                    locality = locality.trim(),
+                    epoch = epoch.trim(),
                 ),
             )
         },
@@ -127,6 +139,30 @@ fun DesignNewBoardDialog(
                 checked = estateRequired,
                 onCheckedChange = { estateRequired = it },
             )
+
+            DesignSectionTitle(stringResource(Res.string.generated_deck))
+            DesignToggleRow(
+                label = stringResource(Res.string.generate_cards),
+                checked = generateCards,
+                onCheckedChange = { generateCards = it },
+            )
+            if (generateCards) {
+                DesignTextField(
+                    value = theme,
+                    onValueChange = { theme = it },
+                    label = stringResource(Res.string.world_theme),
+                )
+                DesignTextField(
+                    value = locality,
+                    onValueChange = { locality = it },
+                    label = stringResource(Res.string.world_locality),
+                )
+                DesignTextField(
+                    value = epoch,
+                    onValueChange = { epoch = it },
+                    label = stringResource(Res.string.world_epoch),
+                )
+            }
         }
     }
 }

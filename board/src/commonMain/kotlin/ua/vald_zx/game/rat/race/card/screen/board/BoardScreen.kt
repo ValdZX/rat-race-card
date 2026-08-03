@@ -64,6 +64,7 @@ import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDialog
 import ua.vald_zx.game.rat.race.card.screen.design.DesignPlayerSheet
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
+import ua.vald_zx.game.rat.race.card.components.EButton
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction
 import ua.vald_zx.game.rat.race.card.logic.BoardConnectionState
@@ -742,6 +743,15 @@ fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
                 modifier = Modifier
                     .size(rollSize)
                     .clickableSingle(enabled = state.canRoll) { vm.rollDice() }
+            )
+        }
+        if (state.canSkipDeputies) {
+            EButton(
+                modifier = Modifier.align(Alignment.CenterVertically),
+                onClick = { vm.skipDeputies() },
+                title = stringResource(Res.string.skip_deputies),
+                unitTS = with(LocalDensity.current) { (rollSize.toPx() / 100).toSp() },
+                unitDp = rollSize / 100,
             )
         }
         if (state.canEnterOuterCircle) {
