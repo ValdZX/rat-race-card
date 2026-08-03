@@ -52,23 +52,23 @@ class AmountFormRenderTest {
     }
 
     @Test
-    fun keypadBuildsTheAmountAndConfirmCarriesIt() = runComposeUiTest {
+    fun systemInputBuildsTheAmountAndConfirmCarriesIt() = runComposeUiTest {
         var confirmed: Long? = null
         form(onConfirm = { confirmed = it })
 
-        listOf("1", "2", "5", "0", "0").forEach { onNodeWithTag("key_$it").performClick() }
+        onNodeWithTag("system-amount-field").performTextReplacement("12500")
         onNodeWithText("Купити за 12500").performClick()
 
         assertEquals(12500L, confirmed)
     }
 
     @Test
-    fun backspaceRemovesLastDigit() = runComposeUiTest {
+    fun systemInputCanReplaceTheAmount() = runComposeUiTest {
         var confirmed: Long? = null
         form(onConfirm = { confirmed = it })
 
-        repeat(3) { onNodeWithTag("key_9").performClick() }
-        onNodeWithTag("key_backspace").performClick()
+        onNodeWithTag("system-amount-field").performTextReplacement("999")
+        onNodeWithTag("system-amount-field").performTextReplacement("99")
         onNodeWithText("Купити за 99").performClick()
 
         assertEquals(99L, confirmed)
@@ -86,8 +86,7 @@ class AmountFormRenderTest {
     @Test
     fun renderDark() = runComposeUiTest {
         form(dark = true)
-        onNodeWithTag("key_5").performClick()
-        onNodeWithTag("key_000").performClick()
+        onNodeWithTag("system-amount-field").performTextReplacement("5000")
         val image = onNodeWithTag("form").captureToImage().toAwtImage()
         File("build").mkdirs()
         ImageIO.write(image, "png", File("build/design-amount-dark.png"))
@@ -96,8 +95,7 @@ class AmountFormRenderTest {
     @Test
     fun renderLight() = runComposeUiTest {
         form(dark = false)
-        onNodeWithTag("key_5").performClick()
-        onNodeWithTag("key_000").performClick()
+        onNodeWithTag("system-amount-field").performTextReplacement("5000")
         val image = onNodeWithTag("form").captureToImage().toAwtImage()
         File("build").mkdirs()
         ImageIO.write(image, "png", File("build/design-amount-light.png"))

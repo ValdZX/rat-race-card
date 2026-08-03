@@ -5,15 +5,17 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
 import ua.vald_zx.game.rat.race.card.design.*
@@ -26,53 +28,89 @@ import ua.vald_zx.game.rat.race.card.splitDecimal
 
 @Composable
 fun DesignAuctionSheet(vm: BoardViewModel, fallbackAuction: Auction) {
-    val bottomSheetNavigator = LocalBottomSheetNavigator.current
-    val state by vm.uiState.collectAsState()
-    LaunchedEffect(state.board.takenCard) {
-        if (state.board.takenCard == null) bottomSheetNavigator.hide()
+    BottomSheetContainer(verticalScrollState = null) {
+        DesignAuctionPanel(vm, fallbackAuction)
     }
+}
+
+@Composable
+fun DesignAuctionPanel(
+    vm: BoardViewModel,
+    fallbackAuction: Auction,
+    modifier: Modifier = Modifier,
+) {
+    val state by vm.uiState.collectAsState()
     val auction = state.board.auction ?: fallbackAuction
     val minBid = if (state.board.bidList.isEmpty()) {
         auction.getBid
     } else {
         state.board.bidList.maxBy { it.bid }.bid
     }
-    var biddingOpen by remember { mutableStateOf(false) }
+    var biddingOpen by remember(auction) { mutableStateOf(false) }
 
-    BottomSheetContainer(verticalScrollState = null) {
-        when {
-            state.board.auction == null -> AdvertiseForm(vm, auction, minBid)
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("auction-panel")
+            .levelCard(Design.colors, DesignShapes.lg)
+            .clip(DesignShapes.lg)
+            .background(Design.scaffold.surface1)
+            .border(1.dp, Design.scaffold.outlineStrong, DesignShapes.lg)
+            .padding(14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        key(auction) {
+            when {
+                state.board.auction == null -> ScrollableAuctionForm {
+                    AdvertiseForm(vm, auction, minBid)
+                }
 
-            biddingOpen -> BidForm(
-                auction = auction,
-                minBid = minBid,
-                canPay = { state.canPay(it) },
-                onBack = { biddingOpen = false },
-                onBid = { bid, count ->
-                    biddingOpen = false
-                    vm.makeBid(bid, count)
-                },
-            )
+                biddingOpen -> ScrollableAuctionForm {
+                    BidForm(
+                        auction = auction,
+                        minBid = minBid,
+                        canPay = { state.canPay(it) },
+                        onBack = { biddingOpen = false },
+                        onBid = { bid, count ->
+                            biddingOpen = false
+                            vm.makeBid(bid, count)
+                        },
+                    )
+                }
 
-            else -> {
-                LotHeader(auction, minBid)
-                BidList(
-                    bids = state.board.bidList,
-                    auction = auction,
-                    sellEnabled = state.currentPlayerIsActive,
-                    onSell = { vm.sellBid(it) },
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                if (!state.currentPlayerIsActive && state.canMakeBid()) {
-                    DesignButton(
-                        text = stringResource(Res.string.placeBet),
-                        modifier = Modifier.fillMaxWidth(),
-                        height = 52.dp,
-                    ) { biddingOpen = true }
+                else -> {
+                    LotHeader(auction, minBid)
+                    BidList(
+                        bids = state.board.bidList,
+                        auction = auction,
+                        sellEnabled = state.currentPlayerIsActive,
+                        onSell = { vm.sellBid(it) },
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (!state.currentPlayerIsActive && state.canMakeBid()) {
+                        DesignButton(
+                            text = stringResource(Res.string.placeBet),
+                            modifier = Modifier.fillMaxWidth(),
+                            height = 52.dp,
+                        ) { biddingOpen = true }
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ColumnScope.ScrollableAuctionForm(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f, fill = false)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        content = content,
+    )
 }
 
 @Composable

@@ -1,7 +1,9 @@
 package ua.vald_zx.game.rat.race.card.screen.design
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
@@ -16,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -70,5 +73,37 @@ class DesignAuctionRenderTest {
         val image = onNodeWithTag("auction").captureToImage().toAwtImage()
         File("build").mkdirs()
         ImageIO.write(image, "png", File("build/design-auction.png"))
+    }
+
+    @Test
+    fun inlineAuctionPanelRendersInsideABoundedCardExtension() = runComposeUiTest {
+        val auction = Auction.BusinessAuction(
+            business = Business(type = BusinessType.SMALL, name = "Кав'ярня", price = 9500, profit = 380),
+            firstBid = 5000,
+        )
+        setContent {
+            InitPreviewWithVm { vm ->
+                Box(
+                    Modifier
+                        .size(420.dp, 500.dp)
+                        .background(Design.scaffold.background)
+                        .padding(12.dp)
+                ) {
+                    DesignAuctionPanel(
+                        vm = vm,
+                        fallbackAuction = auction,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        }
+        waitForIdle()
+
+        onNodeWithTag("auction-panel").assertExists()
+        onNodeWithTag("system-amount-field").assertExists()
+        onNodeWithTag("key_1").assertDoesNotExist()
+        val image = onNodeWithTag("auction-panel").captureToImage().toAwtImage()
+        File("build").mkdirs()
+        ImageIO.write(image, "png", File("build/design-auction-inline.png"))
     }
 }

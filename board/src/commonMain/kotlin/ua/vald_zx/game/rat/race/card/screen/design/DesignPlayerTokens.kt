@@ -1,6 +1,10 @@
 package ua.vald_zx.game.rat.race.card.screen.design
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.offset
@@ -17,6 +21,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.zIndex
 import kotlin.math.abs
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
+import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.RouteLayout
 import ua.vald_zx.game.rat.race.card.screen.board.SendMessageDialog
@@ -41,6 +46,7 @@ fun BoxScope.DesignPlayerTokens(vm: BoardViewModel, layout: RouteLayout, focus: 
 
 private const val COVERED_NEIGHBOURS = 1
 private const val PLAYER_TOKEN_Z = 1f
+private const val TOKEN_BUBBLE_Z = 2f
 
 @Composable
 private fun BoxScope.TokenLayer(
@@ -51,13 +57,22 @@ private fun BoxScope.TokenLayer(
 ) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     val state by vm.uiState.collectAsState()
+    val messageLog by vm.playerMessageLog.collectAsState()
     val live = state.player.location.level == layout.layer.level
+    var bubbleOwner by remember { mutableStateOf<String?>(null) }
     Box(
         modifier = Modifier
             .align(Alignment.Center)
             .size(layout.size)
-            .zIndex(PLAYER_TOKEN_Z)
+            .zIndex(if (bubbleOwner != null) FOCUSED_CELL_Z + 1f else PLAYER_TOKEN_Z)
     ) {
+        if (bubbleOwner != null) {
+            Box(
+                Modifier
+                    .size(layout.size)
+                    .clickableSingle { bubbleOwner = null }
+            )
+        }
         forEachPlayerPoint(vm, layout) { pointerState, places, index, count ->
             val place = places.getValue(pointerState.position)
             val focused = focus.key
@@ -81,6 +96,17 @@ private fun BoxScope.TokenLayer(
             }
             val x by animateDpAsState(target.first, label = "TokenX")
             val y by animateDpAsState(target.second, label = "TokenY")
+            val playerId = pointerState.player.id
+            val sendMoney = {
+                bubbleOwner = null
+                bottomSheetNavigator.show(
+                    SendMoneyScreen(
+                        vm = vm,
+                        playerId = playerId,
+                        playerName = pointerState.player.card.name,
+                    )
+                )
+            }
             DesignPlayerToken(
                 player = pointerState.player,
                 isCurrentPlayer = pointerState.isCurrentPlayer,
@@ -88,21 +114,50 @@ private fun BoxScope.TokenLayer(
                 spotSize = layout.cellSize,
                 modifier = Modifier
                     .offset(x, y)
-                    .testTag("player-token-${pointerState.player.id}"),
-                onClick = if (pointerState.isCurrentPlayer) {
-                    onOwnToken
-                } else {
-                    {
-                        bottomSheetNavigator.show(
-                            SendMoneyScreen(
-                                vm = vm,
-                                playerId = pointerState.player.id,
-                                playerName = pointerState.player.card.name,
-                            )
-                        )
-                    }
-                },
+                    .testTag("player-token-$playerId"),
+                onClick = { bubbleOwner = if (bubbleOwner == playerId) null else playerId },
             )
+            if (bubbleOwner == playerId) {
+                TokenBubbleAnchor(layout, target) {
+                    DesignTokenBubble(
+                        player = pointerState.player,
+                        isCurrentPlayer = pointerState.isCurrentPlayer,
+                        isActivePlayer = pointerState.isActivePlayer,
+                        messages = messageLog[playerId].orEmpty(),
+                        onSendMessage = {
+                            bubbleOwner = null
+                            onOwnToken()
+                        },
+                        onSendMoney = if (pointerState.isCurrentPlayer) null else sendMoney,
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun BoxScope.TokenBubbleAnchor(
+    layout: RouteLayout,
+    tokenOffset: Pair<Dp, Dp>,
+    content: @Composable () -> Unit,
+) {
+    val density = LocalDensity.current
+    var bubbleHeight by remember { mutableStateOf(0.dp) }
+    val above = tokenOffset.second > layout.size.height / 2
+    val left = (tokenOffset.first + layout.cellSize.width / 2 - tokenBubbleWidth / 2)
+        .coerceIn(0.dp, (layout.size.width - tokenBubbleWidth).coerceAtLeast(0.dp))
+    val top = if (above) {
+        tokenOffset.second - bubbleHeight
+    } else {
+        tokenOffset.second + layout.cellSize.height
+    }
+    Box(
+        modifier = Modifier
+            .offset(x = left, y = top)
+            .zIndex(TOKEN_BUBBLE_Z)
+            .onSizeChanged { bubbleHeight = with(density) { it.height.toDp() } },
+    ) {
+        content()
     }
 }

@@ -87,6 +87,8 @@ data class PlayerMessage(
     val text: String,
 )
 
+const val PLAYER_MESSAGE_LOG_SIZE = 3
+
 sealed class BoardUiAction {
     data class ConfirmDismissal(val business: Business) : BoardUiAction()
     data class Fired(val business: Business) : BoardUiAction()
@@ -133,6 +135,8 @@ class BoardViewModel(
 
     private val _playerMessages = MutableStateFlow<Map<String, PlayerMessage>>(emptyMap())
     val playerMessages: StateFlow<Map<String, PlayerMessage>> = _playerMessages.asStateFlow()
+    private val _playerMessageLog = MutableStateFlow<Map<String, List<PlayerMessage>>>(emptyMap())
+    val playerMessageLog: StateFlow<Map<String, List<PlayerMessage>>> = _playerMessageLog.asStateFlow()
     private var nextPlayerMessageId = 0L
     private var observationJob: Job? = null
     private var pingJob: Job? = null
@@ -445,6 +449,9 @@ class BoardViewModel(
         if (text.isBlank()) return
         val message = PlayerMessage(++nextPlayerMessageId, text)
         _playerMessages.update { it + (playerId to message) }
+        _playerMessageLog.update { log ->
+            log + (playerId to (log[playerId].orEmpty() + message).takeLast(PLAYER_MESSAGE_LOG_SIZE))
+        }
         viewModelScope.launch {
             delay((expiresAtEpochMs - Clock.System.now().toEpochMilliseconds()).coerceAtLeast(0).milliseconds)
             _playerMessages.update {

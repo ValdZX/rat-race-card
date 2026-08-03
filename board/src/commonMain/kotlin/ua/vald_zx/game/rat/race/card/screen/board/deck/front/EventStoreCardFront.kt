@@ -13,6 +13,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -22,9 +25,11 @@ import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.components.EButton
 import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
+import ua.vald_zx.game.rat.race.card.design.DesignTextField
 import ua.vald_zx.game.rat.race.card.components.OutlinedBasicTextField
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
+import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.EstateSelectScreen
 import ua.vald_zx.game.rat.race.card.screen.board.SellLandScreen
@@ -299,26 +304,40 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                         fontSize = unitTS * 12,
                     )
                     val value = if (count <= 0) "" else count.toString()
-                    OutlinedBasicTextField(
-                        modifier = Modifier.padding(top = smallPadding),
-                        value = value,
-                        onValueChange = {
-                            val tapedCount = it.toLongOrNull() ?: 0
-                            if (tapedCount <= maxCount) {
-                                count = tapedCount
-                            }
-                        },
-                        label = {
-                            Text(
-                                stringResource(Res.string.quantity),
-                                fontSize = unitTS * 11
-                            )
-                        },
-                        contentPadding = contentPadding(
-                            top = unitDp * 4,
-                            bottom = unitDp * 4
-                        ),
-                    )
+                    if (designV2Enabled.value) {
+                        DesignTextField(
+                            value = value,
+                            onValueChange = { input ->
+                                val enteredCount = input.filter(Char::isDigit).toLongOrNull() ?: 0
+                                if (enteredCount <= maxCount) count = enteredCount
+                            },
+                            modifier = Modifier.padding(top = smallPadding),
+                            label = stringResource(Res.string.quantity),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done,
+                            ),
+                        )
+                    } else {
+                        OutlinedBasicTextField(
+                            modifier = Modifier.padding(top = smallPadding),
+                            value = value,
+                            onValueChange = {
+                                val enteredCount = it.toLongOrNull() ?: 0
+                                if (enteredCount <= maxCount) count = enteredCount
+                            },
+                            label = {
+                                Text(
+                                    stringResource(Res.string.quantity),
+                                    fontSize = unitTS * 11,
+                                )
+                            },
+                            contentPadding = contentPadding(
+                                top = unitDp * 4,
+                                bottom = unitDp * 4,
+                            ),
+                        )
+                    }
                 }
                 EButton(
                     kind = DesignButtonKind.Filled,

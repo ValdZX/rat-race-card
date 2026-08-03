@@ -317,4 +317,5 @@
     <string name="tax_inspection">Tax audit</string>
     <string name="child">Child</string>
     <string name="love">Love</string>
+    <string name="player_turn_now">Now moving</string>
 </resources>

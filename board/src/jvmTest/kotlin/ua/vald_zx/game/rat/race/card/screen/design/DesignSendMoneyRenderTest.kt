@@ -10,7 +10,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
@@ -35,7 +35,7 @@ class DesignSendMoneyRenderTest {
         designV2Enabled.value = true
         showSheet()
 
-        onNodeWithTag("key_5").performClick()
+        onNodeWithTag("system-amount-field").performTextReplacement("5")
         waitForIdle()
         onNodeWithText("More than available").assertExists()
 

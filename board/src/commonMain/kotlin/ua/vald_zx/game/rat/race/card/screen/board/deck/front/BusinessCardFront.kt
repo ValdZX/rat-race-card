@@ -29,8 +29,10 @@ import ua.vald_zx.game.rat.race.card.components.EButton
 import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.formatAmount
+import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.AuctionScreen
+import ua.vald_zx.game.rat.race.card.screen.design.LocalAuctionPanelToggle
 import ua.vald_zx.game.rat.race.card.screen.board.cards.bigBusinessCards
 import ua.vald_zx.game.rat.race.card.screen.board.cards.mediumBusinessCards
 import ua.vald_zx.game.rat.race.card.screen.board.cards.smallBusinessCards
@@ -101,6 +103,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                 )
             }
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
+            val auctionPanelToggle = LocalAuctionPanelToggle.current
             val state by vm.uiState.collectAsState()
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
@@ -137,18 +140,17 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                     EButton(
                         enabled = !state.isProgress,
                         onClick = {
-                            bottomSheetNavigator.show(
-                                AuctionScreen(
-                                    vm, Auction.BusinessAuction(
-                                        Business(
-                                            type = BusinessType.SMALL,
-                                            name = card.name,
-                                            price = card.price,
-                                            profit = card.profit
-                                        ), card.price
-                                    )
-                                )
+                            val auction = Auction.BusinessAuction(
+                                Business(
+                                    type = BusinessType.SMALL,
+                                    name = card.name,
+                                    price = card.price,
+                                    profit = card.profit,
+                                ),
+                                card.price,
                             )
+                            if (designV2Enabled.value) auctionPanelToggle(auction)
+                            else bottomSheetNavigator.show(AuctionScreen(vm, auction))
                         },
                         title = stringResource(Res.string.auction),
                         unitTS = unitTS,
@@ -225,6 +227,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
             }
             val state by vm.uiState.collectAsState()
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
+            val auctionPanelToggle = LocalAuctionPanelToggle.current
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround
@@ -259,18 +262,17 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                     EButton(
                         enabled = !state.isProgress,
                         onClick = {
-                            bottomSheetNavigator.show(
-                                AuctionScreen(
-                                    vm, Auction.BusinessAuction(
-                                        Business(
-                                            type = BusinessType.MEDIUM,
-                                            name = card.name,
-                                            price = card.price,
-                                            profit = card.profit
-                                        ), card.price
-                                    )
-                                )
+                            val auction = Auction.BusinessAuction(
+                                Business(
+                                    type = BusinessType.MEDIUM,
+                                    name = card.name,
+                                    price = card.price,
+                                    profit = card.profit,
+                                ),
+                                card.price,
                             )
+                            if (designV2Enabled.value) auctionPanelToggle(auction)
+                            else bottomSheetNavigator.show(AuctionScreen(vm, auction))
                         },
                         title = stringResource(Res.string.auction),
                         unitTS = unitTS,
@@ -347,6 +349,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
             }
             val state by vm.uiState.collectAsState()
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
+            val auctionPanelToggle = LocalAuctionPanelToggle.current
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround
@@ -382,18 +385,17 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                     EButton(
                         modifier = Modifier,
                         onClick = {
-                            bottomSheetNavigator.show(
-                                AuctionScreen(
-                                    vm, Auction.BusinessAuction(
-                                        Business(
-                                            type = BusinessType.LARGE,
-                                            name = card.name,
-                                            price = card.price,
-                                            profit = card.profit
-                                        ), card.price
-                                    )
-                                )
+                            val auction = Auction.BusinessAuction(
+                                Business(
+                                    type = BusinessType.LARGE,
+                                    name = card.name,
+                                    price = card.price,
+                                    profit = card.profit,
+                                ),
+                                card.price,
                             )
+                            if (designV2Enabled.value) auctionPanelToggle(auction)
+                            else bottomSheetNavigator.show(AuctionScreen(vm, auction))
                         },
                         title = stringResource(Res.string.auction),
                         unitTS = unitTS,

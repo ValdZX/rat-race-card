@@ -322,4 +322,5 @@
     <string name="tax_inspection">Податкова</string>
     <string name="child">Дитина</string>
     <string name="love">Кохання</string>
+    <string name="player_turn_now">Зараз ходить</string>
 </resources>

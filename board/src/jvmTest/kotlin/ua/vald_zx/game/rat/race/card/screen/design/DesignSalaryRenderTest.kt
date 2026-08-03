@@ -20,6 +20,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.design.Design
@@ -74,7 +75,7 @@ class DesignSalaryRenderTest {
         }
         waitForIdle()
 
-        listOf("5", "0", "0").forEach { onNodeWithTag("key_$it").performClick() }
+        onNodeWithTag("system-amount-field").performTextReplacement("500")
         onNodeWithText("Грати 500").performClick()
         assertEquals(null, played, "без вибраного числа ставка не приймається")
 
