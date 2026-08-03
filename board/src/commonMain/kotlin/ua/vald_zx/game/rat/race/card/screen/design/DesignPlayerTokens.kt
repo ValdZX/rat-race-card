@@ -13,7 +13,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.zIndex
 import kotlin.math.abs
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
@@ -59,21 +58,27 @@ private fun BoxScope.TokenLayer(
     ) {
         forEachPlayerPoint(vm, layout) { pointerState, places, index, count ->
             val place = places.getValue(pointerState.position)
-            val target = calculatePointerOffset(
-                layout.cellSize.width,
-                layout.cellSize.height,
-                place,
-                index,
-                count,
-            )
             val focused = focus.key
             val stepsAside = live && focused != null &&
                     focused.first == layout.layer.level &&
                     abs(focused.second - pointerState.position) <= COVERED_NEIGHBOURS
             val openBox = focus.expandedBox ?: expandedCellBox(layout)
-            val floatBy = if (stepsAside) tokenFloat(layout, place, openBox) else DpOffset.Zero
-            val x by animateDpAsState(target.first + floatBy.x, label = "TokenX")
-            val y by animateDpAsState(target.second + floatBy.y, label = "TokenY")
+            val target = if (stepsAside) {
+                expandedTokenOffset(layout, place, index, count, openBox)
+            } else {
+                calculatePointerOffset(
+                    layout.cellSize.width,
+                    layout.cellSize.height,
+                    place,
+                    index,
+                    count,
+                )
+            }
+            if (stepsAside && focused.second == pointerState.position) {
+                focus.reportTokenCount(focused, count)
+            }
+            val x by animateDpAsState(target.first, label = "TokenX")
+            val y by animateDpAsState(target.second, label = "TokenY")
             DesignPlayerToken(
                 player = pointerState.player,
                 isCurrentPlayer = pointerState.isCurrentPlayer,

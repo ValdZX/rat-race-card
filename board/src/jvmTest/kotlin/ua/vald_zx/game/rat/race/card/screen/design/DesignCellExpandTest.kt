@@ -22,6 +22,10 @@ import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.shared.PlaceType
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import ua.vald_zx.game.rat.race.card.screen.board.calculateBoardLayout
 import ua.vald_zx.game.rat.race.card.screen.board.Place
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -226,6 +230,30 @@ class DesignCellExpandTest {
             press()
             release()
         }
+    }
+
+    @Test
+    fun waitingAmountShowsUpOnlyWhenTheCellOpens() = runComposeUiTest {
+        var expanded by mutableStateOf(false)
+        setContent {
+            AppTheme(forceDark = false) {
+                Box(Modifier.size(200.dp).background(Design.scaffold.background).testTag("board")) {
+                    DesignPlaceCell(
+                        type = PlaceType.Salary,
+                        label = "Salary",
+                        expanded = expanded,
+                        waitingAmount = 3200,
+                        modifier = Modifier.size(if (expanded) 140.dp else 40.dp, 60.dp),
+                    )
+                }
+            }
+        }
+        waitForIdle()
+        onNodeWithText("+3 200", useUnmergedTree = true).assertDoesNotExist()
+
+        expanded = true
+        waitForIdle()
+        onNodeWithText("+3 200", useUnmergedTree = true).assertExists()
     }
 
     private fun ComposeUiTest.showBoard(liveOuter: Boolean = false, board: DpSize = size) =

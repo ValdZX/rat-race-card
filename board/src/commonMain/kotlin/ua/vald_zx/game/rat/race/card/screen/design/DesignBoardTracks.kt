@@ -53,6 +53,8 @@ import ua.vald_zx.game.rat.race.card.shared.fundAmount
 import ua.vald_zx.game.rat.race.card.shared.moveTo
 
 private val trackGap = 1.5.dp
+private val tokenRowGap = 2.dp
+private val tokenCellGap = 4.dp
 
 internal const val FOCUSED_CELL_Z = 10f
 
@@ -99,11 +101,22 @@ class CellFocus {
     var expandedBox by mutableStateOf<DpSize?>(null)
         private set
 
+    private var tokenCountKey: Pair<Int, Int>? = null
+    private var reportedTokenCount = 1
+
     val key: Pair<Int, Int>? get() = hovered ?: tapped
 
     internal fun reportExpandedBox(size: DpSize) {
         expandedBox = size
     }
+
+    internal fun reportTokenCount(cell: Pair<Int, Int>, count: Int) {
+        tokenCountKey = cell
+        reportedTokenCount = count
+    }
+
+    internal fun tokenCountFor(cell: Pair<Int, Int>?) =
+        reportedTokenCount.takeIf { cell != null && tokenCountKey == cell } ?: 1
 
     internal fun hover(cell: Pair<Int, Int>?) {
         hovered = cell
@@ -145,7 +158,14 @@ fun Modifier.cellFocusTracking(routes: List<RouteLayout>, focus: CellFocus): Mod
                         null
                     } else {
                         routes.firstNotNullOfOrNull {
-                            heldCell(it, point, size, focus.key, focus.expandedBox ?: expandedCellBox(it))
+                            heldCell(
+                                it,
+                                point,
+                                size,
+                                focus.key,
+                                focus.expandedBox ?: expandedCellBox(it),
+                                focus.tokenCountFor(focus.key),
+                            )
                         } ?: routes.firstNotNullOfOrNull { cellUnder(it, point, size) }
                     }
                 )
@@ -159,11 +179,14 @@ internal fun Density.heldCell(
     boardSize: IntSize,
     held: Pair<Int, Int>?,
     openBox: DpSize = expandedCellBox(route),
+    tokenCount: Int = 1,
 ): Pair<Int, Int>? {
     if (held?.first != route.layer.level) return null
     val place = route.places.firstOrNull { it.index == held.second }?.place ?: return null
     val local = toLocal(route, point, boardSize)
-    return held.takeIf { focusBounds(route, place, openBox).holds(local.first, local.second) }
+    return held.takeIf {
+        focusBounds(route, place, openBox, tokenCount).holds(local.first, local.second)
+    }
 }
 
 internal fun Density.cellUnder(
@@ -193,27 +216,79 @@ internal fun cellBounds(layout: RouteLayout, place: Place, size: DpSize): DpRect
 }
 
 internal fun tokenFloat(layout: RouteLayout, place: Place, openBox: DpSize): DpOffset {
+    val centeredX = place.offset.x + (place.size.width - layout.cellSize.width) / 2
+    val centeredY = place.offset.y + (place.size.height - layout.cellSize.height) / 2
     val fromCenterX = place.offset.x + place.size.width / 2 - layout.size.width / 2
     val fromCenterY = place.offset.y + place.size.height / 2 - layout.size.height / 2
+    val expanded = cellBounds(layout, place, openBox)
     return if (place.location.side.isHorizontal) {
-        val shift = openBox.height / 2 + layout.cellSize.height / 2 + 4.dp
-        DpOffset(0.dp, if (fromCenterY > 0.dp) -shift else shift)
+        val targetY = if (fromCenterY > 0.dp) {
+            expanded.bottom + tokenCellGap
+        } else {
+            expanded.top - layout.cellSize.height - tokenCellGap
+        }.visibleOnOuterRoute(layout.size.height - layout.cellSize.height, layout.layer)
+        DpOffset(0.dp, targetY - centeredY)
     } else {
-        val shift = openBox.width / 2 + layout.cellSize.width / 2 + 4.dp
-        DpOffset(if (fromCenterX > 0.dp) -shift else shift, 0.dp)
+        val targetX = if (fromCenterX > 0.dp) {
+            expanded.right + tokenCellGap
+        } else {
+            expanded.left - layout.cellSize.width - tokenCellGap
+        }.visibleOnOuterRoute(layout.size.width - layout.cellSize.width, layout.layer)
+        DpOffset(targetX - centeredX, 0.dp)
     }
 }
 
-private fun parkedTokenBounds(layout: RouteLayout, place: Place, openBox: DpSize): DpRect {
+private fun Dp.visibleOnOuterRoute(max: Dp, layer: BoardLayer) =
+    if (layer == BoardLayer.OUTER) coerceIn(0.dp, max.coerceAtLeast(0.dp)) else this
+
+internal fun expandedTokenOffset(
+    layout: RouteLayout,
+    place: Place,
+    index: Int,
+    count: Int,
+    openBox: DpSize,
+): Pair<Dp, Dp> {
+    val safeCount = count.coerceAtLeast(1)
     val float = tokenFloat(layout, place, openBox)
-    val left = place.offset.x + (place.size.width - layout.cellSize.width) / 2 + float.x
-    val top = place.offset.y + (place.size.height - layout.cellSize.height) / 2 + float.y
-    return DpRect(left, top, left + layout.cellSize.width, top + layout.cellSize.height)
+    val centeredX = place.offset.x + (place.size.width - layout.cellSize.width) / 2 + float.x
+    val centeredY = place.offset.y + (place.size.height - layout.cellSize.height) / 2 + float.y
+    return if (place.location.side.isHorizontal) {
+        val rowWidth = layout.cellSize.width * safeCount + tokenRowGap * (safeCount - 1)
+        val rowStart = (place.offset.x + place.size.width / 2 - rowWidth / 2)
+            .coerceIn(0.dp, (layout.size.width - rowWidth).coerceAtLeast(0.dp))
+        Pair(rowStart + (layout.cellSize.width + tokenRowGap) * index, centeredY)
+    } else {
+        val rowHeight = layout.cellSize.height * safeCount + tokenRowGap * (safeCount - 1)
+        val rowStart = (place.offset.y + place.size.height / 2 - rowHeight / 2)
+            .coerceIn(0.dp, (layout.size.height - rowHeight).coerceAtLeast(0.dp))
+        Pair(centeredX, rowStart + (layout.cellSize.height + tokenRowGap) * index)
+    }
 }
 
-private fun focusBounds(layout: RouteLayout, place: Place, openBox: DpSize): DpRect {
+private fun parkedTokenBounds(
+    layout: RouteLayout,
+    place: Place,
+    openBox: DpSize,
+    tokenCount: Int,
+): DpRect {
+    val first = expandedTokenOffset(layout, place, 0, tokenCount, openBox)
+    val last = expandedTokenOffset(layout, place, tokenCount - 1, tokenCount, openBox)
+    return DpRect(
+        left = minOf(first.first, last.first),
+        top = minOf(first.second, last.second),
+        right = maxOf(first.first, last.first) + layout.cellSize.width,
+        bottom = maxOf(first.second, last.second) + layout.cellSize.height,
+    )
+}
+
+private fun focusBounds(
+    layout: RouteLayout,
+    place: Place,
+    openBox: DpSize,
+    tokenCount: Int,
+): DpRect {
     val expanded = cellBounds(layout, place, openBox)
-    val parked = parkedTokenBounds(layout, place, openBox)
+    val parked = parkedTokenBounds(layout, place, openBox, tokenCount)
     return DpRect(
         left = minOf(expanded.left, parked.left),
         top = minOf(expanded.top, parked.top),

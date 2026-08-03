@@ -232,7 +232,7 @@ class DesignTokenFloatTest {
     }
 
     @Test
-    fun everyTokenStepsTowardTheBoardCentre() {
+    fun everyTokenStepsAwayFromTheBoardCentre() {
         val layout = calculateBoardLayout(board, isVertical = false)!!
         listOf(layout.outerRoute, layout.innerRoute).forEach { route ->
             val centreX = route.size.width / 2
@@ -243,9 +243,29 @@ class DesignTokenFloatTest {
                 val fromY = place.offset.y + place.size.height / 2 - centreY
                 val moved = hypot((fromX + float.x).value, (fromY + float.y).value)
                 assertTrue(
-                    moved < hypot(fromX.value, fromY.value),
-                    "клітинка $index на ${route.layer}: фішка пішла від центру дошки, а не до нього",
+                    moved > hypot(fromX.value, fromY.value),
+                    "клітинка $index на ${route.layer}: фішка пішла до центру дошки, а не назовні",
                 )
+            }
+        }
+    }
+
+    @Test
+    fun tokensOnOneCellFormOneRow() {
+        val layout = calculateBoardLayout(board, isVertical = false)!!
+        listOf(layout.outerRoute, layout.innerRoute).forEach { route ->
+            route.places.forEach { (placeIndex, place) ->
+                val offsets = List(5) { index ->
+                    expandedTokenOffset(route, place, index, 5, expandedCellBox(route))
+                }
+                if (place.location.side.isHorizontal) {
+                    assertEquals(1, offsets.map { it.second }.distinct().size)
+                    assertTrue(offsets.zipWithNext().all { (first, second) -> first.first < second.first })
+                } else {
+                    assertEquals(1, offsets.map { it.first }.distinct().size)
+                    assertTrue(offsets.zipWithNext().all { (first, second) -> first.second < second.second })
+                }
+                assertEquals(5, offsets.distinct().size, "клітинка $placeIndex на ${route.layer}")
             }
         }
     }

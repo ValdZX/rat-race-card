@@ -170,7 +170,7 @@ fun DesignPlaceCell(
             icon(Modifier.fillMaxSize(0.66f))
         }
     }
-        if (waitingAmount != null) {
+        if (waitingAmount != null && expanded) {
             WaitingToken(waitingAmount, Modifier.offset(x = 6.dp, y = (-8).dp))
         }
     }

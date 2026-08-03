@@ -54,6 +54,7 @@ class DesignThemeGuardTest {
                     DesignPlaceCell(
                         type = PlaceType.Salary,
                         label = "Salary",
+                        expanded = true,
                         waitingAmount = 3200,
                     )
                 }

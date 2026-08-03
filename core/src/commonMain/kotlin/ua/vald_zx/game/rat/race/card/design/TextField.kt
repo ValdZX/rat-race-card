@@ -73,7 +73,7 @@ fun DesignTextField(
                     ),
                 decorationBox = { inner ->
                     Box(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 14.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
                         contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
                     ) {
                         if (value.isEmpty() && placeholder != null) {
