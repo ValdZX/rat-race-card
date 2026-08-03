@@ -7,6 +7,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
+import ua.vald_zx.game.rat.race.card.GameSound
+import ua.vald_zx.game.rat.race.card.play
 import ua.vald_zx.game.rat.race.card.shared.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
@@ -220,6 +222,13 @@ class BoardViewModel(
                         }
                         if (changedPlayer.id == _uiState.value.player.id) {
                             _uiState.update { it.copy(player = changedPlayer) }
+                        }
+                        if (oldPlayer != null && oldPlayer.location != changedPlayer.location) {
+                            if (changedPlayer.id == _uiState.value.player.id) {
+                                play(landingSound(changedPlayer.location))
+                            } else {
+                                play(GameSound.TokenStep)
+                            }
                         }
                         changedPlayer.speech
                             ?.takeIf {

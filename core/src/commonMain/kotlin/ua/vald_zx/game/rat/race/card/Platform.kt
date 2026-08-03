@@ -29,13 +29,21 @@ var storageKeyPrefix = ""
 val appKStore: KStore<AppDataStorageBean>
     get() = getStore("${storageKeyPrefix}_appData.json", AppDataStorageBean("", null))
 
+enum class GameSound(internal val file: String) {
+    Coin("coin.mp3"),
+    PlaceService("place_service.mp3"),
+    PlaceCard("place_card.mp3"),
+    PlaceLoss("place_loss.mp3"),
+    PlaceAsset("place_asset.mp3"),
+    PlaceLife("place_life.mp3"),
+    TokenStep("token_step.mp3"),
+}
+
 @OptIn(ExperimentalBasicSound::class)
 private val soundBoard = SoundBoard(platformContext).apply {
-    val coin = SoundByte(
-        name = "coin",
-        localPath = Res.getUri("files/coin.mp3")
-    )
-    load(coin)
+    GameSound.entries.forEach { sound ->
+        load(SoundByte(name = sound.name, localPath = Res.getUri("files/${sound.file}")))
+    }
     try {
         powerUp()
     } catch (e: Exception) {
@@ -44,9 +52,15 @@ private val soundBoard = SoundBoard(platformContext).apply {
 }
 
 @OptIn(ExperimentalBasicSound::class)
-fun playCoin() {
-    soundBoard.mixer.play("coin")
+fun play(sound: GameSound) {
+    try {
+        soundBoard.mixer.play(sound.name)
+    } catch (e: Exception) {
+        Napier.e("sound error", e)
+    }
 }
+
+fun playCoin() = play(GameSound.Coin)
 
 expect val noIme: Boolean
 expect val platformContext: Any
