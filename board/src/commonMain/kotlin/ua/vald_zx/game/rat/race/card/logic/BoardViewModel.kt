@@ -52,8 +52,15 @@ data class BoardState(
         return (board.loanLimit + player.balance() - player.loan - price) > 0
     }
 
-    fun canBuyBusiness(): Boolean {
-        return player.businesses.size <= board.businessLimit
+    val hasBusinessSlot: Boolean
+        get() = player.businesses.size <= board.businessLimit
+
+    fun canBuy(price: Long): Boolean {
+        return !isProgress && currentPlayerIsActive && canPay(price)
+    }
+
+    fun canBuyBusiness(price: Long): Boolean {
+        return canBuy(price) && hasBusinessSlot
     }
 
     fun canMakeBid(): Boolean {
@@ -61,7 +68,7 @@ data class BoardState(
         val auction = board.auction ?: return false
         return when (auction) {
             is Auction.BusinessAuction -> {
-                canPay(auction.firstBid) && canBuyBusiness()
+                canPay(auction.firstBid) && hasBusinessSlot
             }
 
             is Auction.EstateAuction -> {

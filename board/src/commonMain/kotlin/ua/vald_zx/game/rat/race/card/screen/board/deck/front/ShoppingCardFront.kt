@@ -98,7 +98,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                     EButton(
                         kind = DesignButtonKind.Filled,
                         onClick = { vm.buy(card) },
-                        enabled = !state.isProgress && state.canPay(card.price),
+                        enabled = state.canBuy(card.price),
                         title = stringResource(Res.string.buy),
                         unitTS = unitTS,
                         unitDp = unitDp,

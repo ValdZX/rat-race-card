@@ -120,7 +120,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                     EButton(
                         kind = DesignButtonKind.Filled,
                         modifier = Modifier,
-                        enabled = !state.isProgress && state.canPay(card.price) && state.canBuyBusiness(),
+                        enabled = state.canBuyBusiness(card.price),
                         onClick = {
                             vm.buyBusiness(
                                 Business(
@@ -242,7 +242,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                     )
                     EButton(
                         kind = DesignButtonKind.Filled,
-                        enabled = !state.isProgress && state.canPay(card.price) && state.canBuyBusiness(),
+                        enabled = state.canBuyBusiness(card.price),
                         onClick = {
                             vm.buyBusiness(
                                 Business(
@@ -365,7 +365,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                     EButton(
                         kind = DesignButtonKind.Filled,
                         modifier = Modifier,
-                        enabled = !state.isProgress && state.canPay(card.price) && state.canBuyBusiness(),
+                        enabled = state.canBuyBusiness(card.price),
                         onClick = {
                             vm.buyBusiness(
                                 Business(

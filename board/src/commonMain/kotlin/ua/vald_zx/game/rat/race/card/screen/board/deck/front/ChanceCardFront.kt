@@ -134,7 +134,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
                     kind = DesignButtonKind.Filled,
                     onClick = { vm.buy(card) },
                     title = stringResource(Res.string.buy),
-                    enabled = !state.isProgress && state.canPay(card.price),
+                    enabled = state.canBuy(card.price),
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )
@@ -252,7 +252,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
                 )
                 EButton(
                     kind = DesignButtonKind.Filled,
-                    enabled = !state.isProgress,
+                    enabled = state.canBuy(card.price),
                     onClick = { vm.buy(card) },
                     title = stringResource(Res.string.buy),
                     unitTS = unitTS,
@@ -455,7 +455,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 EButton(
                     kind = DesignButtonKind.Filled,
                     onClick = { vm.buyShares(card, count) },
-                    enabled = !state.isProgress && count > 0 && state.canPay(card.price * count),
+                    enabled = count > 0 && state.canBuy(card.price * count),
                     title = stringResource(Res.string.buy),
                     unitTS = unitTS,
                     unitDp = unitDp,

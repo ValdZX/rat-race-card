@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import com.composables.core.BottomSheetState
 import kotlinx.coroutines.launch
@@ -180,7 +181,7 @@ private fun YouChip() {
 }
 
 @Composable
-private fun BalanceRow(player: Player) {
+internal fun BalanceRow(player: Player) {
     val colors = Design.colors
     val type = Design.type
     Row(
@@ -192,28 +193,59 @@ private fun BalanceRow(player: Player) {
             label = stringResource(Res.string.total_assets),
             amount = player.total(),
             color = colors.scaffold.brass,
+            changes = player.lastTotals,
         )
         AmountBlock(
             label = stringResource(Res.string.cash_flow),
             amount = player.cashFlow(),
             color = if (player.cashFlow() >= 0) Design.semantic.positive.edge else Design.semantic.negative.edge,
+            changes = player.lastCashFlows,
         )
     }
 }
 
 @Composable
-private fun AmountBlock(label: String, amount: Long, color: androidx.compose.ui.graphics.Color) {
+private fun AmountBlock(
+    label: String,
+    amount: Long,
+    color: androidx.compose.ui.graphics.Color,
+    changes: List<Long>,
+) {
     Column(horizontalAlignment = Alignment.End) {
         Text(label, style = Design.type.micro, color = Design.scaffold.onSurfaceMuted)
         Text(
             text = amount.splitDecimal(),
-            style = Design.type.amountLg,
+            style = Design.type.amountMd,
             color = color,
             maxLines = 1,
             softWrap = false,
         )
+        RecentChanges(changes)
     }
 }
+
+@Composable
+private fun RecentChanges(changes: List<Long>) {
+    val recent = changes.takeLast(RECENT_CHANGES)
+    if (recent.isEmpty()) return
+    Column(horizontalAlignment = Alignment.End) {
+        recent.forEach { change ->
+            Text(
+                text = change.formatSigned(),
+                style = Design.type.monoMeta.copy(lineHeight = 11.sp),
+                color = if (change >= 0) {
+                    Design.scaffold.accentDim
+                } else {
+                    Design.semantic.negative.edge
+                },
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
+    }
+}
+
+private const val RECENT_CHANGES = 3
 
 @Composable
 private fun PendingSalary(vm: BoardViewModel, player: Player) {
