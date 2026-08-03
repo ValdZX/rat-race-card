@@ -28,14 +28,19 @@ internal const val TokenPulseSpreadFraction = 0.4f
 
 private val PulseEasing = CubicBezierEasing(0f, 0f, 0.58f, 1f)
 
+internal fun pulseProgress(progress: Float): Float {
+    if (progress >= PulseVisiblePart) return 1f
+    return PulseEasing.transform(progress / PulseVisiblePart)
+}
+
 internal fun pulseSpreadFraction(progress: Float, maxFraction: Float = PulseSpreadFraction): Float {
     if (progress >= PulseVisiblePart) return 0f
-    return PulseEasing.transform(progress / PulseVisiblePart) * maxFraction
+    return pulseProgress(progress) * maxFraction
 }
 
 internal fun pulseAlpha(progress: Float): Float {
     if (progress >= PulseVisiblePart) return 0f
-    return 1f - PulseEasing.transform(progress / PulseVisiblePart)
+    return 1f - pulseProgress(progress)
 }
 
 @Composable

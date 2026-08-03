@@ -59,7 +59,7 @@ import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.design.DesignShapes
-import ua.vald_zx.game.rat.race.card.screen.design.DesignActivePulse
+import ua.vald_zx.game.rat.race.card.screen.design.DesignActiveWaves
 import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDialog
 import ua.vald_zx.game.rat.race.card.screen.design.DesignPlayerSheet
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
@@ -690,7 +690,7 @@ fun BoxScope.Controls(vm: BoardViewModel) {
     }
 }
 
-private const val DICE_BODY_FRACTION = 0.53f
+private const val DICE_WAVE_FRACTION = 1.15f
 private const val DICE_BODY_DROP = 0.16f
 
 @Composable
@@ -723,11 +723,10 @@ fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
         ) {
             if (state.canRoll) {
                 if (designV2Enabled.value) {
-                    DesignActivePulse(
-                        shape = RoundedCornerShape(rollSize * DICE_BODY_FRACTION * 0.29f),
+                    DesignActiveWaves(
                         color = Design.scaffold.accentDim,
                         modifier = Modifier
-                            .size(rollSize * DICE_BODY_FRACTION)
+                            .size(rollSize * DICE_WAVE_FRACTION)
                             .offset(y = rollSize * DICE_BODY_DROP),
                     )
                 } else {
