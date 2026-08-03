@@ -79,7 +79,7 @@ fun BoxScope.DesignBoardTracks(vm: BoardViewModel, layout: BoardLayout, focus: C
         focus = focus,
         onSalaryClick = onSalary,
         onStartClick = onStart,
-    )
+    ) { DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus) }
     DesignTrack(
         layout = layout.innerRoute,
         surface = if (playerLevel == layout.innerRoute.layer.level) CellSurface.Tile else CellSurface.Engraved,
@@ -87,7 +87,7 @@ fun BoxScope.DesignBoardTracks(vm: BoardViewModel, layout: BoardLayout, focus: C
         focus = focus,
         onSalaryClick = onSalary,
         onStartClick = onStart,
-    )
+    ) { DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus) }
 }
 
 @Stable
@@ -302,7 +302,16 @@ internal fun BoxScope.DesignTrackForTest(
     layout: RouteLayout,
     surface: CellSurface,
     focus: CellFocus = rememberCellFocus(),
-) = DesignTrack(layout, surface, player = null, focus = focus, onSalaryClick = null, onStartClick = null)
+    tokenContent: @Composable BoxScope.() -> Unit = {},
+) = DesignTrack(
+    layout,
+    surface,
+    player = null,
+    focus = focus,
+    onSalaryClick = null,
+    onStartClick = null,
+    tokenContent = tokenContent,
+)
 
 @Composable
 private fun BoxScope.DesignTrack(
@@ -312,6 +321,7 @@ private fun BoxScope.DesignTrack(
     focus: CellFocus,
     onSalaryClick: (() -> Unit)?,
     onStartClick: (() -> Unit)?,
+    tokenContent: @Composable BoxScope.() -> Unit,
 ) {
     val colors = Design.colors
     val blendBedEdges = layout.layer != BoardLayer.OUTER
@@ -344,16 +354,16 @@ private fun BoxScope.DesignTrack(
         modifier = Modifier
             .align(Alignment.Center)
             .size(layout.size)
-            .alpha(bedAlpha)
             .zIndex(if (focusedIndex != null) FOCUSED_CELL_Z else 0f)
     ) {
         layout.places.forEach { (index, place) ->
             TrackCell(
                 layout, place, index, live, surface, player, focus,
                 expandedBox, expandedIcon, index == focusedIndex,
-                onSalaryClick, onStartClick,
+                onSalaryClick, onStartClick, bedAlpha,
             )
         }
+        tokenContent()
     }
 }
 
@@ -371,6 +381,7 @@ private fun BoxScope.TrackCell(
     expanded: Boolean,
     onSalaryClick: (() -> Unit)?,
     onStartClick: (() -> Unit)?,
+    cellAlpha: Float,
 ) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
@@ -430,6 +441,7 @@ private fun BoxScope.TrackCell(
         modifier = Modifier
             .offset(bounds.left, bounds.top)
             .size(width, height)
+            .alpha(cellAlpha)
             .zIndex(if (expanded) 2f else if (waitingAmount != null) 1f else 0f),
     )
 }

@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.zIndex
 import kotlin.math.abs
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
@@ -39,6 +40,7 @@ fun BoxScope.DesignPlayerTokens(vm: BoardViewModel, layout: RouteLayout, focus: 
 }
 
 private const val COVERED_NEIGHBOURS = 1
+private const val PLAYER_TOKEN_Z = 1f
 
 @Composable
 private fun BoxScope.TokenLayer(
@@ -54,7 +56,7 @@ private fun BoxScope.TokenLayer(
         modifier = Modifier
             .align(Alignment.Center)
             .size(layout.size)
-            .zIndex(FOCUSED_CELL_Z + 1f)
+            .zIndex(PLAYER_TOKEN_Z)
     ) {
         forEachPlayerPoint(vm, layout) { pointerState, places, index, count ->
             val place = places.getValue(pointerState.position)
@@ -84,7 +86,9 @@ private fun BoxScope.TokenLayer(
                 isCurrentPlayer = pointerState.isCurrentPlayer,
                 isActivePlayer = pointerState.isActivePlayer,
                 spotSize = layout.cellSize,
-                modifier = Modifier.offset(x, y),
+                modifier = Modifier
+                    .offset(x, y)
+                    .testTag("player-token-${pointerState.player.id}"),
                 onClick = if (pointerState.isCurrentPlayer) {
                     onOwnToken
                 } else {

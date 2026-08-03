@@ -11,8 +11,6 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
-import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -103,8 +101,9 @@ class DesignTokenFloatTest {
                                 .cellFocusTracking(listOf(layout.innerRoute), focus)
                                 .testTag("board")
                         ) {
-                            DesignTrackForTest(layout.innerRoute, CellSurface.Tile, focus)
-                            DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus)
+                            DesignTrackForTest(layout.innerRoute, CellSurface.Tile, focus) {
+                                DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus)
+                            }
                         }
                     }
                 }
@@ -144,14 +143,15 @@ class DesignTokenFloatTest {
                             .cellFocusTracking(listOf(layout.innerRoute), focus)
                             .testTag("board")
                     ) {
-                        DesignTrackForTest(layout.innerRoute, CellSurface.Tile, focus)
-                        DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus)
+                        DesignTrackForTest(layout.innerRoute, CellSurface.Tile, focus) {
+                            DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus)
+                        }
                     }
                 }
             }
         }
         waitForIdle()
-        val tokenHome = tokenBounds()
+        val tokenHome = tokenBounds("3")
 
         val shown = layout.innerRoute.places.first {
             it.index == moveTo(target.index, layout.innerRoute.layer.cellCount, layout.innerRoute.route.offset)
@@ -168,7 +168,7 @@ class DesignTokenFloatTest {
         waitForIdle()
 
         assertTrue(
-            tokenBounds() != tokenHome,
+            tokenBounds("3") != tokenHome,
             "сусідня фішка лишилась на місці й накриває підпис",
         )
     }
@@ -198,8 +198,9 @@ class DesignTokenFloatTest {
                             .cellFocusTracking(listOf(route), focus)
                             .testTag("board")
                     ) {
-                        DesignTrackForTest(route, CellSurface.Tile, focus)
-                        DesignPlayerTokens(vm = vm, layout = route, focus = focus)
+                        DesignTrackForTest(route, CellSurface.Tile, focus) {
+                            DesignPlayerTokens(vm = vm, layout = route, focus = focus)
+                        }
                     }
                 }
             }
@@ -223,7 +224,7 @@ class DesignTokenFloatTest {
         waitForIdle()
 
         val label = onNodeWithText("Shopping", useUnmergedTree = true).getBoundsInRoot()
-        val token = tokenBounds()
+        val token = tokenBounds("5")
         assertTrue(
             token.left >= label.right || token.right <= label.left ||
                     token.top >= label.bottom || token.bottom <= label.top,
@@ -292,14 +293,15 @@ class DesignTokenFloatTest {
                             .cellFocusTracking(listOf(layout.outerRoute), focus)
                             .testTag("board")
                     ) {
-                        DesignTrackForTest(layout.outerRoute, CellSurface.Engraved, focus)
-                        DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus)
+                        DesignTrackForTest(layout.outerRoute, CellSurface.Engraved, focus) {
+                            DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus)
+                        }
                     }
                 }
             }
         }
         waitForIdle()
-        val home = tokenBounds()
+        val home = tokenBounds("4")
 
         val shown = layout.outerRoute.places.first {
             it.index == moveTo(standsOn.index, layout.outerRoute.layer.cellCount, layout.outerRoute.route.offset)
@@ -317,7 +319,7 @@ class DesignTokenFloatTest {
         mainClock.advanceTimeBy(600)
         waitForIdle()
 
-        assertEquals(home, tokenBounds(), "фішка рушила через наведення на неактивне коло")
+        assertEquals(home, tokenBounds("4"), "фішка рушила через наведення на неактивне коло")
     }
 
     @Test
@@ -342,8 +344,8 @@ class DesignTokenFloatTest {
         assertEquals(settled, tokenBounds(), "фішка й далі стрибає — саме з цього починалось блимання")
     }
 
-    private fun ComposeUiTest.tokenBounds() =
-        onAllNodes(hasClickAction()).onLast().getBoundsInRoot()
+    private fun ComposeUiTest.tokenBounds(playerId: String = "2") =
+        onNodeWithTag("player-token-$playerId").getBoundsInRoot()
 
     private fun ComposeUiTest.capture() {
         val image = onNodeWithTag("board").captureToImage().toAwtImage()

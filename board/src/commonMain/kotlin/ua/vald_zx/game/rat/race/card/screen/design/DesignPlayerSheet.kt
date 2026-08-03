@@ -30,15 +30,8 @@ import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
-import ua.vald_zx.game.rat.race.card.resource.images.Fly
-import ua.vald_zx.game.rat.race.card.resource.images.Yacht
-import ua.vald_zx.game.rat.race.card.resource.images.Estate
-import ua.vald_zx.game.rat.race.card.resource.images.Flat
-import ua.vald_zx.game.rat.race.card.resource.images.Car
-import ua.vald_zx.game.rat.race.card.resource.images.Baby
-import ua.vald_zx.game.rat.race.card.resource.images.Mariage
-import ua.vald_zx.game.rat.race.card.resource.images.Work
-import androidx.compose.ui.graphics.vector.ImageVector
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
 import androidx.compose.foundation.verticalScroll
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.*
@@ -392,14 +385,14 @@ private fun DesignStatePage(player: Player, board: Board) {
 private fun PossessionsGrid(player: Player) {
     val config = player.config
     val items = listOf(
-        Possession(stringResource(Res.string.work), Images.Work, player.card.salary, 0, player.businesses.any { it.type == BusinessType.WORK }),
-        Possession(stringResource(Res.string.marriage), Images.Mariage, 0, 0, player.isMarried),
-        Possession(stringResource(Res.string.kids), Images.Baby, player.babies * config.babyCost, player.babies, player.babies > 0),
-        Possession(stringResource(Res.string.car), Images.Car, player.cars * config.carCost, player.cars, player.cars > 0),
-        Possession(stringResource(Res.string.apartment), Images.Flat, player.apartment * config.apartmentCost, player.apartment, player.apartment > 0),
-        Possession(stringResource(Res.string.estate), Images.Estate, player.cottage * config.cottageCost, player.cottage, player.cottage > 0),
-        Possession(stringResource(Res.string.yacht), Images.Yacht, player.yacht * config.yachtCost, player.yacht, player.yacht > 0),
-        Possession(stringResource(Res.string.plane), Images.Fly, player.flight * config.flightCost, player.flight, player.flight > 0),
+        Possession(stringResource(Res.string.work), Res.drawable.asset_work, player.card.salary, 0, player.businesses.any { it.type == BusinessType.WORK }),
+        Possession(stringResource(Res.string.marriage), Res.drawable.cell_love, 0, 0, player.isMarried),
+        Possession(stringResource(Res.string.kids), Res.drawable.cell_child, player.babies * config.babyCost, player.babies, player.babies > 0),
+        Possession(stringResource(Res.string.car), Res.drawable.asset_car, player.cars * config.carCost, player.cars, player.cars > 0),
+        Possession(stringResource(Res.string.apartment), Res.drawable.asset_apartment, player.apartment * config.apartmentCost, player.apartment, player.apartment > 0),
+        Possession(stringResource(Res.string.estate), Res.drawable.asset_estate, player.cottage * config.cottageCost, player.cottage, player.cottage > 0),
+        Possession(stringResource(Res.string.yacht), Res.drawable.asset_yacht, player.yacht * config.yachtCost, player.yacht, player.yacht > 0),
+        Possession(stringResource(Res.string.plane), Res.drawable.asset_plane, player.flight * config.flightCost, player.flight, player.flight > 0),
     )
     SectionCard(stringResource(Res.string.status)) {
         FlowRow(
@@ -414,7 +407,7 @@ private fun PossessionsGrid(player: Player) {
 
 private data class Possession(
     val label: String,
-    val icon: ImageVector,
+    val icon: DrawableResource,
     val price: Long,
     val count: Long,
     val owned: Boolean,
@@ -426,7 +419,7 @@ private fun PossessionTile(possession: Possession) {
     val ink = if (possession.owned) colors.scaffold.onSurface else colors.scaffold.onSurfaceMuted
     Column(
         modifier = Modifier
-            .width(80.dp)
+            .size(POSSESSION_TILE_WIDTH, POSSESSION_TILE_HEIGHT)
             .clip(DesignShapes.sm)
             .background(if (possession.owned) colors.scaffold.surface2 else colors.scaffold.surface1)
             .border(
@@ -436,10 +429,10 @@ private fun PossessionTile(possession: Possession) {
             )
             .padding(vertical = 8.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
     ) {
         Icon(
-            imageVector = possession.icon,
+            painter = painterResource(possession.icon),
             contentDescription = possession.label,
             tint = ink,
             modifier = Modifier.size(24.dp),
@@ -451,17 +444,18 @@ private fun PossessionTile(possession: Possession) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        if (possession.price != 0L) {
-            Text(
-                text = possession.price.splitDecimal(),
-                style = Design.type.monoMeta,
-                color = if (possession.owned) colors.scaffold.brass else colors.scaffold.onSurfaceMuted,
-                maxLines = 1,
-                softWrap = false,
-            )
-        }
+        Text(
+            text = if (possession.price != 0L) possession.price.splitDecimal() else "",
+            style = Design.type.monoMeta,
+            color = if (possession.owned) colors.scaffold.brass else colors.scaffold.onSurfaceMuted,
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
+
+private val POSSESSION_TILE_WIDTH = 80.dp
+private val POSSESSION_TILE_HEIGHT = 84.dp
 
 @Composable
 private fun ConditionsBlock(player: Player, board: Board) {
