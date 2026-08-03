@@ -31,7 +31,7 @@ class BackLogScreen : Screen {
         var state by remember(backCount) {
             mutableStateOf(log[log.lastIndex - backCount])
         }
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             SmoothRainbowText(
                 state.total().splitDecimal(),
                 rainbow = GoldRainbow,

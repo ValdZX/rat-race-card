@@ -13,7 +13,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.add_baby
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 
@@ -22,7 +22,7 @@ class BabyScreen : Screen {
     override fun Content() {
         val raceRate2store = koinInject<RatRace2CardStore>()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
 
             ElevatedButton(
                 modifier = Modifier

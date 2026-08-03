@@ -22,7 +22,7 @@ import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
@@ -33,7 +33,7 @@ class BuyBusinessScreen() : Screen {
         val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             var businessType by remember {
                 val type = raceRate2store.observeState().value.business.firstOrNull()?.type
                 mutableStateOf(if (type == null || type == BusinessType.WORK) BusinessType.SMALL else type)

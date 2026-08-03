@@ -2,6 +2,7 @@ package ua.vald_zx.game.rat.race.card.screen.board
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -18,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.resources.*
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.DetailsField
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.formatAmount
@@ -43,7 +44,7 @@ internal fun LegacyAuctionScreen(vm: BoardViewModel, auction: Auction) {
         } else {
             state.board.bidList.maxBy { it.bid }.bid
         }
-        BottomSheetContainer(verticalScrollState = null) {
+        ClosableBottomSheetContainer(verticalScrollState = null) {
             if (state.board.auction == null) {
                 val firstBidState = remember {
                     mutableStateOf(TextFieldValue(minBid.toString()))
@@ -69,7 +70,11 @@ internal fun LegacyAuctionScreen(vm: BoardViewModel, auction: Auction) {
                     Text(stringResource(Res.string.noBetsYet), style = MaterialTheme.typography.titleSmall)
                     Text(stringResource(Res.string.min_bid, auction.getBid.toString()), style = MaterialTheme.typography.titleSmall)
                 } else {
-                    LazyColumn {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false),
+                    ) {
                         items(state.board.bidList) { item ->
                             Row {
                                 Column(

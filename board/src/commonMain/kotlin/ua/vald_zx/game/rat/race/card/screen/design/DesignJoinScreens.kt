@@ -21,10 +21,10 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.screen.board.ColorsSelector
 import ua.vald_zx.game.rat.race.card.shared.Gender
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
@@ -55,9 +55,7 @@ fun DesignInitPlayerContent(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Images.Back, contentDescription = null)
-            }
+            NavigationBackButton(onClick = onBack)
             Text(
                 text = stringResource(Res.string.player_name_label),
                 style = Design.type.title,
@@ -118,9 +116,7 @@ fun DesignProfessionContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        IconButton(onClick = onBack) {
-            Icon(Images.Back, contentDescription = null)
-        }
+        NavigationBackButton(onClick = onBack)
         ProfessionHeader(card, cashFlow)
 
         DesignSectionTitle(stringResource(Res.string.expenses))

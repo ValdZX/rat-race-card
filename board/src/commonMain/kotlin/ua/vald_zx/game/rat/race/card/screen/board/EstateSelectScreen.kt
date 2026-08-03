@@ -11,7 +11,7 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.sell
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.board.page.EstateItem
@@ -22,7 +22,7 @@ class EstateSelectScreen(private val vm: BoardViewModel, private val price: Long
         val state by vm.uiState.collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         val checkedEstates = remember { state.player.estateList.toMutableStateList() }
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             state.player.estateList.forEach { estate ->
                 Row {
                     Box(Modifier.weight(1f)) {

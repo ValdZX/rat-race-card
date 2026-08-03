@@ -32,7 +32,7 @@ class StatisticsScreen : Screen {
     override fun Content() {
         val raceRate2store = koinInject<RatRace2CardStore>()
         val statistics = raceRate2store.statistics ?: return
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             Column(modifier = Modifier.statusBarsPadding()) {
                 Text(stringResource(Res.string.salary_count, statistics.salaryCount.toString()))
                 var needTotal by remember { mutableStateOf(true) }

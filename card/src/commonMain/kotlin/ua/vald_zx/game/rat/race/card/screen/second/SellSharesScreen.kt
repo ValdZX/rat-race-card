@@ -15,7 +15,7 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.*
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.label
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
@@ -28,7 +28,7 @@ class SellSharesScreen : Screen {
         val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             val existsShares = state.existsShares()
             var type by remember { mutableStateOf(existsShares.first()) }
             val inputCount = remember {

@@ -16,7 +16,7 @@ import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.area
 import ua.vald_zx.game.rat.race.card.resources.sell
 import ua.vald_zx.game.rat.race.card.resources.total
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 
@@ -25,7 +25,7 @@ class SellLandScreen(private val vm: BoardViewModel, private val price: Long) : 
     override fun Content() {
         val state by vm.uiState.collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             val totalArea = state.player.landList.sumOf { it.area }
             val inputArea = remember {
                 mutableStateOf(

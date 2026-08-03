@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.Button
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.connection_failed
 import ua.vald_zx.game.rat.race.card.resources.retry_connection
@@ -25,9 +25,7 @@ internal fun LegacyLoadOnline(failed: Boolean, onBack: () -> Unit, onRetry: () -
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(16.dp),
     ) {
-        IconButton(onClick = onBack) {
-            Icon(Images.Back, contentDescription = null)
-        }
+        NavigationBackButton(onClick = onBack)
         if (failed) {
             Column(modifier = Modifier.align(Alignment.Center)) {
                 Text(stringResource(Res.string.connection_failed))

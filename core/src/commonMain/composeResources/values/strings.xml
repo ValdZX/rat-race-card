@@ -125,6 +125,7 @@
     <string name="purchase_price">Purchase Price</string>
     <string name="sell">Sell</string>
     <string name="expand">Expand</string>
+    <string name="collapse">Collapse</string>
     <string name="marriage_proposal">Get Married</string>
     <string name="divorce_proposal">Get Divorced</string>
     <string name="add_baby">Add Baby</string>
@@ -216,6 +217,7 @@
     <string name="area">Area</string>
     <string name="priceOfUnit">Price per square meter</string>
     <string name="close">Close</string>
+    <string name="back">Back</string>
     <string name="loanLimit">Loan limit</string>
     <string name="businessLimit">Maximum number of businesses</string>
     <string name="limitOverload">Credit limit exceeded by %1$s$. You have been declared bankrupt. Start over?</string>

@@ -19,7 +19,7 @@ import ua.vald_zx.game.rat.race.card.resources.buy
 import ua.vald_zx.game.rat.race.card.resources.contribution
 import ua.vald_zx.game.rat.race.card.resources.percent
 import ua.vald_zx.game.rat.race.card.beans.Fund
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
@@ -29,7 +29,7 @@ class BuyFundScreen() : Screen {
     override fun Content() {
         val raceRate2store = koinInject<RatRace2CardStore>()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             val inputRate = remember { mutableStateOf(TextFieldValue("")) }
             val inputAmount = remember { mutableStateOf(TextFieldValue("")) }
             val amount = inputAmount.value.text

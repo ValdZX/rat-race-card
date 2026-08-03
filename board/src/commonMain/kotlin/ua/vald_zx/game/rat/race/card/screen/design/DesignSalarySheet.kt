@@ -41,7 +41,15 @@ fun DesignSalarySheet(vm: BoardViewModel) {
         }
     }
 
-    BottomSheetContainer(verticalScrollState = null) {
+    BottomSheetContainer(
+        onClose = {
+            if (openGame == null) {
+                bottomSheetNavigator.hide()
+            } else {
+                openGame = null
+            }
+        },
+    ) {
         when (val game = openGame) {
             null -> Overview(
                 salary = player.salaryPosition?.let { player.cashFlow() },

@@ -20,10 +20,10 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.shared.PlayerCard
 
 class PersonCard2Screen : Screen {
@@ -40,6 +40,12 @@ class PersonCard2Screen : Screen {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            if (navigator?.canPop == true) {
+                NavigationBackButton(
+                    modifier = Modifier.align(Alignment.Start),
+                    onClick = { navigator.pop() },
+                )
+            }
             ProfessionCardForm {
                 raceRate2store.dispatch(RatRace2CardAction.FillProfessionCardRat(it))
                 navigator?.replace(RaceRate2Screen())
@@ -63,12 +69,9 @@ class EditPersonCardScreen : Screen {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            IconButton(
+            NavigationBackButton(
                 modifier = Modifier.align(Alignment.Start),
                 onClick = { navigator?.pop() },
-                content = {
-                    Icon(Images.Back, contentDescription = null)
-                }
             )
             ProfessionCardForm(state.playerCard) {
                 raceRate2store.dispatch(RatRace2CardAction.EditFillProfessionCardRat(it))

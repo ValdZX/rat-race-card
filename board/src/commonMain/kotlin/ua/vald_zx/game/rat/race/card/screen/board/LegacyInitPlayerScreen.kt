@@ -21,9 +21,9 @@ import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.screen.board.cards.menProfessionCards
 import ua.vald_zx.game.rat.race.card.screen.board.cards.womenProfessionCards
 import ua.vald_zx.game.rat.race.card.shared.Board
@@ -46,12 +46,10 @@ internal fun LegacyInitPlayerContent(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            IconButton(
+            NavigationBackButton(
                 modifier = Modifier.align(Alignment.Start),
                 onClick = onBack,
-            ) {
-                Icon(Images.Back, contentDescription = null)
-            }
+            )
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 ColorsSelector(colorState)
             }

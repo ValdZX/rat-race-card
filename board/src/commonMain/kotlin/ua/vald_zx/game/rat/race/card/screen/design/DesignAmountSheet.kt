@@ -21,7 +21,9 @@ fun DesignAmountSheet(
 ) {
     val availableWord = stringResource(Res.string.available)
     val remainderWord = stringResource(Res.string.remainder)
-    BottomSheetContainer(verticalScrollState = null) {
+    BottomSheetContainer(
+        onClose = onCancel,
+    ) {
         DesignAmountForm(
             title = title,
             subtitle = subtitle,

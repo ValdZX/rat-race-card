@@ -12,6 +12,9 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,9 +75,19 @@ fun DesignPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
             .padding(horizontal = 16.dp),
     ) {
         Column(Modifier.fillMaxHeight()) {
-            SheetHandle()
+            SheetHandle(
+                isCollapsed = scaffoldState.currentDetent == HalfExpanded,
+                onToggle = {
+                    coroutineScope.launch {
+                        scaffoldState.animateTo(
+                            if (scaffoldState.currentDetent == HalfExpanded) ContentExpanded else HalfExpanded
+                        )
+                    }
+                },
+                onOpenSettings = { bottomSheetNavigator.show(OnlineSettingsScreen(vm)) },
+            )
             Row(
-                modifier = Modifier.height(littleDetailsHeight - 26.dp),
+                modifier = Modifier.height(littleDetailsHeight - 40.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -89,35 +102,59 @@ fun DesignPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
             }
             DesignSheetPages(player, state.board, pagerState, Modifier.weight(1f))
         }
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 12.dp)
-                .size(36.dp)
-                .clip(DesignShapes.sm)
-                .background(colors.scaffold.surface3)
-                .border(1.dp, colors.scaffold.outline, DesignShapes.sm)
-                .clickableSingle { bottomSheetNavigator.show(OnlineSettingsScreen(vm)) },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Images.Settings,
-                contentDescription = stringResource(Res.string.online_settings),
-                tint = colors.scaffold.onSurfaceMuted,
-            )
-        }
     }
 }
 
 @Composable
-private fun SheetHandle() {
-    Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+private fun SheetHandle(
+    isCollapsed: Boolean,
+    onToggle: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    Box(
+        modifier = Modifier.fillMaxWidth().height(40.dp),
+        contentAlignment = Alignment.Center,
+    ) {
         Box(
             Modifier
                 .size(width = 44.dp, height = 5.dp)
                 .clip(DesignShapes.full)
                 .background(Design.scaffold.outlineStrong)
         )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .size(36.dp)
+                .clip(DesignShapes.sm)
+                .background(Design.scaffold.surface3)
+                .border(1.dp, Design.scaffold.outline, DesignShapes.sm)
+                .clickableSingle(onClick = onToggle),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = if (isCollapsed) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = stringResource(
+                    if (isCollapsed) Res.string.expand else Res.string.collapse
+                ),
+                tint = Design.scaffold.onSurfaceMuted,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(36.dp)
+                .clip(DesignShapes.sm)
+                .background(Design.scaffold.surface3)
+                .border(1.dp, Design.scaffold.outline, DesignShapes.sm)
+                .clickableSingle(onClick = onOpenSettings),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Images.Settings,
+                contentDescription = stringResource(Res.string.online_settings),
+                tint = Design.scaffold.onSurfaceMuted,
+            )
+        }
     }
 }
 

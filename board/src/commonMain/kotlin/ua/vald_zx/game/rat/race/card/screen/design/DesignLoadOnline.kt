@@ -15,8 +15,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.design.*
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resources.*
 
 @Composable
@@ -34,12 +34,10 @@ fun DesignLoadOnline(
             .padding(24.dp),
         contentAlignment = Alignment.Center,
     ) {
-        IconButton(
+        NavigationBackButton(
             onClick = onBack,
             modifier = Modifier.align(Alignment.TopStart),
-        ) {
-            Icon(Images.Back, contentDescription = null)
-        }
+        )
         Column(
             modifier = Modifier
                 .widthIn(max = 360.dp)

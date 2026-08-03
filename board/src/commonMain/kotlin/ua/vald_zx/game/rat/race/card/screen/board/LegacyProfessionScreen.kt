@@ -18,10 +18,10 @@ import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.DetailsField
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.launchWithHandler
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.PlayerCard
@@ -44,12 +44,10 @@ internal fun LegacyProfessionContent(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            IconButton(
+            NavigationBackButton(
                 modifier = Modifier.align(Alignment.Start),
                 onClick = onBack,
-            ) {
-                Icon(Images.Back, contentDescription = null)
-            }
+            )
             Text(
                 text = stringResource(Res.string.work),
                 style = MaterialTheme.typography.titleSmall,

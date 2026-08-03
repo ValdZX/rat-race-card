@@ -17,7 +17,7 @@ import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.beans.Shares
 import ua.vald_zx.game.rat.race.card.beans.SharesType
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.label
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
@@ -30,7 +30,7 @@ class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0))
     override fun Content() {
         val raceRate2store = koinInject<RatRace2CardStore>()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             var type by remember { mutableStateOf(shares.type) }
             val inputCount = remember { mutableStateOf(TextFieldValue(shares.count.emptyIfZero())) }
             val inputPrice = remember { mutableStateOf(TextFieldValue(shares.buyPrice.emptyIfZero())) }

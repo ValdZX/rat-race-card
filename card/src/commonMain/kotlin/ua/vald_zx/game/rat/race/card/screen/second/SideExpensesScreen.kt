@@ -17,7 +17,7 @@ import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.expense_amount
 import ua.vald_zx.game.rat.race.card.resources.give
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
@@ -27,7 +27,7 @@ class SideExpensesScreen : Screen {
     override fun Content() {
         val raceRate2store = koinInject<RatRace2CardStore>()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             val inputAmount = remember { mutableStateOf(TextFieldValue("")) }
             val amount = inputAmount.value.text
             NumberTextField(

@@ -27,12 +27,12 @@ import org.koin.compose.getKoin
 import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.Button
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.components.TextButton
 import ua.vald_zx.game.rat.race.card.dateFullDotsFormat
 import ua.vald_zx.game.rat.race.card.launchWithHandler
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.BoardScreen
 import ua.vald_zx.game.rat.race.card.screen.board.InitPlayerScreen
@@ -51,13 +51,6 @@ internal fun LegacyBoardList(
     onOpen: (BoardId) -> Unit,
 ) {
         Box {
-            IconButton(
-                modifier = Modifier.align(Alignment.TopStart),
-                onClick = { onBack() },
-                content = {
-                    Icon(Images.Back, contentDescription = null)
-                }
-            )
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -66,6 +59,10 @@ internal fun LegacyBoardList(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                NavigationBackButton(
+                    modifier = Modifier.align(Alignment.Start),
+                    onClick = onBack,
+                )
                 Button(
                     enabled = !isLoading,
                     text = stringResource(Res.string.new_table)

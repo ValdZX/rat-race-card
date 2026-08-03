@@ -5,11 +5,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
@@ -27,14 +23,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.AppDataStorageBean
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.designV2Enabled
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.design.DesignButton
 import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
@@ -55,7 +50,6 @@ class OnlineSettingsScreen(private val vm: BoardViewModel) : Screen {
     override fun Content() {
         val state by vm.uiState.collectAsState()
         val allPlayers by players.collectAsState()
-        val bottomSheetNavigator = LocalBottomSheetNavigator.current
         val coroutineScope = rememberCoroutineScope()
         var isDark by LocalThemeIsDark.current
         var selectedColor by remember(state.player.id) {
@@ -65,25 +59,12 @@ class OnlineSettingsScreen(private val vm: BoardViewModel) : Screen {
             selectedColor = state.player.attrs.color
         }
 
-        BottomSheetContainer {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(Res.string.online_settings),
-                    style = Design.type.title,
-                    color = Design.scaffold.onSurface,
-                )
-                IconButton(onClick = { bottomSheetNavigator.hide() }) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(Res.string.online_settings),
-                        tint = Design.scaffold.onSurfaceMuted,
-                    )
-                }
-            }
+        ClosableBottomSheetContainer {
+            Text(
+                text = stringResource(Res.string.online_settings),
+                style = Design.type.title,
+                color = Design.scaffold.onSurface,
+            )
 
             DesignToggleRow(
                 label = stringResource(Res.string.dark_theme),

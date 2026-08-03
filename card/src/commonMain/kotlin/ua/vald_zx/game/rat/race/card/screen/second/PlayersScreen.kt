@@ -15,14 +15,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.*
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.CashFlowField
 import ua.vald_zx.game.rat.race.card.components.GoldRainbow
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.Rat
 import ua.vald_zx.game.rat.race.card.resource.images.Send
 import ua.vald_zx.game.rat.race.card.screen.SendScreen
@@ -36,16 +36,13 @@ class PlayersScreen : Screen {
     override fun Content() {
 
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             val store = koinInject<RatRace2CardStore>()
             val state by store.observeState().collectAsState()
             if (state.room.isNotEmpty()) {
-                IconButton(
+                NavigationBackButton(
                     modifier = Modifier.align(Alignment.Start),
                     onClick = { store.dispatch(RatRace2CardAction.Disconnect) },
-                    content = {
-                        Icon(Images.Back, contentDescription = null)
-                    }
                 )
                 val players by offlinePlayers.collectAsState()
                 if (players.size < 2) {

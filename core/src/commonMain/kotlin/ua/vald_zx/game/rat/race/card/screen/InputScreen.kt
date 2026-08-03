@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 
 @Composable
@@ -23,7 +23,7 @@ fun InputScreen(
     value: String = ""
 ) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
-    BottomSheetContainer {
+    ClosableBottomSheetContainer {
         val input = remember { mutableStateOf(TextFieldValue(value)) }
         NumberTextField(
             input = input,

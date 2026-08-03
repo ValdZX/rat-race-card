@@ -9,7 +9,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resources.*
@@ -33,7 +33,7 @@ internal fun LegacySalaryScreen(vm: BoardViewModel) {
                 bottomSheetNavigator.hide()
             }
         }
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             if (player.salaryPosition != null) {
                 ElevatedButton(
                     modifier = Modifier.widthIn(min = 220.dp),

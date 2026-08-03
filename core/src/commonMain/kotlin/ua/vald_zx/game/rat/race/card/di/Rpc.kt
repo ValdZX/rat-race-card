@@ -16,7 +16,7 @@ private const val NORTHFLANK_API = "wss://p01--rat-race--8zcqpqq8ysrd.code.run/a
 private const val CLOUD_RUN_API = "wss://race-rat-online-1033277102369.us-central1.run.app/api"
 private const val LAN_API = "ws://10.51.71.82:8080/api"
 
-private val apiUrl = LAN_API
+private val apiUrl = NORTHFLANK_API
 
 val coreModule = module {
     single {

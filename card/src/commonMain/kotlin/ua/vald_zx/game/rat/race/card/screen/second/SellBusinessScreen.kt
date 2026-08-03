@@ -19,7 +19,7 @@ import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
@@ -30,7 +30,7 @@ class SellBusinessScreen(private val businessToSell: Business) : Screen {
     override fun Content() {
         val raceRate2store = koinInject<RatRace2CardStore>()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             val inputAmount = remember { mutableStateOf(TextFieldValue(businessToSell.price.toString())) }
             val amount = inputAmount.value.text
             val title = when (businessToSell.type) {

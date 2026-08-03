@@ -1,10 +1,6 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -20,6 +16,7 @@ import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.Button
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.RainbowButton
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
@@ -134,14 +131,5 @@ class LoanActionsScreen() : Screen {
 fun ActionsScreen(
     content: @Composable ColumnScope.() -> Unit
 ) = AppTheme {
-    Column(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-            .navigationBarsPadding()
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        content = content
-    )
+    ClosableBottomSheetContainer(content = content)
 }

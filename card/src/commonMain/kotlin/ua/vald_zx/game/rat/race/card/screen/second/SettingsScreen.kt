@@ -24,11 +24,11 @@ import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.screen.ExportScreen
@@ -50,12 +50,9 @@ class SettingsScreen : Screen {
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .padding(16.dp),
             ) {
-                IconButton(
+                NavigationBackButton(
                     modifier = Modifier.align(Alignment.TopStart),
                     onClick = { navigator?.pop() },
-                    content = {
-                        Icon(Images.Back, contentDescription = null)
-                    }
                 )
                 val icon = remember(isDark) {
                     if (isDark) Images.IcLightMode

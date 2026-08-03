@@ -63,16 +63,15 @@ import ua.vald_zx.game.rat.race.card.screen.design.DesignActivePulse
 import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDialog
 import ua.vald_zx.game.rat.race.card.screen.design.DesignPlayerSheet
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction
 import ua.vald_zx.game.rat.race.card.logic.BoardConnectionState
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.lottieDiceAnimations
-import ua.vald_zx.game.rat.race.card.playCoin
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.ArrowUp
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.screen.BoardListScreen
@@ -209,12 +208,9 @@ class BoardScreen(
                     }
                 }
             }
-            IconButton(
+            NavigationBackButton(
                 modifier = Modifier.align(Alignment.TopStart).statusBarsPadding(),
                 onClick = ::requestExit,
-                content = {
-                    Icon(Images.Back, contentDescription = null)
-                }
             )
         }
 
@@ -301,13 +297,9 @@ class BoardScreen(
                         receivedCashDialog = event
                     }
 
-                    is BoardUiAction.AddCash -> {
-                        playCoin()
-                    }
+                    is BoardUiAction.AddCash -> Unit
 
-                    is BoardUiAction.SubCash -> {
-                        playCoin()
-                    }
+                    is BoardUiAction.SubCash -> Unit
 
                     is BoardUiAction.BankruptBusiness -> {
                         bankruptBusinessDialog = event.business

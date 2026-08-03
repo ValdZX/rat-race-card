@@ -215,6 +215,7 @@ class BoardViewModel(
             eventsObserve().collect { event ->
                 when (event) {
                     is Event.MoneyIncome -> {
+                        play(GameSound.Coin)
                         _actions.send(ReceivedCash(event.playerId, event.amount))
                     }
 
@@ -230,13 +231,7 @@ class BoardViewModel(
                         if (changedPlayer.id == _uiState.value.player.id) {
                             _uiState.update { it.copy(player = changedPlayer) }
                         }
-                        if (oldPlayer != null && oldPlayer.location != changedPlayer.location) {
-                            if (changedPlayer.id == _uiState.value.player.id) {
-                                play(landingSound(changedPlayer.location))
-                            } else {
-                                play(GameSound.TokenStep)
-                            }
-                        }
+                        moveSound(old = oldPlayer, changed = changedPlayer)?.let(::play)
                         changedPlayer.speech
                             ?.takeIf {
                                 it.text.isNotBlank() &&
@@ -246,6 +241,7 @@ class BoardViewModel(
                     }
 
                     is Event.BoardChanged -> {
+                        cardTakenSound(_uiState.value.board, event.board)?.let(::play)
                         _uiState.update { it.copy(board = event.board) }
                         invalidatePlayers(event.board.playerIds)
                     }
@@ -255,6 +251,7 @@ class BoardViewModel(
                     }
 
                     is Event.Fired -> {
+                        play(GameSound.PlaceLoss)
                         _actions.send(Fired(event.business))
                     }
 
@@ -271,14 +268,17 @@ class BoardViewModel(
                     }
 
                     is Event.AddCash -> {
+                        play(GameSound.Coin)
                         _actions.send(AddCash(event.amount))
                     }
 
                     is Event.SubCash -> {
+                        play(GameSound.PlaceLoss)
                         _actions.send(SubCash(event.amount))
                     }
 
                     is Event.BankruptBusiness -> {
+                        play(GameSound.PlaceLoss)
                         _actions.send(BankruptBusiness(event.business))
                     }
 
@@ -303,10 +303,12 @@ class BoardViewModel(
                     }
 
                     is Event.FundsCapitalized -> {
+                        play(GameSound.Coin)
                         _actions.send(FundsCapitalized(event.profit))
                     }
 
                     is Event.PlayerHadBaby -> {
+                        play(GameSound.PlaceLife)
                         if (event.playerId == _uiState.value.player.id) {
                             _actions.send(CongratulationsWithBaby)
                         } else {
@@ -317,6 +319,7 @@ class BoardViewModel(
                     }
 
                     is Event.PlayerMarried -> {
+                        play(GameSound.PlaceLife)
                         if (event.playerId == _uiState.value.player.id) {
                             _actions.send(CongratulationsWithMarriage)
                         } else {
@@ -335,18 +338,22 @@ class BoardViewModel(
                     }
 
                     Event.BidBusinessAuctionSuccessBuy -> {
+                        play(GameSound.PlaceAsset)
                         _actions.send(BidBusinessAuctionSuccessBuy)
                     }
 
                     Event.BidEstateAuctionSuccessBuy -> {
+                        play(GameSound.PlaceAsset)
                         _actions.send(BidEstateAuctionSuccessBuy)
                     }
 
                     Event.BidLandAuctionSuccessBuy -> {
+                        play(GameSound.PlaceAsset)
                         _actions.send(BidLandAuctionSuccessBuy)
                     }
 
                     Event.BidSharesAuctionSuccessBuy -> {
+                        play(GameSound.PlaceAsset)
                         _actions.send(BidSharesAuctionSuccessBuy)
                     }
 
@@ -359,6 +366,7 @@ class BoardViewModel(
                     }
 
                     is Event.PlayerWon -> {
+                        play(GameSound.PlaceLife)
                         _actions.send(
                             PlayerWon(
                                 playerName = event.playerName,

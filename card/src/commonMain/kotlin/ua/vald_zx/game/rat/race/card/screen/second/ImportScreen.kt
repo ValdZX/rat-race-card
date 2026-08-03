@@ -15,12 +15,12 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardState
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 
 class ImportScreen : Screen {
     @Composable
@@ -34,12 +34,9 @@ class ImportScreen : Screen {
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(16.dp),
         ) {
-            IconButton(
+            NavigationBackButton(
                 modifier = Modifier.align(Alignment.TopStart),
                 onClick = { navigator?.pop() },
-                content = {
-                    Icon(Images.Back, contentDescription = null)
-                }
             )
             Column(
                 modifier = Modifier

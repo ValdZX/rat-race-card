@@ -17,7 +17,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
@@ -28,7 +28,7 @@ import ua.vald_zx.game.rat.race.card.splitDecimal
 
 @Composable
 fun DesignAuctionSheet(vm: BoardViewModel, fallbackAuction: Auction) {
-    BottomSheetContainer(verticalScrollState = null) {
+    ClosableBottomSheetContainer(verticalScrollState = null) {
         DesignAuctionPanel(vm, fallbackAuction)
     }
 }

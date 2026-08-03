@@ -17,10 +17,10 @@ import androidx.compose.ui.unit.dp
 import kotlinx.datetime.format
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.dateFullDotsFormat
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.BoardId
 
@@ -44,17 +44,7 @@ fun DesignBoardList(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(DesignShapes.sm)
-                        .background(colors.scaffold.surface3)
-                        .border(1.dp, colors.scaffold.outline, DesignShapes.sm)
-                        .clickableSingle(onClick = onBack),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Images.Back, contentDescription = null, tint = colors.scaffold.onSurface)
-                }
+                NavigationBackButton(onClick = onBack)
                 Text(
                     text = stringResource(Res.string.online_game),
                     style = Design.type.title,

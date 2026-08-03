@@ -21,8 +21,8 @@ import ua.vald_zx.game.rat.race.card.resources.card_code
 import ua.vald_zx.game.rat.race.card.resources.copy
 import ua.vald_zx.game.rat.race.card.resources.send
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
+import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.resource.images.Back
 import ua.vald_zx.game.rat.race.card.share
 
 class ExportScreen : Screen {
@@ -37,12 +37,9 @@ class ExportScreen : Screen {
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(16.dp),
         ) {
-            IconButton(
+            NavigationBackButton(
                 modifier = Modifier.align(Alignment.TopStart),
                 onClick = { navigator?.pop() },
-                content = {
-                    Icon(Images.Back, contentDescription = null)
-                }
             )
             Column(
                 modifier = Modifier

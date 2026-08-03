@@ -30,7 +30,7 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import com.sebastianneubauer.jsontree.JsonTree
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.stringResource
-import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.design.DesignButton
@@ -113,7 +113,7 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
         }
         var showBoardState by remember { mutableStateOf(false) }
 
-        BottomSheetContainer {
+        ClosableBottomSheetContainer {
             Text(
                 text = stringResource(Res.string.debug_tools),
                 style = Design.type.title,
