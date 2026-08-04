@@ -507,7 +507,7 @@ class BoardViewModel(
         }
     }
 
-    fun passShares(sharesType: SharesType) {
+    fun passShares(sharesType: String) {
         safeLaunch {
             passShares(sharesType)
         }

@@ -27,6 +27,15 @@ import kotlin.test.Test
 @OptIn(ExperimentalTestApi::class)
 class DesignAssetPagesRenderTest {
 
+    private val board = Board(
+        id = "b1",
+        name = "Board",
+        loanLimit = 0,
+        businessLimit = 0,
+        createDateTime = kotlinx.datetime.LocalDateTime(2026, 1, 1, 0, 0),
+        cards = emptyMap(),
+    )
+
     private val player = Player(
         id = "p1",
         boardId = "b1",
@@ -75,7 +84,7 @@ class DesignAssetPagesRenderTest {
 
     @Test
     fun sharesLandEstateShare() = render("mixed") {
-        DesignSharesPage(player)
+        DesignSharesPage(player, board)
         DesignLandPage(player)
         DesignEstatePage(player)
     }

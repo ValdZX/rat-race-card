@@ -41,6 +41,9 @@ SLOTS = {
     "step": ("Крок фішки по клітинці", [
         "wood tap", "click soft", "token place",
     ]),
+    "dice": ("Падіння кубика", [
+        "dice roll", "dice throw", "dice shake",
+    ]),
 }
 
 

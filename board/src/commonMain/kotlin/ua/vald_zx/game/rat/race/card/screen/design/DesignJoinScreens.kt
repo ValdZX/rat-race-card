@@ -1,5 +1,7 @@
 package ua.vald_zx.game.rat.race.card.screen.design
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -9,26 +11,184 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
+import ua.vald_zx.game.rat.race.card.components.FemaleShape
+import ua.vald_zx.game.rat.race.card.components.GenderOption
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
-import ua.vald_zx.game.rat.race.card.components.GenderSelector
+import ua.vald_zx.game.rat.race.card.components.MaleShape
 import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
+import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.screen.board.ColorsSelector
 import ua.vald_zx.game.rat.race.card.shared.Gender
+import ua.vald_zx.game.rat.race.card.shared.pointerColors
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
+import ua.vald_zx.game.rat.race.card.shared.BoardGenerationProgress
+import ua.vald_zx.game.rat.race.card.shared.BoardGenerationStage
+import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+
+@OptIn(ExperimentalTime::class)
+@Composable
+fun DesignBoardGenerationContent(
+    progress: BoardGenerationProgress,
+    onBack: () -> Unit,
+    onContinue: () -> Unit,
+    onRestart: () -> Unit,
+) {
+    val colors = Design.colors
+    var nowEpochMs by remember { mutableLongStateOf(Clock.System.now().toEpochMilliseconds()) }
+    LaunchedEffect(progress.isRunning, progress.activeSinceEpochMs) {
+        nowEpochMs = Clock.System.now().toEpochMilliseconds()
+        while (progress.isRunning) {
+            delay(1_000)
+            nowEpochMs = Clock.System.now().toEpochMilliseconds()
+        }
+    }
+    val elapsed = progress.elapsedMillisAt(nowEpochMs).formatElapsedTime()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colors.scaffold.background)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        NavigationBackButton(onClick = onBack)
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = stringResource(
+                if (progress.isRunning) Res.string.generating_board_title
+                else Res.string.generation_waiting_title
+            ),
+            style = Design.type.title,
+            color = colors.scaffold.onSurface,
+        )
+        Text(
+            text = generationStageText(progress),
+            style = Design.type.body,
+            color = colors.scaffold.onSurfaceMuted,
+        )
+        progress.retryAtEpochMs?.let { retryAt ->
+            val remainingSeconds = ((retryAt - nowEpochMs).coerceAtLeast(0) + 999) / 1_000
+            Text(
+                text = stringResource(
+                    Res.string.generation_rate_limit_wait,
+                    progress.retryProvider,
+                    remainingSeconds,
+                ),
+                style = Design.type.body,
+                color = colors.scaffold.accent,
+            )
+        }
+        LinearProgressIndicator(
+            progress = { progress.fraction },
+            modifier = Modifier.fillMaxWidth().height(8.dp).clip(DesignShapes.xs),
+            color = colors.scaffold.accent,
+            trackColor = colors.scaffold.surface2,
+        )
+        if (progress.total > 1) {
+            Text(
+                text = "${progress.completed} / ${progress.total}",
+                style = Design.type.monoMeta,
+                color = colors.scaffold.onSurfaceMuted,
+            )
+        }
+        Text(
+            text = stringResource(Res.string.generation_elapsed_time, elapsed),
+            style = Design.type.monoMeta,
+            color = colors.scaffold.onSurfaceMuted,
+        )
+        Text(
+            text = stringResource(
+                Res.string.generation_token_usage,
+                progress.totalTokens.splitDecimal(),
+                progress.inputTokens.splitDecimal(),
+                progress.outputTokens.splitDecimal(),
+            ),
+            style = Design.type.monoMeta,
+            color = colors.scaffold.onSurfaceMuted,
+        )
+        if (progress.isFailed) {
+            Text(
+                text = progress.error.ifBlank { stringResource(Res.string.generation_failed) },
+                style = Design.type.body,
+                color = Design.semantic.negative.edge,
+            )
+        }
+        if (!progress.isRunning) {
+            DesignButton(
+                text = stringResource(Res.string.continue_generation),
+                modifier = Modifier.fillMaxWidth(),
+                height = 52.dp,
+                onClick = onContinue,
+            )
+            DesignButton(
+                text = stringResource(Res.string.restart_generation),
+                modifier = Modifier.fillMaxWidth(),
+                kind = DesignButtonKind.Tonal,
+                height = 52.dp,
+                onClick = onRestart,
+            )
+        }
+        Spacer(Modifier.weight(1f))
+    }
+}
+
+private fun Long.formatElapsedTime(): String {
+    val totalSeconds = div(1_000).coerceAtLeast(0)
+    val seconds = totalSeconds.rem(60).toString().padStart(2, '0')
+    val totalMinutes = totalSeconds.div(60)
+    val minutes = totalMinutes.rem(60).toString().padStart(2, '0')
+    val hours = totalMinutes.div(60)
+    return if (hours > 0) "$hours:$minutes:$seconds" else "$minutes:$seconds"
+}
+
+@Composable
+private fun generationStageText(progress: BoardGenerationProgress): String {
+    val stage = stringResource(when (progress.stage) {
+        BoardGenerationStage.READY -> Res.string.generation_stage_ready
+        BoardGenerationStage.PREPARING -> Res.string.generation_stage_preparing
+        BoardGenerationStage.BALANCE -> Res.string.generation_stage_balance
+        BoardGenerationStage.PROFESSIONS -> Res.string.generation_stage_professions
+        BoardGenerationStage.CARDS -> Res.string.generation_stage_cards
+        BoardGenerationStage.PLACES -> Res.string.generation_stage_places
+        BoardGenerationStage.UKRAINIAN_TEXT -> Res.string.generation_stage_ukrainian
+        BoardGenerationStage.ENGLISH_TEXT -> Res.string.generation_stage_english
+        BoardGenerationStage.FAILED -> Res.string.generation_failed
+    })
+    if (progress.stage != BoardGenerationStage.CARDS) return stage
+    val type = runCatching { BoardCardType.valueOf(progress.detail) }.getOrNull() ?: return stage
+    val deck = stringResource(when (type) {
+        BoardCardType.Chance -> Res.string.chance
+        BoardCardType.Expenses -> Res.string.expenses
+        BoardCardType.Shopping -> Res.string.shopping
+        BoardCardType.EventStore -> Res.string.store
+        BoardCardType.Deputy -> Res.string.deputy
+        BoardCardType.SmallBusiness -> Res.string.small_business
+        BoardCardType.MediumBusiness -> Res.string.medium_business
+        BoardCardType.BigBusiness -> Res.string.big_business
+    })
+    return "$stage: $deck"
+}
 
 @Composable
 fun DesignInitPlayerContent(
@@ -41,6 +201,9 @@ fun DesignInitPlayerContent(
     onNext: () -> Unit,
 ) {
     val colors = Design.colors
+    LaunchedEffect(Unit) {
+        if (colorState.value !in pointerColors) colorState.value = pointerColors.first()
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -49,7 +212,6 @@ fun DesignInitPlayerContent(
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -57,15 +219,17 @@ fun DesignInitPlayerContent(
         ) {
             NavigationBackButton(onClick = onBack)
             Text(
-                text = stringResource(Res.string.player_name_label),
+                text = stringResource(Res.string.create_player_title),
                 style = Design.type.title,
                 color = colors.scaffold.onSurface,
                 modifier = Modifier.padding(start = 8.dp),
             )
         }
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            ColorsSelector(colorState)
-        }
+        PlayerPreview(
+            color = Color(colorState.value),
+            playerName = playerName,
+            gender = gender,
+        )
         DesignTextField(
             value = playerName,
             onValueChange = onNameChange,
@@ -73,19 +237,18 @@ fun DesignInitPlayerContent(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             modifier = Modifier.fillMaxWidth(),
         )
-        GenderSelector(
-            selected = gender,
-            iconSize = 100.dp,
-            femaleStyle = GenderOptionStyle.FemaleDefault.copy(
-                effectOrigin = TransformOrigin(1f, 0.5f),
-                fillColor = Color(colorState.value),
-            ),
-            maleStyle = GenderOptionStyle.MaleDefault.copy(
-                effectOrigin = TransformOrigin(0f, 0.5f),
-                fillColor = Color(colorState.value),
-            ),
+        DesignSectionTitle(stringResource(Res.string.player_token_color))
+        ColorSwatches(
+            selected = colorState.value,
+            onSelect = { colorState.value = it },
+        )
+        DesignSectionTitle(stringResource(Res.string.gender_label))
+        GenderTiles(
+            gender = gender,
+            color = Color(colorState.value),
             onGenderChange = onGenderChange,
         )
+        Spacer(Modifier.height(2.dp))
         DesignButton(
             text = stringResource(Res.string.next),
             enabled = playerName.isNotEmpty(),
@@ -95,6 +258,174 @@ fun DesignInitPlayerContent(
             onClick = onNext,
         )
     }
+}
+
+@Composable
+private fun PlayerPreview(color: Color, playerName: String, gender: Gender) {
+    val colors = Design.colors
+    val ink = if (color.luminance() > 0.45f) Color(0xFF10160F) else Color(0xFFF6FAF7)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .levelCard(colors, DesignShapes.lg)
+            .clip(DesignShapes.lg)
+            .background(colors.scaffold.surface1)
+            .border(1.dp, colors.scaffold.outline, DesignShapes.lg)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .plinth(colors.scaffold.outlineStrong, 4.dp, DesignShapes.full)
+                .clip(DesignShapes.full)
+                .background(color)
+                .border(3.dp, colors.scaffold.onSurface, DesignShapes.full),
+            contentAlignment = Alignment.Center,
+        ) {
+            GenderGlyph(gender = gender, tint = ink, size = 44.dp)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = stringResource(Res.string.your_token),
+                style = Design.type.micro,
+                color = colors.scaffold.onSurfaceMuted,
+            )
+            Text(
+                text = playerName.ifBlank { stringResource(Res.string.player_name) },
+                style = Design.type.title,
+                color = if (playerName.isBlank()) {
+                    colors.scaffold.onSurfaceMuted
+                } else {
+                    colors.scaffold.onSurface
+                },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ColorSwatches(selected: Long, onSelect: (Long) -> Unit) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        pointerColors.forEach { color ->
+            ColorSwatch(
+                color = color,
+                selected = color == selected,
+                onClick = { onSelect(color) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ColorSwatch(color: Long, selected: Boolean, onClick: () -> Unit) {
+    val colors = Design.colors
+    val diameter by animateDpAsState(
+        targetValue = if (selected) 44.dp else 34.dp,
+        animationSpec = tween(140),
+        label = "SwatchSize",
+    )
+    Box(
+        modifier = Modifier
+            .size(52.dp)
+            .clip(DesignShapes.full)
+            .testTag("swatch_$color")
+            .clickableSingle(role = Role.RadioButton, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(diameter)
+                .plinth(colors.scaffold.outlineStrong, if (selected) 3.dp else 2.dp, DesignShapes.full)
+                .clip(DesignShapes.full)
+                .background(Color(color))
+                .border(
+                    width = if (selected) 3.dp else 1.dp,
+                    color = if (selected) colors.scaffold.onSurface else colors.scaffold.outline,
+                    shape = DesignShapes.full,
+                )
+        )
+    }
+}
+
+@Composable
+private fun GenderTiles(gender: Gender, color: Color, onGenderChange: (Gender) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        GenderTile(
+            gender = Gender.FEMALE,
+            selected = gender == Gender.FEMALE,
+            color = color,
+            modifier = Modifier.weight(1f),
+            onClick = { onGenderChange(Gender.FEMALE) },
+        )
+        GenderTile(
+            gender = Gender.MALE,
+            selected = gender == Gender.MALE,
+            color = color,
+            modifier = Modifier.weight(1f),
+            onClick = { onGenderChange(Gender.MALE) },
+        )
+    }
+}
+
+@Composable
+private fun GenderTile(
+    gender: Gender,
+    selected: Boolean,
+    color: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val colors = Design.colors
+    Box(
+        modifier = modifier
+            .plinth(
+                color = if (selected) colors.scaffold.accentDim else colors.scaffold.outline,
+                depth = if (selected) 4.dp else 2.dp,
+                shape = DesignShapes.lg,
+            )
+            .clip(DesignShapes.lg)
+            .background(if (selected) colors.scaffold.surface3 else colors.scaffold.surface2)
+            .border(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) colors.scaffold.accent else colors.scaffold.outline,
+                shape = DesignShapes.lg,
+            )
+            .testTag("gender_${gender.name}")
+            .clickableSingle(role = Role.RadioButton, onClick = onClick)
+            .padding(vertical = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        GenderGlyph(
+            gender = gender,
+            tint = if (selected) color else colors.scaffold.onSurfaceMuted,
+            size = 84.dp,
+        )
+    }
+}
+
+@Composable
+private fun GenderGlyph(gender: Gender, tint: Color, size: Dp) {
+    GenderOption(
+        shape = if (gender == Gender.FEMALE) FemaleShape else MaleShape,
+        selected = true,
+        style = GenderOptionStyle(
+            backgroundColor = tint,
+            fillColor = tint,
+            effectOrigin = TransformOrigin.Center,
+        ),
+        modifier = Modifier.size(size),
+    )
 }
 
 @Composable
@@ -163,6 +494,13 @@ private fun ProfessionHeader(card: ProfessionCard, cashFlow: Long) {
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
+        if (card.description.isNotBlank()) {
+            Text(
+                text = card.description,
+                style = type.body,
+                color = colors.scaffold.onSurfaceMuted,
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),

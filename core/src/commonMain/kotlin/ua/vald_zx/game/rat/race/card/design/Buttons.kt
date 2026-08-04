@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -113,6 +115,33 @@ private fun ButtonSurface(
             maxLines = 2,
             fontSize = fontSize,
             lineHeight = fontSize * 1.33f,
+        )
+    }
+}
+
+@Composable
+fun DesignIconButton(
+    icon: ImageVector,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+    size: Dp = 28.dp,
+    onClick: () -> Unit,
+) {
+    val colors = Design.colors
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(DesignShapes.sm)
+            .background(colors.scaffold.surface3)
+            .border(1.dp, colors.scaffold.outline, DesignShapes.sm)
+            .clickableSingle(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = colors.scaffold.accent,
+            modifier = Modifier.size(size * 0.64f),
         )
     }
 }

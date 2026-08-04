@@ -38,6 +38,7 @@ fun StatePage(
     selectedDream: Dream?,
     outerCircleConditions: OuterCircleConditions,
     victoryConditions: VictoryConditions,
+    loanLimit: Long,
 ) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(state = rememberScrollState())) {
         Row(
@@ -195,6 +196,11 @@ fun StatePage(
             stringResource(Res.string.total_profit),
             player.totalProfit().toString(),
             MaterialTheme.colorScheme.primary
+        )
+        DetailsField(
+            stringResource(Res.string.loanLimit),
+            loanLimit.toString(),
+            MaterialTheme.colorScheme.tertiary
         )
         DetailsField(
             stringResource(Res.string.credit_expenses),

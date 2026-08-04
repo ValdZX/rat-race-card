@@ -36,11 +36,11 @@ import ua.vald_zx.game.rat.race.card.screen.board.cards.cardOf
 import ua.vald_zx.game.rat.race.card.screen.board.EstateSelectScreen
 import ua.vald_zx.game.rat.race.card.screen.board.SellLandScreen
 import ua.vald_zx.game.rat.race.card.screen.board.cards.eventStoreCards
-import ua.vald_zx.game.rat.race.card.screen.board.page.label
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BusinessType
 import ua.vald_zx.game.rat.race.card.shared.CardLink
+import ua.vald_zx.game.rat.race.card.shared.shareTicker
 
 @Composable
 fun BoxWithConstraintsScope.EventStoreCardFront(
@@ -256,6 +256,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
     card: BoardCard.EventStore.Shares,
     vm: BoardViewModel
 ) {
+    val state by vm.uiState.collectAsState()
     val density = LocalDensity.current
     val cardWidth = max(maxWidth, 100.dp)
     val unitTS = with(density) { (cardWidth.toPx() / 300).toSp() }
@@ -271,7 +272,13 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,
             )
-            CardStamp(glyph = card.sharesType.label(), unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 15f)
+            CardStamp(
+                glyph = state.board.shareTicker(card.sharesType),
+                unitTS = unitTS,
+                unitDp = unitDp,
+                id = cardLink.id,
+                glyphSize = 15f,
+            )
         }
         Text(
             modifier = Modifier.padding(top = smallPadding),
@@ -292,82 +299,111 @@ private fun BoxWithConstraintsScope.SharesCardFront(
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold
         )
-        val state by vm.uiState.collectAsState()
-    val locale = Locale.current.language
+        if (card.forcedSale) {
+            Text(
+                modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
+                text = stringResource(Res.string.forced_share_sale),
+                fontSize = unitTS * 11,
+                lineHeight = unitTS * 15,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         val currentPlayerNotProcessed = !state.board.processedPlayerIds.contains(state.player.id)
         if (state.player.sharesList.any { it.type == card.sharesType } && currentPlayerNotProcessed) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                EButton(
-                    enabled = !state.isProgress,
-                    onClick = { vm.passShares(card.sharesType) },
-                    title = stringResource(Res.string.close),
-                    unitTS = unitTS,
-                    unitDp = unitDp,
-                )
-                var count by remember { mutableStateOf(0L) }
+            val maxCount = state.player.sharesList.filter { it.type == card.sharesType }.sumOf { it.count }
+            if (card.forcedSale) {
                 Column(
-                    modifier = Modifier.padding(horizontal = padding).weight(1f),
-                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    val maxCount = state.player.sharesList.filter { it.type == card.sharesType }.sumOf { it.count }
                     Text(
                         stringResource(Res.string.in_stock, maxCount.toString()),
                         fontSize = unitTS * 12,
                     )
-                    val value = if (count <= 0) "" else count.toString()
-                    if (designV2Enabled.value) {
-                        DesignTextField(
-                            value = value,
-                            onValueChange = { input ->
-                                val enteredCount = input.filter(Char::isDigit).toLongOrNull() ?: 0
-                                if (enteredCount <= maxCount) count = enteredCount
-                            },
-                            modifier = Modifier.padding(top = smallPadding),
-                            label = stringResource(Res.string.quantity),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done,
-                            ),
-                        )
-                    } else {
-                        OutlinedBasicTextField(
-                            modifier = Modifier.padding(top = smallPadding),
-                            value = value,
-                            onValueChange = {
-                                val enteredCount = it.toLongOrNull() ?: 0
-                                if (enteredCount <= maxCount) count = enteredCount
-                            },
-                            label = {
-                                Text(
-                                    stringResource(Res.string.quantity),
-                                    fontSize = unitTS * 11,
-                                )
-                            },
-                            contentPadding = contentPadding(
-                                top = unitDp * 4,
-                                bottom = unitDp * 4,
-                            ),
-                        )
-                    }
+                    EButton(
+                        kind = DesignButtonKind.Filled,
+                        enabled = !state.isProgress,
+                        onClick = { vm.sellShares(card, maxCount) },
+                        title = stringResource(Res.string.sell_all_shares),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
+                    )
                 }
-                EButton(
-                    kind = DesignButtonKind.Filled,
-                    enabled = !state.isProgress,
-                    onClick = { vm.sellShares(card, count) },
-                    title = stringResource(Res.string.sell),
-                    unitTS = unitTS,
-                    unitDp = unitDp,
-                )
+            } else {
+                var count by remember { mutableStateOf(0L) }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    EButton(
+                        enabled = !state.isProgress,
+                        onClick = { vm.passShares(card.sharesType) },
+                        title = stringResource(Res.string.close),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
+                    )
+                    Column(
+                        modifier = Modifier.padding(horizontal = padding).weight(1f),
+                        horizontalAlignment = Alignment.End,
+                    ) {
+                        Text(
+                            stringResource(Res.string.in_stock, maxCount.toString()),
+                            fontSize = unitTS * 12,
+                        )
+                        val value = if (count <= 0) "" else count.toString()
+                        if (designV2Enabled.value) {
+                            DesignTextField(
+                                value = value,
+                                onValueChange = { input ->
+                                    val enteredCount = input.filter(Char::isDigit).toLongOrNull() ?: 0
+                                    if (enteredCount <= maxCount) count = enteredCount
+                                },
+                                modifier = Modifier.padding(top = smallPadding),
+                                label = stringResource(Res.string.quantity),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Done,
+                                ),
+                            )
+                        } else {
+                            OutlinedBasicTextField(
+                                modifier = Modifier.padding(top = smallPadding),
+                                value = value,
+                                onValueChange = {
+                                    val enteredCount = it.toLongOrNull() ?: 0
+                                    if (enteredCount <= maxCount) count = enteredCount
+                                },
+                                label = {
+                                    Text(
+                                        stringResource(Res.string.quantity),
+                                        fontSize = unitTS * 11,
+                                    )
+                                },
+                                contentPadding = contentPadding(
+                                    top = unitDp * 4,
+                                    bottom = unitDp * 4,
+                                ),
+                            )
+                        }
+                    }
+                    EButton(
+                        kind = DesignButtonKind.Filled,
+                        enabled = !state.isProgress && count > 0,
+                        onClick = { vm.sellShares(card, count) },
+                        title = stringResource(Res.string.sell),
+                        unitTS = unitTS,
+                        unitDp = unitDp,
+                    )
+                }
             }
         } else if (state.currentPlayerIsActive && currentPlayerNotProcessed) {
             EButton(
                 enabled = !state.isProgress,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
-                onClick = { vm.passEstate() },
+                onClick = { vm.passShares(card.sharesType) },
                 title = stringResource(Res.string.close),
                 unitTS = unitTS,
                 unitDp = unitDp,
@@ -452,7 +488,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
             EButton(
                 enabled = !state.isProgress,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
-                onClick = { vm.passEstate() },
+                onClick = { vm.pass() },
                 title = stringResource(Res.string.close),
                 unitTS = unitTS,
                 unitDp = unitDp,

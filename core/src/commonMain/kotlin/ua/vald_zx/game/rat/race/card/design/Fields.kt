@@ -21,6 +21,7 @@ fun ValueField(
     modifier: Modifier = Modifier,
     tone: SemanticTone? = null,
     signed: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val colors = Design.colors
     val type = Design.type
@@ -62,6 +63,9 @@ fun ValueField(
                 maxLines = 1,
                 softWrap = false,
             )
+        }
+        if (trailing != null) {
+            Box(Modifier.padding(end = 10.dp)) { trailing() }
         }
     }
 }

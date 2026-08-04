@@ -18,13 +18,13 @@ class BoardLayoutGeneratorTest {
     )
 
     private fun places(seed: Long = 42, layer: BoardLayer = BoardLayer.INNER): List<PlaceType> =
-        BoardGenerator(world(seed)).generatePlaces()
+        BoardGenerator(world(seed), testBalance()).generatePlaces()
             .getValue(layer)
             .map { code -> assertNotNull(placeTypeOfCode(code), "невідомий код клітинки $code") }
 
     @Test
     fun everyLayerKeepsItsLength() {
-        val generated = BoardGenerator(world()).generatePlaces()
+        val generated = BoardGenerator(world(), testBalance()).generatePlaces()
         BoardLayer.entries.forEach { layer ->
             assertEquals(layer.places.size, generated.getValue(layer).size, "довжина кола $layer змінилась")
         }
@@ -82,7 +82,7 @@ class BoardLayoutGeneratorTest {
 
     @Test
     fun switchingGenerationOffKeepsTheStaticBoard() {
-        val off = BoardGenerator(world().copy(enabled = false)).generatePlaces()
+        val off = BoardGenerator(world().copy(enabled = false), testBalance()).generatePlaces()
         assertTrue(off.isEmpty(), "вимкнена генерація все одно перемішала дошку")
     }
 }

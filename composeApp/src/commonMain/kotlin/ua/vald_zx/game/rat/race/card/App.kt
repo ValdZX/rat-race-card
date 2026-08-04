@@ -78,6 +78,8 @@ private fun FullApp() {
                     val systemIsDark = storage?.theme ?: isDarkTheme
                     isDarkTheme = systemIsDark
                     designV2Enabled.value = storage?.designV2 ?: false
+                    soundEnabled.value = storage?.sound ?: true
+                    restoreAppLanguage(storage)
                 }
                 CurrentScreen()
             }
@@ -101,6 +103,8 @@ private fun CardOnlyApp() {
                         Napier.base(DebugAntilog())
                         val storage = appKStore.get()
                         isDarkTheme = storage?.theme ?: isDarkTheme
+                        soundEnabled.value = storage?.sound ?: true
+                        restoreAppLanguage(storage)
                     }
                     CurrentScreen()
                 }

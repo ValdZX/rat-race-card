@@ -2,14 +2,9 @@ package ua.vald_zx.game.rat.race.server
 
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -18,6 +13,7 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
@@ -25,7 +21,10 @@ import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.CardText
 import ua.vald_zx.game.rat.race.card.shared.GeneratedText
 import ua.vald_zx.game.rat.race.card.shared.Gender
+import ua.vald_zx.game.rat.race.card.shared.PayerType
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
+import ua.vald_zx.game.rat.race.card.shared.ShopType
+import ua.vald_zx.game.rat.race.card.shared.generatedLocales
 import ua.vald_zx.game.rat.race.server.data.Env
 import java.net.URI
 import java.net.http.HttpClient
@@ -36,17 +35,128 @@ import java.time.Duration
 private val llmLogger = KtorSimpleLogger("CardTextLlm")
 
 internal object LlmSettings {
-    val url: String get() = Env["LLM_API_URL"] ?: "https://api.groq.com/openai/v1/chat/completions"
-    val key: String get() = Env["LLM_API_KEY"].orEmpty()
-    val model: String get() = Env["LLM_MODEL"] ?: "llama-3.3-70b-versatile"
-    val enabled: Boolean get() = key.isNotBlank()
+    val providers: List<LlmProviderSettings>
+        get() = buildList {
+            provider(
+                prefix = "LLM_",
+                defaultName = "gemini",
+                defaultUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+                defaultBalanceModel = "gemini-3.6-flash",
+                defaultTextModel = "gemini-3.5-flash-lite",
+            )?.let(::add)
+            (1..MAX_LLM_FALLBACKS).mapNotNullTo(this) { index ->
+                provider(prefix = "LLM_FALLBACK_${index}_", defaultName = "fallback-$index")
+            }
+        }
+
+    val enabled: Boolean get() = providers.isNotEmpty()
+
+    fun balanceChat(
+        onUsage: suspend (LlmTokenUsage) -> Unit = {},
+        onRetry: suspend (LlmRetryWait) -> Unit = {},
+    ): ChatCompletion = fallbackChat({ it.balanceModel }, onUsage, onRetry)
+
+    fun textChat(
+        onUsage: suspend (LlmTokenUsage) -> Unit = {},
+        onRetry: suspend (LlmRetryWait) -> Unit = {},
+    ): ChatCompletion = fallbackChat({ it.textModel }, onUsage, onRetry)
+
+    private fun fallbackChat(
+        model: (LlmProviderSettings) -> String,
+        onUsage: suspend (LlmTokenUsage) -> Unit,
+        onRetry: suspend (LlmRetryWait) -> Unit,
+    ): ChatCompletion {
+        val configured = providers
+        return FallbackChatCompletion(
+            configured.mapIndexed { index, provider ->
+                HttpChatCompletion(
+                    provider = provider,
+                    model = model(provider),
+                    retryRateLimits = index == configured.lastIndex,
+                    onUsage = onUsage,
+                    onRetry = onRetry,
+                )
+            }
+        )
+    }
+
+    private fun provider(
+        prefix: String,
+        defaultName: String,
+        defaultUrl: String? = null,
+        defaultBalanceModel: String? = null,
+        defaultTextModel: String? = null,
+    ): LlmProviderSettings? {
+        val key = Env["${prefix}API_KEY"].orEmpty()
+        if (key.isBlank()) return null
+        val model = Env["${prefix}MODEL"]
+        val url = Env["${prefix}API_URL"] ?: defaultUrl ?: return null
+        val balanceModel = Env["${prefix}BALANCE_MODEL"] ?: model ?: defaultBalanceModel ?: return null
+        val textModel = Env["${prefix}TEXT_MODEL"] ?: model ?: defaultTextModel ?: return null
+        return LlmProviderSettings(
+            name = Env["${prefix}PROVIDER_NAME"] ?: defaultName,
+            url = url,
+            key = key,
+            balanceModel = balanceModel,
+            textModel = textModel,
+        )
+    }
 }
+
+internal data class LlmProviderSettings(
+    val name: String,
+    val url: String,
+    val key: String,
+    val balanceModel: String,
+    val textModel: String,
+)
+
+internal data class LlmTokenUsage(
+    val input: Long,
+    val output: Long,
+    val total: Long,
+)
+
+internal data class LlmRetryWait(
+    val provider: String,
+    val model: String,
+    val delayMillis: Long,
+)
 
 internal fun interface ChatCompletion {
     suspend fun complete(system: String, user: String): String?
 }
 
-internal object HttpChatCompletion : ChatCompletion {
+internal class FallbackChatCompletion(
+    private val completions: List<ChatCompletion>,
+) : ChatCompletion {
+    override suspend fun complete(system: String, user: String): String? {
+        var providerFailure: LlmProviderException? = null
+        completions.forEachIndexed { index, completion ->
+            val answer = try {
+                completion.complete(system, user)
+            } catch (error: LlmProviderException) {
+                providerFailure = error
+                if (index < completions.lastIndex) {
+                    llmLogger.warn("${error.message}; switching to fallback ${index + 2}")
+                }
+                null
+            }
+            if (answer != null) return answer
+        }
+        providerFailure?.let { throw it }
+        return null
+    }
+}
+
+internal class HttpChatCompletion(
+    private val provider: LlmProviderSettings,
+    private val model: String,
+    private val retryRateLimits: Boolean = true,
+    private val onUsage: suspend (LlmTokenUsage) -> Unit = {},
+    private val onRetry: suspend (LlmRetryWait) -> Unit = {},
+    private val wait: suspend (Long) -> Unit = { delay(it) },
+) : ChatCompletion {
 
     private val client: HttpClient by lazy {
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build()
@@ -56,137 +166,408 @@ internal object HttpChatCompletion : ChatCompletion {
 
     override suspend fun complete(system: String, user: String): String? = withContext(Dispatchers.IO) {
         val payload = buildJsonObject {
-            put("model", LlmSettings.model)
-            put("temperature", 0.9)
+            put("model", model)
             put("messages", buildJsonArray {
                 add(message("system", system))
                 add(message("user", user))
             })
         }
-        val request = HttpRequest.newBuilder(URI.create(LlmSettings.url))
-            .timeout(Duration.ofSeconds(120))
-            .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer ${LlmSettings.key}")
-            .POST(HttpRequest.BodyPublishers.ofString(payload.toString(), Charsets.UTF_8))
-            .build()
-        runCatching {
-            val response = client.send(request, HttpResponse.BodyHandlers.ofString(Charsets.UTF_8))
-            if (response.statusCode() !in 200..299) {
-                llmLogger.warn("LLM answered ${response.statusCode()}: ${response.body().take(300)}")
-                return@runCatching null
+        var failedAttempts = 0
+        while (true) {
+            val request = HttpRequest.newBuilder(URI.create(provider.url))
+                .timeout(Duration.ofSeconds(120))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer ${provider.key}")
+                .POST(HttpRequest.BodyPublishers.ofString(payload.toString(), Charsets.UTF_8))
+                .build()
+            val response = runCatching {
+                client.send(request, HttpResponse.BodyHandlers.ofString(Charsets.UTF_8))
+            }.onFailure {
+                llmLogger.warn("LLM call failed: ${it.message}")
+            }.getOrNull()
+            if (response == null) {
+                failedAttempts += 1
+                if (failedAttempts >= MAX_LLM_REQUEST_ATTEMPTS) return@withContext null
+                continue
             }
-            json.parseToJsonElement(response.body())
-                .jsonObject["choices"]?.jsonArray?.firstOrNull()
-                ?.jsonObject?.get("message")?.jsonObject?.get("content")
+            if (response.statusCode() == 429) {
+                val retry = response.retryDelay()
+                if (!retryRateLimits) {
+                    throw LlmRateLimitException(provider.name, model, retry.millis)
+                }
+                if (!retry.precise) {
+                    failedAttempts += 1
+                    if (failedAttempts >= MAX_LLM_REQUEST_ATTEMPTS) {
+                        throw LlmRateLimitException(provider.name, model, retry.millis)
+                    }
+                }
+                llmLogger.warn("${provider.name}/$model rate limit reached, retrying in ${retry.millis}ms")
+                onRetry(LlmRetryWait(provider.name, model, retry.millis))
+                wait(retry.millis)
+                continue
+            }
+            if (response.statusCode() in 500..599) {
+                val message = response.errorMessage()
+                failedAttempts += 1
+                if (failedAttempts < MAX_LLM_UNAVAILABLE_ATTEMPTS) {
+                    val waitMillis = UNAVAILABLE_RETRY_DELAY_MILLIS * failedAttempts
+                    llmLogger.warn(
+                        "${provider.name}/$model temporarily unavailable: $message; retrying in ${waitMillis}ms"
+                    )
+                    wait(waitMillis)
+                    continue
+                }
+                throw LlmProviderException("${provider.name}/$model is unavailable: $message")
+            }
+            if (response.statusCode() !in 200..299) {
+                throw LlmProviderException(
+                    "${provider.name}/$model answered ${response.statusCode()}: ${response.errorMessage()}"
+                )
+            }
+            val responseObject = json.parseToJsonElement(response.body()).jsonObject
+            responseObject.tokenUsageOrNull()?.let { onUsage(it) }
+            val choice = responseObject["choices"]?.jsonArray?.firstOrNull()?.jsonObject
+                ?: throw LlmProviderException("${provider.name}/$model returned no choices")
+            return@withContext choice["message"]?.jsonObject?.get("content")
                 ?.jsonPrimitive?.contentOrNull
-        }.onFailure { llmLogger.warn("LLM call failed: ${it.message}") }.getOrNull()
+                ?: throw LlmProviderException(
+                    "${provider.name}/$model returned no text (${choice["finish_reason"]?.jsonPrimitive?.contentOrNull ?: "unknown reason"})"
+                )
+        }
+        @Suppress("UNREACHABLE_CODE")
+        return@withContext null
     }
 
     private fun message(role: String, content: String) = buildJsonObject {
         put("role", role)
         put("content", content)
     }
-}
 
-internal class LlmTextGenerator(
-    private val chat: ChatCompletion = HttpChatCompletion,
-    private val batchSize: Int = 12,
-    concurrentRequests: Int = 4,
-) {
-
-    private val json = Json { ignoreUnknownKeys = true }
-    private val gate = Semaphore(concurrentRequests)
-
-    private suspend fun ask(system: String, user: String): String? =
-        gate.withPermit { chat.complete(system, user) }
-
-    suspend fun localize(
-        world: BoardGeneration,
-        cards: Map<BoardCardType, Map<Int, BoardCard>>,
-        professions: List<ProfessionCard>,
-        locale: String,
-    ): GeneratedText = coroutineScope {
-        val decks = cards.map { (type, deck) ->
-            async { type to deckTexts(world, locale, type, deck) }
-        }
-        val names = async { professionTexts(world, locale, professions) }
-        GeneratedText(
-            cards = decks.awaitAll().toMap().filterValues { it.isNotEmpty() },
-            professions = names.await(),
+    private fun HttpResponse<String>.retryDelay(): RetryDelay {
+        val headerSeconds = headers().firstValue("Retry-After").orElse(null)?.toDoubleOrNull()
+        val bodyDelay = RETRY_DELAY_PATTERN.find(body())?.groupValues?.get(1)?.retryDurationMillis()
+        val value = headerSeconds?.times(1_000)?.toLong() ?: bodyDelay ?: DEFAULT_RETRY_DELAY_MILLIS
+        return RetryDelay(
+            millis = value.coerceIn(MIN_RETRY_DELAY_MILLIS, MAX_REPORTED_RETRY_DELAY_MILLIS) +
+                    RETRY_DELAY_BUFFER_MILLIS,
+            precise = headerSeconds != null || bodyDelay != null,
         )
     }
 
-    private suspend fun deckTexts(
-        world: BoardGeneration,
-        locale: String,
-        type: BoardCardType,
-        deck: Map<Int, BoardCard>,
-    ): Map<Int, CardText> {
-        val texts = mutableMapOf<Int, CardText>()
-        deck.entries.sortedBy { it.key }.chunked(batchSize).forEach { batch ->
-            val briefs = batch.joinToString("\n") { (id, card) -> "$id. ${card.brief()}" }
-            val answer = ask(
-                system = systemPrompt(locale),
-                user = deckPrompt(world, locale, type, briefs),
-            ) ?: return@forEach
-            answer.parseItems().forEach { (id, text) ->
-                if (batch.any { it.key == id }) texts[id] = text
-            }
-        }
-        return texts
-    }
+    private fun HttpResponse<String>.errorMessage(): String =
+        ERROR_MESSAGE_PATTERN.find(body())?.groupValues?.get(1)
+            ?: body().take(MAX_ERROR_MESSAGE_LENGTH).ifBlank { "empty response" }
 
-    private suspend fun professionTexts(
+    private fun JsonObject.tokenUsageOrNull(): LlmTokenUsage? {
+        val usage = runCatching { get("usage")?.jsonObject }.getOrNull() ?: return null
+        val input = usage["prompt_tokens"]?.jsonPrimitive?.longOrNull ?: 0
+        val output = usage["completion_tokens"]?.jsonPrimitive?.longOrNull ?: 0
+        val total = usage["total_tokens"]?.jsonPrimitive?.longOrNull ?: input + output
+        return LlmTokenUsage(input, output, total).takeIf { it.total > 0 }
+    }
+}
+
+private data class RetryDelay(
+    val millis: Long,
+    val precise: Boolean,
+)
+
+internal open class LlmProviderException(message: String) : IllegalStateException(message)
+
+internal class LlmRateLimitException(
+    provider: String,
+    model: String,
+    retryAfterMillis: Long,
+) : LlmProviderException(
+    "LLM rate limit reached for $provider/$model. Try again in ${retryAfterMillis.retryDelayText()}",
+)
+
+internal class LlmTextGenerator(
+    private val chat: ChatCompletion = LlmSettings.textChat(),
+    private val batchSize: Int = 24,
+) {
+
+    private val json = Json { ignoreUnknownKeys = true }
+
+    fun workUnits(
+        deckSizes: Collection<Int>,
+        professionCount: Int,
+    ): Int = deckSizes.sumOf(::batches) + batches(professionCount)
+
+    suspend fun generateComplete(
         world: BoardGeneration,
-        locale: String,
+        cards: Map<BoardCardType, Map<Int, BoardCard>>,
         professions: List<ProfessionCard>,
-    ): Map<Int, String> {
-        val names = mutableMapOf<Int, String>()
-        professions.chunked(batchSize).forEach { batch ->
-            val briefs = batch.joinToString("\n") { card ->
-                "${card.id}. ${if (card.gender == Gender.FEMALE) "жінка" else "чоловік"}, зарплата ${card.salary}"
-            }
-            val answer = ask(
-                system = systemPrompt(locale),
-                user = professionPrompt(world, locale, briefs),
-            ) ?: return@forEach
-            answer.parseItems().forEach { (id, text) ->
-                val name = text.name.ifBlank { text.description }
-                if (name.isNotBlank() && batch.any { it.id == id }) names[id] = name
+        existingTexts: Map<String, GeneratedText> = emptyMap(),
+        shareNames: Map<String, String> = emptyMap(),
+        onCheckpoint: suspend (
+            texts: Map<String, GeneratedText>,
+            completed: Int,
+            total: Int,
+            detail: String,
+        ) -> Unit = { _, _, _, _ -> },
+    ): Map<String, GeneratedText> {
+        val texts = generatedLocales.associateWith { existingTexts[it] ?: GeneratedText() }.toMutableMap()
+        val cardBatches = cards.entries.flatMap { (type, deck) ->
+            deck.entries.sortedBy { it.key }.chunked(batchSize).mapIndexed { index, batch ->
+                CardBatch(type, index, batches(deck.size), batch)
             }
         }
-        return names
+        val professionBatches = professions.chunked(batchSize).mapIndexed { index, batch ->
+            ProfessionBatch(index, batches(professions.size), batch)
+        }
+        val total = cardBatches.size + professionBatches.size
+        var completed = cardBatches.count { batch -> texts.hasCards(batch.type, batch.items.map { it.key }) } +
+                professionBatches.count { batch -> texts.hasProfessions(batch.items.map { it.id }) }
+        onCheckpoint(texts.snapshot(), completed, total, "")
+
+        cardBatches.forEach { batch ->
+            if (texts.hasCards(batch.type, batch.items.map { it.key })) return@forEach
+            val detail = "${batch.type.name} ${batch.index + 1}/${batch.count}"
+            val rejected = mutableMapOf<Int, MutableList<Map<String, CardText>>>()
+            repeat(MAX_TEXT_BATCH_ATTEMPTS) { attempt ->
+                val missing = batch.items.filterNot { texts.hasCard(batch.type, it.key) }
+                if (missing.isEmpty()) return@repeat
+                val briefs = missing.joinToString("\n") { (id, card) -> "$id. ${card.brief(shareNames)}" }
+                val answer = chat.complete(
+                    system = systemPrompt(),
+                    user = deckPrompt(
+                        world = world,
+                        type = batch.type,
+                        briefs = briefs,
+                        acceptedNames = texts.cardNameContext(batch.type),
+                        attempt = attempt,
+                        rejected = rejected,
+                    ),
+                ) ?: return@repeat
+                val candidates = answer.parseLocalizedItems()
+                texts.acceptCards(batch.type, candidates, missing.map { it.key }.toSet())
+                missing.filterNot { texts.hasCard(batch.type, it.key) }.forEach { (id) ->
+                    candidates[id]?.let { candidate -> rejected.getOrPut(id, ::mutableListOf) += candidate }
+                }
+                if (!texts.hasCards(batch.type, batch.items.map { it.key })) {
+                    onCheckpoint(texts.snapshot(), completed, total, detail)
+                }
+            }
+            batch.items.filterNot { texts.hasCard(batch.type, it.key) }.forEach { missingCard ->
+                repeat(MAX_SINGLE_ITEM_ATTEMPTS) { repairAttempt ->
+                    if (texts.hasCard(batch.type, missingCard.key)) return@repeat
+                    val id = missingCard.key
+                    val answer = chat.complete(
+                        system = systemPrompt(),
+                        user = deckPrompt(
+                            world = world,
+                            type = batch.type,
+                            briefs = "$id. ${missingCard.value.brief(shareNames)}",
+                            acceptedNames = texts.cardNameContext(batch.type),
+                            attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
+                            rejected = rejected,
+                        ),
+                    ) ?: return@repeat
+                    val candidates = answer.parseLocalizedItems(expectedSingleId = id)
+                    texts.acceptCards(batch.type, candidates, setOf(id))
+                    if (!texts.hasCard(batch.type, id)) {
+                        candidates[id]?.let { candidate ->
+                            rejected.getOrPut(id, ::mutableListOf) += candidate
+                            llmLogger.warn("Rejected duplicate localized card text for ${batch.type} $id")
+                        } ?: llmLogger.warn("LLM repair response has no usable localized card text for ${batch.type} $id")
+                    }
+                    onCheckpoint(texts.snapshot(), completed, total, detail)
+                }
+            }
+            val missingIds = batch.items.map { it.key }.filterNot { texts.hasCard(batch.type, it) }
+            check(missingIds.isEmpty()) {
+                "Incomplete uk/en texts for ${batch.type}: ${missingIds.take(MAX_ERROR_IDS)}"
+            }
+            completed += 1
+            onCheckpoint(texts.snapshot(), completed, total, detail)
+        }
+
+        professionBatches.forEach { batch ->
+            if (texts.hasProfessions(batch.items.map { it.id })) return@forEach
+            val detail = "professions ${batch.index + 1}/${batch.count}"
+            val rejected = mutableMapOf<Int, MutableList<Map<String, CardText>>>()
+            repeat(MAX_TEXT_BATCH_ATTEMPTS) { attempt ->
+                val missing = batch.items.filterNot { texts.hasProfession(it.id) }
+                if (missing.isEmpty()) return@repeat
+                val briefs = missing.joinToString("\n") { card ->
+                    "${card.id}. ${if (card.gender == Gender.FEMALE) "жінка" else "чоловік"}, зарплата ${card.salary}"
+                }
+                val answer = chat.complete(
+                    system = systemPrompt(),
+                    user = professionPrompt(
+                        world = world,
+                        briefs = briefs,
+                        acceptedNames = texts.professionNameContext(),
+                        attempt = attempt,
+                        rejected = rejected,
+                    ),
+                ) ?: return@repeat
+                val candidates = answer.parseLocalizedItems()
+                texts.acceptProfessions(candidates, missing.map { it.id }.toSet())
+                missing.filterNot { texts.hasProfession(it.id) }.forEach { profession ->
+                    candidates[profession.id]?.let { candidate ->
+                        rejected.getOrPut(profession.id, ::mutableListOf) += candidate
+                    }
+                }
+                if (!texts.hasProfessions(batch.items.map { it.id })) {
+                    onCheckpoint(texts.snapshot(), completed, total, detail)
+                }
+            }
+            batch.items.filterNot { texts.hasProfession(it.id) }.forEach { missingProfession ->
+                repeat(MAX_SINGLE_ITEM_ATTEMPTS) { repairAttempt ->
+                    if (texts.hasProfession(missingProfession.id)) return@repeat
+                    val answer = chat.complete(
+                        system = systemPrompt(),
+                        user = professionPrompt(
+                            world = world,
+                            briefs = "${missingProfession.id}. ${if (missingProfession.gender == Gender.FEMALE) "жінка" else "чоловік"}, зарплата ${missingProfession.salary}",
+                            acceptedNames = texts.professionNameContext(),
+                            attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
+                            rejected = rejected,
+                        ),
+                    ) ?: return@repeat
+                    val candidates = answer.parseLocalizedItems(expectedSingleId = missingProfession.id)
+                    texts.acceptProfessions(candidates, setOf(missingProfession.id))
+                    if (!texts.hasProfession(missingProfession.id)) {
+                        candidates[missingProfession.id]?.let { candidate ->
+                            rejected.getOrPut(missingProfession.id, ::mutableListOf) += candidate
+                            llmLogger.warn("Rejected duplicate localized profession ${missingProfession.id}")
+                        } ?: llmLogger.warn(
+                            "LLM repair response has no usable localized profession ${missingProfession.id}"
+                        )
+                    }
+                    onCheckpoint(texts.snapshot(), completed, total, detail)
+                }
+            }
+            val missingIds = batch.items.map { it.id }.filterNot { texts.hasProfession(it) }
+            check(missingIds.isEmpty()) { "Incomplete uk/en professions: ${missingIds.take(MAX_ERROR_IDS)}" }
+            completed += 1
+            onCheckpoint(texts.snapshot(), completed, total, detail)
+        }
+
+        val generated = texts.snapshot()
+        generatedLocales.forEach { locale -> validateComplete(locale, generated.getValue(locale), cards, professions) }
+        return generated
     }
 
-    private fun systemPrompt(locale: String) = buildString {
+    private fun validateComplete(
+        locale: String,
+        generated: GeneratedText,
+        cards: Map<BoardCardType, Map<Int, BoardCard>>,
+        professions: List<ProfessionCard>,
+    ) {
+        cards.forEach { (type, deck) ->
+            val texts = generated.cards[type].orEmpty()
+            check(texts.keys == deck.keys) { "Incomplete $locale texts for $type" }
+            check(texts.values.all { it.name.isNotBlank() }) { "Empty $locale name for $type" }
+            check(texts.values.all { it.description.isNotBlank() }) { "Empty $locale description for $type" }
+            check(texts.values.map { it.name.lowercase() }.distinct().size == texts.size) {
+                "Repeated $locale names for $type"
+            }
+            check(texts.values.map { it.description }.distinct().size == texts.size) {
+                "Repeated $locale descriptions for $type"
+            }
+        }
+        val cardIdentities = generated.cards.values
+            .flatMap { it.values }
+            .map { text -> text.name.lowercase() to text.description.lowercase() }
+        check(cardIdentities.distinct().size == cardIdentities.size) { "Repeated $locale cards" }
+        check(generated.professions.keys == professions.map { it.id }.toSet()) {
+            "Incomplete $locale profession names"
+        }
+        check(generated.professionDescriptions.keys == professions.map { it.id }.toSet()) {
+            "Incomplete $locale profession descriptions"
+        }
+        check(generated.professions.values.all { it.isNotBlank() }) { "Empty $locale profession name" }
+        check(generated.professionDescriptions.values.all { it.isNotBlank() }) {
+            "Empty $locale profession description"
+        }
+        check(generated.professions.values.map { it.lowercase() }.distinct().size == professions.size) {
+            "Repeated $locale profession names"
+        }
+        check(generated.professionDescriptions.values.map { it.lowercase() }.distinct().size == professions.size) {
+            "Repeated $locale profession descriptions"
+        }
+    }
+
+    private fun systemPrompt() = buildString {
         append("Ти пишеш тексти карток для настільної економічної гри. ")
-        append("Відповідай виключно JSON-масивом об'єктів {\"id\":число,\"name\":рядок,\"description\":рядок}, ")
+        append("Відповідай виключно JSON-масивом об'єктів ")
+        append("{\"id\":число,\"uk\":{\"name\":рядок,\"description\":рядок},")
+        append("\"en\":{\"name\":рядок,\"description\":рядок}}, ")
         append("без пояснень і без markdown. ")
-        append("Усі тексти мовою: ${languageName(locale)}.")
+        append("Для кожного ID обов'язково поверни природні українські та англійські тексти.")
     }
 
     private fun deckPrompt(
         world: BoardGeneration,
-        locale: String,
         type: BoardCardType,
         briefs: String,
+        acceptedNames: List<String>,
+        attempt: Int,
+        rejected: Map<Int, List<Map<String, CardText>>>,
     ) = buildString {
         append(worldPrompt(world))
-        append("Придумай назву та опис (до 140 символів) для кожної картки колоди «${deckName(type)}». ")
-        append("Не змінюй числа, вони вже надруковані на картці. ")
-        append("Мова відповіді: ${languageName(locale)}.\n")
+        append("Створи унікальну назву та унікальний опис (до 140 символів) для кожної картки колоди «${deckName(type)}». ")
+        append("У цій грі доречний легкий дотепний гумор, пов'язаний зі світом і ситуацією картки. ")
+        append("Не повторюй сюжети, назви чи описи. Механіка в кожному рядку є точною й обов'язковою: відобрази її в описі, не додавай нових чисел, умов або наслідків. ")
+        append("Поверни рівно по одному об'єкту для кожного переданого ID. ")
+        append("Поля uk та en мають передавати той самий зміст відповідними мовами.\n")
+        appendAcceptedNames(acceptedNames)
+        appendRetryInstructions(attempt, rejected)
         append("Картки:\n")
         append(briefs)
     }
 
-    private fun professionPrompt(world: BoardGeneration, locale: String, briefs: String) = buildString {
+    private fun professionPrompt(
+        world: BoardGeneration,
+        briefs: String,
+        acceptedNames: List<String>,
+        attempt: Int,
+        rejected: Map<Int, List<Map<String, CardText>>>,
+    ) = buildString {
         append(worldPrompt(world))
-        append("Придумай назву професії для кожного рядка. ")
-        append("Назва має бути у формі, що відповідає статі, і пасувати до розміру зарплати. ")
-        append("У полі name повертай назву професії, description лишай порожнім. ")
-        append("Мова відповіді: ${languageName(locale)}.\n")
+        append("Створи унікальну назву й опис професії для кожного рядка. ")
+        append("У цій грі доречний легкий дотепний гумор, пов'язаний із професією та світом. ")
+        append("Назва має відповідати статі, світу та розміру зарплати. ")
+        append("Стать є ігровою ознакою: вона впливає на шлюб, дітей, розлучення й умовні витрати, тому не роби професію гендерно суперечливою. ")
+        append("Опис до 140 символів має пояснювати роль професії у вказаних темі, місцевості й епосі. ")
+        append("Не повторюй назви чи описи. ")
+        append("Поверни рівно по одному об'єкту для кожного переданого ID. ")
+        append("Поля uk та en мають передавати ту саму професію відповідними мовами.\n")
+        appendAcceptedNames(acceptedNames)
+        appendRetryInstructions(attempt, rejected)
         append("Професії:\n")
         append(briefs)
+    }
+
+    private fun StringBuilder.appendAcceptedNames(names: List<String>) {
+        if (names.isEmpty()) return
+        append("Уже використані назви, які не можна повторювати:\n")
+        names.forEach { name -> append("- $name\n") }
+    }
+
+    private fun StringBuilder.appendRetryInstructions(
+        attempt: Int,
+        rejected: Map<Int, List<Map<String, CardText>>>,
+    ) {
+        if (attempt == 0) return
+        append("Це повторна спроба: попередня відповідь не пройшла перевірку або не містила всі ID. ")
+        append("Поверни всі передані нижче ID й створи для них нові варіанти. ")
+        append("Скопіюй кожен числовий ID без змін; не замінюй його на 1 і не пропускай поля uk/en, name або description.\n")
+        if (rejected.isEmpty()) return
+        append("Не повторюй ці відхилені назви й описи:\n")
+        rejected.forEach { (id, attempts) ->
+            attempts.takeLast(MAX_REJECTED_TEXTS_IN_PROMPT).forEach { localized ->
+                append("$id: ")
+                append(generatedLocales.joinToString("; ") { locale ->
+                    val text = localized.getValue(locale)
+                    "$locale «${text.name}» — «${text.description}»"
+                })
+                append('\n')
+            }
+        }
     }
 
     private fun worldPrompt(world: BoardGeneration) = buildString {
@@ -199,29 +580,249 @@ internal class LlmTextGenerator(
         append(".\n")
     }
 
-    private fun String.parseItems(): Map<Int, CardText> {
-        val start = indexOf('[')
-        val end = lastIndexOf(']')
-        if (start < 0 || end <= start) return emptyMap()
-        val array = runCatching { json.parseToJsonElement(substring(start, end + 1)) as? JsonArray }
-            .onFailure { llmLogger.warn("LLM answered unparsable JSON: ${it.message}") }
-            .getOrNull() ?: return emptyMap()
-        return array.mapNotNull { element ->
-            val item = element as? JsonObject ?: return@mapNotNull null
-            val id = item["id"]?.jsonPrimitive?.intOrNull ?: return@mapNotNull null
+    private fun String.parseLocalizedItems(expectedSingleId: Int? = null): Map<Int, Map<String, CardText>> {
+        val items = completeJsonObjects()
+        if (items.isEmpty()) llmLogger.warn("LLM answer contains no complete JSON items")
+        val parsed = items.mapNotNull { item ->
+            val id = item["id"]?.jsonPrimitive?.let { value ->
+                value.intOrNull ?: value.contentOrNull?.toIntOrNull()
+            } ?: return@mapNotNull null
+            val localized = item.localizedTextOrNull() ?: return@mapNotNull null
+            id to localized
+        }.toMap()
+        if (expectedSingleId == null || expectedSingleId in parsed || items.size != 1) return parsed
+        val localized = items.single().localizedTextOrNull() ?: return parsed
+        return parsed + (expectedSingleId to localized)
+    }
+
+    private fun String.completeJsonObjects(): List<JsonObject> {
+        val arrayStart = indexOf('[')
+        val scanStart = if (arrayStart >= 0) arrayStart + 1 else 0
+        val objects = mutableListOf<JsonObject>()
+        var objectStart = -1
+        var depth = 0
+        var insideString = false
+        var escaped = false
+        for (index in scanStart until length) {
+            val character = this[index]
+            if (insideString) {
+                when {
+                    escaped -> escaped = false
+                    character == '\\' -> escaped = true
+                    character == '"' -> insideString = false
+                }
+                continue
+            }
+            when (character) {
+                '"' -> insideString = true
+                '{' -> {
+                    if (depth == 0) objectStart = index
+                    depth += 1
+                }
+                '}' -> if (depth > 0) {
+                    depth -= 1
+                    if (depth == 0 && objectStart >= 0) {
+                        runCatching { json.parseToJsonElement(substring(objectStart, index + 1)) as? JsonObject }
+                            .onFailure { llmLogger.warn("LLM answered an invalid JSON item: ${it.message}") }
+                            .getOrNull()
+                            ?.let(objects::add)
+                        objectStart = -1
+                    }
+                }
+                ']' -> if (arrayStart >= 0 && depth == 0) break
+            }
+        }
+        return objects
+    }
+
+    private fun JsonObject.localizedTextOrNull(): Map<String, CardText>? {
+        val localized = mutableMapOf<String, CardText>()
+        generatedLocales.forEach { locale ->
+            val item = this[locale] as? JsonObject ?: return null
             val text = CardText(
                 name = item["name"]?.jsonPrimitive?.contentOrNull.orEmpty().trim(),
                 description = item["description"]?.jsonPrimitive?.contentOrNull.orEmpty().trim(),
             )
-            if (text.name.isBlank() && text.description.isBlank()) null else id to text
-        }.toMap()
+            if (!text.isUsable()) return null
+            localized[locale] = text
+        }
+        return localized
+    }
+
+    private fun MutableMap<String, GeneratedText>.acceptCards(
+        type: BoardCardType,
+        candidates: Map<Int, Map<String, CardText>>,
+        allowedIds: Set<Int>,
+    ) {
+        candidates.forEach { (id, localized) ->
+            if (id !in allowedIds) return@forEach
+            val unique = generatedLocales.all { locale ->
+                localized.getValue(locale).isUniqueCard(this, locale, type, id)
+            }
+            if (!unique) return@forEach
+            generatedLocales.forEach { locale -> putCard(locale, type, id, localized.getValue(locale)) }
+        }
+    }
+
+    private fun MutableMap<String, GeneratedText>.acceptProfessions(
+        candidates: Map<Int, Map<String, CardText>>,
+        allowedIds: Set<Int>,
+    ) {
+        candidates.forEach { (id, localized) ->
+            if (id !in allowedIds) return@forEach
+            val unique = generatedLocales.all { locale ->
+                localized.getValue(locale).isUniqueProfession(this, locale, id)
+            }
+            if (!unique) return@forEach
+            generatedLocales.forEach { locale -> putProfession(locale, id, localized.getValue(locale)) }
+        }
+    }
+
+    private fun CardText.isUniqueCard(
+        texts: Map<String, GeneratedText>,
+        locale: String,
+        type: BoardCardType,
+        id: Int,
+    ): Boolean = texts.getValue(locale).cards.none { (existingType, deck) ->
+        deck.any { (existingId, existing) ->
+            (existingType != type || existingId != id) && existing.collidesWith(this)
+        }
+    }
+
+    private fun CardText.isUniqueProfession(
+        texts: Map<String, GeneratedText>,
+        locale: String,
+        id: Int,
+    ): Boolean {
+        val generated = texts.getValue(locale)
+        return generated.professions.none { (existingId, name) ->
+            existingId != id && name.normalized() == this.name.normalized()
+        } && generated.professionDescriptions.none { (existingId, description) ->
+            existingId != id && description.normalized() == this.description.normalized()
+        }
+    }
+
+    private fun MutableMap<String, GeneratedText>.putCard(
+        locale: String,
+        type: BoardCardType,
+        id: Int,
+        text: CardText,
+    ) {
+        val generated = getValue(locale)
+        this[locale] = generated.copy(
+            cards = generated.cards + (type to (generated.cards[type].orEmpty() + (id to text)))
+        )
+    }
+
+    private fun MutableMap<String, GeneratedText>.putProfession(locale: String, id: Int, text: CardText) {
+        val generated = getValue(locale)
+        this[locale] = generated.copy(
+            professions = generated.professions + (id to text.name),
+            professionDescriptions = generated.professionDescriptions + (id to text.description),
+        )
+    }
+
+    private fun Map<String, GeneratedText>.hasCard(type: BoardCardType, id: Int): Boolean =
+        generatedLocales.all { locale -> this[locale]?.cards?.get(type)?.get(id)?.isUsable() == true }
+
+    private fun Map<String, GeneratedText>.hasCards(type: BoardCardType, ids: List<Int>): Boolean =
+        ids.all { hasCard(type, it) }
+
+    private fun Map<String, GeneratedText>.hasProfession(id: Int): Boolean = generatedLocales.all { locale ->
+        this[locale]?.professions?.get(id).orEmpty().isNotBlank() &&
+                this[locale]?.professionDescriptions?.get(id).orEmpty().isNotBlank()
+    }
+
+    private fun Map<String, GeneratedText>.hasProfessions(ids: List<Int>): Boolean = ids.all { hasProfession(it) }
+
+    private fun Map<String, GeneratedText>.snapshot(): Map<String, GeneratedText> =
+        generatedLocales.associateWith { getValue(it) }
+
+    private fun Map<String, GeneratedText>.cardNameContext(preferredType: BoardCardType): List<String> {
+        val orderedTypes = listOf(preferredType) + BoardCardType.entries.filterNot { it == preferredType }
+        return orderedTypes.flatMap { type ->
+            val ids = generatedLocales.flatMap { locale ->
+                this[locale]?.cards?.get(type)?.keys.orEmpty()
+            }.distinct().sorted()
+            ids.mapNotNull { id ->
+                localizedNameContext { locale -> this[locale]?.cards?.get(type)?.get(id)?.name }
+                    ?.let { names -> "${type.name}: $names" }
+            }
+        }.take(MAX_ACCEPTED_CARD_NAMES_IN_PROMPT)
+    }
+
+    private fun Map<String, GeneratedText>.professionNameContext(): List<String> {
+        val ids = generatedLocales.flatMap { locale -> this[locale]?.professions?.keys.orEmpty() }
+            .distinct()
+            .sorted()
+        return ids.mapNotNull { id ->
+            localizedNameContext { locale -> this[locale]?.professions?.get(id) }
+        }.take(MAX_ACCEPTED_PROFESSION_NAMES_IN_PROMPT)
+    }
+
+    private fun localizedNameContext(name: (String) -> String?): String? {
+        val localized = generatedLocales.mapNotNull { locale ->
+            name(locale)?.takeIf(String::isNotBlank)?.let { "$locale «$it»" }
+        }
+        return localized.takeIf { it.size == generatedLocales.size }?.joinToString(" / ")
+    }
+
+    private fun batches(size: Int): Int = if (size == 0) 0 else (size + batchSize - 1) / batchSize
+}
+
+private data class CardBatch(
+    val type: BoardCardType,
+    val index: Int,
+    val count: Int,
+    val items: List<Map.Entry<Int, BoardCard>>,
+)
+
+private data class ProfessionBatch(
+    val index: Int,
+    val count: Int,
+    val items: List<ProfessionCard>,
+)
+
+private fun CardText.isUsable(): Boolean = name.isNotBlank() && description.isNotBlank()
+
+private fun CardText.collidesWith(other: CardText): Boolean =
+    name.normalized() == other.name.normalized() || description.normalized() == other.description.normalized()
+
+private fun String.normalized(): String = trim().lowercase()
+
+private const val MAX_LLM_REQUEST_ATTEMPTS = 8
+private const val MAX_LLM_UNAVAILABLE_ATTEMPTS = 3
+private const val UNAVAILABLE_RETRY_DELAY_MILLIS = 2_000L
+private const val MAX_ERROR_MESSAGE_LENGTH = 300
+private const val MAX_LLM_FALLBACKS = 3
+private const val MAX_TEXT_BATCH_ATTEMPTS = 3
+private const val MAX_SINGLE_ITEM_ATTEMPTS = 8
+private const val MAX_REJECTED_TEXTS_IN_PROMPT = 2
+private const val MAX_ACCEPTED_CARD_NAMES_IN_PROMPT = 150
+private const val MAX_ACCEPTED_PROFESSION_NAMES_IN_PROMPT = 100
+private const val MAX_ERROR_IDS = 8
+private const val DEFAULT_RETRY_DELAY_MILLIS = 3_000L
+private const val MIN_RETRY_DELAY_MILLIS = 500L
+private const val MAX_REPORTED_RETRY_DELAY_MILLIS = 24 * 60 * 60 * 1_000L
+private const val RETRY_DELAY_BUFFER_MILLIS = 300L
+private val RETRY_DELAY_PATTERN = Regex("Please try again in ((?:[\\d.]+(?:ms|[hms]))+)")
+private val ERROR_MESSAGE_PATTERN = Regex("\\\"message\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"")
+private val RETRY_DURATION_PART_PATTERN = Regex("([\\d.]+)(ms|[hms])")
+
+private fun String.retryDurationMillis(): Long = RETRY_DURATION_PART_PATTERN.findAll(this).sumOf { match ->
+    val amount = match.groupValues[1].toDoubleOrNull() ?: return@sumOf 0L
+    when (match.groupValues[2]) {
+        "h" -> amount.times(60 * 60 * 1_000).toLong()
+        "m" -> amount.times(60 * 1_000).toLong()
+        "s" -> amount.times(1_000).toLong()
+        else -> amount.toLong()
     }
 }
 
-private fun languageName(locale: String) = when (locale.take(2)) {
-    "uk" -> "українська"
-    "en" -> "англійська"
-    else -> locale
+private fun Long.retryDelayText(): String = when {
+    this >= 60 * 60 * 1_000 -> "${(this + 60 * 60 * 1_000 - 1) / (60 * 60 * 1_000)} h"
+    this >= 60 * 1_000 -> "${(this + 60 * 1_000 - 1) / (60 * 1_000)} min"
+    else -> "${(this + 1_000 - 1) / 1_000} s"
 }
 
 private fun deckName(type: BoardCardType) = when (type) {
@@ -235,23 +836,55 @@ private fun deckName(type: BoardCardType) = when (type) {
     BoardCardType.Deputy -> "депутати"
 }
 
-private fun BoardCard.brief(): String = when (this) {
-    is BoardCard.SmallBusiness -> "бізнес, ціна $price, дохід $profit"
-    is BoardCard.MediumBusiness -> "бізнес, ціна $price, дохід $profit"
-    is BoardCard.BigBusiness -> "бізнес, ціна $price, дохід $profit"
-    is BoardCard.Shopping -> "покупка ${shopType.name}, ціна $price"
-    is BoardCard.Expenses -> "витрата $price"
-    is BoardCard.Deputy -> if (corrupt) "продажний посадовець" else "чесний посадовець"
-    is BoardCard.EventStore.Shares -> "акції ${sharesType.name}, ціна $price"
-    is BoardCard.EventStore.Land -> "зміна ціни землі, $price"
-    is BoardCard.EventStore.Estate -> "зміна ціни нерухомості, $price"
-    is BoardCard.EventStore.BusinessExtending -> "розширення бізнесу, дохід $profit"
-    is BoardCard.EventStore.Reelection -> "перевибори"
-    is BoardCard.EventStore.Announcement -> "оголошення"
-    is BoardCard.Chance.RandomJob -> "підробіток, дохід $profit"
-    is BoardCard.Chance.Land -> "земля $area соток, ціна $price"
-    is BoardCard.Chance.Estate -> "нерухомість, ціна $price"
-    is BoardCard.Chance.Shares -> "акції ${sharesType.name}, ціна $price"
-    is BoardCard.Chance.CorruptBusiness -> "корупційний бізнес, ціна $price, дохід $profit, депутатів $deputies"
-    is BoardCard.Chance.CorruptLand -> "корупційна земля $area соток, ціна $price, депутатів $deputies"
+private fun BoardCard.brief(shareNames: Map<String, String>): String = when (this) {
+    is BoardCard.SmallBusiness -> "можна купити малий бізнес за $price; він додає регулярний дохід $profit"
+    is BoardCard.MediumBusiness -> "можна купити середній бізнес за $price; він додає регулярний дохід $profit"
+    is BoardCard.BigBusiness -> "можна купити великий бізнес за $price; він додає регулярний дохід $profit"
+    is BoardCard.Shopping -> "можна купити ${shopType.promptAsset()} за $price; покупка додає один такий актив"
+    is BoardCard.Expenses -> "обов'язкова витрата $price лише для гравців за умовою: ${payer.promptRule()}"
+    is BoardCard.Deputy -> if (corrupt) {
+        "продажний посадовець приєднується до гравця як депутат"
+    } else {
+        "чесний посадовець не приєднується до гравця"
+    }
+    is BoardCard.EventStore.Shares -> if (forcedSale) {
+        "примусовий продаж усіх акцій ${shareNames[sharesType] ?: sharesType} кожним власником за невигідною ціною $price; відмовитися чи продати частину не можна"
+    } else {
+        "власники акцій ${shareNames[sharesType] ?: sharesType} можуть продати будь-яку кількість за ціною $price за акцію або відмовитися"
+    }
+    is BoardCard.EventStore.Land -> "власники землі можуть продати будь-яку площу за $price за одиницю площі або відмовитися"
+    is BoardCard.EventStore.Estate -> "власники нерухомості можуть продати вибрані об'єкти по $price за об'єкт або відмовитися"
+    is BoardCard.EventStore.BusinessExtending -> "активний гравець збільшує регулярний дохід одного випадкового малого бізнесу на $profit; без малого бізнесу ефекту немає"
+    is BoardCard.EventStore.Reelection -> "перевибори: усі гравці втрачають усіх депутатів"
+    is BoardCard.EventStore.Announcement -> "ринкова новина без прямої фінансової дії"
+    is BoardCard.Chance.RandomJob -> "гравець одразу отримує разовий дохід $profit"
+    is BoardCard.Chance.Land -> "можна купити землю площею $area за $price"
+    is BoardCard.Chance.Estate -> "можна купити один об'єкт нерухомості за $price"
+    is BoardCard.Chance.Shares -> "можна купити до $maxCount акцій ${shareNames[sharesType] ?: sharesType} за ціною $price за акцію"
+    is BoardCard.Chance.CorruptBusiness -> if (oneTimeProfit > 0) {
+        "можна витратити $deputies депутатів і $price та одразу отримати разову виплату $oneTimeProfit; регулярного доходу немає"
+    } else {
+        "можна витратити $deputies депутатів і $price та отримати корупційний бізнес із регулярним доходом $profit"
+    }
+    is BoardCard.Chance.CorruptLand -> "можна витратити $deputies депутатів і $price та отримати корупційну землю площею $area"
+}
+
+private fun ShopType.promptAsset(): String = when (this) {
+    ShopType.AUTO -> "автомобіль"
+    ShopType.HOUSE -> "будинок"
+    ShopType.APARTMENT -> "квартиру"
+    ShopType.YACHT -> "яхту"
+    ShopType.FLY -> "літак"
+}
+
+private fun PayerType.promptRule(): String = when (this) {
+    PayerType.ALL -> "платять усі"
+    PayerType.FREE_W_OR_MARRIED_M -> "платять лише незаміжні жінки та одружені чоловіки"
+    PayerType.AUTO_OWNER -> "платять лише власники автомобілів"
+    PayerType.MEN -> "платять лише чоловіки"
+    PayerType.PARENT -> "платять лише гравці з дітьми"
+    PayerType.MARRIED_M -> "платять лише одружені чоловіки"
+    PayerType.APARTMENT_OWNER -> "платять лише власники квартир"
+    PayerType.APARTMENT_OR_HOUSE_OWNER -> "платять лише власники квартир або будинків"
+    PayerType.ANIMAL_OWNER -> "платять лише власники тварин"
 }

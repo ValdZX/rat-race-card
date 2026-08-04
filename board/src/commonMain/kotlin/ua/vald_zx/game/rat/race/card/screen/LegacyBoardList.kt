@@ -50,6 +50,7 @@ internal fun LegacyBoardList(
     onBack: () -> Unit,
     onCreate: () -> Unit,
     onOpen: (BoardId) -> Unit,
+    onDelete: (BoardId) -> Unit = {},
 ) {
         Box {
             Column(
@@ -75,16 +76,33 @@ internal fun LegacyBoardList(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(boards) { board ->
-                        Column(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.primaryContainer)
-                                .clickable { onOpen(board) }
-                                .padding(8.dp)
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(text = board.name)
-                            Text(text = board.createDateTime.format(dateFullDotsFormat))
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onOpen(board) }
+                            ) {
+                                Text(text = board.name)
+                                Text(text = board.createDateTime.format(dateFullDotsFormat))
+                                Text(
+                                    text = stringResource(
+                                        Res.string.active_and_inactive_players_count,
+                                        board.activePlayerCount,
+                                        board.inactivePlayerCount,
+                                    ),
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            }
+                            if (board.canDelete) {
+                                TextButton(stringResource(Res.string.delete_table)) { onDelete(board) }
+                            }
                         }
                     }
                 }
@@ -112,6 +130,21 @@ internal fun LegacyNewBoardDialog(
                         .padding(16.dp)
                 ) {
                     var boardName by remember { mutableStateOf("") }
+                    val loanLimit = remember { mutableStateOf(TextFieldValue("10000")) }
+                    val businessLimit = remember { mutableStateOf(TextFieldValue("10")) }
+                    var transportMovementBonusEnabled by remember { mutableStateOf(true) }
+                    val minimumCashFlow = remember { mutableStateOf(TextFieldValue("50000")) }
+                    val minimumAccountBalance = remember { mutableStateOf(TextFieldValue("200000")) }
+                    var apartmentRequired by remember { mutableStateOf(true) }
+                    var carRequired by remember { mutableStateOf(true) }
+                    val victoryAccountBalance = remember { mutableStateOf(TextFieldValue("10000000")) }
+                    var dreamRequired by remember { mutableStateOf(true) }
+                    var planeRequired by remember { mutableStateOf(true) }
+                    var estateRequired by remember { mutableStateOf(true) }
+                    var generateBoard by remember { mutableStateOf(false) }
+                    var worldTheme by remember { mutableStateOf("") }
+                    var worldLocality by remember { mutableStateOf("") }
+                    var worldEpoch by remember { mutableStateOf("") }
                     OutlinedTextField(
                         value = boardName,
                         singleLine = true,
@@ -119,17 +152,53 @@ internal fun LegacyNewBoardDialog(
                         onValueChange = { boardName = it },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    val loanLimit = remember { mutableStateOf(TextFieldValue("10000")) }
+                    Text(
+                        text = stringResource(Res.string.generated_deck),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Switch(
+                            checked = generateBoard,
+                            onCheckedChange = { generateBoard = it },
+                        )
+                        Text(
+                            text = stringResource(Res.string.generate_cards),
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                    if (generateBoard) {
+                        OutlinedTextField(
+                            value = worldTheme,
+                            onValueChange = { worldTheme = it },
+                            label = { Text(stringResource(Res.string.world_theme)) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = worldLocality,
+                            onValueChange = { worldLocality = it },
+                            label = { Text(stringResource(Res.string.world_locality)) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = worldEpoch,
+                            onValueChange = { worldEpoch = it },
+                            label = { Text(stringResource(Res.string.world_epoch)) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    if (!generateBoard) {
                     NumberTextField(
                         input = loanLimit,
                         inputLabel = stringResource(Res.string.loanLimit),
                     )
-                    val businessLimit = remember { mutableStateOf(TextFieldValue("10")) }
                     NumberTextField(
                         input = businessLimit,
                         inputLabel = stringResource(Res.string.businessLimit),
                     )
-                    var transportMovementBonusEnabled by remember { mutableStateOf(true) }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -148,17 +217,14 @@ internal fun LegacyNewBoardDialog(
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
-                    val minimumCashFlow = remember { mutableStateOf(TextFieldValue("50000")) }
                     NumberTextField(
                         input = minimumCashFlow,
                         inputLabel = stringResource(Res.string.minimum_cash_flow),
                     )
-                    val minimumAccountBalance = remember { mutableStateOf(TextFieldValue("200000")) }
                     NumberTextField(
                         input = minimumAccountBalance,
                         inputLabel = stringResource(Res.string.minimum_account_balance),
                     )
-                    var apartmentRequired by remember { mutableStateOf(true) }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -169,7 +235,6 @@ internal fun LegacyNewBoardDialog(
                         )
                         Text(stringResource(Res.string.apartment_required))
                     }
-                    var carRequired by remember { mutableStateOf(true) }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -185,14 +250,10 @@ internal fun LegacyNewBoardDialog(
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
-                    val victoryAccountBalance = remember {
-                        mutableStateOf(TextFieldValue("10000000"))
-                    }
                     NumberTextField(
                         input = victoryAccountBalance,
                         inputLabel = stringResource(Res.string.victory_account_balance),
                     )
-                    var dreamRequired by remember { mutableStateOf(true) }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -203,7 +264,6 @@ internal fun LegacyNewBoardDialog(
                         )
                         Text(stringResource(Res.string.dream_required))
                     }
-                    var planeRequired by remember { mutableStateOf(true) }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -214,7 +274,6 @@ internal fun LegacyNewBoardDialog(
                         )
                         Text(stringResource(Res.string.plane_required))
                     }
-                    var estateRequired by remember { mutableStateOf(true) }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -224,6 +283,7 @@ internal fun LegacyNewBoardDialog(
                             onCheckedChange = { estateRequired = it },
                         )
                         Text(stringResource(Res.string.estate_required))
+                    }
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -235,11 +295,14 @@ internal fun LegacyNewBoardDialog(
                         TextButton(
                             stringResource(Res.string.create_table),
                             enabled = boardName.isNotEmpty()
-                                    && loanLimit.value.text.isNotEmpty()
-                                    && businessLimit.value.text.isNotEmpty()
-                                    && minimumCashFlow.value.text.isNotEmpty()
-                                    && minimumAccountBalance.value.text.isNotEmpty()
-                                    && victoryAccountBalance.value.text.isNotEmpty()
+                                    && (generateBoard || listOf(
+                                        loanLimit,
+                                        businessLimit,
+                                        minimumCashFlow,
+                                        minimumAccountBalance,
+                                        victoryAccountBalance,
+                                    ).all { it.value.text.isNotEmpty() })
+                                    && (!generateBoard || listOf(worldTheme, worldLocality, worldEpoch).all { it.isNotBlank() })
                         ) {
                             onCreate(
                                 boardName,
@@ -258,7 +321,12 @@ internal fun LegacyNewBoardDialog(
                                     estateRequired = estateRequired,
                                     minimumAccountBalance = victoryAccountBalance.value.text.toLong(),
                                 ),
-                                BoardGeneration(),
+                                BoardGeneration(
+                                    enabled = generateBoard,
+                                    theme = worldTheme.trim(),
+                                    locality = worldLocality.trim(),
+                                    epoch = worldEpoch.trim(),
+                                ),
                             )
                         }
                     }

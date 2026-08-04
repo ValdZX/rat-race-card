@@ -103,6 +103,9 @@
     <!-- UI Actions and Labels -->
     <string name="player_name">Імʼя гравця</string>
     <string name="player_name_label">Імʼя гравця</string>
+    <string name="create_player_title">Новий гравець</string>
+    <string name="your_token">Твоя фішка</string>
+    <string name="gender_label">Стать</string>
     <string name="undo_actions">Відміна дій</string>
     <string name="export_card">Експорт картки</string>
     <string name="import_card">Імпорт картки</string>
@@ -125,6 +128,8 @@
     <string name="total">Сумарно</string>
     <string name="purchase_price">Ціна покупки</string>
     <string name="sell">Продати</string>
+    <string name="sell_all_shares">Продати всі акції</string>
+    <string name="forced_share_sale">Примусовий продаж: усі акції треба продати за цією ціною</string>
     <string name="expand">Розширити</string>
     <string name="collapse">Згорнути</string>
     <string name="marriage_proposal">Укласти шлюб</string>
@@ -291,6 +296,7 @@
     <string name="debug_card_auto_move">Фішка перейде на найближчу клітинку вибраної колоди, після чого відкриється картка.</string>
     <string name="online_settings">Налаштування онлайн-гри</string>
     <string name="dark_theme">Темна тема</string>
+    <string name="sound">Звук</string>
     <string name="player_token_color">Колір фішки гравця</string>
     <string name="investments">Інвестиції</string>
     <string name="high_risk">Високоризикові</string>
@@ -340,7 +346,29 @@
     <string name="generated_deck">Згенерована гра</string>
     <string name="generate_cards">Генерувати дошку</string>
     <string name="generate_cards_hint">Для цього столу генеруються професії, порядок клітинок і всі колоди карток</string>
-    <string name="world_theme">Тематика (необовʼязково)</string>
-    <string name="world_locality">Місцевість (необовʼязково)</string>
-    <string name="world_epoch">Епоха (необовʼязково)</string>
+    <string name="world_theme">Тематика</string>
+    <string name="world_locality">Місцевість</string>
+    <string name="world_epoch">Епоха</string>
+    <string name="generating_board_title">Створюємо унікальну гру</string>
+    <string name="generation_waiting_title">Унікальна гра готова до генерації</string>
+    <string name="generation_stage_ready">Дошка готова</string>
+    <string name="generation_stage_preparing">Готуємо світ</string>
+    <string name="generation_stage_balance">Налаштовуємо економіку та ринок акцій</string>
+    <string name="generation_stage_professions">Створюємо унікальні професії</string>
+    <string name="generation_stage_cards">Формуємо колоди карток</string>
+    <string name="generation_stage_places">Генеруємо набір клітинок</string>
+    <string name="generation_stage_ukrainian">Пишемо українські й англійські назви та історії</string>
+    <string name="generation_stage_english">Пишемо англійські назви та історії</string>
+    <string name="generation_failed">Не вдалося завершити генерацію</string>
+    <string name="generation_elapsed_time">Час: %1$s</string>
+    <string name="generation_token_usage">Токени: %1$s всього · %2$s вхідні · %3$s вихідні</string>
+    <string name="generation_rate_limit_wait">Досягнуто ліміту %1$s. Автоматичний повтор через %2$d с</string>
+    <string name="continue_generation">Продовжити</string>
+    <string name="restart_generation">Почати заново</string>
+    <string name="active_players_count">Активні: %1$d</string>
+    <string name="inactive_players_count">Неактивні: %1$d</string>
+    <string name="active_and_inactive_players_count">Активні: %1$d · неактивні: %2$d</string>
+    <string name="delete_table">Видалити стіл</string>
+    <string name="delete">Видалити</string>
+    <string name="delete_table_confirmation">Видалити «%1$s» назавжди? Гравці та прогрес партії також будуть видалені.</string>
 </resources>

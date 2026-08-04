@@ -5,6 +5,8 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
@@ -83,20 +85,27 @@ fun SmoothRainbowText(
     style: TextStyle = LocalTextStyle.current,
     rainbow: List<Color> = SkittlesRainbow,
     startColor: Int = 0,
-    duration: Int = 1200
+    duration: Int = 1200,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start
 ) {
-    Row(modifier) {
-        var index = startColor
-        for (letter in text) {
-            MultiColorSmoothText(
-                text = letter.toString(),
-                style = style,
-                rainbow = rainbow,
-                startIndex = index,
-                duration = duration
-            )
-            index++
-            if (index == rainbow.size) index = 0
+    var index = startColor
+    FlowRow(modifier, horizontalArrangement = horizontalArrangement) {
+        val words = text.split(" ")
+        words.forEachIndexed { wordIndex, word ->
+            val chunk = if (wordIndex == words.lastIndex) word else "$word "
+            Row {
+                for (letter in chunk) {
+                    MultiColorSmoothText(
+                        text = letter.toString(),
+                        style = style,
+                        rainbow = rainbow,
+                        startIndex = index,
+                        duration = duration
+                    )
+                    index++
+                    if (index == rainbow.size) index = 0
+                }
+            }
         }
     }
 }

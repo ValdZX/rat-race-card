@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -153,12 +154,13 @@ private fun Business.tone(): SemanticTone = when {
 }
 
 @Composable
-internal fun DesignSharesPage(player: Player) {
+internal fun DesignSharesPage(player: Player, board: Board) {
     val quantityWord = stringResource(Res.string.quantity)
+    val locale = Locale.current.language
     AssetList(player.sharesList.isEmpty()) {
         items(player.sharesList) { shares ->
             AssetRow(
-                title = shares.type.name.replace("ShchHP", "ЩГП"),
+                title = board.shareName(shares.type, locale),
                 subtitle = "$quantityWord ${shares.count} × ${shares.buyPrice.splitDecimal()}",
                 amount = shares.price,
                 tone = Design.semantic.funds,

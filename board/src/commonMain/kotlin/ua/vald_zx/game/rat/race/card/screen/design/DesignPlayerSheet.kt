@@ -33,6 +33,8 @@ import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resource.Images
+import ua.vald_zx.game.rat.race.card.resource.images.Deposit
+import ua.vald_zx.game.rat.race.card.resource.images.Repay
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -92,7 +94,10 @@ fun DesignPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 PlayerHeader(player, modifier = Modifier.weight(1f))
-                BalanceRow(player)
+                BalanceRow(
+                    player = player,
+                    onRepay = { bottomSheetNavigator.show(RepayCreditScreen(vm)) },
+                )
             }
             PendingSalary(vm, player)
             val pageCount = if (player.config.hasFunds) 6 else 5
@@ -100,7 +105,13 @@ fun DesignPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
             TabsRow(player, pagerState.currentPage) { page ->
                 coroutineScope.launch { pagerState.animateScrollToPage(page) }
             }
-            DesignSheetPages(player, state.board, pagerState, Modifier.weight(1f))
+            DesignSheetPages(
+                player = player,
+                board = state.board,
+                pagerState = pagerState,
+                modifier = Modifier.weight(1f),
+                onDeposit = { bottomSheetNavigator.show(ToDepositScreen(vm)) },
+            )
         }
     }
 }
@@ -218,12 +229,12 @@ private fun YouChip() {
 }
 
 @Composable
-internal fun BalanceRow(player: Player) {
+internal fun BalanceRow(player: Player, onRepay: () -> Unit = {}) {
     val colors = Design.colors
     val type = Design.type
     Row(
         verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.padding(end = 44.dp),
     ) {
         AmountBlock(
@@ -238,6 +249,37 @@ internal fun BalanceRow(player: Player) {
             color = if (player.cashFlow() >= 0) Design.semantic.positive.edge else Design.semantic.negative.edge,
             changes = player.lastCashFlows,
         )
+        if (player.loan > 0) {
+            LoanBlock(player.loan, onRepay)
+        }
+    }
+}
+
+@Composable
+private fun LoanBlock(amount: Long, onRepay: () -> Unit) {
+    Column(horizontalAlignment = Alignment.End) {
+        Text(
+            text = stringResource(Res.string.loan),
+            style = Design.type.micro,
+            color = Design.scaffold.onSurfaceMuted,
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(
+                text = amount.splitDecimal(),
+                style = Design.type.amountMd,
+                color = Design.semantic.negative.edge,
+                maxLines = 1,
+                softWrap = false,
+            )
+            DesignIconButton(
+                icon = Images.Repay,
+                contentDescription = stringResource(Res.string.repay_action),
+                onClick = onRepay,
+            )
+        }
     }
 }
 
@@ -344,6 +386,7 @@ internal fun DesignSheetPages(
     board: Board,
     pagerState: PagerState,
     modifier: Modifier = Modifier,
+    onDeposit: () -> Unit = {},
 ) {
     HorizontalPager(
         state = pagerState,
@@ -352,9 +395,9 @@ internal fun DesignSheetPages(
             .padding(bottom = 8.dp),
     ) { page ->
         when (page) {
-            0 -> DesignStatePage(player, board)
+            0 -> DesignStatePage(player, board, onDeposit)
             1 -> DesignBusinessPage(player)
-            2 -> DesignSharesPage(player)
+            2 -> DesignSharesPage(player, board)
             3 -> DesignLandPage(player)
             4 -> DesignEstatePage(player)
             5 -> DesignFundsPage(player)
@@ -363,10 +406,14 @@ internal fun DesignSheetPages(
 }
 
 @Composable
-internal fun DesignPlayerStatePageForTest(player: Player, board: Board) = DesignStatePage(player, board)
+internal fun DesignPlayerStatePageForTest(
+    player: Player,
+    board: Board,
+    onDeposit: () -> Unit = {},
+) = DesignStatePage(player, board, onDeposit)
 
 @Composable
-private fun DesignStatePage(player: Player, board: Board) {
+private fun DesignStatePage(player: Player, board: Board, onDeposit: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
@@ -392,6 +439,17 @@ private fun DesignStatePage(player: Player, board: Board) {
                 amount = player.deposit,
                 tone = Design.semantic.cash,
                 modifier = Modifier.weight(1f),
+                trailing = if (player.cash > 0) {
+                    {
+                        DesignIconButton(
+                            icon = Images.Deposit,
+                            contentDescription = stringResource(Res.string.deposit_to_deposit),
+                            onClick = onDeposit,
+                        )
+                    }
+                } else {
+                    null
+                },
             )
             ValueField(
                 label = stringResource(Res.string.loan),
@@ -400,6 +458,12 @@ private fun DesignStatePage(player: Player, board: Board) {
                 modifier = Modifier.weight(1f),
             )
         }
+        ValueField(
+            label = stringResource(Res.string.loanLimit),
+            amount = board.loanLimit,
+            tone = Design.semantic.action,
+            modifier = Modifier.fillMaxWidth(),
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ValueField(
                 label = stringResource(Res.string.active_profit),

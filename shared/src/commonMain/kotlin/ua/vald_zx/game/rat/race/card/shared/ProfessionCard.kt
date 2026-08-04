@@ -13,5 +13,5 @@ data class ProfessionCard(
     val transport: Long,
     val phone: Long,
     val gender: Gender,
+    val description: String = "",
 )
-

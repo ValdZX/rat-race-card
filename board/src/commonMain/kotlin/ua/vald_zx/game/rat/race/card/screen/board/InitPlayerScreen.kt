@@ -17,10 +17,16 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import io.github.aakira.napier.Napier
+import org.koin.compose.koinInject
 import org.jetbrains.compose.resources.stringResource
+import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.screen.design.DesignInitPlayerContent
+import ua.vald_zx.game.rat.race.card.screen.design.DesignBoardGenerationContent
+import ua.vald_zx.game.rat.race.card.di.RaceRatConnection
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
 import ua.vald_zx.game.rat.race.card.resources.*
@@ -34,10 +40,56 @@ class InitPlayerScreen(private val board: Board) : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val coroutineScope = rememberCoroutineScope()
+        val connection = koinInject<RaceRatConnection>()
+        var currentBoard by remember { mutableStateOf(board) }
+        var generationProgress by remember { mutableStateOf(board.generationProgress) }
         val colorState = remember { mutableStateOf(0L) }
         var designName by remember { mutableStateOf("") }
         var designGender by remember { mutableStateOf(Gender.MALE) }
         val locale = Locale.current.language
+        LaunchedEffect(board.id) {
+            if (!board.generation.enabled) return@LaunchedEffect
+            try {
+                connection.service().observeGeneration().collect { progress ->
+                    generationProgress = progress
+                    if (progress.isReady) {
+                        val service = connection.service()
+                        val readyBoard = service.getBoard()
+                        currentBoard = readyBoard
+                        val clientUuid = appKStore.get()?.clientUuid.orEmpty()
+                        if (clientUuid.isNotBlank()) {
+                            val instance = service.hello(clientUuid, readyBoard.id)
+                            instance.player?.let { restoredPlayer ->
+                                navigator.replace(BoardScreen(instance.board, restoredPlayer))
+                            }
+                        }
+                    }
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Throwable) {
+                Napier.e("Observing board generation failed", error)
+            }
+        }
+        if (currentBoard.generation.enabled && !generationProgress.isReady) {
+            DesignBoardGenerationContent(
+                progress = generationProgress,
+                onBack = { navigator.pop() },
+                onContinue = {
+                    coroutineScope.launch {
+                        runCatching { connection.service().continueGeneration() }
+                            .onFailure { error -> Napier.e("Continuing board generation failed", error) }
+                    }
+                },
+                onRestart = {
+                    coroutineScope.launch {
+                        runCatching { connection.service().restartGeneration() }
+                            .onFailure { error -> Napier.e("Restarting board generation failed", error) }
+                    }
+                },
+            )
+            return
+        }
         if (designV2Enabled.value) {
             DesignInitPlayerContent(
                 colorState = colorState,
@@ -48,10 +100,10 @@ class InitPlayerScreen(private val board: Board) : Screen {
                 onBack = { navigator.pop() },
                 onNext = {
                     coroutineScope.launch {
-                        val card = professionFor(board, designGender, locale)
+                        val card = professionFor(currentBoard, designGender, locale)
                         navigator.push(
                             ProfessionScreen(
-                                board = board,
+                                board = currentBoard,
                                 card = card,
                                 playerName = designName,
                                 color = colorState.value,
@@ -62,7 +114,7 @@ class InitPlayerScreen(private val board: Board) : Screen {
             )
         } else {
             LegacyInitPlayerContent(
-                board = board,
+                board = currentBoard,
                 colorState = colorState,
                 onBack = { navigator.pop() },
             )

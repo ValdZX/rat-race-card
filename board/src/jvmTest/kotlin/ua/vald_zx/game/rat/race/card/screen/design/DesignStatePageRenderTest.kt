@@ -10,15 +10,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
@@ -27,6 +31,7 @@ import javax.imageio.ImageIO
 import kotlinx.datetime.LocalDateTime
 import ua.vald_zx.game.rat.race.card.shared.Board
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
@@ -74,6 +79,51 @@ class DesignStatePageRenderTest {
     fun renderLight() = render(dark = false, name = "light")
 
     @Test
+    fun statePageShowsBoardLoanLimit() = runComposeUiTest {
+        setContent {
+            AppTheme(forceDark = true) {
+                Column(Modifier.size(400.dp, 600.dp)) {
+                    DesignPlayerStatePageForTest(player, previewBoard)
+                }
+            }
+        }
+        waitForIdle()
+
+        onNodeWithText("Loan limit").assertIsDisplayed()
+        onNodeWithText(previewBoard.loanLimit.splitDecimal()).assertIsDisplayed()
+    }
+
+    @Test
+    fun depositActionIsOfferedWhileThereIsCash() = runComposeUiTest {
+        var deposits = 0
+        setContent {
+            AppTheme(forceDark = true) {
+                Column(Modifier.size(400.dp, 600.dp)) {
+                    DesignPlayerStatePageForTest(player, previewBoard) { deposits++ }
+                }
+            }
+        }
+        waitForIdle()
+
+        onNodeWithContentDescription("Deposit to Deposit").performClick()
+        assertEquals(1, deposits)
+    }
+
+    @Test
+    fun depositActionHidesWithoutCash() = runComposeUiTest {
+        setContent {
+            AppTheme(forceDark = true) {
+                Column(Modifier.size(400.dp, 600.dp)) {
+                    DesignPlayerStatePageForTest(player.copy(cash = 0), previewBoard)
+                }
+            }
+        }
+        waitForIdle()
+
+        onNodeWithContentDescription("Deposit to Deposit").assertDoesNotExist()
+    }
+
+    @Test
     fun statePageScrollsDownToTheLastBlock() = runComposeUiTest {
         setContent {
             AppTheme(forceDark = true) {
@@ -115,7 +165,7 @@ class DesignStatePageRenderTest {
 private val previewBoard = Board(
     id = "b",
     name = "b",
-    loanLimit = 0,
+    loanLimit = 10_000,
     businessLimit = 0,
     createDateTime = LocalDateTime(2026, 1, 1, 0, 0),
     cards = emptyMap(),

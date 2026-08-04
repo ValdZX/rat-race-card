@@ -102,6 +102,9 @@
     <!-- UI Actions and Labels -->
     <string name="player_name">Player Name</string>
     <string name="player_name_label">Player Name</string>
+    <string name="create_player_title">New Player</string>
+    <string name="your_token">Your token</string>
+    <string name="gender_label">Gender</string>
     <string name="undo_actions">Undo Actions</string>
     <string name="export_card">Export Card</string>
     <string name="import_card">Import Card</string>
@@ -124,6 +127,8 @@
     <string name="total">Total</string>
     <string name="purchase_price">Purchase Price</string>
     <string name="sell">Sell</string>
+    <string name="sell_all_shares">Sell all shares</string>
+    <string name="forced_share_sale">Forced sale: all shares must be sold at this price</string>
     <string name="expand">Expand</string>
     <string name="collapse">Collapse</string>
     <string name="marriage_proposal">Get Married</string>
@@ -286,6 +291,7 @@
     <string name="debug_card_auto_move">The token will move to the nearest space for the selected deck, then the card will open.</string>
     <string name="online_settings">Online game settings</string>
     <string name="dark_theme">Dark theme</string>
+    <string name="sound">Sound</string>
     <string name="player_token_color">Player token color</string>
     <string name="investments">Investments</string>
     <string name="high_risk">High risk</string>
@@ -335,7 +341,29 @@
     <string name="generated_deck">Generated game</string>
     <string name="generate_cards">Generate the board</string>
     <string name="generate_cards_hint">Professions, cell order and all card decks are generated for this table</string>
-    <string name="world_theme">Theme (optional)</string>
-    <string name="world_locality">Place (optional)</string>
-    <string name="world_epoch">Epoch (optional)</string>
+    <string name="world_theme">Theme</string>
+    <string name="world_locality">Place</string>
+    <string name="world_epoch">Epoch</string>
+    <string name="generating_board_title">Creating a unique game</string>
+    <string name="generation_waiting_title">A unique game is ready to generate</string>
+    <string name="generation_stage_ready">The board is ready</string>
+    <string name="generation_stage_preparing">Preparing the world</string>
+    <string name="generation_stage_balance">Balancing the economy and stock market</string>
+    <string name="generation_stage_professions">Creating unique professions</string>
+    <string name="generation_stage_cards">Building card decks</string>
+    <string name="generation_stage_places">Generating the board cells</string>
+    <string name="generation_stage_ukrainian">Writing Ukrainian and English names and stories</string>
+    <string name="generation_stage_english">Writing English names and stories</string>
+    <string name="generation_failed">Generation failed</string>
+    <string name="generation_elapsed_time">Time: %1$s</string>
+    <string name="generation_token_usage">Tokens: %1$s total · %2$s input · %3$s output</string>
+    <string name="generation_rate_limit_wait">%1$s limit reached. Automatic retry in %2$d s</string>
+    <string name="continue_generation">Continue</string>
+    <string name="restart_generation">Start over</string>
+    <string name="active_players_count">Active: %1$d</string>
+    <string name="inactive_players_count">Inactive: %1$d</string>
+    <string name="active_and_inactive_players_count">Active: %1$d · inactive: %2$d</string>
+    <string name="delete_table">Delete table</string>
+    <string name="delete">Delete</string>
+    <string name="delete_table_confirmation">Delete “%1$s” permanently? Its players and game progress will also be deleted.</string>
 </resources>

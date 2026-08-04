@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.absoluteValue
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -27,10 +28,11 @@ internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
 private const val CORRUPT_NAME_LENGTH = 48
 private const val SPEECH_LIFETIME_MS = 8_000
+private const val LEGACY_CHILD_BENEFIT = 1_000L
 
 private val boardMutexes = ConcurrentHashMap<String, Mutex>()
 private val playerMutexes = ConcurrentHashMap<String, Mutex>()
-private fun boardMutex(boardId: String): Mutex = boardMutexes.getOrPut(boardId) { Mutex() }
+internal fun boardMutex(boardId: String): Mutex = boardMutexes.getOrPut(boardId) { Mutex() }
 private fun playerMutex(playerId: String): Mutex = playerMutexes.getOrPut(playerId) { Mutex() }
 
 class RaceRatServiceImpl(
@@ -41,7 +43,7 @@ class RaceRatServiceImpl(
 
     private var boardIdState = MutableStateFlow("")
     private val eventBus = MutableSharedFlow<Event>()
-    private val boardsFlow = MutableSharedFlow<List<BoardId>>()
+    private val boardsFlow = MutableSharedFlow<List<BoardId>>(replay = 1)
     private val globalEventBus: MutableSharedFlow<GlobalEvent>
         get() = getGlobalEventBus(boardIdState.value)
     private var boardStateSubJob: Job? = null
@@ -106,11 +108,24 @@ class RaceRatServiceImpl(
         boardSelected(board)
         uuidStateProvider.value = helloUuid
         connectionIdentified(helloUuid)
-        if (board.playerIds.contains(playerId)) {
+        val storedPlayer = Storage.getPlayerOrNull(playerId)
+        val belongsToBoard = storedPlayer?.boardId == board.id
+        val boardIsPlayable = !board.generation.enabled || board.generationProgress.isReady
+        if (boardIsPlayable && storedPlayer != null && (board.playerIds.contains(playerId) || belongsToBoard)) {
+            if (!board.playerIds.contains(playerId)) {
+                LOGGER.warn("Restoring missing player ${storedPlayer.id} in persisted board ${board.id}")
+                updateBoard {
+                    copy(
+                        playerIds = playerIds + storedPlayer.id,
+                        activePlayerId = activePlayerId.ifBlank { storedPlayer.id },
+                    )
+                }
+            }
             checkStatusJobs[playerId]?.cancel()
             updatePlayer { copy(isInactive = false) }
-            invalidateNextPlayer(board.activePlayerId)
-            return Instance(board, player())
+            val restoredBoard = board()
+            invalidateNextPlayer(restoredBoard.activePlayerId)
+            return Instance(board(), player())
         }
         return Instance(board, null)
     }
@@ -131,10 +146,50 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun getBoards(): List<BoardId> {
-        return Storage.boards().map { board -> board.toBoardId() }
+        val now = Clock.System.now().toEpochMilliseconds()
+        return Storage.boards().map { board ->
+            val players = Storage.players(board.id)
+            val active = players.count { !it.isInactive }
+            val inactiveSince = when {
+                active == 0 && board.allInactiveSinceEpochMs == null -> now.also { timestamp ->
+                    Storage.updateBoard(board.copy(allInactiveSinceEpochMs = timestamp))
+                }
+
+                active > 0 && board.allInactiveSinceEpochMs != null -> null.also {
+                    Storage.updateBoard(board.copy(allInactiveSinceEpochMs = null))
+                }
+
+                else -> board.allInactiveSinceEpochMs
+            }
+            val deletableAfter = inactiveSince?.plus(BOARD_DELETION_INACTIVITY.inWholeMilliseconds)
+            BoardId(
+                id = board.id,
+                name = board.name,
+                createDateTime = board.createDateTime,
+                activePlayerCount = active,
+                inactivePlayerCount = players.size - active,
+                deletableAfterEpochMs = deletableAfter,
+                canDelete = active == 0 && deletableAfter != null && now >= deletableAfter,
+            )
+        }
     }
 
     override fun observeBoards(): Flow<List<BoardId>> = boardsFlow
+
+    override suspend fun deleteBoard(boardId: String) {
+        boardMutex(boardId).withLock {
+            val board = Storage.getBoardOrNull(boardId) ?: return
+            val players = Storage.players(boardId)
+            check(players.none { !it.isInactive }) { "Board has active players" }
+            val inactiveSince = board.allInactiveSinceEpochMs ?: error("Board is still active")
+            val inactiveFor = Clock.System.now().toEpochMilliseconds() - inactiveSince
+            check(inactiveFor >= BOARD_DELETION_INACTIVITY.inWholeMilliseconds) {
+                "Board has not been inactive long enough"
+            }
+            BoardGenerationCoordinator.cancelGeneration(boardId)
+            Storage.removeBoard(boardId)
+        }
+    }
 
     override suspend fun createBoard(
         name: String,
@@ -146,12 +201,16 @@ class RaceRatServiceImpl(
         transportMovementBonusEnabled: Boolean,
         generation: BoardGeneration,
     ): Board {
+        require(decks.keys.containsAll(BoardCardType.entries)) { "All card decks are required" }
+        require(decks.values.all { it in 1..500 }) { "Deck size must be between 1 and 500" }
+        if (generation.enabled) {
+            require(listOf(generation.theme, generation.locality, generation.epoch).all { it.isNotBlank() }) {
+                "Theme, locality and epoch are required for generation"
+            }
+        }
         val world = generation.copy(
             seed = if (generation.seed != 0L) generation.seed else Clock.System.now().toEpochMilliseconds()
         )
-        val generator = BoardGenerator(world)
-        val generatedCards = generator.generate(decks)
-        val generatedProfessions = generator.generateProfessions()
         val board = Board(
             name = name,
             loanLimit = loanLimit,
@@ -163,35 +222,38 @@ class RaceRatServiceImpl(
             victoryConditions = victoryConditions,
             transportMovementBonusEnabled = transportMovementBonusEnabled,
             generation = world,
-            generatedCards = generatedCards,
-            generatedProfessions = generatedProfessions,
-            generatedPlaces = generator.generatePlaces(),
+            generationProgress = if (world.enabled) {
+                BoardGenerationProgress(
+                    stage = BoardGenerationStage.PREPARING,
+                    completed = 0,
+                    total = 1,
+                )
+            } else {
+                BoardGenerationProgress()
+            },
         )
         Storage.newBoard(board)
         boardSelected(board)
-        if (world.enabled && LlmSettings.enabled) {
-            scope.launch { writeGeneratedTexts(board.id, world, generatedCards, generatedProfessions) }
-        }
         return board
     }
 
-    private suspend fun writeGeneratedTexts(
-        boardId: String,
-        world: BoardGeneration,
-        cards: Map<BoardCardType, Map<Int, BoardCard>>,
-        professions: List<ProfessionCard>,
-    ) {
-        val generator = LlmTextGenerator()
-        generatedLocales.forEach { locale ->
-            val texts = runCatching { generator.localize(world, cards, professions, locale) }
-                .onFailure { LOGGER.warn("Card texts for $locale failed: ${it.message}") }
-                .getOrNull() ?: return@forEach
-            if (texts.cards.isEmpty() && texts.professions.isEmpty()) return@forEach
-            boardMutex(boardId).withLock {
-                val stored = Storage.getBoardOrNull(boardId) ?: return@withLock
-                Storage.updateBoard(stored.copy(generatedTexts = stored.generatedTexts + (locale to texts)))
-            }
-        }
+    override fun observeGeneration(): Flow<BoardGenerationProgress> = flow {
+        Storage.observeBoard(boardIdState.value)
+            .map { it.generationProgress }
+            .distinctUntilChanged()
+            .collect(::emit)
+    }
+
+    override suspend fun continueGeneration() {
+        val board = board()
+        if (!board.generation.enabled || board.generationProgress.isReady) return
+        BoardGenerationCoordinator.continueGeneration(board.id)
+    }
+
+    override suspend fun restartGeneration() {
+        val board = board()
+        if (!board.generation.enabled) return
+        BoardGenerationCoordinator.restartGeneration(board.id)
     }
 
     override suspend fun makePlayer(
@@ -200,6 +262,12 @@ class RaceRatServiceImpl(
         card: PlayerCard,
     ): Player {
         val board = board()
+        check(board.generationProgress.isReady) { "Board generation is not complete" }
+        if (board.generation.enabled) {
+            check(board.generatedProfessions.any { profession -> board.matches(profession, card) }) {
+                "Unknown generated profession"
+            }
+        }
         uuidStateProvider.value = uuid
         connectionIdentified(uuid)
         val newPlayer = Player(
@@ -207,6 +275,7 @@ class RaceRatServiceImpl(
             boardId = board.id,
             attrs = PlayerAttributes(color = color),
             card = card,
+            config = board.generatedBalance?.playerConfig() ?: Config(),
             businesses = listOf(
                 Business(
                     type = BusinessType.WORK,
@@ -452,7 +521,8 @@ class RaceRatServiceImpl(
 
     private suspend fun processNewPosition(newPosition: Int) {
         val player = player()
-        val places = board().placesOf(player.location)
+        val currentBoard = board()
+        val places = currentBoard.placesOf(player.location)
         val placeCount = places.size
         val currentPosition = player.location.position
         val safeNewPosition = newPosition.coerceIn(0, placeCount - 1)
@@ -527,7 +597,9 @@ class RaceRatServiceImpl(
                 if (player.card.gender == Gender.FEMALE || (player.card.gender == Gender.MALE && player.isMarried)) {
                     updatePlayer {
                         val totalBabies = babies + 1
-                        copy(babies = totalBabies).plusCash(1000).also {
+                        copy(babies = totalBabies)
+                            .plusCash(currentBoard.generatedBalance?.childBenefit ?: LEGACY_CHILD_BENEFIT)
+                            .also {
                             globalEventBus.emit(GlobalEvent.PlayerHadBaby(playerId, totalBabies))
                         }
                     }
@@ -845,9 +917,18 @@ class RaceRatServiceImpl(
         card: BoardCard.EventStore.Shares,
         count: Long
     ) {
+        val board = board()
+        val activeCard = board.generatedShareEventOrNull()
+        if (activeCard != null && activeCard.sharesType != card.sharesType) return
+        val resolvedCard = activeCard ?: card
+        val ownedCount = player().sharesList
+            .filter { it.type == resolvedCard.sharesType }
+            .sumOf { it.count }
+        if (count <= 0 || count > ownedCount) return
+        if (resolvedCard.forcedSale && count != ownedCount) return
         updatePlayer {
             var resultList = sharesList.toMutableList()
-            val sharesByType = resultList.filter { it.type == card.sharesType }
+            val sharesByType = resultList.filter { it.type == resolvedCard.sharesType }
             var needToSell = count
             var index = 0
             while (needToSell != 0L && index < sharesByType.size) {
@@ -867,12 +948,12 @@ class RaceRatServiceImpl(
                     index += 1
                 }
             }
-            copy(sharesList = resultList).plusCash(count * card.price)
+            copy(sharesList = resultList).plusCash(count * resolvedCard.price)
         }
         updateBoard {
             copy(processedPlayerIds = processedPlayerIds + playerId)
         }
-        passShares(card.sharesType)
+        passShares(resolvedCard.sharesType)
     }
 
     override suspend fun sellEstate(
@@ -889,28 +970,52 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun passLand() {
-        val board = board()
-        val playersWithLands = board.activePlayers(board.players()).filter { it.landList.isNotEmpty() }.map { it.id }.toSet()
-        if (playersWithLands.size <= 1 || board.processedPlayerIds.containsAll(playersWithLands)) {
+        if (player().landList.isNotEmpty()) {
+            updateBoard { copy(processedPlayerIds = processedPlayerIds + playerId) }
+        }
+        val currentBoard = board()
+        val owners = currentBoard.activePlayers(currentBoard.players())
+            .filter { it.landList.isNotEmpty() }
+            .map { it.id }
+            .toSet()
+        val participants = owners + currentBoard.processedPlayerIds
+        if (participants.isEmpty() || currentBoard.processedPlayerIds.containsAll(participants)) {
             nextPlayer()
         }
     }
 
-    override suspend fun passShares(sharesType: SharesType) {
-        val board = board()
-        val playersWithShares =
-            board.activePlayers(board.players()).filter { player -> player.sharesList.any { it.type == sharesType } }
-                .map { it.id }.toSet()
-        if (playersWithShares.size <= 1 || board.processedPlayerIds.containsAll(playersWithShares)) {
+    override suspend fun passShares(sharesType: String) {
+        val initialBoard = board()
+        val activeCard = initialBoard.generatedShareEventOrNull()
+        if (activeCard != null && activeCard.sharesType != sharesType) return
+        val playerHasShares = player().sharesList.any { it.type == sharesType }
+        if (activeCard?.forcedSale == true &&
+            activeCard.sharesType == sharesType &&
+            playerHasShares
+        ) return
+        if (playerHasShares) {
+            updateBoard { copy(processedPlayerIds = processedPlayerIds + playerId) }
+        }
+        val currentBoard = board()
+        val owners = currentBoard.activePlayers(currentBoard.players())
+            .filter { current -> current.sharesList.any { it.type == sharesType } }
+            .map { it.id }
+            .toSet()
+        val participants = owners + currentBoard.processedPlayerIds
+        if (participants.isEmpty() || currentBoard.processedPlayerIds.containsAll(participants)) {
             nextPlayer()
         }
     }
 
     override suspend fun passEstate() {
-        val board = board()
-        val playersWithEstate = board.activePlayers(board.players()).filter { it.estateList.isNotEmpty() }
+        if (player().estateList.isNotEmpty()) {
+            updateBoard { copy(processedPlayerIds = processedPlayerIds + playerId) }
+        }
+        val currentBoard = board()
+        val owners = currentBoard.activePlayers(currentBoard.players()).filter { it.estateList.isNotEmpty() }
             .map { it.id }.toSet()
-        if (playersWithEstate.size <= 1 || board.processedPlayerIds.containsAll(playersWithEstate)) {
+        val participants = owners + currentBoard.processedPlayerIds
+        if (participants.isEmpty() || currentBoard.processedPlayerIds.containsAll(participants)) {
             nextPlayer()
         }
     }
@@ -987,6 +1092,9 @@ class RaceRatServiceImpl(
 
     override suspend fun repayLoan(amount: Long) {
         updatePlayer {
+            require(amount > 0) { "Repayment must be positive" }
+            require(amount <= loan) { "Repayment exceeds the loan" }
+            require(amount <= balance()) { "Not enough money for repayment" }
             copy(loan = loan - amount).minusCash(amount)
         }
     }
@@ -1130,6 +1238,8 @@ class RaceRatServiceImpl(
     }
 }
 
+private val BOARD_DELETION_INACTIVITY = 7.days
+
 suspend fun nextPlayer(board: Board) {
     val activePlayers = board.activePlayers(Storage.players(board.id))
     if (activePlayers.isEmpty()) return
@@ -1198,9 +1308,26 @@ private fun Board.invalidateDecks(): Board {
     return copy(cards = newCards, discard = newDiscard)
 }
 
+private fun Board.generatedShareEventOrNull(): BoardCard.EventStore.Shares? {
+    val link = takenCard?.takeIf { it.type == BoardCardType.EventStore } ?: return null
+    return generatedCards[link.type]?.get(link.id) as? BoardCard.EventStore.Shares
+}
+
 private fun Board.containsCard(cardId: Int, cardType: BoardCardType): Boolean {
     val knownCardIds = cards[cardType].orEmpty() +
             discard[cardType].orEmpty() +
             listOfNotNull(takenCard?.takeIf { it.type == cardType }?.id)
     return cardId in knownCardIds
+}
+
+private fun Board.matches(profession: ProfessionCard, card: PlayerCard): Boolean {
+    val names = generatedTexts.values.mapNotNull { texts -> texts.professions[profession.id] }
+    return card.profession in names &&
+            profession.gender == card.gender &&
+            profession.salary == card.salary &&
+            profession.rent == card.rent &&
+            profession.food == card.food &&
+            profession.cloth == card.cloth &&
+            profession.transport == card.transport &&
+            profession.phone == card.phone
 }

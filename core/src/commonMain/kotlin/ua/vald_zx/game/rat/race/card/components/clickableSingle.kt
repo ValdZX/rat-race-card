@@ -40,6 +40,7 @@ fun Modifier.clickableSingle(
     onClickLabel: String? = null,
     role: Role? = null,
     indication: Indication? = null,
+    interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit
 ) = composed(
     inspectorInfo = debugInspectorInfo {
@@ -51,12 +52,13 @@ fun Modifier.clickableSingle(
     }
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter.get() }
+    val source = interactionSource ?: remember { MutableInteractionSource() }
     Modifier.clickable(
         enabled = enabled,
         onClickLabel = onClickLabel,
         onClick = { multipleEventsCutter.processEvent { onClick() } },
         role = role,
         indication = indication,
-        interactionSource = remember { MutableInteractionSource() }
+        interactionSource = source
     )
 }

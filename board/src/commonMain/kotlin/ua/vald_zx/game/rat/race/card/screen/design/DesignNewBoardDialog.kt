@@ -48,8 +48,13 @@ fun DesignNewBoardDialog(
     var locality by remember { mutableStateOf("") }
     var epoch by remember { mutableStateOf("") }
 
-    val amounts = listOf(loanLimit, businessLimit, minimumCashFlow, minimumAccountBalance, victoryAccountBalance)
-    val complete = name.isNotBlank() && amounts.none { it.isEmpty() }
+    val amounts = if (generateCards) {
+        emptyList()
+    } else {
+        listOf(loanLimit, businessLimit, minimumCashFlow, minimumAccountBalance, victoryAccountBalance)
+    }
+    val worldComplete = !generateCards || listOf(theme, locality, epoch).all { it.isNotBlank() }
+    val complete = name.isNotBlank() && amounts.none { it.isEmpty() } && worldComplete
 
     DesignDialog(
         title = stringResource(Res.string.new_table),
@@ -97,50 +102,6 @@ fun DesignNewBoardDialog(
                 onValueChange = { name = it },
                 label = stringResource(Res.string.table_name),
             )
-            AmountField(stringResource(Res.string.loanLimit), loanLimit) { loanLimit = it }
-            AmountField(stringResource(Res.string.businessLimit), businessLimit) { businessLimit = it }
-            DesignToggleRow(
-                label = stringResource(Res.string.transport_movement_bonus),
-                checked = transportBonus,
-                onCheckedChange = { transportBonus = it },
-            )
-
-            DesignSectionTitle(stringResource(Res.string.outer_circle_conditions))
-            AmountField(stringResource(Res.string.minimum_cash_flow), minimumCashFlow) { minimumCashFlow = it }
-            AmountField(stringResource(Res.string.minimum_account_balance), minimumAccountBalance) {
-                minimumAccountBalance = it
-            }
-            DesignToggleRow(
-                label = stringResource(Res.string.apartment_required),
-                checked = apartmentRequired,
-                onCheckedChange = { apartmentRequired = it },
-            )
-            DesignToggleRow(
-                label = stringResource(Res.string.car_required),
-                checked = carRequired,
-                onCheckedChange = { carRequired = it },
-            )
-
-            DesignSectionTitle(stringResource(Res.string.victory_conditions))
-            AmountField(stringResource(Res.string.victory_account_balance), victoryAccountBalance) {
-                victoryAccountBalance = it
-            }
-            DesignToggleRow(
-                label = stringResource(Res.string.dream_required),
-                checked = dreamRequired,
-                onCheckedChange = { dreamRequired = it },
-            )
-            DesignToggleRow(
-                label = stringResource(Res.string.plane_required),
-                checked = planeRequired,
-                onCheckedChange = { planeRequired = it },
-            )
-            DesignToggleRow(
-                label = stringResource(Res.string.estate_required),
-                checked = estateRequired,
-                onCheckedChange = { estateRequired = it },
-            )
-
             DesignSectionTitle(stringResource(Res.string.generated_deck))
             DesignToggleRow(
                 label = stringResource(Res.string.generate_cards),
@@ -167,6 +128,53 @@ fun DesignNewBoardDialog(
                     value = epoch,
                     onValueChange = { epoch = it },
                     label = stringResource(Res.string.world_epoch),
+                )
+            }
+            if (!generateCards) {
+                AmountField(stringResource(Res.string.loanLimit), loanLimit) { loanLimit = it }
+                AmountField(stringResource(Res.string.businessLimit), businessLimit) { businessLimit = it }
+                DesignToggleRow(
+                    label = stringResource(Res.string.transport_movement_bonus),
+                    checked = transportBonus,
+                    onCheckedChange = { transportBonus = it },
+                )
+
+                DesignSectionTitle(stringResource(Res.string.outer_circle_conditions))
+                AmountField(stringResource(Res.string.minimum_cash_flow), minimumCashFlow) {
+                    minimumCashFlow = it
+                }
+                AmountField(stringResource(Res.string.minimum_account_balance), minimumAccountBalance) {
+                    minimumAccountBalance = it
+                }
+                DesignToggleRow(
+                    label = stringResource(Res.string.apartment_required),
+                    checked = apartmentRequired,
+                    onCheckedChange = { apartmentRequired = it },
+                )
+                DesignToggleRow(
+                    label = stringResource(Res.string.car_required),
+                    checked = carRequired,
+                    onCheckedChange = { carRequired = it },
+                )
+
+                DesignSectionTitle(stringResource(Res.string.victory_conditions))
+                AmountField(stringResource(Res.string.victory_account_balance), victoryAccountBalance) {
+                    victoryAccountBalance = it
+                }
+                DesignToggleRow(
+                    label = stringResource(Res.string.dream_required),
+                    checked = dreamRequired,
+                    onCheckedChange = { dreamRequired = it },
+                )
+                DesignToggleRow(
+                    label = stringResource(Res.string.plane_required),
+                    checked = planeRequired,
+                    onCheckedChange = { planeRequired = it },
+                )
+                DesignToggleRow(
+                    label = stringResource(Res.string.estate_required),
+                    checked = estateRequired,
+                    onCheckedChange = { estateRequired = it },
                 )
             }
         }

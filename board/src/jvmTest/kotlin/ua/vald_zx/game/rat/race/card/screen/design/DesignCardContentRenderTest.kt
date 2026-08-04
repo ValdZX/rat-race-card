@@ -35,6 +35,7 @@ class DesignCardContentRenderTest {
         CardLink(BoardCardType.Shopping, 1),
         CardLink(BoardCardType.Chance, 96),
         CardLink(BoardCardType.Chance, 61),
+        CardLink(BoardCardType.Chance, 134),
         CardLink(BoardCardType.EventStore, 1),
         CardLink(BoardCardType.SmallBusiness, 1),
     )

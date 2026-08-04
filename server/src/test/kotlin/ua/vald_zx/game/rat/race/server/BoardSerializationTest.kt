@@ -10,8 +10,12 @@ import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.CardLink
 import ua.vald_zx.game.rat.race.card.shared.CardText
 import ua.vald_zx.game.rat.race.card.shared.GeneratedText
+import ua.vald_zx.game.rat.race.card.shared.Shares
+import ua.vald_zx.game.rat.race.card.shared.SharesType
 import ua.vald_zx.game.rat.race.card.shared.cardOrNull
 import ua.vald_zx.game.rat.race.card.shared.placesOf
+import ua.vald_zx.game.rat.race.card.shared.shareName
+import ua.vald_zx.game.rat.race.card.shared.shareTicker
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -34,7 +38,8 @@ class BoardSerializationTest {
     @Test
     fun everyGeneratedCardKindSurvivesTheWire() {
         val generated = BoardGenerator(
-            BoardGeneration(enabled = true, theme = "тема", locality = "місто", epoch = "епоха", seed = 7)
+            BoardGeneration(enabled = true, theme = "тема", locality = "місто", epoch = "епоха", seed = 7),
+            testBalance(),
         ).generate(BoardCardType.entries.associateWith { 30 })
 
         val kinds = generated.values.flatMap { it.values }.map { it::class.simpleName }.toSet()
@@ -54,12 +59,23 @@ class BoardSerializationTest {
     }
 
     @Test
+    fun oldEnumJsonDecodesAsTheNewStringShareId() {
+        val legacyJson = """{"type":"IT","count":120,"buyPrice":45}"""
+
+        val decoded = json.decodeFromString(Shares.serializer(), legacyJson)
+
+        assertEquals(SharesType.IT, decoded.type)
+        assertEquals(120, decoded.count)
+    }
+
+    @Test
     fun theGeneratedWorldSurvivesTheWire() {
         val world = BoardGeneration(enabled = true, theme = "тема", locality = "місто", epoch = "епоха", seed = 7)
-        val generator = BoardGenerator(world)
+        val generator = BoardGenerator(world, testBalance())
         val generated = board(generator.generate(BoardCardType.entries.associateWith { 5 })).copy(
             generatedProfessions = generator.generateProfessions(),
             generatedPlaces = generator.generatePlaces(),
+            generatedBalance = testBalance(),
             generatedTexts = mapOf(
                 "uk" to GeneratedText(
                     cards = mapOf(BoardCardType.Shopping to mapOf(1 to CardText("Назва", "Опис"))),
@@ -73,6 +89,9 @@ class BoardSerializationTest {
         assertEquals(generated.generatedProfessions, decoded.generatedProfessions)
         assertEquals(generated.generatedPlaces, decoded.generatedPlaces)
         assertEquals(generated.generatedTexts, decoded.generatedTexts)
+        assertEquals(generated.generatedBalance, decoded.generatedBalance)
+        assertEquals("Аероліт", decoded.shareName("aerolith", "uk-UA"))
+        assertEquals("AERO", decoded.shareTicker("aerolith"))
         BoardLayer.entries.forEach { layer ->
             assertEquals(generated.placesOf(layer), decoded.placesOf(layer), "коло $layer не пережило JSON")
             assertEquals(layer.places.size, decoded.placesOf(layer).size)
@@ -81,7 +100,7 @@ class BoardSerializationTest {
 
     @Test
     fun localizedTextReplacesTheGeneratedOne() {
-        val generator = BoardGenerator(BoardGeneration(enabled = true, theme = "тема", seed = 7))
+        val generator = BoardGenerator(BoardGeneration(enabled = true, theme = "тема", seed = 7), testBalance())
         val generated = board(generator.generate(mapOf(BoardCardType.Shopping to 3))).copy(
             generatedTexts = mapOf(
                 "uk" to GeneratedText(
@@ -103,7 +122,7 @@ class BoardSerializationTest {
         assertEquals("English text", english.description)
         assertEquals("Український опис", unknown.description)
         assertEquals(ukrainian.price, english.price)
-        assertTrue(untouched.description.isNotBlank(), "картка без перекладу лишилась без тексту")
+        assertTrue(untouched.description.isBlank(), "механіка картки містить шаблонний текст")
     }
 
     @Test

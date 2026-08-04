@@ -23,7 +23,6 @@ import ua.vald_zx.game.rat.race.server.data.Env
 import ua.vald_zx.game.rat.race.server.data.Storage
 import ua.vald_zx.game.rat.race.server.data.generateStableDbId
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -37,8 +36,6 @@ private val connectionIdsByUuid = ConcurrentHashMap<String, MutableSet<String>>(
 
 private const val STATUS_SWEEP_INTERVAL = 60
 private const val INACTIVITY_GRACE_MS = 5000L
-private val BOARD_CLEANUP_INTERVAL = 1.days
-private val BOARD_MAX_INACTIVITY = 7.days
 
 fun main() {
     Runtime.getRuntime().addShutdownHook(Thread {
@@ -51,12 +48,6 @@ fun main() {
         while (isActive) {
             delay(STATUS_SWEEP_INTERVAL.seconds)
             runStatusSweep()
-        }
-    }
-    instanceScope.launch {
-        while (isActive) {
-            delay(BOARD_CLEANUP_INTERVAL)
-            runBoardCleanup()
         }
     }
     embeddedServer(
@@ -95,20 +86,10 @@ fun getGlobalEventBus(boardId: String): MutableSharedFlow<GlobalEvent> {
     return globalEventBusMap.computeIfAbsent(boardId) { MutableSharedFlow() }
 }
 
-private suspend fun runBoardCleanup() {
-    runCatching {
-        val removed = Storage.removeInactiveBoardsOlderThan(BOARD_MAX_INACTIVITY)
-        if (removed.isNotEmpty()) {
-            LOGGER.info("Removed ${removed.size} inactive boards: $removed")
-        }
-    }.onFailure { error ->
-        LOGGER.error("Board cleanup failed", error)
-    }
-}
-
 fun Application.module() {
     install(Krpc)
     installCORS()
+    instanceScope.launch { BoardGenerationCoordinator.markPendingAsPaused() }
     monitor.subscribe(ApplicationStopping) {
         runBlocking {
             runCatching { Storage.flushPendingWrites() }

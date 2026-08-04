@@ -9,8 +9,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeout
 import kotlin.time.Duration.Companion.seconds
 import io.github.aakira.napier.Napier
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.appKStore
+import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.di.RaceRatConnection
 import ua.vald_zx.game.rat.race.card.screen.design.DesignBoardList
@@ -32,6 +34,7 @@ class BoardListScreen : Screen {
         var boardList by remember { mutableStateOf(emptyList<BoardId>()) }
         var isProgressVisible by remember { mutableStateOf(true) }
         var newBoardDialog by remember { mutableStateOf(false) }
+        var boardToDelete by remember { mutableStateOf<BoardId?>(null) }
         val coroutineScope = rememberCoroutineScope()
         LaunchedEffect(Unit) {
             try {
@@ -109,6 +112,7 @@ class BoardListScreen : Screen {
                 onBack = { navigator.pop() },
                 onCreate = { newBoardDialog = true },
                 onOpen = openBoard,
+                onDelete = { boardToDelete = it },
             )
         } else {
             LegacyBoardList(
@@ -117,7 +121,51 @@ class BoardListScreen : Screen {
                 onBack = { navigator.pop() },
                 onCreate = { newBoardDialog = true },
                 onOpen = openBoard,
+                onDelete = { boardToDelete = it },
             )
+        }
+        boardToDelete?.let { board ->
+            val dismissDelete = { boardToDelete = null }
+            val confirmDelete: () -> Unit = {
+                boardToDelete = null
+                coroutineScope.launch {
+                    isProgressVisible = true
+                    runCatching { connection.service().deleteBoard(board.id) }
+                        .onFailure { error -> Napier.e("Deleting board failed", error) }
+                    isProgressVisible = false
+                }
+            }
+            if (designV2) {
+                DesignMessageDialog(
+                    title = stringResource(Res.string.delete_table),
+                    message = stringResource(Res.string.delete_table_confirmation, board.name),
+                    confirmLabel = stringResource(Res.string.delete),
+                    onConfirm = confirmDelete,
+                    dismissLabel = stringResource(Res.string.cancel),
+                    onDismissAction = dismissDelete,
+                    onDismissRequest = dismissDelete,
+                )
+            } else {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = dismissDelete,
+                    title = { androidx.compose.material3.Text(stringResource(Res.string.delete_table)) },
+                    text = {
+                        androidx.compose.material3.Text(
+                            stringResource(Res.string.delete_table_confirmation, board.name)
+                        )
+                    },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(onClick = confirmDelete) {
+                            androidx.compose.material3.Text(stringResource(Res.string.delete))
+                        }
+                    },
+                    dismissButton = {
+                        androidx.compose.material3.TextButton(onClick = dismissDelete) {
+                            androidx.compose.material3.Text(stringResource(Res.string.cancel))
+                        }
+                    },
+                )
+            }
         }
         if (newBoardDialog) {
             if (designV2) {

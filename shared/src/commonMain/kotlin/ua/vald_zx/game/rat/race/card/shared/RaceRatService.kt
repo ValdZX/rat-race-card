@@ -120,6 +120,7 @@ interface RaceRatService {
     suspend fun connectionIsValid()
     suspend fun getBoards(): List<BoardId>
     fun observeBoards(): Flow<List<BoardId>>
+    suspend fun deleteBoard(boardId: String)
     suspend fun createBoard(
         name: String,
         loanLimit: Long,
@@ -133,6 +134,9 @@ interface RaceRatService {
 
     suspend fun updateAttributes(attrs: PlayerAttributes)
     suspend fun getPlayer(): Player
+    fun observeGeneration(): Flow<BoardGenerationProgress>
+    suspend fun continueGeneration()
+    suspend fun restartGeneration()
     suspend fun makePlayer(
         uuid: String,
         color: Long,
@@ -175,7 +179,7 @@ interface RaceRatService {
     suspend fun sellShares(card: BoardCard.EventStore.Shares, count: Long)
     suspend fun sellEstate(card: List<Estate>, price: Long)
     suspend fun passLand()
-    suspend fun passShares(sharesType: SharesType)
+    suspend fun passShares(sharesType: String)
     suspend fun passEstate()
     suspend fun playHighRiskInvestment(stake: Long, guess: Int)
     suspend fun playMediumRiskInvestment(stake: Long, even: Boolean)

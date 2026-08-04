@@ -7,8 +7,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -17,7 +19,6 @@ import kotlinx.coroutines.sync.withLock
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Player
 import kotlin.time.Clock
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
@@ -27,7 +28,11 @@ object Storage {
     private val db: MongoDatabase by lazy { connectToDatabase() }
     private val persistenceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val boardsFlow = MutableStateFlow<List<Board>>(emptyList())
+    private val boardsFlow = MutableSharedFlow<List<Board>>(
+        replay = 1,
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
     private val players: MutableMap<String, MutableStateFlow<Player>> = mutableMapOf()
     private val boards: MutableMap<String, MutableStateFlow<Board>> = mutableMapOf()
 
@@ -94,9 +99,9 @@ object Storage {
             !allInactive && board.allInactiveSinceEpochMs != null ->
                 board.copy(allInactiveSinceEpochMs = null)
 
-            else -> return
+            else -> null
         }
-        updateBoard(updated)
+        if (updated != null) updateBoard(updated) else updateBoardList()
     }
 
     suspend fun players(boardId: String): List<Player> {
@@ -121,7 +126,7 @@ object Storage {
     }
 
     private fun updateBoardList() {
-        boardsFlow.value = boards.values.map { it.value }
+        boardsFlow.tryEmit(boards.values.map { it.value })
     }
 
     suspend fun updateBoard(board: Board) {
@@ -162,18 +167,6 @@ object Storage {
     suspend fun newPlayer(player: Player) {
         cachePlayer(player)
         playerWriteQueue.enqueue(player.id, player)
-    }
-
-    suspend fun removeInactiveBoardsOlderThan(maxInactivity: Duration): List<String> {
-        boards().forEach { board -> recalculateBoardActivity(board.id) }
-        val nowMs = Clock.System.now().toEpochMilliseconds()
-        val maxInactivityMs = maxInactivity.inWholeMilliseconds
-        val expiredBoardIds = boards().filter { board ->
-            val sinceMs = board.allInactiveSinceEpochMs ?: return@filter false
-            nowMs - sinceMs >= maxInactivityMs
-        }.map { it.id }
-        expiredBoardIds.forEach { boardId -> removeBoard(boardId) }
-        return expiredBoardIds
     }
 
     suspend fun flushPendingWrites() {

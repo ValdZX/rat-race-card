@@ -21,27 +21,27 @@ class BoardGeneratorTest {
 
     @Test
     fun theSameSeedRebuildsTheSameDeck() {
-        val first = BoardGenerator(world()).generate(decks)
-        val second = BoardGenerator(world()).generate(decks)
+        val first = BoardGenerator(world(), testBalance()).generate(decks)
+        val second = BoardGenerator(world(), testBalance()).generate(decks)
         assertEquals(first, second, "колода не відтворюється з того самого seed")
     }
 
     @Test
     fun anotherSeedGivesAnotherDeck() {
-        val first = BoardGenerator(world(seed = 1)).generate(decks)
-        val second = BoardGenerator(world(seed = 2)).generate(decks)
+        val first = BoardGenerator(world(seed = 1), testBalance()).generate(decks)
+        val second = BoardGenerator(world(seed = 2), testBalance()).generate(decks)
         assertTrue(first != second, "seed ні на що не впливає")
     }
 
     @Test
     fun switchingGenerationOffLeavesTheStaticDecks() {
-        val off = BoardGenerator(world().copy(enabled = false)).generate(decks)
+        val off = BoardGenerator(world().copy(enabled = false), testBalance()).generate(decks)
         assertTrue(off.isEmpty(), "вимкнена генерація все одно підмінила колоду")
     }
 
     @Test
     fun everyRequestedCardIsBuilt() {
-        val generated = BoardGenerator(world()).generate(decks)
+        val generated = BoardGenerator(world(), testBalance()).generate(decks)
         decks.forEach { (type, size) ->
             assertEquals(size, generated.getValue(type).size, "колода $type неповна")
             assertEquals((1..size).toSet(), generated.getValue(type).keys)
@@ -49,23 +49,97 @@ class BoardGeneratorTest {
     }
 
     @Test
-    fun theWorldLeaksIntoTheText() {
-        val generated = BoardGenerator(world()).generate(decks)
-        val texts = generated.getValue(BoardCardType.Shopping).values
-            .filterIsInstance<BoardCard.Shopping>()
-            .map { it.description }
-        assertTrue(texts.any { "Марсі" in it }, "місцевість не потрапила в тексти")
-        assertTrue(texts.any { "2140 рік" in it }, "епоха не потрапила в тексти")
-        assertTrue(texts.any { "космічна колонія" in it }, "тематика не потрапила в тексти")
+    fun generatedExpensesHaveVisiblePriceTitles() {
+        val expenses = BoardGenerator(world(), testBalance())
+            .generate(mapOf(BoardCardType.Expenses to 40))
+            .getValue(BoardCardType.Expenses)
+            .values
+            .filterIsInstance<BoardCard.Expenses>()
+
+        assertTrue(expenses.isNotEmpty())
+        expenses.forEach { card ->
+            assertTrue(card.priceTitle.isNotBlank())
+            assertEquals(card.price.toString(), card.priceTitle.filter(Char::isDigit))
+        }
+    }
+
+    @Test
+    fun shareCardsUseOnlyTheGeneratedMarket() {
+        val balance = testBalance()
+        val generated = BoardGenerator(world(), balance).generate(decks)
+        val shareIds = generated.values.flatMap { it.values }.mapNotNull { card ->
+            when (card) {
+                is BoardCard.Chance.Shares -> card.sharesType
+                is BoardCard.EventStore.Shares -> card.sharesType
+                else -> null
+            }
+        }
+
+        assertTrue(shareIds.isNotEmpty())
+        assertTrue(shareIds.all { id -> balance.shares.any { it.id == id } })
+    }
+
+    @Test
+    fun generatedMarketContainsUnfavorableForcedShareSales() {
+        val balance = testBalance()
+        val events = BoardGenerator(world(), balance)
+            .generate(mapOf(BoardCardType.EventStore to 200))
+            .getValue(BoardCardType.EventStore)
+            .values
+            .filterIsInstance<BoardCard.EventStore.Shares>()
+        val forced = events.filter { it.forcedSale }
+
+        assertTrue(forced.isNotEmpty())
+        assertTrue(forced.all { it.price in balance.forcedShareSalePrices })
+        assertTrue(forced.all { it.price < balance.sharePrices.min() })
+        assertTrue(events.filterNot { it.forcedSale }.all { it.price in balance.sharePrices })
+    }
+
+    @Test
+    fun mechanicsContainNoTemplateText() {
+        val generated = BoardGenerator(world(), testBalance()).generate(decks)
+        generated.values.flatMap { it.values }.forEach { card ->
+            val text = when (card) {
+                is BoardCard.SmallBusiness -> card.name + card.description
+                is BoardCard.MediumBusiness -> card.name + card.description
+                is BoardCard.BigBusiness -> card.name + card.description
+                is BoardCard.Shopping -> card.description
+                is BoardCard.Expenses -> card.description
+                is BoardCard.Deputy -> card.description
+                is BoardCard.EventStore.Shares -> card.description
+                is BoardCard.EventStore.Land -> card.description
+                is BoardCard.EventStore.Estate -> card.description
+                is BoardCard.EventStore.BusinessExtending -> card.description
+                is BoardCard.EventStore.Reelection -> card.description
+                is BoardCard.EventStore.Announcement -> card.description
+                is BoardCard.Chance.RandomJob -> card.description
+                is BoardCard.Chance.Land -> card.name + card.description
+                is BoardCard.Chance.Estate -> card.name + card.description
+                is BoardCard.Chance.Shares -> card.description
+                is BoardCard.Chance.CorruptBusiness -> card.description
+                is BoardCard.Chance.CorruptLand -> card.description
+            }
+            assertTrue(text.isBlank(), "генератор механіки повернув шаблонний текст")
+        }
     }
 
     @Test
     fun businessesStayInsideTheBandsFromTheSpec() {
-        val generated = BoardGenerator(world()).generate(decks)
+        val balance = testBalance()
+        val generated = BoardGenerator(world(), balance).generate(decks)
         val bands = mapOf(
-            BoardCardType.SmallBusiness to (200L..8_000L to 12..100),
-            BoardCardType.MediumBusiness to (50_000L..950_000L to 3..10),
-            BoardCardType.BigBusiness to (700_000L..8_000_000L to 6..10),
+            BoardCardType.SmallBusiness to (
+                    balance.smallBusinessPrices.min()..balance.smallBusinessPrices.max() to
+                            balance.smallBusinessReturnPercentages.min().toInt()..balance.smallBusinessReturnPercentages.max().toInt()
+                    ),
+            BoardCardType.MediumBusiness to (
+                    balance.mediumBusinessPrices.min()..balance.mediumBusinessPrices.max() to
+                            balance.mediumBusinessReturnPercentages.min().toInt()..balance.mediumBusinessReturnPercentages.max().toInt()
+                    ),
+            BoardCardType.BigBusiness to (
+                    balance.bigBusinessPrices.min()..balance.bigBusinessPrices.max() to
+                            balance.bigBusinessReturnPercentages.min().toInt()..balance.bigBusinessReturnPercentages.max().toInt()
+                    ),
         )
         bands.forEach { (type, band) ->
             val (prices, rates) = band
@@ -87,7 +161,7 @@ class BoardGeneratorTest {
     @Test
     fun corruptionSurvivesGeneration() {
         val bigDecks = BoardCardType.entries.associateWith { 200 }
-        val chance = BoardGenerator(world()).generate(bigDecks).getValue(BoardCardType.Chance).values
+        val chance = BoardGenerator(world(), testBalance()).generate(bigDecks).getValue(BoardCardType.Chance).values
         val corruptBusiness = chance.filterIsInstance<BoardCard.Chance.CorruptBusiness>()
         val corruptLand = chance.filterIsInstance<BoardCard.Chance.CorruptLand>()
 
@@ -105,7 +179,7 @@ class BoardGeneratorTest {
 
     @Test
     fun marketEventsKeepTheirRareCards() {
-        val events = BoardGenerator(world()).generate(BoardCardType.entries.associateWith { 200 })
+        val events = BoardGenerator(world(), testBalance()).generate(BoardCardType.entries.associateWith { 200 })
             .getValue(BoardCardType.EventStore)
             .values
         assertTrue(
@@ -124,7 +198,7 @@ class BoardGeneratorTest {
 
     @Test
     fun deputiesStayCloseToHalfCorrupt() {
-        val deputies = BoardGenerator(world()).generate(BoardCardType.entries.associateWith { 200 })
+        val deputies = BoardGenerator(world(), testBalance()).generate(BoardCardType.entries.associateWith { 200 })
             .getValue(BoardCardType.Deputy)
             .values
             .filterIsInstance<BoardCard.Deputy>()

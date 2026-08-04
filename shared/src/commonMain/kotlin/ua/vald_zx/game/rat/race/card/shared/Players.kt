@@ -140,18 +140,18 @@ enum class BusinessType(val klass: Int) {
     CORRUPTION(3)
 }
 
-enum class SharesType {
-    GC,
-    ShchHP,
-    TO,
-    CST,
-    AGRO,
-    IT,
+object SharesType {
+    const val GC = "GC"
+    const val ShchHP = "ShchHP"
+    const val TO = "TO"
+    const val CST = "CST"
+    const val AGRO = "AGRO"
+    const val IT = "IT"
 }
 
 @Serializable
 data class Shares(
-    val type: SharesType,
+    val type: String,
     val count: Long,
     val buyPrice: Long,
 ) {

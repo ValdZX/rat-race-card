@@ -56,9 +56,10 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
     sealed class EventStore : BoardCard(BoardCardType.EventStore) {
         @Serializable
         data class Shares(
-            val sharesType: SharesType,
+            val sharesType: String,
             val description: String,
-            val price: Long
+            val price: Long,
+            val forcedSale: Boolean = false,
         ) : EventStore()
 
         @Serializable
@@ -117,7 +118,7 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
             val description: String,
             val price: Long,
             val maxCount: Long,
-            val sharesType: SharesType
+            val sharesType: String
         ) : Chance()
 
         @Serializable

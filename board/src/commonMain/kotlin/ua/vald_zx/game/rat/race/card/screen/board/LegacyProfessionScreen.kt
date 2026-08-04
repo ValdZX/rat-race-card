@@ -58,6 +58,13 @@ internal fun LegacyProfessionContent(
                 value = card.salary.toString(),
                 color = MaterialTheme.colorScheme.primary
             )
+            if (card.description.isNotBlank()) {
+                Text(
+                    text = card.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                )
+            }
             Text(
                 text = stringResource(Res.string.expenses),
                 style = MaterialTheme.typography.titleSmall,

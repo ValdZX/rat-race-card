@@ -232,9 +232,10 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                         selectedDream = state.board.dreamById(player.selectedDreamId),
                         outerCircleConditions = state.board.outerCircleConditions,
                         victoryConditions = state.board.victoryConditions,
+                        loanLimit = state.board.loanLimit,
                     )
                     1 -> BusinessListPage(player)
-                    2 -> SharesPage(player)
+                    2 -> SharesPage(player, state.board)
                     3 -> LandPage(player)
                     4 -> EstatePage(player)
                     5 -> FundsPage(player)

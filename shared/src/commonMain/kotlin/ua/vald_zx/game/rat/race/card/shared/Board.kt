@@ -9,6 +9,10 @@ data class BoardId(
     val id: String,
     val name: String,
     val createDateTime: LocalDateTime,
+    val activePlayerCount: Int = 0,
+    val inactivePlayerCount: Int = 0,
+    val deletableAfterEpochMs: Long? = null,
+    val canDelete: Boolean = false,
 )
 
 @Serializable
@@ -45,6 +49,8 @@ data class Board(
     val generatedProfessions: List<ProfessionCard> = emptyList(),
     val generatedPlaces: Map<BoardLayer, List<String>> = emptyMap(),
     val generatedTexts: Map<String, GeneratedText> = emptyMap(),
+    val generationProgress: BoardGenerationProgress = BoardGenerationProgress(),
+    val generatedBalance: GeneratedBalance? = null,
 )
 
 fun Board.cardOrNull(link: CardLink, locale: String = DEFAULT_LOCALE): BoardCard? {
@@ -54,11 +60,30 @@ fun Board.cardOrNull(link: CardLink, locale: String = DEFAULT_LOCALE): BoardCard
 }
 
 fun Board.professionsFor(gender: Gender, locale: String = DEFAULT_LOCALE): List<ProfessionCard> {
-    val names = textsFor(locale).professions
+    val texts = textsFor(locale)
     return generatedProfessions
         .filter { it.gender == gender }
-        .map { profession -> names[profession.id]?.let { profession.copy(name = it) } ?: profession }
+        .map { profession ->
+            profession.copy(
+                name = texts.professions[profession.id] ?: profession.name,
+                description = texts.professionDescriptions[profession.id] ?: profession.description,
+            )
+        }
 }
+
+fun Board.shareName(id: String, locale: String = DEFAULT_LOCALE): String {
+    val share = generatedBalance?.shares?.firstOrNull { it.id == id }
+    return share?.names?.get(locale)
+        ?: share?.names?.get(locale.take(2))
+        ?: share?.names?.get(DEFAULT_LOCALE)
+        ?: share?.names?.values?.firstOrNull()
+        ?: shareTicker(id)
+}
+
+fun Board.shareTicker(id: String): String = generatedBalance?.shares
+    ?.firstOrNull { it.id == id }
+    ?.ticker
+    ?: id.replace(SharesType.ShchHP, "ЩГП")
 
 private fun Board.textsFor(locale: String): GeneratedText =
     generatedTexts[locale]

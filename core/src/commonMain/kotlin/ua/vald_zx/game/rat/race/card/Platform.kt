@@ -20,9 +20,13 @@ data class AppDataStorageBean(
     val clientUuid: String,
     val theme: Boolean?,
     val designV2: Boolean = false,
+    val sound: Boolean = true,
+    val language: String? = null,
 )
 
 val designV2Enabled = mutableStateOf(false)
+
+val soundEnabled = mutableStateOf(true)
 
 var storageKeyPrefix = ""
 
@@ -37,6 +41,7 @@ enum class GameSound(internal val file: String) {
     PlaceAsset("place_asset.mp3"),
     PlaceLife("place_life.mp3"),
     TokenStep("token_step.mp3"),
+    DiceRoll("dice_roll.wav"),
 }
 
 @OptIn(ExperimentalBasicSound::class)
@@ -53,6 +58,7 @@ private val soundBoard = SoundBoard(platformContext).apply {
 
 @OptIn(ExperimentalBasicSound::class)
 fun play(sound: GameSound) {
+    if (!soundEnabled.value) return
     try {
         soundBoard.mixer.play(sound.name)
     } catch (e: Exception) {

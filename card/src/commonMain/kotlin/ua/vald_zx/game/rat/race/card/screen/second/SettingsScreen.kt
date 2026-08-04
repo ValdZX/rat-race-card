@@ -9,18 +9,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
-import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.*
+import ua.vald_zx.game.rat.race.card.AppDataStorageBean
 import ua.vald_zx.game.rat.race.card.appKStore
+import ua.vald_zx.game.rat.race.card.applyAppLanguage
+import ua.vald_zx.game.rat.race.card.currentAppLanguage
+import ua.vald_zx.game.rat.race.card.design.DesignLanguagePicker
+import ua.vald_zx.game.rat.race.card.soundEnabled
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
@@ -132,16 +135,15 @@ class SettingsScreen : Screen {
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(Res.string.language))
-                        val locale = Locale.current.language
-                        Button(
-                            onClick = {
-                                LocaleUpdater.updateLocale(if (locale.contains("uk", ignoreCase = true)) {
-                                    "en"
-                                } else {
-                                    "uk"
-                                })
-                            }
-                        ) { Text(if (locale == "uk") "Українська" else "English") }
+                        val language = currentAppLanguage
+                        DesignLanguagePicker(
+                            selected = language,
+                            onSelect = { selected ->
+                                if (selected != language) {
+                                    coroutineScope.launch { applyAppLanguage(selected) }
+                                }
+                            },
+                        )
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -155,6 +157,21 @@ class SettingsScreen : Screen {
                                     state.config.copy(hasFunds = it)
                                 )
                             )
+                        })
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(Res.string.sound))
+                        Switch(soundEnabled.value, onCheckedChange = { enabled ->
+                            soundEnabled.value = enabled
+                            coroutineScope.launch {
+                                appKStore.update { stored ->
+                                    (stored ?: AppDataStorageBean("", null)).copy(sound = enabled)
+                                }
+                            }
                         })
                     }
                     Row(

@@ -74,7 +74,9 @@ import ua.vald_zx.game.rat.race.card.logic.BoardUiAction
 import ua.vald_zx.game.rat.race.card.logic.BoardConnectionState
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
+import ua.vald_zx.game.rat.race.card.GameSound
 import ua.vald_zx.game.rat.race.card.lottieDiceAnimations
+import ua.vald_zx.game.rat.race.card.play
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.ArrowUp
 import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
@@ -733,6 +735,7 @@ fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(state.board.dice, state.board.diceRolling) {
         if (state.board.diceRolling) {
+            play(GameSound.DiceRoll)
             coroutineScope.launch {
                 animatable.animate(composition, iterations = 1, initialProgress = 0f)
             }

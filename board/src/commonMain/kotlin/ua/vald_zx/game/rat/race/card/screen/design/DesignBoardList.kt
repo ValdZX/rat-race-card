@@ -31,6 +31,7 @@ fun DesignBoardList(
     onBack: () -> Unit,
     onCreate: () -> Unit,
     onOpen: (BoardId) -> Unit,
+    onDelete: (BoardId) -> Unit = {},
 ) {
     val colors = Design.colors
     Box(
@@ -74,7 +75,13 @@ fun DesignBoardList(
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(boards) { board -> BoardRow(board) { onOpen(board) } }
+                items(boards) { board ->
+                    BoardRow(
+                        board = board,
+                        onOpen = { onOpen(board) },
+                        onDelete = { onDelete(board) },
+                    )
+                }
             }
         }
         if (isLoading) {
@@ -87,7 +94,7 @@ fun DesignBoardList(
 }
 
 @Composable
-private fun BoardRow(board: BoardId, onClick: () -> Unit) {
+private fun BoardRow(board: BoardId, onOpen: () -> Unit, onDelete: () -> Unit) {
     val colors = Design.colors
     Row(
         modifier = Modifier
@@ -96,7 +103,6 @@ private fun BoardRow(board: BoardId, onClick: () -> Unit) {
             .clip(DesignShapes.lg)
             .background(colors.scaffold.surface2)
             .border(1.dp, colors.scaffold.outline, DesignShapes.lg)
-            .clickableSingle(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -107,7 +113,12 @@ private fun BoardRow(board: BoardId, onClick: () -> Unit) {
                 .clip(DesignShapes.xs)
                 .background(Design.semantic.business.edge)
         )
-        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickableSingle(onClick = onOpen)
+                .padding(start = 12.dp),
+        ) {
             Text(
                 text = board.name,
                 style = Design.type.subtitle,
@@ -119,6 +130,31 @@ private fun BoardRow(board: BoardId, onClick: () -> Unit) {
                 text = board.createDateTime.format(dateFullDotsFormat),
                 style = Design.type.monoMeta,
                 color = colors.scaffold.onSurfaceMuted,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = stringResource(Res.string.active_players_count, board.activePlayerCount),
+                    style = Design.type.micro,
+                    color = if (board.activePlayerCount > 0) {
+                        Design.semantic.positive.edge
+                    } else {
+                        colors.scaffold.onSurfaceMuted
+                    },
+                )
+                Text(
+                    text = stringResource(Res.string.inactive_players_count, board.inactivePlayerCount),
+                    style = Design.type.micro,
+                    color = colors.scaffold.onSurfaceMuted,
+                )
+            }
+        }
+        if (board.canDelete) {
+            DesignButton(
+                text = stringResource(Res.string.delete_table),
+                kind = DesignButtonKind.Text,
+                height = 36.dp,
+                padding = 10.dp,
+                onClick = onDelete,
             )
         }
     }

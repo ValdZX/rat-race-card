@@ -10,7 +10,9 @@ fun Player.needPayExpenses(
 ): Boolean {
     return when (expenses.payer) {
         PayerType.ALL -> true
-        PayerType.FREE_W_OR_MARRIED_M -> card.gender == Gender.FEMALE || isMarried
+        PayerType.FREE_W_OR_MARRIED_M ->
+            (card.gender == Gender.FEMALE && !isMarried) ||
+                    (card.gender == Gender.MALE && isMarried)
         PayerType.AUTO_OWNER -> cars > 0
         PayerType.MEN -> card.gender == Gender.MALE
         PayerType.PARENT -> babies > 0

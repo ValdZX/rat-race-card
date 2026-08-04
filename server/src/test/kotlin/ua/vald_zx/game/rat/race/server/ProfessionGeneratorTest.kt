@@ -14,7 +14,7 @@ class ProfessionGeneratorTest {
         seed = seed,
     )
 
-    private fun professions(seed: Long = 42) = BoardGenerator(world(seed)).generateProfessions()
+    private fun professions(seed: Long = 42) = BoardGenerator(world(seed), testBalance()).generateProfessions()
 
     @Test
     fun bothGendersGetTheSameChoice() {
@@ -48,6 +48,6 @@ class ProfessionGeneratorTest {
 
     @Test
     fun switchingGenerationOffKeepsTheStaticProfessions() {
-        assertTrue(BoardGenerator(world().copy(enabled = false)).generateProfessions().isEmpty())
+        assertTrue(BoardGenerator(world().copy(enabled = false), testBalance()).generateProfessions().isEmpty())
     }
 }

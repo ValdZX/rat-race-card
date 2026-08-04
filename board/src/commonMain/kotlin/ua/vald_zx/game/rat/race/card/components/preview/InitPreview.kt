@@ -43,6 +43,9 @@ fun InitPreview(
                             error("Not for preview")
                         }
 
+                        override suspend fun deleteBoard(boardId: String) {
+                        }
+
                         override suspend fun createBoard(
                             name: String,
                             loanLimit: Long,
@@ -62,6 +65,14 @@ fun InitPreview(
 
                         override suspend fun getPlayer(): Player {
                             error("Not for preview")
+                        }
+
+                        override fun observeGeneration(): Flow<BoardGenerationProgress> = MutableSharedFlow()
+
+                        override suspend fun continueGeneration() {
+                        }
+
+                        override suspend fun restartGeneration() {
                         }
 
                         override suspend fun makePlayer(
@@ -182,7 +193,7 @@ fun InitPreview(
                         override suspend fun passLand() {
                         }
 
-                        override suspend fun passShares(sharesType: SharesType) {
+                        override suspend fun passShares(sharesType: String) {
                         }
 
                         override suspend fun passEstate() {

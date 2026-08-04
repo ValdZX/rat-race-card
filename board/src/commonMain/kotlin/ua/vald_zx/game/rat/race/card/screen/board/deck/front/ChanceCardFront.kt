@@ -36,7 +36,6 @@ import ua.vald_zx.game.rat.race.card.screen.board.cards.cardOf
 import ua.vald_zx.game.rat.race.card.screen.board.AuctionScreen
 import ua.vald_zx.game.rat.race.card.screen.design.LocalAuctionPanelToggle
 import ua.vald_zx.game.rat.race.card.screen.board.cards.chanceCards
-import ua.vald_zx.game.rat.race.card.screen.board.page.label
 import ua.vald_zx.game.rat.race.card.shared.*
 
 @Composable
@@ -372,7 +371,13 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,
             )
-            CardStamp(glyph = card.sharesType.label(), unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 13f)
+            CardStamp(
+                glyph = state.board.shareTicker(card.sharesType),
+                unitTS = unitTS,
+                unitDp = unitDp,
+                id = cardLink.id,
+                glyphSize = 13f,
+            )
         }
         Text(
             modifier = Modifier.padding(top = smallPadding),
