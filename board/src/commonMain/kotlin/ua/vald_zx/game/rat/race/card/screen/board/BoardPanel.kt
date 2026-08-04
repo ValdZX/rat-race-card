@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
+import androidx.compose.runtime.collectAsState
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.design.DesignBoardRoutes
@@ -33,10 +34,13 @@ fun BoxWithConstraintsScope.BoardPanel(
     val maxHeight = maxHeight
     val density = LocalDensity.current
     val isDark by LocalThemeIsDark.current
-    val layout = remember(isVertical, maxWidth, maxHeight) {
+    val board = vm.uiState.collectAsState().value.board
+    val layers = remember(board.generatedPlaces) { boardLayersOf(board) }
+    val layout = remember(isVertical, maxWidth, maxHeight, layers) {
         calculateBoardLayout(
             boardSize = DpSize(maxWidth, maxHeight),
             isVertical = isVertical,
+            layers = layers,
         )
     } ?: return
 

@@ -332,9 +332,10 @@
     <string name="reelection">Re-elections</string>
     <string name="market_news">News</string>
     <string name="skip_deputies">Walk past</string>
-    <string name="generated_deck">Generated deck</string>
-    <string name="generate_cards">Generate cards</string>
-    <string name="world_theme">Theme</string>
-    <string name="world_locality">Place</string>
-    <string name="world_epoch">Epoch</string>
+    <string name="generated_deck">Generated game</string>
+    <string name="generate_cards">Generate the board</string>
+    <string name="generate_cards_hint">Professions, cell order and all card decks are generated for this table</string>
+    <string name="world_theme">Theme (optional)</string>
+    <string name="world_locality">Place (optional)</string>
+    <string name="world_epoch">Epoch (optional)</string>
 </resources>

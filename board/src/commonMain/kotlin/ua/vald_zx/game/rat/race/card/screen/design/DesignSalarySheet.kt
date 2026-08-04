@@ -29,9 +29,9 @@ fun DesignSalarySheet(vm: BoardViewModel) {
     val player = state.player
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     var openGame by remember { mutableStateOf<Game?>(null) }
-    val fundRate = remember(player.investmentPosition, player.location.level) {
+    val fundRate = remember(player.investmentPosition, player.location.level, state.places) {
         player.investmentPosition?.let { position ->
-            player.location.level.toLayer().fundRateAtSalary(position)
+            state.places.fundRateAtSalary(position)
         }
     }
 

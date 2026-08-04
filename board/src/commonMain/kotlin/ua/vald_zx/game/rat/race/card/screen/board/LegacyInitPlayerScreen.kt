@@ -24,8 +24,8 @@ import ua.vald_zx.game.rat.race.card.components.GenderSelector
 import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.resource.Images
-import ua.vald_zx.game.rat.race.card.screen.board.cards.menProfessionCards
-import ua.vald_zx.game.rat.race.card.screen.board.cards.womenProfessionCards
+import androidx.compose.ui.text.intl.Locale
+import ua.vald_zx.game.rat.race.card.screen.board.cards.professionFor
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Gender
 
@@ -37,6 +37,7 @@ internal fun LegacyInitPlayerContent(
 ) {
     val navigator = LocalNavigator.currentOrThrow
     val coroutineScope = rememberCoroutineScope()
+    val locale = Locale.current.language
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -82,10 +83,7 @@ internal fun LegacyInitPlayerContent(
                 enabled = playerName.isNotEmpty(),
             ) {
                 coroutineScope.launch {
-                    val card = when (currentGender) {
-                        Gender.MALE -> menProfessionCards.random()
-                        Gender.FEMALE -> womenProfessionCards.random()
-                    }
+                    val card = professionFor(board, currentGender, locale)
                     navigator.push(
                         ProfessionScreen(
                             board = board,

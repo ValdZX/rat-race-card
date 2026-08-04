@@ -174,6 +174,31 @@ enum class PayerType {
     ANIMAL_OWNER,
 }
 
+fun BoardCard.withText(text: CardText): BoardCard {
+    val description = text.description.ifBlank { null }
+    val name = text.name.ifBlank { null }
+    return when (this) {
+        is BoardCard.SmallBusiness -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.MediumBusiness -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.BigBusiness -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.Shopping -> copy(description = description ?: this.description)
+        is BoardCard.Deputy -> copy(description = description ?: this.description)
+        is BoardCard.Expenses -> copy(description = description ?: this.description)
+        is BoardCard.EventStore.Shares -> copy(description = description ?: this.description)
+        is BoardCard.EventStore.Land -> copy(description = description ?: this.description)
+        is BoardCard.EventStore.Estate -> copy(description = description ?: this.description)
+        is BoardCard.EventStore.BusinessExtending -> copy(description = description ?: this.description)
+        is BoardCard.EventStore.Reelection -> copy(description = description ?: this.description)
+        is BoardCard.EventStore.Announcement -> copy(description = description ?: this.description)
+        is BoardCard.Chance.RandomJob -> copy(description = description ?: this.description)
+        is BoardCard.Chance.Land -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.Chance.Estate -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.Chance.Shares -> copy(description = description ?: this.description)
+        is BoardCard.Chance.CorruptBusiness -> copy(description = description ?: this.description)
+        is BoardCard.Chance.CorruptLand -> copy(description = description ?: this.description)
+    }
+}
+
 fun BoardCardType.matches(placeType: PlaceType): Boolean {
     return when (this) {
         BoardCardType.Chance -> placeType == PlaceType.Chance
@@ -188,15 +213,20 @@ fun BoardCardType.matches(placeType: PlaceType): Boolean {
     }
 }
 
-fun BoardLayer.hasPlaceFor(cardType: BoardCardType): Boolean {
-    return places.any(cardType::matches)
+fun List<PlaceType>.hasPlaceFor(cardType: BoardCardType): Boolean = any(cardType::matches)
+
+fun List<PlaceType>.nearestPlacePosition(
+    currentPosition: Int,
+    cardType: BoardCardType,
+): Int? {
+    return (1..size)
+        .map { offset -> moveTo(currentPosition, size, offset) }
+        .firstOrNull { position -> cardType.matches(this[position]) }
 }
+
+fun BoardLayer.hasPlaceFor(cardType: BoardCardType): Boolean = places.hasPlaceFor(cardType)
 
 fun BoardLayer.nearestPlacePosition(
     currentPosition: Int,
     cardType: BoardCardType,
-): Int? {
-    return (1..cellCount)
-        .map { offset -> moveTo(currentPosition, cellCount, offset) }
-        .firstOrNull { position -> cardType.matches(places[position]) }
-}
+): Int? = places.nearestPlacePosition(currentPosition, cardType)

@@ -72,9 +72,10 @@ private val rightDeckTypes = listOf(
 fun calculateBoardLayout(
     boardSize: DpSize,
     isVertical: Boolean,
+    layers: BoardLayers = boardLayers,
 ): BoardLayout? {
-    val outRoute = boardLayers.layers[BoardLayer.OUTER] ?: return null
-    val inRoute = boardLayers.layers[BoardLayer.INNER] ?: return null
+    val outRoute = layers.layers[BoardLayer.OUTER] ?: return null
+    val inRoute = layers.layers[BoardLayer.INNER] ?: return null
     val actualOutRoute = if (isVertical) outRoute.rotate() else outRoute
     val actualInRoute = if (isVertical) inRoute.rotate() else inRoute
     val outerCell = boardSize.cellSize(actualOutRoute)

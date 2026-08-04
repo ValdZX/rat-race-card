@@ -4,10 +4,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.inPlaces
 import ua.vald_zx.game.rat.race.card.shared.outPlaces
+import ua.vald_zx.game.rat.race.card.shared.placesOf
 
 enum class Side(val isHorizontal: Boolean) {
     TOP(true), LEFT(false), BOTTOM(true), RIGHT(false)
@@ -57,6 +59,13 @@ val boardLayers = BoardLayers(
     layers = mapOf(
         BoardLayer.OUTER to BoardRoute(26, 18, outPlaces),
         BoardLayer.INNER to BoardRoute(28, 18, inPlaces),
+    )
+)
+
+fun boardLayersOf(board: Board): BoardLayers = BoardLayers(
+    layers = mapOf(
+        BoardLayer.OUTER to BoardRoute(26, 18, board.placesOf(BoardLayer.OUTER)),
+        BoardLayer.INNER to BoardRoute(28, 18, board.placesOf(BoardLayer.INNER)),
     )
 )
 

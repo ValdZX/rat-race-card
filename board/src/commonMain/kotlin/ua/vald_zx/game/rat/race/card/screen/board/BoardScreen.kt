@@ -43,6 +43,7 @@ import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.composables.core.BottomSheet
+import com.composables.core.BottomSheetState
 import com.composables.core.SheetDetent
 import com.composables.core.rememberBottomSheetState
 import dev.lennartegb.shadows.boxShadow
@@ -86,18 +87,37 @@ val navigationBarHeightState = mutableStateOf(0.dp)
 val statusBarHeightState = mutableStateOf(0.dp)
 val deckCoordinatesMap = mutableMapOf<BoardCardType, MutableState<Pair<DpOffset, DpSize>>>()
 val discardPilesCoordinatesMap = mutableMapOf<BoardCardType, MutableState<Pair<DpOffset, DpSize>>>()
+val collapsedSheetContentHeight = 100.dp
 val littleDetailsHeight
-    get() = 100.dp + statusBarHeightState.value + navigationBarHeightState.value
+    get() = collapsedSheetContentHeight + navigationBarHeightState.value
 var sheetContentSize = mutableStateOf(0.dp)
 val HalfExpanded = SheetDetent("hidden") { _, _ ->
     littleDetailsHeight
 }
 val ContentExpanded = SheetDetent("content") { containerHeight, _ ->
-    if (sheetContentSize.value == 0.dp) {
-        containerHeight
-    } else {
-        sheetContentSize.value
-    } - statusBarHeightState.value
+    val content = sheetContentSize.value.takeIf { it > 0.dp } ?: containerHeight
+    minOf(content, containerHeight - statusBarHeightState.value)
+}
+
+@Composable
+fun PlayerSheetContainer(
+    scaffoldState: BottomSheetState,
+    content: @Composable () -> Unit,
+) {
+    val density = LocalDensity.current
+    BoxWithConstraints {
+        Box(
+            modifier = Modifier
+                .navigationBarsPadding()
+                .heightIn(max = maxHeight - statusBarHeightState.value)
+                .onSizeChanged { size ->
+                    sheetContentSize.value = with(density) { size.height.toDp() }
+                    scaffoldState.invalidateDetents()
+                }
+        ) {
+            content()
+        }
+    }
 }
 
 class BoardScreen(
@@ -131,10 +151,7 @@ class BoardScreen(
                     BoardScreenContent(vm)
                 }
                 BottomSheet(state = scaffoldState) {
-                    Box(Modifier.navigationBarsPadding().onSizeChanged { size ->
-                        sheetContentSize.value = with(density) { size.height.toDp() }
-                        scaffoldState.invalidateDetents()
-                    }) {
+                    PlayerSheetContainer(scaffoldState) {
                         if (designV2Enabled.value) {
                             DesignPlayerSheet(vm, scaffoldState)
                         } else {

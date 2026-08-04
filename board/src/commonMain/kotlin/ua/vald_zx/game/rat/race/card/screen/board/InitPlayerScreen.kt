@@ -24,8 +24,8 @@ import ua.vald_zx.game.rat.race.card.screen.design.DesignInitPlayerContent
 import ua.vald_zx.game.rat.race.card.components.GenderOptionStyle
 import ua.vald_zx.game.rat.race.card.components.GenderSelector
 import ua.vald_zx.game.rat.race.card.resources.*
-import ua.vald_zx.game.rat.race.card.screen.board.cards.menProfessionCards
-import ua.vald_zx.game.rat.race.card.screen.board.cards.womenProfessionCards
+import androidx.compose.ui.text.intl.Locale
+import ua.vald_zx.game.rat.race.card.screen.board.cards.professionFor
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Gender
 
@@ -37,6 +37,7 @@ class InitPlayerScreen(private val board: Board) : Screen {
         val colorState = remember { mutableStateOf(0L) }
         var designName by remember { mutableStateOf("") }
         var designGender by remember { mutableStateOf(Gender.MALE) }
+        val locale = Locale.current.language
         if (designV2Enabled.value) {
             DesignInitPlayerContent(
                 colorState = colorState,
@@ -47,10 +48,7 @@ class InitPlayerScreen(private val board: Board) : Screen {
                 onBack = { navigator.pop() },
                 onNext = {
                     coroutineScope.launch {
-                        val card = when (designGender) {
-                            Gender.MALE -> menProfessionCards.random()
-                            Gender.FEMALE -> womenProfessionCards.random()
-                        }
+                        val card = professionFor(board, designGender, locale)
                         navigator.push(
                             ProfessionScreen(
                                 board = board,

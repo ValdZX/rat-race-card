@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -47,8 +48,9 @@ fun BoxWithConstraintsScope.EventStoreCardFront(
     vm: BoardViewModel,
 ) {
     val state by vm.uiState.collectAsState()
-    remember(cardLink.id, state.board.generatedCards) {
-        state.board.cardOf(cardLink) as? BoardCard.EventStore
+    val locale = Locale.current.language
+    remember(cardLink.id, state.board.generatedCards, state.board.generatedTexts, locale) {
+        state.board.cardOf(cardLink, locale) as? BoardCard.EventStore
     }?.let { eventCard ->
         when (eventCard) {
             is BoardCard.EventStore.Estate -> {
@@ -130,6 +132,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
             )
         }
         val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
         if (state.board.takenCard != null) {
             val currentPlayerNotProcessed = !state.board.processedPlayerIds.contains(state.player.id)
             if (state.player.estateList.isNotEmpty() && currentPlayerNotProcessed) {
@@ -210,6 +213,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         val currentPlayerNotProcessed = !state.board.processedPlayerIds.contains(state.player.id)
         if (state.player.landList.isNotEmpty() && currentPlayerNotProcessed) {
@@ -289,6 +293,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
             fontWeight = FontWeight.Bold
         )
         val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
         val currentPlayerNotProcessed = !state.board.processedPlayerIds.contains(state.player.id)
         if (state.player.sharesList.any { it.type == card.sharesType } && currentPlayerNotProcessed) {
             Row(
@@ -401,6 +406,7 @@ private fun BoxWithConstraintsScope.BusinessExtendingCardFront(
             lineHeight = unitTS * 16,
         )
         val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
         val randomSmallBusiness =
             remember { state.player.businesses.filter { it.type == BusinessType.SMALL }.randomOrNull() }
         if (state.currentPlayerIsActive && randomSmallBusiness != null) {

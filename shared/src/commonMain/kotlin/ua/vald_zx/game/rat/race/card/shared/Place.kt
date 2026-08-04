@@ -26,6 +26,37 @@ sealed class PlaceType(val name: String, val isBig: Boolean = false) {
     data object Resignation : PlaceType("Exaltation")
 }
 
+private const val DESIRE_CODE_PREFIX = "Desire:"
+
+private val placeTypesByName = listOf(
+    PlaceType.Start,
+    PlaceType.Salary,
+    PlaceType.Business,
+    PlaceType.BigBusiness,
+    PlaceType.Shopping,
+    PlaceType.Chance,
+    PlaceType.Expenses,
+    PlaceType.Store,
+    PlaceType.Bankruptcy,
+    PlaceType.Child,
+    PlaceType.Love,
+    PlaceType.Rest,
+    PlaceType.Divorce,
+    PlaceType.Deputy,
+    PlaceType.TaxInspection,
+    PlaceType.Resignation,
+).associateBy { it.name }
+
+fun PlaceType.code(): String =
+    if (this is PlaceType.Desire) DESIRE_CODE_PREFIX + dreamId else name
+
+fun placeTypeOfCode(code: String): PlaceType? =
+    if (code.startsWith(DESIRE_CODE_PREFIX)) {
+        PlaceType.Desire(code.removePrefix(DESIRE_CODE_PREFIX))
+    } else {
+        placeTypesByName[code]
+    }
+
 val inPlaces = listOf(
     PlaceType.Salary,
     PlaceType.Start,

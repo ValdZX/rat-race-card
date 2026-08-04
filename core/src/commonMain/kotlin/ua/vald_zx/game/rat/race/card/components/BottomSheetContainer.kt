@@ -30,9 +30,11 @@ fun BottomSheetContainer(
 ) {
     val density = LocalDensity.current
     val windowInfo = LocalWindowInfo.current
-    val screenHeight = with(density) { windowInfo.containerSize.height.dp }
+    val screenHeight = with(density) { windowInfo.containerSize.height.toDp() }
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Column(
         modifier = Modifier
+            .heightIn(max = screenHeight - statusBarHeight)
             .background(MaterialTheme.colorScheme.background)
             .navigationBarsPadding()
             .optionalModifier(!noIme) { imePadding() }

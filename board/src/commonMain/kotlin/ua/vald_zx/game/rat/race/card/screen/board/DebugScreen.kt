@@ -78,6 +78,7 @@ import ua.vald_zx.game.rat.race.card.shared.DebugPlayerValues
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.dreamById
 import ua.vald_zx.game.rat.race.card.shared.hasPlaceFor
+import ua.vald_zx.game.rat.race.card.shared.placesOf
 import ua.vald_zx.game.rat.race.card.shared.nextPositionOf
 import kotlin.math.roundToInt
 
@@ -207,14 +208,14 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
                 enabled = state.canRoll,
             ) {
                 val from = if (selectedLayer == state.layer) player.location.position else 0
-                val salaryPosition = selectedLayer.nextPositionOf(PlaceType.Salary, from)
+                val salaryPosition = state.board.placesOf(selectedLayer).nextPositionOf(PlaceType.Salary, from)
                 selectedPosition = salaryPosition
                 vm.debugChangePosition(selectedLayer, salaryPosition)
             }
 
             DebugSectionTitle(stringResource(Res.string.debug_cards))
             val availableCardTypes = if (state.canRoll) {
-                BoardCardType.entries.filter(state.layer::hasPlaceFor)
+                BoardCardType.entries.filter(state.places::hasPlaceFor)
             } else {
                 BoardCardType.entries
             }

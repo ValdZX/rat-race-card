@@ -12,6 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -34,13 +35,14 @@ fun BoxWithConstraintsScope.DeputyCardFront(
     vm: BoardViewModel,
 ) {
     val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
     val density = LocalDensity.current
     val cardWidth = max(maxWidth, 100.dp)
     val unitTS = with(density) { (cardWidth.toPx() / 300).toSp() }
     val unitDp = cardWidth / 300
     val padding = unitDp * 10
     val smallPadding = unitDp * 6
-    val deputy = state.board.cardOf(card) as? BoardCard.Deputy
+    val deputy = state.board.cardOf(card, locale) as? BoardCard.Deputy
 
     Column(modifier = Modifier.padding(padding)) {
         Row {

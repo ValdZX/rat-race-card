@@ -33,7 +33,7 @@ class StatisticsScreen : Screen {
         val raceRate2store = koinInject<RatRace2CardStore>()
         val statistics = raceRate2store.statistics ?: return
         ClosableBottomSheetContainer {
-            Column(modifier = Modifier.statusBarsPadding()) {
+            Column {
                 Text(stringResource(Res.string.salary_count, statistics.salaryCount.toString()))
                 var needTotal by remember { mutableStateOf(true) }
                 var needCashFlow by remember { mutableStateOf(true) }

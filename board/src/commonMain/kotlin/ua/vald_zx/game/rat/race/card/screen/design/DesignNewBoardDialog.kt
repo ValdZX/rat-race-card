@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -145,6 +146,11 @@ fun DesignNewBoardDialog(
                 label = stringResource(Res.string.generate_cards),
                 checked = generateCards,
                 onCheckedChange = { generateCards = it },
+            )
+            Text(
+                text = stringResource(Res.string.generate_cards_hint),
+                style = Design.type.label,
+                color = Design.scaffold.onSurfaceMuted,
             )
             if (generateCards) {
                 DesignTextField(

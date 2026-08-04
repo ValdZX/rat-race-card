@@ -1,7 +1,9 @@
 package ua.vald_zx.game.rat.race.card.screen.board.cards
 
 import ua.vald_zx.game.rat.race.card.shared.Gender
+import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
+import ua.vald_zx.game.rat.race.card.shared.professionsFor
 
 val womenProfessionCards = listOf(
     ProfessionCard(1, "Водійка-далекобійниця", 800, 300, 150, 20, 0, 10, Gender.FEMALE),
@@ -71,3 +73,12 @@ val menProfessionCards = listOf(
     ProfessionCard(32, "Веб-дизайнер", 2000, 500, 300, 150, 150, 50, Gender.MALE),
     ProfessionCard(33, "Програміст", 2500, 800, 250, 150, 100, 50, Gender.MALE),
 )
+
+fun professionFor(board: Board, gender: Gender, locale: String): ProfessionCard {
+    val generated = board.professionsFor(gender, locale)
+    if (generated.isNotEmpty()) return generated.random()
+    return when (gender) {
+        Gender.MALE -> menProfessionCards.random()
+        Gender.FEMALE -> womenProfessionCards.random()
+    }
+}

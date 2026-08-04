@@ -23,9 +23,9 @@ internal fun LegacySalaryScreen(vm: BoardViewModel) {
         val state by vm.uiState.collectAsState()
         val player = state.player
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        val fundRate = remember(player.investmentPosition, player.location.level) {
+        val fundRate = remember(player.investmentPosition, player.location.level, state.places) {
             player.investmentPosition?.let { position ->
-                player.location.level.toLayer().fundRateAtSalary(position)
+                state.places.fundRateAtSalary(position)
             }
         }
         LaunchedEffect(player.salaryPosition, player.investmentPosition) {

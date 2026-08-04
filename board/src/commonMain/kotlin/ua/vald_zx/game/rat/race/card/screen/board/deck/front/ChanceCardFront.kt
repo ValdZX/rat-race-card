@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -44,8 +45,9 @@ fun BoxWithConstraintsScope.ChanceCardFront(
     vm: BoardViewModel,
 ) {
     val state by vm.uiState.collectAsState()
-    remember(cardLink.id, state.board.generatedCards) {
-        state.board.cardOf(cardLink) as? BoardCard.Chance
+    val locale = Locale.current.language
+    remember(cardLink.id, state.board.generatedCards, state.board.generatedTexts, locale) {
+        state.board.cardOf(cardLink, locale) as? BoardCard.Chance
     }?.let { chanceCard ->
         when (chanceCard) {
             is BoardCard.Chance.Estate -> {
@@ -126,6 +128,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
             )
         }
         val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         val auctionPanelToggle = LocalAuctionPanelToggle.current
         Row(
@@ -246,6 +249,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
             )
         }
         val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         val auctionPanelToggle = LocalAuctionPanelToggle.current
         Row(
@@ -326,6 +330,7 @@ private fun BoxWithConstraintsScope.RandomJobCardFront(
             modifier = Modifier.padding(top = smallPadding).align(Alignment.CenterHorizontally)
         )
         val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
         if (state.currentPlayerIsActive) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
@@ -351,6 +356,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
     vm: BoardViewModel
 ) {
     val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
     val density = LocalDensity.current
     val cardWidth = max(maxWidth, 100.dp)
     val unitTS = with(density) { (cardWidth.toPx() / 300).toSp() }
@@ -411,6 +417,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
             )
         }
         val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         val auctionPanelToggle = LocalAuctionPanelToggle.current
         Row(

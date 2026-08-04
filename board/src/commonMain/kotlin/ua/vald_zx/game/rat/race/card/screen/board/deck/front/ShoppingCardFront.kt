@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -40,8 +41,9 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
 ) {
 
     val state by vm.uiState.collectAsState()
-    remember(card.id, state.board.generatedCards) {
-        state.board.cardOf(card) as? BoardCard.Shopping
+    val locale = Locale.current.language
+    remember(card.id, state.board.generatedCards, state.board.generatedTexts, locale) {
+        state.board.cardOf(card, locale) as? BoardCard.Shopping
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)
@@ -86,6 +88,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                 lineHeight = unitTS * 16,
             )
             val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
             if (state.currentPlayerIsActive) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = smallPadding),

@@ -337,9 +337,10 @@
     <string name="reelection">Перевибори</string>
     <string name="market_news">Новини</string>
     <string name="skip_deputies">Пройти повз</string>
-    <string name="generated_deck">Згенерована колода</string>
-    <string name="generate_cards">Генерувати картки</string>
-    <string name="world_theme">Тематика</string>
-    <string name="world_locality">Місцевість</string>
-    <string name="world_epoch">Епоха</string>
+    <string name="generated_deck">Згенерована гра</string>
+    <string name="generate_cards">Генерувати дошку</string>
+    <string name="generate_cards_hint">Для цього столу генеруються професії, порядок клітинок і всі колоди карток</string>
+    <string name="world_theme">Тематика (необовʼязково)</string>
+    <string name="world_locality">Місцевість (необовʼязково)</string>
+    <string name="world_epoch">Епоха (необовʼязково)</string>
 </resources>

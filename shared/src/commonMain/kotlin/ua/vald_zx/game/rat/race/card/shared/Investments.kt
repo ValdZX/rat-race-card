@@ -22,17 +22,19 @@ data class InvestmentOutcome(
     val payout: Long,
 )
 
-fun BoardLayer.fundRateAtSalary(position: Int): Long {
-    val startIndex = places.indexOf(PlaceType.Start)
-    if (startIndex < 0 || places.getOrNull(position) != PlaceType.Salary) {
+fun List<PlaceType>.fundRateAtSalary(position: Int): Long {
+    val startIndex = indexOf(PlaceType.Start)
+    if (startIndex < 0 || getOrNull(position) != PlaceType.Salary) {
         return salaryFundRates.last()
     }
-    val rank = places.indices
-        .filter { places[it] == PlaceType.Salary }
-        .sortedByDescending { it.stepsTo(startIndex, places.size) }
+    val rank = indices
+        .filter { this[it] == PlaceType.Salary }
+        .sortedByDescending { it.stepsTo(startIndex, size) }
         .indexOf(position)
     return salaryFundRates.getOrElse(rank) { salaryFundRates.last() }
 }
+
+fun BoardLayer.fundRateAtSalary(position: Int): Long = places.fundRateAtSalary(position)
 
 private fun Int.stepsTo(target: Int, cellCount: Int): Int = ((target - this) + cellCount) % cellCount
 

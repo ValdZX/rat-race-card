@@ -80,7 +80,7 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Column(
-                modifier = Modifier.height(littleDetailsHeight),
+                modifier = Modifier.height(collapsedSheetContentHeight),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

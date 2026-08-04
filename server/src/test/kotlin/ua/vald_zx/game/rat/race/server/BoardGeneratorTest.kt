@@ -85,6 +85,44 @@ class BoardGeneratorTest {
     }
 
     @Test
+    fun corruptionSurvivesGeneration() {
+        val bigDecks = BoardCardType.entries.associateWith { 200 }
+        val chance = BoardGenerator(world()).generate(bigDecks).getValue(BoardCardType.Chance).values
+        val corruptBusiness = chance.filterIsInstance<BoardCard.Chance.CorruptBusiness>()
+        val corruptLand = chance.filterIsInstance<BoardCard.Chance.CorruptLand>()
+
+        assertTrue(corruptBusiness.isNotEmpty(), "у згенерованій колоді немає корупційного бізнесу")
+        assertTrue(corruptLand.isNotEmpty(), "у згенерованій колоді немає корупційної землі")
+        corruptBusiness.forEach { card ->
+            assertTrue(card.deputies > 0, "корупційний бізнес без депутатів: $card")
+            assertTrue(card.profit > 0 || card.oneTimeProfit > 0, "корупційний бізнес без вигоди: $card")
+        }
+        corruptLand.forEach { card ->
+            assertTrue(card.deputies > 0, "корупційна земля без депутатів: $card")
+            assertTrue(card.area > 0, "корупційна земля без площі: $card")
+        }
+    }
+
+    @Test
+    fun marketEventsKeepTheirRareCards() {
+        val events = BoardGenerator(world()).generate(BoardCardType.entries.associateWith { 200 })
+            .getValue(BoardCardType.EventStore)
+            .values
+        assertTrue(
+            events.any { it is BoardCard.EventStore.Reelection },
+            "перевибори зникли зі згенерованої колоди подій",
+        )
+        assertTrue(
+            events.any { it is BoardCard.EventStore.BusinessExtending },
+            "розширення бізнесу зникло зі згенерованої колоди подій",
+        )
+        assertTrue(
+            events.any { it is BoardCard.EventStore.Announcement },
+            "оголошення зникли зі згенерованої колоди подій",
+        )
+    }
+
+    @Test
     fun deputiesStayCloseToHalfCorrupt() {
         val deputies = BoardGenerator(world()).generate(BoardCardType.entries.associateWith { 200 })
             .getValue(BoardCardType.Deputy)

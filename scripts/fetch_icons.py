@@ -6,6 +6,11 @@
 
     python3 scripts/fetch_icons.py
 
+Вибраний файл кладеться в core/src/commonMain/composeResources/drawable/ і
+одразу перекладається у vector drawable — Android не читає SVG:
+
+    python3 scripts/svg_to_vector.py core/src/commonMain/composeResources/drawable/*.svg
+
 Набори прибиті навмисно: різностильові знаки на дошці виглядають як звалище,
 навіть коли кожен окремо гарний.
 """

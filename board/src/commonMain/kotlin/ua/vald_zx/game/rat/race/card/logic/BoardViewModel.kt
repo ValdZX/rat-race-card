@@ -26,6 +26,7 @@ data class BoardState(
     val connectionState: BoardConnectionState = BoardConnectionState.Connected,
 ) {
     val layer: BoardLayer = player.location.level.toLayer()
+    val places: List<PlaceType> = board.placesOf(layer)
     val color: Long = player.attrs.color
     val currentPlayerIsConnected: Boolean by lazy { player.isActiveOn(board) }
     val currentPlayerIsActive: Boolean by lazy {
@@ -38,8 +39,7 @@ data class BoardState(
         player.canEnterOuterCircle(canRoll,board.outerCircleConditions)
     }
     val currentDream: Dream? by lazy {
-        val place = player.location.level.toLayer().places
-            .getOrNull(player.location.position) as? PlaceType.Desire
+        val place = places.getOrNull(player.location.position) as? PlaceType.Desire
         board.dreamById(place?.dreamId)
     }
     val canBuyDream: Boolean by lazy {

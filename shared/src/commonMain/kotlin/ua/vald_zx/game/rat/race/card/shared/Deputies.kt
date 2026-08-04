@@ -8,3 +8,7 @@ val corruptDeputyIds = setOf(
     59, 60, 61, 62, 63, 64, 65, 66, 67, 68,
     69, 70, 71, 72, 73, 74, 75,
 )
+
+fun Board.deputyIsCorrupt(cardId: Int): Boolean =
+    (cardOrNull(CardLink(BoardCardType.Deputy, cardId)) as? BoardCard.Deputy)?.corrupt
+        ?: (cardId in corruptDeputyIds)

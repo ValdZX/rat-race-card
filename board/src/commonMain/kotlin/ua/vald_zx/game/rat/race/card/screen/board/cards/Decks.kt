@@ -19,4 +19,5 @@ val decks = BoardCardType.entries.associate { type ->
     }
 }
 
-fun Board.cardOf(link: CardLink): BoardCard? = cardOrNull(link) ?: decks[link.type]?.get(link.id)
+fun Board.cardOf(link: CardLink, locale: String): BoardCard? =
+    cardOrNull(link, locale) ?: decks[link.type]?.get(link.id)

@@ -87,7 +87,7 @@ fun DesignPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                 onOpenSettings = { bottomSheetNavigator.show(OnlineSettingsScreen(vm)) },
             )
             Row(
-                modifier = Modifier.height(littleDetailsHeight - 40.dp),
+                modifier = Modifier.height(collapsedSheetContentHeight - 40.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {

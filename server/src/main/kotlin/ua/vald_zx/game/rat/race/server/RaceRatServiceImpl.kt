@@ -6,6 +6,7 @@ import io.ktor.util.logging.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -148,6 +149,9 @@ class RaceRatServiceImpl(
         val world = generation.copy(
             seed = if (generation.seed != 0L) generation.seed else Clock.System.now().toEpochMilliseconds()
         )
+        val generator = BoardGenerator(world)
+        val generatedCards = generator.generate(decks)
+        val generatedProfessions = generator.generateProfessions()
         val board = Board(
             name = name,
             loanLimit = loanLimit,
@@ -159,11 +163,35 @@ class RaceRatServiceImpl(
             victoryConditions = victoryConditions,
             transportMovementBonusEnabled = transportMovementBonusEnabled,
             generation = world,
-            generatedCards = BoardGenerator(world).generate(decks),
+            generatedCards = generatedCards,
+            generatedProfessions = generatedProfessions,
+            generatedPlaces = generator.generatePlaces(),
         )
         Storage.newBoard(board)
         boardSelected(board)
+        if (world.enabled && LlmSettings.enabled) {
+            scope.launch { writeGeneratedTexts(board.id, world, generatedCards, generatedProfessions) }
+        }
         return board
+    }
+
+    private suspend fun writeGeneratedTexts(
+        boardId: String,
+        world: BoardGeneration,
+        cards: Map<BoardCardType, Map<Int, BoardCard>>,
+        professions: List<ProfessionCard>,
+    ) {
+        val generator = LlmTextGenerator()
+        generatedLocales.forEach { locale ->
+            val texts = runCatching { generator.localize(world, cards, professions, locale) }
+                .onFailure { LOGGER.warn("Card texts for $locale failed: ${it.message}") }
+                .getOrNull() ?: return@forEach
+            if (texts.cards.isEmpty() && texts.professions.isEmpty()) return@forEach
+            boardMutex(boardId).withLock {
+                val stored = Storage.getBoardOrNull(boardId) ?: return@withLock
+                Storage.updateBoard(stored.copy(generatedTexts = stored.generatedTexts + (locale to texts)))
+            }
+        }
     }
 
     override suspend fun makePlayer(
@@ -296,9 +324,10 @@ class RaceRatServiceImpl(
     override suspend fun buyDeputy() {
         if (board().activePlayerId != playerId) return
         updateBoard { discardPileB() }
-        val cardId = board().cards[BoardCardType.Deputy]?.randomOrNull() ?: return
+        val board = board()
+        val cardId = board.cards[BoardCardType.Deputy]?.randomOrNull() ?: return
         updatePlayer {
-            val hired = if (cardId in corruptDeputyIds) deputies + 1 else deputies
+            val hired = if (board.deputyIsCorrupt(cardId)) deputies + 1 else deputies
             copy(deputies = hired).minusCash(DEPUTY_CARD_PRICE)
         }
         selectCard(cardId, BoardCardType.Deputy)
@@ -320,8 +349,7 @@ class RaceRatServiceImpl(
         if (!board.canRoll || board.activePlayerId != playerId) return
         if (!board.containsCard(cardId, cardType)) return
         val currentPlayer = player()
-        val layer = currentPlayer.location.level.toLayer()
-        val position = layer.nearestPlacePosition(
+        val position = board.placesOf(currentPlayer.location).nearestPlacePosition(
             currentPosition = currentPlayer.location.position,
             cardType = cardType,
         ) ?: return
@@ -413,8 +441,7 @@ class RaceRatServiceImpl(
     private suspend fun move() {
         val player = player()
         val board = board()
-        val layer = player.location.level.toLayer()
-        val cellCount = layer.cellCount
+        val cellCount = board.placesOf(player.location).size
         val currentPosition = player.location.position
         val movementSteps = player.movementSteps(
             dice = board.dice,
@@ -426,16 +453,16 @@ class RaceRatServiceImpl(
 
     private suspend fun processNewPosition(newPosition: Int) {
         val player = player()
-        val layer = player.location.level.toLayer()
-        val placeCount = layer.places.size
+        val places = board().placesOf(player.location)
+        val placeCount = places.size
         val currentPosition = player.location.position
         val safeNewPosition = newPosition.coerceIn(0, placeCount - 1)
         val safeCurrent = currentPosition.coerceIn(0, placeCount - 1)
 
         val passedPlaces = if (safeCurrent > safeNewPosition) {
-            layer.places.subList(safeCurrent + 1, placeCount) + layer.places.subList(0, safeNewPosition + 1)
+            places.subList(safeCurrent + 1, placeCount) + places.subList(0, safeNewPosition + 1)
         } else {
-            layer.places.subList(safeCurrent + 1, safeNewPosition + 1)
+            places.subList(safeCurrent + 1, safeNewPosition + 1)
         }
         val passedSalaryPosition = if (passedPlaces.contains(PlaceType.Salary)) {
             var pos = safeCurrent + passedPlaces.indexOfLast { it == PlaceType.Salary } + 1
@@ -465,12 +492,12 @@ class RaceRatServiceImpl(
             copy(
                 location = location.copy(position = safeNewPosition),
                 salaryPosition = salaryPosition,
-                investmentPosition = safeNewPosition.takeIf { layer.places[it] == PlaceType.Salary },
+                investmentPosition = safeNewPosition.takeIf { places[it] == PlaceType.Salary },
                 startCapitalization = startCapitalization,
             )
         }
 
-        when (val place = layer.places[safeNewPosition]) {
+        when (val place = places[safeNewPosition]) {
             PlaceType.BigBusiness -> updateBoard {
                 copy(canTakeCard = listOf(BoardCardType.BigBusiness))
             }
@@ -707,7 +734,7 @@ class RaceRatServiceImpl(
 
     override suspend fun debugChangePosition(location: PlayerLocation) {
         val layer = location.level.toLayer()
-        val position = location.position.coerceIn(0, layer.places.lastIndex)
+        val position = location.position.coerceIn(0, board().placesOf(layer).lastIndex)
         if (layer.level != player().location.level) {
             updatePlayer {
                 copy(location = PlayerLocation(position = position, level = layer.level))
@@ -929,7 +956,7 @@ class RaceRatServiceImpl(
         val player = player()
         val salaryPosition = player.investmentPosition ?: return
         if (amount <= 0) return
-        val rate = player.location.level.toLayer().fundRateAtSalary(salaryPosition)
+        val rate = board().placesOf(player.location).fundRateAtSalary(salaryPosition)
         updatePlayer {
             val sameRate = funds.find { it.rate == rate }
             val newFunds = if (sameRate != null) {
@@ -1033,7 +1060,7 @@ class RaceRatServiceImpl(
     override suspend fun buyDream() {
         val currentBoard = board()
         val currentPlayer = player()
-        val dreamPlace = currentPlayer.location.level.toLayer().places
+        val dreamPlace = currentBoard.placesOf(currentPlayer.location)
             .getOrNull(currentPlayer.location.position) as? PlaceType.Desire ?: return
         val dream = currentBoard.dreamById(dreamPlace.dreamId) ?: return
         val canBuy = currentBoard.activePlayerId == playerId &&

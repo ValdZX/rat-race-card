@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -46,8 +47,9 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
     vm: BoardViewModel,
 ) {
     val state by vm.uiState.collectAsState()
-    remember(cardLink.id, state.board.generatedCards) {
-        state.board.cardOf(cardLink) as? BoardCard.SmallBusiness
+    val locale = Locale.current.language
+    remember(cardLink.id, state.board.generatedCards, state.board.generatedTexts, locale) {
+        state.board.cardOf(cardLink, locale) as? BoardCard.SmallBusiness
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)
@@ -107,6 +109,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
             val auctionPanelToggle = LocalAuctionPanelToggle.current
             val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround
@@ -170,8 +173,9 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
     vm: BoardViewModel,
 ) {
     val state by vm.uiState.collectAsState()
-    remember(cardLink.id, state.board.generatedCards) {
-        state.board.cardOf(cardLink) as? BoardCard.MediumBusiness
+    val locale = Locale.current.language
+    remember(cardLink.id, state.board.generatedCards, state.board.generatedTexts, locale) {
+        state.board.cardOf(cardLink, locale) as? BoardCard.MediumBusiness
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)
@@ -229,6 +233,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                 )
             }
             val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
             val auctionPanelToggle = LocalAuctionPanelToggle.current
             Row(
@@ -293,8 +298,9 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
     vm: BoardViewModel,
 ) {
     val state by vm.uiState.collectAsState()
-    remember(cardLink.id, state.board.generatedCards) {
-        state.board.cardOf(cardLink) as? BoardCard.BigBusiness
+    val locale = Locale.current.language
+    remember(cardLink.id, state.board.generatedCards, state.board.generatedTexts, locale) {
+        state.board.cardOf(cardLink, locale) as? BoardCard.BigBusiness
     }?.let { card ->
         val density = LocalDensity.current
         val cardWidth = max(maxWidth, 100.dp)
@@ -352,6 +358,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                 )
             }
             val state by vm.uiState.collectAsState()
+    val locale = Locale.current.language
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
             val auctionPanelToggle = LocalAuctionPanelToggle.current
             Row(

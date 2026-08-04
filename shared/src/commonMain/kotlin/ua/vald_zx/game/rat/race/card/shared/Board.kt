@@ -42,9 +42,39 @@ data class Board(
     val purchasedDreamIds: Set<String> = emptySet(),
     val generation: BoardGeneration = BoardGeneration(),
     val generatedCards: Map<BoardCardType, Map<Int, BoardCard>> = emptyMap(),
+    val generatedProfessions: List<ProfessionCard> = emptyList(),
+    val generatedPlaces: Map<BoardLayer, List<String>> = emptyMap(),
+    val generatedTexts: Map<String, GeneratedText> = emptyMap(),
 )
 
-fun Board.cardOrNull(link: CardLink): BoardCard? = generatedCards[link.type]?.get(link.id)
+fun Board.cardOrNull(link: CardLink, locale: String = DEFAULT_LOCALE): BoardCard? {
+    val card = generatedCards[link.type]?.get(link.id) ?: return null
+    val text = textsFor(locale).cards[link.type]?.get(link.id) ?: return card
+    return card.withText(text)
+}
+
+fun Board.professionsFor(gender: Gender, locale: String = DEFAULT_LOCALE): List<ProfessionCard> {
+    val names = textsFor(locale).professions
+    return generatedProfessions
+        .filter { it.gender == gender }
+        .map { profession -> names[profession.id]?.let { profession.copy(name = it) } ?: profession }
+}
+
+private fun Board.textsFor(locale: String): GeneratedText =
+    generatedTexts[locale]
+        ?: generatedTexts[locale.take(2)]
+        ?: generatedTexts[DEFAULT_LOCALE]
+        ?: GeneratedText()
+
+fun Board.placesOf(layer: BoardLayer): List<PlaceType> {
+    val codes = generatedPlaces[layer] ?: return layer.places
+    val decoded = codes.mapNotNull(::placeTypeOfCode)
+    return if (decoded.size == layer.places.size) decoded else layer.places
+}
+
+fun Board.placesAt(level: Int): List<PlaceType> = placesOf(level.toLayer())
+
+fun Board.placesOf(location: PlayerLocation): List<PlaceType> = placesAt(location.level)
 
 @Serializable
 data class OuterCircleConditions(

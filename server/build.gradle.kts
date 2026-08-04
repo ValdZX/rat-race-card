@@ -28,6 +28,7 @@ dependencies {
     testImplementation(libs.kotlinx.rpc.krpc.client)
     testImplementation(libs.kotlinx.rpc.krpc.ktor.client)
     testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     implementation(libs.google.cloud.firestore)
     implementation(libs.google.cloud.storage)
     implementation(platform(libs.mongodb.bom))

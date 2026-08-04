@@ -125,7 +125,8 @@ There is no CI config in-repo; verify changes by building the relevant target.
 - Persisted local state is plain JSON via KStore; changing `@Serializable` model fields can break existing saved files — keep defaults on new fields.
 - `resource/images/*.kt` are generated-style vector assets — large and noisy; the user has asked to ignore resource-heavy dirs during analysis.
 - `server/src/main/resources/application.conf` binds `0.0.0.0` and honours `${?PORT}` / `${?HOST}` — required by any container host. The `main()` in `Application.kt` is unused by the packaged app (`mainClass` is `EngineMain`, which reads this file).
-- Server config/secrets: `.env` (see `.env.example` — `MONGODB_URI`, `MONGODB_DATABASE`, `ALLOWED_ORIGINS`); MongoDB creds also referenced in `gradle.properties`; Android signing config is inline in `composeApp/build.gradle.kts`. Treat all of these as secrets — don't echo or commit new ones.
+- Board generation (cards, professions, cell order) is server-side and seeded — see `docs/GENERATION.md`. Card texts come from templates unless `LLM_API_KEY` is set, then an OpenAI-compatible model rewrites them per locale in the background.
+- Server config/secrets: `.env` (see `.env.example` — `MONGODB_URI`, `MONGODB_DATABASE`, `ALLOWED_ORIGINS`, `LLM_API_KEY`/`LLM_API_URL`/`LLM_MODEL`); MongoDB creds also referenced in `gradle.properties`; Android signing config is inline in `composeApp/build.gradle.kts`. Treat all of these as secrets — don't echo or commit new ones.
 - The Android `release` build uses minify + shrink (`proguard-rules.pro`).
 
 ## Tech stack
