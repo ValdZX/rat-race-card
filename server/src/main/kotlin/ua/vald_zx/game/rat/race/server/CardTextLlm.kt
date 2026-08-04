@@ -397,6 +397,35 @@ internal class LlmTextGenerator(
                     onCheckpoint(texts.snapshot(), completed, total, detail)
                 }
             }
+            repeat(MAX_REPAIR_BATCH_ATTEMPTS) { repairAttempt ->
+                val missing = batch.items.filterNot { texts.hasCard(batch.type, it.key) }
+                if (missing.isEmpty()) return@repeat
+                missing.chunked(REPAIR_BATCH_SIZE).forEach repairBatchLoop@{ repairBatch ->
+                    val briefs = repairBatch.joinToString("\n") { (id, card) ->
+                        "$id. ${card.brief(shareNames)}"
+                    }
+                    val answer = chat.complete(
+                        system = systemPrompt(),
+                        user = deckPrompt(
+                            world = world,
+                            type = batch.type,
+                            briefs = briefs,
+                            acceptedNames = texts.cardNameContext(batch.type),
+                            attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
+                            rejected = rejected,
+                        ),
+                    ) ?: return@repairBatchLoop
+                    val expectedIds = repairBatch.map { it.key }.toSet()
+                    val candidates = answer.parseLocalizedItems(
+                        expectedSingleId = expectedIds.singleOrNull(),
+                    )
+                    texts.acceptCards(batch.type, candidates, expectedIds)
+                    repairBatch.filterNot { texts.hasCard(batch.type, it.key) }.forEach { (id) ->
+                        candidates[id]?.let { candidate -> rejected.getOrPut(id, ::mutableListOf) += candidate }
+                    }
+                    onCheckpoint(texts.snapshot(), completed, total, detail)
+                }
+            }
             batch.items.filterNot { texts.hasCard(batch.type, it.key) }.forEach { missingCard ->
                 repeat(MAX_SINGLE_ITEM_ATTEMPTS) { repairAttempt ->
                     if (texts.hasCard(batch.type, missingCard.key)) return@repeat
@@ -459,6 +488,36 @@ internal class LlmTextGenerator(
                     }
                 }
                 if (!texts.hasProfessions(batch.items.map { it.id })) {
+                    onCheckpoint(texts.snapshot(), completed, total, detail)
+                }
+            }
+            repeat(MAX_REPAIR_BATCH_ATTEMPTS) { repairAttempt ->
+                val missing = batch.items.filterNot { texts.hasProfession(it.id) }
+                if (missing.isEmpty()) return@repeat
+                missing.chunked(REPAIR_BATCH_SIZE).forEach repairBatchLoop@{ repairBatch ->
+                    val briefs = repairBatch.joinToString("\n") { profession ->
+                        "${profession.id}. ${if (profession.gender == Gender.FEMALE) "жінка" else "чоловік"}, зарплата ${profession.salary}"
+                    }
+                    val answer = chat.complete(
+                        system = systemPrompt(),
+                        user = professionPrompt(
+                            world = world,
+                            briefs = briefs,
+                            acceptedNames = texts.professionNameContext(),
+                            attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
+                            rejected = rejected,
+                        ),
+                    ) ?: return@repairBatchLoop
+                    val expectedIds = repairBatch.map { it.id }.toSet()
+                    val candidates = answer.parseLocalizedItems(
+                        expectedSingleId = expectedIds.singleOrNull(),
+                    )
+                    texts.acceptProfessions(candidates, expectedIds)
+                    repairBatch.filterNot { texts.hasProfession(it.id) }.forEach { profession ->
+                        candidates[profession.id]?.let { candidate ->
+                            rejected.getOrPut(profession.id, ::mutableListOf) += candidate
+                        }
+                    }
                     onCheckpoint(texts.snapshot(), completed, total, detail)
                 }
             }
@@ -631,15 +690,17 @@ internal class LlmTextGenerator(
     private fun String.parseLocalizedItems(expectedSingleId: Int? = null): Map<Int, Map<String, CardText>> {
         val items = completeJsonObjects()
         if (items.isEmpty()) llmLogger.warn("LLM answer contains no complete JSON items")
-        val parsed = items.mapNotNull { item ->
+        val localizedItems = items.mapNotNull { item ->
+            item.localizedTextOrNull()?.let { localized -> item to localized }
+        }
+        val parsed = localizedItems.mapNotNull { (item, localized) ->
             val id = item["id"]?.jsonPrimitive?.let { value ->
                 value.intOrNull ?: value.contentOrNull?.toIntOrNull()
             } ?: return@mapNotNull null
-            val localized = item.localizedTextOrNull() ?: return@mapNotNull null
             id to localized
         }.toMap()
-        if (expectedSingleId == null || expectedSingleId in parsed || items.size != 1) return parsed
-        val localized = items.single().localizedTextOrNull() ?: return parsed
+        if (expectedSingleId == null || expectedSingleId in parsed || localizedItems.size != 1) return parsed
+        val localized = localizedItems.single().second
         return parsed + (expectedSingleId to localized)
     }
 
@@ -647,8 +708,7 @@ internal class LlmTextGenerator(
         val arrayStart = indexOf('[')
         val scanStart = if (arrayStart >= 0) arrayStart + 1 else 0
         val objects = mutableListOf<JsonObject>()
-        var objectStart = -1
-        var depth = 0
+        val objectStarts = mutableListOf<Int>()
         var insideString = false
         var escaped = false
         for (index in scanStart until length) {
@@ -663,21 +723,15 @@ internal class LlmTextGenerator(
             }
             when (character) {
                 '"' -> insideString = true
-                '{' -> {
-                    if (depth == 0) objectStart = index
-                    depth += 1
+                '{' -> objectStarts += index
+                '}' -> if (objectStarts.isNotEmpty()) {
+                    val objectStart = objectStarts.removeLast()
+                    runCatching { json.parseToJsonElement(substring(objectStart, index + 1)) as? JsonObject }
+                        .onFailure { llmLogger.warn("LLM answered an invalid JSON item: ${it.message}") }
+                        .getOrNull()
+                        ?.let(objects::add)
                 }
-                '}' -> if (depth > 0) {
-                    depth -= 1
-                    if (depth == 0 && objectStart >= 0) {
-                        runCatching { json.parseToJsonElement(substring(objectStart, index + 1)) as? JsonObject }
-                            .onFailure { llmLogger.warn("LLM answered an invalid JSON item: ${it.message}") }
-                            .getOrNull()
-                            ?.let(objects::add)
-                        objectStart = -1
-                    }
-                }
-                ']' -> if (arrayStart >= 0 && depth == 0) break
+                ']' -> if (arrayStart >= 0 && objectStarts.isEmpty()) break
             }
         }
         return objects
@@ -844,6 +898,8 @@ private const val UNAVAILABLE_RETRY_DELAY_MILLIS = 2_000L
 private const val MAX_ERROR_MESSAGE_LENGTH = 300
 private const val MAX_LLM_FALLBACKS = 3
 private const val MAX_TEXT_BATCH_ATTEMPTS = 3
+private const val MAX_REPAIR_BATCH_ATTEMPTS = 4
+private const val REPAIR_BATCH_SIZE = 4
 private const val MAX_SINGLE_ITEM_ATTEMPTS = 8
 private const val MAX_REJECTED_TEXTS_IN_PROMPT = 2
 private const val MAX_ACCEPTED_CARD_NAMES_IN_PROMPT = 150

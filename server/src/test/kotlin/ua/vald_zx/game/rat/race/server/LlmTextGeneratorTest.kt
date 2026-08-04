@@ -220,6 +220,42 @@ class LlmTextGeneratorTest {
     }
 
     @Test
+    fun severalMissingCardsAreRepairedInASmallBatch() = runTest {
+        var attempt = 0
+        val chat = FakeChat { user ->
+            attempt += 1
+            val ids = promptIds(user)
+            val returnedIds = if (attempt <= 3) ids.filter { it == "1" } else ids
+            returnedIds.joinToString(prefix = "[", postfix = "]", transform = ::localizedItem)
+        }
+
+        val generated = LlmTextGenerator(chat).generateComplete(world, cards, emptyList())
+
+        assertEquals((1..4).toSet(), generated.getValue("uk").cards.getValue(BoardCardType.SmallBusiness).keys)
+        assertEquals(listOf("2", "3", "4"), promptIds(chat.prompts[3]))
+        assertEquals(4, chat.prompts.size)
+    }
+
+    @Test
+    fun nestedSingleRepairObjectIsAccepted() = runTest {
+        var attempt = 0
+        val chat = FakeChat { user ->
+            attempt += 1
+            val ids = promptIds(user)
+            if (attempt <= 3) {
+                ids.filterNot { it == "4" }.joinToString(prefix = "[", postfix = "]", transform = ::localizedItem)
+            } else {
+                """{"card":${localizedItem("999")}}"""
+            }
+        }
+
+        val generated = LlmTextGenerator(chat).generateComplete(world, cards, emptyList())
+
+        assertEquals("Назва 999", generated.getValue("uk").cards.getValue(BoardCardType.SmallBusiness).getValue(4).name)
+        assertEquals(listOf("4"), promptIds(chat.prompts[3]))
+    }
+
+    @Test
     fun aSingleObjectCompletesTheLastMissingId() = runTest {
         var attempt = 0
         val chat = FakeChat { user ->
