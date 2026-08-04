@@ -62,6 +62,7 @@ internal object BoardGenerationCoordinator {
                                 isRunning = false,
                                 activeSinceEpochMs = null,
                                 elapsedMillis = progress.elapsedMillisAt(now),
+                                retryStartedAtEpochMs = null,
                                 retryAtEpochMs = null,
                                 retryProvider = "",
                             )
@@ -245,6 +246,7 @@ internal object BoardGenerationCoordinator {
                         isRunning = false,
                         activeSinceEpochMs = null,
                         elapsedMillis = progress.elapsedMillisAt(now),
+                        retryStartedAtEpochMs = null,
                         retryAtEpochMs = null,
                         retryProvider = "",
                     )
@@ -268,6 +270,9 @@ internal object BoardGenerationCoordinator {
                         quotaLimit = usage.quota?.limit ?: progress.quotaLimit,
                         quotaUsed = usage.quota?.used ?: progress.quotaUsed,
                         quotaResetAtEpochMs = usage.quota?.resetAtEpochMs ?: progress.quotaResetAtEpochMs,
+                        retryStartedAtEpochMs = null,
+                        retryAtEpochMs = null,
+                        retryProvider = "",
                     )
                 )
             )
@@ -278,10 +283,12 @@ internal object BoardGenerationCoordinator {
         boardMutex(boardId).withLock {
             val board = Storage.getBoardOrNull(boardId) ?: return
             val progress = board.generationProgress
+            val now = Clock.System.now().toEpochMilliseconds()
             Storage.updateBoard(
                 board.copy(
                     generationProgress = progress.copy(
-                        retryAtEpochMs = Clock.System.now().toEpochMilliseconds() + retry.delayMillis,
+                        retryStartedAtEpochMs = now,
+                        retryAtEpochMs = now + retry.delayMillis,
                         retryProvider = "${retry.provider}/${retry.model}",
                         quotaType = retry.quota?.type ?: progress.quotaType,
                         quotaLimit = retry.quota?.limit ?: progress.quotaLimit,

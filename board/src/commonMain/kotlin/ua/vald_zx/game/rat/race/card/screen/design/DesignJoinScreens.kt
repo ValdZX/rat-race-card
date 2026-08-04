@@ -141,7 +141,12 @@ fun DesignBoardGenerationContent(
             style = Design.type.monoMeta,
             color = colors.scaffold.onSurfaceMuted,
         )
-        if (progress.quotaLimit > 0 && progress.quotaType != GenerationQuotaType.UNKNOWN) {
+        val quotaResetAt = progress.quotaResetAtEpochMs
+        if (
+            progress.quotaLimit > 0 &&
+            progress.quotaType != GenerationQuotaType.UNKNOWN &&
+            (quotaResetAt == null || quotaResetAt > nowEpochMs)
+        ) {
             Text(
                 text = stringResource(
                     Res.string.generation_quota_usage,
@@ -152,7 +157,7 @@ fun DesignBoardGenerationContent(
                 style = Design.type.monoMeta,
                 color = colors.scaffold.onSurfaceMuted,
             )
-            progress.quotaResetAtEpochMs?.let { resetAt ->
+            quotaResetAt?.let { resetAt ->
                 val resetIn = (resetAt - nowEpochMs).coerceAtLeast(0).formatElapsedTime()
                 Text(
                     text = stringResource(Res.string.generation_quota_reset_in, resetIn),

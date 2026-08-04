@@ -6,8 +6,10 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.GeneratedText
+import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import ua.vald_zx.game.rat.race.card.shared.PayerType
 import java.net.InetSocketAddress
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -451,8 +453,10 @@ class LlmTextGeneratorTest {
             assertEquals(11, requests.get())
             assertEquals(10, retries.size)
             assertTrue(retries.all { it.provider == "gemini" && it.delayMillis > 0 })
-            assertTrue(retries.all { it.quota?.type == ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType.REQUESTS_PER_MINUTE })
-            assertTrue(retries.all { it.quota?.limit == 20L && it.quota?.used == 20L })
+            assertTrue(retries.all { it.quota?.type == GenerationQuotaType.REQUESTS_PER_MINUTE })
+            assertTrue(retries.all { retry ->
+                retry.quota?.let { it.limit == 20L && it.used == 20L } == true
+            })
         } finally {
             server.stop(0)
         }
@@ -476,6 +480,7 @@ class LlmTextGeneratorTest {
             start()
         }
         val retries = mutableListOf<LlmRetryWait>()
+        val now = Instant.parse("2026-08-05T12:00:00Z").toEpochMilli()
         try {
             val chat = HttpChatCompletion(
                 provider = LlmProviderSettings(
@@ -488,14 +493,16 @@ class LlmTextGeneratorTest {
                 model = "daily-model",
                 onRetry = { retries += it },
                 wait = {},
+                quotaTracker = LlmQuotaTracker { now },
+                nowEpochMs = { now },
             )
 
             assertEquals("completed", chat.complete("system", "user"))
             assertEquals(2, requests.get())
             assertEquals(1, retries.size)
-            assertTrue(retries.single().delayMillis > 60 * 60 * 1_000)
+            assertTrue(retries.single().delayMillis > 18 * 60 * 60 * 1_000)
             assertEquals(
-                ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType.REQUESTS_PER_DAY,
+                GenerationQuotaType.REQUESTS_PER_DAY,
                 retries.single().quota?.type,
             )
             assertEquals(250, retries.single().quota?.limit)

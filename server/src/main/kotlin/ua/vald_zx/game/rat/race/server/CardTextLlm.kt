@@ -160,6 +160,8 @@ internal class HttpChatCompletion(
     private val onUsage: suspend (LlmTokenUsage) -> Unit = {},
     private val onRetry: suspend (LlmRetryWait) -> Unit = {},
     private val wait: suspend (Long) -> Unit = { delay(it) },
+    private val quotaTracker: LlmQuotaTracker = llmQuotaTracker,
+    private val nowEpochMs: () -> Long = System::currentTimeMillis,
 ) : ChatCompletion {
 
     private val client: HttpClient by lazy {
@@ -198,7 +200,7 @@ internal class HttpChatCompletion(
                 val reportedRetry = response.retryDelay()
                 val reportedQuota = response.reportedQuota()
                 val quota = reportedQuota?.let { reported ->
-                    llmQuotaTracker.recordLimit(
+                    quotaTracker.recordLimit(
                         provider = provider.name,
                         model = model,
                         type = reported.type,
@@ -208,7 +210,7 @@ internal class HttpChatCompletion(
                 }
                 val retry = quota?.takeIf { it.type.isDailyQuota }?.let { dailyQuota ->
                     RetryDelay(
-                        millis = maxOf(reportedRetry.millis, dailyQuota.resetAtEpochMs - System.currentTimeMillis()),
+                        millis = maxOf(reportedRetry.millis, dailyQuota.resetAtEpochMs - nowEpochMs()),
                         precise = true,
                     )
                 } ?: reportedRetry
@@ -246,7 +248,7 @@ internal class HttpChatCompletion(
             }
             val responseObject = json.parseToJsonElement(response.body()).jsonObject
             responseObject.tokenUsageOrNull()?.let { usage ->
-                val quota = llmQuotaTracker.recordSuccess(provider.name, model, usage.input)
+                val quota = quotaTracker.recordSuccess(provider.name, model, usage.input)
                 onUsage(usage.copy(quota = quota))
             }
             val choice = responseObject["choices"]?.jsonArray?.firstOrNull()?.jsonObject

@@ -12,6 +12,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.BoardGenerationProgress
 import ua.vald_zx.game.rat.race.card.shared.BoardGenerationStage
+import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
 import ua.vald_zx.game.rat.race.server.BoardGenerator
@@ -54,6 +55,11 @@ class DatabaseSerializationTest {
                 total = 1,
                 elapsedMillis = 25_000,
                 totalTokens = 4_200,
+                requestCount = 17,
+                quotaType = GenerationQuotaType.REQUESTS_PER_MINUTE,
+                quotaLimit = 20,
+                quotaUsed = 17,
+                quotaResetAtEpochMs = 1_800_000_000_000,
             ),
         )
 

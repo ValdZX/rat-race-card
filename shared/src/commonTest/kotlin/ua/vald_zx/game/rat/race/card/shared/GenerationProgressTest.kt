@@ -32,10 +32,11 @@ class GenerationProgressTest {
             total = 100,
             isRunning = true,
             activeSinceEpochMs = 0,
+            retryStartedAtEpochMs = 40_000,
             retryAtEpochMs = 70_000,
         )
 
-        assertEquals(95_000, progress.estimatedRemainingMillisAt(50_000))
+        assertEquals(80_000, progress.estimatedRemainingMillisAt(50_000))
     }
 
     @Test

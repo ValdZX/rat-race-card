@@ -54,6 +54,7 @@ data class BoardGenerationProgress(
     val inputTokens: Long = 0,
     val outputTokens: Long = 0,
     val totalTokens: Long = 0,
+    val retryStartedAtEpochMs: Long? = null,
     val retryAtEpochMs: Long? = null,
     val retryProvider: String = "",
     val requestCount: Long = 0,
@@ -79,7 +80,9 @@ data class BoardGenerationProgress(
 
     fun estimatedRemainingMillisAt(nowEpochMs: Long): Long? {
         if (!isRunning || total <= 0 || completed <= 0 || completed >= total) return null
-        val averageUnitMillis = elapsedMillisAt(nowEpochMs).div(completed)
+        val currentWaitElapsed = retryStartedAtEpochMs?.let { (nowEpochMs - it).coerceAtLeast(0) } ?: 0
+        val productiveElapsed = (elapsedMillisAt(nowEpochMs) - currentWaitElapsed).coerceAtLeast(0)
+        val averageUnitMillis = productiveElapsed.div(completed)
         val generationMillis = averageUnitMillis * (total - completed)
         val currentWaitMillis = retryAtEpochMs?.let { (it - nowEpochMs).coerceAtLeast(0) } ?: 0
         return generationMillis + currentWaitMillis
