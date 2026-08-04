@@ -50,7 +50,7 @@ class DesignCardDecksRenderTest {
                                         kind = CardDeckSlotKind.DRAW,
                                         size = slotSize,
                                         count = 12,
-                                        actionable = type == BoardCardType.Chance,
+                                        canTake = type == BoardCardType.Chance,
                                         onClick = {},
                                     )
                                 }
@@ -64,7 +64,7 @@ class DesignCardDecksRenderTest {
                                 kind = CardDeckSlotKind.DISCARD,
                                 size = slotSize,
                                 count = 0,
-                                actionable = false,
+                                canTake = false,
                                 onClick = {},
                             )
                         }

@@ -108,6 +108,11 @@ data class PlayerMessage(
 
 const val PLAYER_MESSAGE_LOG_SIZE = 3
 
+internal fun List<PlayerMessage>.plusSpeech(text: String, expiresAtEpochMs: Long): List<PlayerMessage> {
+    if (text.isBlank() || lastOrNull()?.id == expiresAtEpochMs) return this
+    return (this + PlayerMessage(expiresAtEpochMs, text)).takeLast(PLAYER_MESSAGE_LOG_SIZE)
+}
+
 sealed class BoardUiAction {
     data class ConfirmDismissal(val business: Business) : BoardUiAction()
     data class Fired(val business: Business) : BoardUiAction()
@@ -156,7 +161,6 @@ class BoardViewModel(
     val playerMessages: StateFlow<Map<String, PlayerMessage>> = _playerMessages.asStateFlow()
     private val _playerMessageLog = MutableStateFlow<Map<String, List<PlayerMessage>>>(emptyMap())
     val playerMessageLog: StateFlow<Map<String, List<PlayerMessage>>> = _playerMessageLog.asStateFlow()
-    private var nextPlayerMessageId = 0L
     private var observationJob: Job? = null
     private var pingJob: Job? = null
     private var reconnectJob: Job? = null
@@ -242,12 +246,7 @@ class BoardViewModel(
                             _uiState.update { it.copy(player = changedPlayer) }
                         }
                         moveSound(old = oldPlayer, changed = changedPlayer)?.let(::play)
-                        changedPlayer.speech
-                            ?.takeIf {
-                                it.text.isNotBlank() &&
-                                        it.expiresAtEpochMs > Clock.System.now().toEpochMilliseconds()
-                            }
-                            ?.let { showPlayerMessage(changedPlayer.id, it.text, it.expiresAtEpochMs) }
+                        changedPlayer.speech?.let { showSpeech(changedPlayer.id, it) }
                     }
 
                     is Event.BoardChanged -> {
@@ -301,8 +300,6 @@ class BoardViewModel(
                             }
                         }
                     }
-
-                    is Event.PlayerMessage -> showPlayerMessage(event.playerId, event.text)
 
                     is Event.HighRiskPlayed -> {
                         _actions.send(HighRiskPlayed(event.outcome, event.guess))
@@ -475,17 +472,15 @@ class BoardViewModel(
         }
     }
 
-    private fun showPlayerMessage(
-        playerId: String,
-        text: String,
-        expiresAtEpochMs: Long = Clock.System.now().toEpochMilliseconds() + 8_000,
-    ) {
-        if (text.isBlank()) return
-        val message = PlayerMessage(++nextPlayerMessageId, text)
+    internal fun showSpeech(playerId: String, speech: PlayerSpeech) {
+        val expiresAtEpochMs = speech.expiresAtEpochMs
+        if (expiresAtEpochMs <= Clock.System.now().toEpochMilliseconds()) return
+        val log = _playerMessageLog.value[playerId].orEmpty()
+        val updated = log.plusSpeech(speech.text, expiresAtEpochMs)
+        if (updated == log) return
+        val message = updated.last()
         _playerMessages.update { it + (playerId to message) }
-        _playerMessageLog.update { log ->
-            log + (playerId to (log[playerId].orEmpty() + message).takeLast(PLAYER_MESSAGE_LOG_SIZE))
-        }
+        _playerMessageLog.update { it + (playerId to updated) }
         viewModelScope.launch {
             delay((expiresAtEpochMs - Clock.System.now().toEpochMilliseconds()).coerceAtLeast(0).milliseconds)
             _playerMessages.update {

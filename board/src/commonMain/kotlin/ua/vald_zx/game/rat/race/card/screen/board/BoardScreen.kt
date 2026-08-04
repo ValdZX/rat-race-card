@@ -63,6 +63,9 @@ import ua.vald_zx.game.rat.race.card.design.DesignShapes
 import ua.vald_zx.game.rat.race.card.screen.design.DesignActiveWaves
 import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDialog
 import ua.vald_zx.game.rat.race.card.screen.design.DesignPlayerSheet
+import ua.vald_zx.game.rat.race.card.screen.design.DesignBoardOverlay
+import ua.vald_zx.game.rat.race.card.screen.design.rememberCellFocus
+import ua.vald_zx.game.rat.race.card.screen.design.rememberTokenBubbleState
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
 import ua.vald_zx.game.rat.race.card.components.NavigationBackButton
 import ua.vald_zx.game.rat.race.card.components.EButton
@@ -661,6 +664,8 @@ fun BoardScreenContent(vm: BoardViewModel) {
 fun BoardFragment(vm: BoardViewModel) {
     val rotX = remember { Animatable(0f) }
     val rotY = remember { Animatable(0f) }
+    val focus = rememberCellFocus()
+    val bubble = rememberTokenBubbleState()
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -683,11 +688,17 @@ fun BoardFragment(vm: BoardViewModel) {
                     scaleY = scale
                 }
         ) {
-            BoardPanel(isVertical, vm)
+            val layout = rememberBoardLayout(vm, isVertical)
+            if (layout != null) {
+                BoardPanel(vm, layout, focus, bubble)
+            }
             if (isFlipped(rotY, rotX)) {
                 BackSide()
             }
             Dice(vm)
+            if (layout != null && designV2Enabled.value) {
+                DesignBoardOverlay(layout, vm, focus, bubble)
+            }
         }
     }
 }
@@ -730,8 +741,7 @@ fun BoxWithConstraintsScope.Dice(vm: BoardViewModel) {
     val rollSize = min(maxWidth, maxHeight) / 7
     val arrowSize = rollSize * 0.7f
     Row(
-        modifier = Modifier
-            .align(Alignment.Center),
+        modifier = Modifier.align(Alignment.Center),
     ) {
         Box(
             modifier = Modifier

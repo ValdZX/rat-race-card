@@ -222,7 +222,7 @@ internal fun BalanceRow(player: Player) {
     val colors = Design.colors
     val type = Design.type
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.padding(end = 44.dp),
     ) {

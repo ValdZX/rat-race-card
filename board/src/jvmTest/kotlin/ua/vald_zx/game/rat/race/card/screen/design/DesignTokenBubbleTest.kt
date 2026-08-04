@@ -124,6 +124,7 @@ class DesignTokenBubbleTest {
                 BottomSheetNavigator {
                     AppTheme(forceDark = true) {
                         val focus = rememberCellFocus()
+                        val bubble = rememberTokenBubbleState()
                         Box(
                             Modifier.size(board)
                                 .background(Design.scaffold.background)
@@ -131,8 +132,10 @@ class DesignTokenBubbleTest {
                                 .testTag("board")
                         ) {
                             DesignTrackForTest(route, CellSurface.Tile, focus) {
-                                DesignPlayerTokens(vm = vm, layout = route, focus = focus)
+                                DesignPlayerTokens(vm = vm, layout = route, focus = focus, bubble = bubble)
                             }
+                            TokenBubbleScrim(bubble)
+                            DesignTokenBubbles(vm = vm, layout = route, focus = focus, bubble = bubble)
                         }
                     }
                 }

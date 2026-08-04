@@ -23,9 +23,6 @@ sealed class GlobalEvent {
     data class PlayerDivorced(val playerId: String) : GlobalEvent()
 
     @Serializable
-    data class PlayerMessage(val playerId: String, val text: String) : GlobalEvent()
-
-    @Serializable
     data class BidSelled(val bid: Bid, val auction: Auction) : GlobalEvent()
 
     @Serializable
@@ -45,9 +42,6 @@ sealed class Event {
 
     @Serializable
     data class PlayerDivorced(val playerId: String) : Event()
-
-    @Serializable
-    data class PlayerMessage(val playerId: String, val text: String) : Event()
 
     @Serializable
     data class PlayerChanged(val player: Player) : Event()

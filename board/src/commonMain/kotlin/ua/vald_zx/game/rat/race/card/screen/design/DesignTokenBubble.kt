@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,6 +33,7 @@ import ua.vald_zx.game.rat.race.card.shared.total
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
 internal val tokenBubbleWidth = 220.dp
+internal const val tokenBubbleTag = "token-bubble"
 
 @Composable
 internal fun DesignTokenBubble(
@@ -46,6 +48,7 @@ internal fun DesignTokenBubble(
     val colors = Design.colors
     Column(
         modifier = modifier
+            .testTag(tokenBubbleTag)
             .width(tokenBubbleWidth)
             .levelSheet(colors, DesignShapes.md)
             .clip(DesignShapes.md)

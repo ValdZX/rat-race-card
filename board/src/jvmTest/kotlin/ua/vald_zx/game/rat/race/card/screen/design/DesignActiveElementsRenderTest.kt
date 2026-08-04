@@ -62,7 +62,7 @@ class DesignActiveElementsRenderTest {
                             kind = CardDeckSlotKind.DRAW,
                             size = deckSize,
                             count = 12,
-                            actionable = true,
+                            canTake = true,
                             onClick = {},
                         )
                     }

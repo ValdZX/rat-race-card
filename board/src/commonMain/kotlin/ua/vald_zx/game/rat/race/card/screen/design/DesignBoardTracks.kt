@@ -64,7 +64,12 @@ private fun Int.onTrack(layout: RouteLayout): Int =
     moveTo(this, layout.layer.cellCount, layout.route.offset)
 
 @Composable
-fun BoxScope.DesignBoardTracks(vm: BoardViewModel, layout: BoardLayout, focus: CellFocus) {
+fun BoxScope.DesignBoardTracks(
+    vm: BoardViewModel,
+    layout: BoardLayout,
+    focus: CellFocus,
+    bubble: TokenBubbleState,
+) {
     val state by vm.uiState.collectAsState()
     val playerLevel = state.player.location.level
 
@@ -79,7 +84,7 @@ fun BoxScope.DesignBoardTracks(vm: BoardViewModel, layout: BoardLayout, focus: C
         focus = focus,
         onSalaryClick = onSalary,
         onStartClick = onStart,
-    ) { DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus) }
+    ) { DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus, bubble = bubble) }
     DesignTrack(
         layout = layout.innerRoute,
         surface = if (playerLevel == layout.innerRoute.layer.level) CellSurface.Tile else CellSurface.Engraved,
@@ -87,7 +92,7 @@ fun BoxScope.DesignBoardTracks(vm: BoardViewModel, layout: BoardLayout, focus: C
         focus = focus,
         onSalaryClick = onSalary,
         onStartClick = onStart,
-    ) { DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus) }
+    ) { DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus, bubble = bubble) }
 }
 
 @Stable

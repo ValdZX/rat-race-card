@@ -3,7 +3,6 @@ package ua.vald_zx.game.rat.race.card.screen.design
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -33,6 +33,8 @@ import ua.vald_zx.game.rat.race.card.screen.board.*
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
 internal const val DECKS_Z = 2f
+
+internal fun deckSlotTag(type: BoardCardType, kind: CardDeckSlotKind) = "deck-${type.name}-${kind.name}"
 
 @Composable
 fun BoxScope.DesignCardDecks(layout: CardDeckLayout, vm: BoardViewModel) {
@@ -57,13 +59,14 @@ fun BoxScope.DesignCardDecks(layout: CardDeckLayout, vm: BoardViewModel) {
                     .offset(slot.offset.x, slot.offset.y)
                     .size(slot.size)
                     .zIndex(if (canTake) 1f else 0f)
+                    .testTag(deckSlotTag(slot.type, slot.kind))
             ) {
                 DeckSlot(
                     type = slot.type,
                     kind = slot.kind,
                     size = slot.size,
                     count = count,
-                    actionable = canTake,
+                    canTake = canTake,
                     onClick = { vm.selectCard(slot.type) },
                 )
             }
@@ -77,7 +80,7 @@ internal fun DeckSlot(
     kind: CardDeckSlotKind,
     size: DpSize,
     count: Int,
-    actionable: Boolean,
+    canTake: Boolean,
     onClick: () -> Unit,
 ) {
     val colors = Design.colors
@@ -96,10 +99,10 @@ internal fun DeckSlot(
                 val map = if (isDraw) deckCoordinatesMap else discardPilesCoordinatesMap
                 map.getOrPut(type) { mutableStateOf(offset to size) }.value = offset to size
             }
-            .optionalModifier(actionable) { clickableSingle(onClick = onClick) },
+            .optionalModifier(canTake) { clickableSingle(onClick = onClick) },
         contentAlignment = Alignment.Center,
     ) {
-        if (actionable) {
+        if (canTake) {
             DesignActivePulse(shape = shape, color = tone.edge)
         }
         Box(
@@ -108,12 +111,8 @@ internal fun DeckSlot(
                 .clip(shape)
                 .background(if (isDraw && count > 0) tone.fill else colors.scaffold.surface3)
                 .border(
-                    width = if (actionable) 2.dp else 1.dp,
-                    color = when {
-                        actionable -> colors.scaffold.accent
-                        isDraw && count > 0 -> tone.edge
-                        else -> colors.scaffold.outline
-                    },
+                    width = if (canTake) 2.dp else 1.dp,
+                    color = tone.edge,
                     shape = shape,
                 ),
             contentAlignment = Alignment.Center,

@@ -23,26 +23,36 @@ import androidx.compose.runtime.collectAsState
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.design.DesignBoardRoutes
+import ua.vald_zx.game.rat.race.card.screen.design.CellFocus
+import ua.vald_zx.game.rat.race.card.screen.design.TokenBubbleState
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 @Composable
-fun BoxWithConstraintsScope.BoardPanel(
-    isVertical: Boolean,
-    vm: BoardViewModel,
-) {
+fun BoxWithConstraintsScope.rememberBoardLayout(vm: BoardViewModel, isVertical: Boolean): BoardLayout? {
     val maxWidth = maxWidth
     val maxHeight = maxHeight
-    val density = LocalDensity.current
-    val isDark by LocalThemeIsDark.current
     val board = vm.uiState.collectAsState().value.board
     val layers = remember(board.generatedPlaces) { boardLayersOf(board) }
-    val layout = remember(isVertical, maxWidth, maxHeight, layers) {
+    return remember(isVertical, maxWidth, maxHeight, layers) {
         calculateBoardLayout(
             boardSize = DpSize(maxWidth, maxHeight),
             isVertical = isVertical,
             layers = layers,
         )
-    } ?: return
+    }
+}
+
+@Composable
+fun BoxWithConstraintsScope.BoardPanel(
+    vm: BoardViewModel,
+    layout: BoardLayout,
+    focus: CellFocus,
+    bubble: TokenBubbleState,
+) {
+    val maxWidth = maxWidth
+    val maxHeight = maxHeight
+    val density = LocalDensity.current
+    val isDark by LocalThemeIsDark.current
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -58,6 +68,8 @@ fun BoxWithConstraintsScope.BoardPanel(
         BoardRoutes(
             layout = layout,
             vm = vm,
+            focus = focus,
+            bubble = bubble,
         )
     }
 }
@@ -66,9 +78,11 @@ fun BoxWithConstraintsScope.BoardPanel(
 private fun BoxScope.BoardRoutes(
     layout: BoardLayout,
     vm: BoardViewModel,
+    focus: CellFocus,
+    bubble: TokenBubbleState,
 ) {
     if (designV2Enabled.value) {
-        DesignBoardRoutes(layout = layout, vm = vm)
+        DesignBoardRoutes(layout = layout, vm = vm, focus = focus, bubble = bubble)
     } else {
         LegacyBoardRoutes(layout = layout, vm = vm)
     }

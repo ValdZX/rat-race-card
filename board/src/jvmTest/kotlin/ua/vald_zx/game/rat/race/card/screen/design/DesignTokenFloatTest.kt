@@ -102,7 +102,7 @@ class DesignTokenFloatTest {
                                 .testTag("board")
                         ) {
                             DesignTrackForTest(layout.innerRoute, CellSurface.Tile, focus) {
-                                DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus)
+                                DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus, bubble = rememberTokenBubbleState())
                             }
                         }
                     }
@@ -144,7 +144,7 @@ class DesignTokenFloatTest {
                             .testTag("board")
                     ) {
                         DesignTrackForTest(layout.innerRoute, CellSurface.Tile, focus) {
-                            DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus)
+                            DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus, bubble = rememberTokenBubbleState())
                         }
                     }
                 }
@@ -199,7 +199,7 @@ class DesignTokenFloatTest {
                             .testTag("board")
                     ) {
                         DesignTrackForTest(route, CellSurface.Tile, focus) {
-                            DesignPlayerTokens(vm = vm, layout = route, focus = focus)
+                            DesignPlayerTokens(vm = vm, layout = route, focus = focus, bubble = rememberTokenBubbleState())
                         }
                     }
                 }
@@ -294,7 +294,7 @@ class DesignTokenFloatTest {
                             .testTag("board")
                     ) {
                         DesignTrackForTest(layout.outerRoute, CellSurface.Engraved, focus) {
-                            DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus)
+                            DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus, bubble = rememberTokenBubbleState())
                         }
                     }
                 }

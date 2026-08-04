@@ -26,6 +26,7 @@ import kotlin.uuid.Uuid
 internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
 private const val CORRUPT_NAME_LENGTH = 48
+private const val SPEECH_LIFETIME_MS = 8_000
 
 private val boardMutexes = ConcurrentHashMap<String, Mutex>()
 private val playerMutexes = ConcurrentHashMap<String, Mutex>()
@@ -91,7 +92,6 @@ class RaceRatServiceImpl(
             is GlobalEvent.PlayerHadBaby -> eventBus.emit(Event.PlayerHadBaby(event.playerId, event.babies))
             is GlobalEvent.PlayerMarried -> eventBus.emit(Event.PlayerMarried(event.playerId))
             is GlobalEvent.PlayerDivorced -> eventBus.emit(Event.PlayerDivorced(event.playerId))
-            is GlobalEvent.PlayerMessage -> eventBus.emit(Event.PlayerMessage(event.playerId, event.text))
             is GlobalEvent.PlayerWon -> eventBus.emit(Event.PlayerWon(event.playerId, event.playerName))
             is GlobalEvent.BidSelled -> {
                 if (event.bid.playerId == playerId) {
@@ -244,9 +244,8 @@ class RaceRatServiceImpl(
     override suspend fun sendMessage(text: String) {
         val message = text.trim().take(160)
         if (message.isNotEmpty()) {
-            val speech = PlayerSpeech(message, Clock.System.now().toEpochMilliseconds() + 8_000)
+            val speech = PlayerSpeech(message, Clock.System.now().toEpochMilliseconds() + SPEECH_LIFETIME_MS)
             updatePlayer { copy(speech = speech) }
-            globalEventBus.emit(GlobalEvent.PlayerMessage(playerId, message))
         }
     }
 
