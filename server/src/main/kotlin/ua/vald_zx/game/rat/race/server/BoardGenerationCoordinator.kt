@@ -263,6 +263,11 @@ internal object BoardGenerationCoordinator {
                         inputTokens = progress.inputTokens + usage.input,
                         outputTokens = progress.outputTokens + usage.output,
                         totalTokens = progress.totalTokens + usage.total,
+                        requestCount = progress.requestCount + 1,
+                        quotaType = usage.quota?.type ?: progress.quotaType,
+                        quotaLimit = usage.quota?.limit ?: progress.quotaLimit,
+                        quotaUsed = usage.quota?.used ?: progress.quotaUsed,
+                        quotaResetAtEpochMs = usage.quota?.resetAtEpochMs ?: progress.quotaResetAtEpochMs,
                     )
                 )
             )
@@ -278,6 +283,10 @@ internal object BoardGenerationCoordinator {
                     generationProgress = progress.copy(
                         retryAtEpochMs = Clock.System.now().toEpochMilliseconds() + retry.delayMillis,
                         retryProvider = "${retry.provider}/${retry.model}",
+                        quotaType = retry.quota?.type ?: progress.quotaType,
+                        quotaLimit = retry.quota?.limit ?: progress.quotaLimit,
+                        quotaUsed = retry.quota?.used ?: progress.quotaUsed,
+                        quotaResetAtEpochMs = retry.quota?.resetAtEpochMs ?: progress.quotaResetAtEpochMs,
                     )
                 )
             )
@@ -321,6 +330,11 @@ internal object BoardGenerationCoordinator {
                         inputTokens = previousProgress.inputTokens,
                         outputTokens = previousProgress.outputTokens,
                         totalTokens = previousProgress.totalTokens,
+                        requestCount = previousProgress.requestCount,
+                        quotaType = previousProgress.quotaType,
+                        quotaLimit = previousProgress.quotaLimit,
+                        quotaUsed = previousProgress.quotaUsed,
+                        quotaResetAtEpochMs = previousProgress.quotaResetAtEpochMs,
                     )
                 )
             )

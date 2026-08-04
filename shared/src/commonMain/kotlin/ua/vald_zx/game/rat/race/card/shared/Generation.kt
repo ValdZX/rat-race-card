@@ -32,6 +32,16 @@ enum class BoardGenerationStage {
 }
 
 @Serializable
+enum class GenerationQuotaType {
+    UNKNOWN,
+    REQUESTS_PER_MINUTE,
+    INPUT_TOKENS_PER_MINUTE,
+    REQUESTS_PER_DAY,
+    INPUT_TOKENS_PER_DAY,
+    SPEND_PER_TEN_MINUTES,
+}
+
+@Serializable
 data class BoardGenerationProgress(
     val stage: BoardGenerationStage = BoardGenerationStage.READY,
     val completed: Int = 1,
@@ -46,6 +56,11 @@ data class BoardGenerationProgress(
     val totalTokens: Long = 0,
     val retryAtEpochMs: Long? = null,
     val retryProvider: String = "",
+    val requestCount: Long = 0,
+    val quotaType: GenerationQuotaType = GenerationQuotaType.UNKNOWN,
+    val quotaLimit: Long = 0,
+    val quotaUsed: Long = 0,
+    val quotaResetAtEpochMs: Long? = null,
 ) {
     val isReady: Boolean
         get() = stage == BoardGenerationStage.READY
@@ -61,6 +76,17 @@ data class BoardGenerationProgress(
     } else {
         0
     }
+
+    fun estimatedRemainingMillisAt(nowEpochMs: Long): Long? {
+        if (!isRunning || total <= 0 || completed <= 0 || completed >= total) return null
+        val averageUnitMillis = elapsedMillisAt(nowEpochMs).div(completed)
+        val generationMillis = averageUnitMillis * (total - completed)
+        val currentWaitMillis = retryAtEpochMs?.let { (it - nowEpochMs).coerceAtLeast(0) } ?: 0
+        return generationMillis + currentWaitMillis
+    }
+
+    val quotaRemaining: Long
+        get() = (quotaLimit - quotaUsed).coerceAtLeast(0)
 }
 
 @Serializable

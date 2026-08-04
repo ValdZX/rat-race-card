@@ -20,6 +20,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.CardText
 import ua.vald_zx.game.rat.race.card.shared.GeneratedText
+import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import ua.vald_zx.game.rat.race.card.shared.Gender
 import ua.vald_zx.game.rat.race.card.shared.PayerType
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
@@ -33,6 +34,7 @@ import java.net.http.HttpResponse
 import java.time.Duration
 
 private val llmLogger = KtorSimpleLogger("CardTextLlm")
+private val llmQuotaTracker = LlmQuotaTracker()
 
 internal object LlmSettings {
     val providers: List<LlmProviderSettings>
@@ -115,12 +117,14 @@ internal data class LlmTokenUsage(
     val input: Long,
     val output: Long,
     val total: Long,
+    val quota: LlmQuotaSnapshot? = null,
 )
 
 internal data class LlmRetryWait(
     val provider: String,
     val model: String,
     val delayMillis: Long,
+    val quota: LlmQuotaSnapshot? = null,
 )
 
 internal fun interface ChatCompletion {
@@ -191,7 +195,23 @@ internal class HttpChatCompletion(
                 continue
             }
             if (response.statusCode() == 429) {
-                val retry = response.retryDelay()
+                val reportedRetry = response.retryDelay()
+                val reportedQuota = response.reportedQuota()
+                val quota = reportedQuota?.let { reported ->
+                    llmQuotaTracker.recordLimit(
+                        provider = provider.name,
+                        model = model,
+                        type = reported.type,
+                        limit = reported.limit,
+                        retryDelayMillis = reportedRetry.millis,
+                    )
+                }
+                val retry = quota?.takeIf { it.type.isDailyQuota }?.let { dailyQuota ->
+                    RetryDelay(
+                        millis = maxOf(reportedRetry.millis, dailyQuota.resetAtEpochMs - System.currentTimeMillis()),
+                        precise = true,
+                    )
+                } ?: reportedRetry
                 if (!retryRateLimits) {
                     throw LlmRateLimitException(provider.name, model, retry.millis)
                 }
@@ -202,7 +222,7 @@ internal class HttpChatCompletion(
                     }
                 }
                 llmLogger.warn("${provider.name}/$model rate limit reached, retrying in ${retry.millis}ms")
-                onRetry(LlmRetryWait(provider.name, model, retry.millis))
+                onRetry(LlmRetryWait(provider.name, model, retry.millis, quota))
                 wait(retry.millis)
                 continue
             }
@@ -225,7 +245,10 @@ internal class HttpChatCompletion(
                 )
             }
             val responseObject = json.parseToJsonElement(response.body()).jsonObject
-            responseObject.tokenUsageOrNull()?.let { onUsage(it) }
+            responseObject.tokenUsageOrNull()?.let { usage ->
+                val quota = llmQuotaTracker.recordSuccess(provider.name, model, usage.input)
+                onUsage(usage.copy(quota = quota))
+            }
             val choice = responseObject["choices"]?.jsonArray?.firstOrNull()?.jsonObject
                 ?: throw LlmProviderException("${provider.name}/$model returned no choices")
             return@withContext choice["message"]?.jsonObject?.get("content")
@@ -245,7 +268,9 @@ internal class HttpChatCompletion(
 
     private fun HttpResponse<String>.retryDelay(): RetryDelay {
         val headerSeconds = headers().firstValue("Retry-After").orElse(null)?.toDoubleOrNull()
-        val bodyDelay = RETRY_DELAY_PATTERN.find(body())?.groupValues?.get(1)?.retryDurationMillis()
+        val responseBody = body()
+        val bodyDelay = RETRY_INFO_DELAY_PATTERN.find(responseBody)?.groupValues?.get(1)?.retryDurationMillis()
+            ?: RETRY_MESSAGE_DELAY_PATTERN.find(responseBody)?.groupValues?.get(1)?.retryDurationMillis()
         val value = headerSeconds?.times(1_000)?.toLong() ?: bodyDelay ?: DEFAULT_RETRY_DELAY_MILLIS
         return RetryDelay(
             millis = value.coerceIn(MIN_RETRY_DELAY_MILLIS, MAX_REPORTED_RETRY_DELAY_MILLIS) +
@@ -257,6 +282,22 @@ internal class HttpChatCompletion(
     private fun HttpResponse<String>.errorMessage(): String =
         ERROR_MESSAGE_PATTERN.find(body())?.groupValues?.get(1)
             ?: body().take(MAX_ERROR_MESSAGE_LENGTH).ifBlank { "empty response" }
+
+    private fun HttpResponse<String>.reportedQuota(): ReportedQuota? {
+        val responseObject = runCatching { json.parseToJsonElement(body()).jsonObject }.getOrNull() ?: return null
+        val details = runCatching {
+            responseObject["error"]?.jsonObject?.get("details")?.jsonArray
+        }.getOrNull() ?: return null
+        return details.flatMap { detail ->
+            runCatching { detail.jsonObject["violations"]?.jsonArray.orEmpty() }.getOrDefault(emptyList())
+        }.mapNotNull { violation ->
+            val value = runCatching { violation.jsonObject }.getOrNull() ?: return@mapNotNull null
+            val quotaId = value["quotaId"]?.jsonPrimitive?.contentOrNull.orEmpty()
+            val metric = value["quotaMetric"]?.jsonPrimitive?.contentOrNull.orEmpty()
+            val limit = value["quotaValue"]?.jsonPrimitive?.longOrNull ?: return@mapNotNull null
+            ReportedQuota(quotaType("$quotaId $metric"), limit)
+        }.maxByOrNull { it.type.priority }
+    }
 
     private fun JsonObject.tokenUsageOrNull(): LlmTokenUsage? {
         val usage = runCatching { get("usage")?.jsonObject }.getOrNull() ?: return null
@@ -270,6 +311,11 @@ internal class HttpChatCompletion(
 private data class RetryDelay(
     val millis: Long,
     val precise: Boolean,
+)
+
+private data class ReportedQuota(
+    val type: GenerationQuotaType,
+    val limit: Long,
 )
 
 internal open class LlmProviderException(message: String) : IllegalStateException(message)
@@ -805,13 +851,47 @@ private const val DEFAULT_RETRY_DELAY_MILLIS = 3_000L
 private const val MIN_RETRY_DELAY_MILLIS = 500L
 private const val MAX_REPORTED_RETRY_DELAY_MILLIS = 24 * 60 * 60 * 1_000L
 private const val RETRY_DELAY_BUFFER_MILLIS = 300L
-private val RETRY_DELAY_PATTERN = Regex("Please try again in ((?:[\\d.]+(?:ms|[hms]))+)")
+private val RETRY_INFO_DELAY_PATTERN = Regex(
+    "\\\"retryDelay\\\"\\s*:\\s*\\\"((?:[\\d.]+(?:ms|[hms]))+)\\\"",
+    RegexOption.IGNORE_CASE,
+)
+private val RETRY_MESSAGE_DELAY_PATTERN = Regex(
+    "(?:please\\s+)?(?:try\\s+again|retry)\\s+in\\s+((?:[\\d.]+(?:ms|[hms]))+)",
+    RegexOption.IGNORE_CASE,
+)
 private val ERROR_MESSAGE_PATTERN = Regex("\\\"message\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"")
-private val RETRY_DURATION_PART_PATTERN = Regex("([\\d.]+)(ms|[hms])")
+private val RETRY_DURATION_PART_PATTERN = Regex("([\\d.]+)(ms|[hms])", RegexOption.IGNORE_CASE)
+
+private fun quotaType(value: String): GenerationQuotaType {
+    val normalized = value.lowercase().filter(Char::isLetterOrDigit)
+    return when {
+        "inputtoken" in normalized && "perday" in normalized -> GenerationQuotaType.INPUT_TOKENS_PER_DAY
+        "request" in normalized && "perday" in normalized -> GenerationQuotaType.REQUESTS_PER_DAY
+        "inputtoken" in normalized && "perminute" in normalized -> GenerationQuotaType.INPUT_TOKENS_PER_MINUTE
+        "request" in normalized && "perminute" in normalized -> GenerationQuotaType.REQUESTS_PER_MINUTE
+        "spend" in normalized -> GenerationQuotaType.SPEND_PER_TEN_MINUTES
+        else -> GenerationQuotaType.UNKNOWN
+    }
+}
+
+private val GenerationQuotaType.priority: Int
+    get() = when (this) {
+        GenerationQuotaType.REQUESTS_PER_DAY,
+        GenerationQuotaType.INPUT_TOKENS_PER_DAY -> 3
+
+        GenerationQuotaType.SPEND_PER_TEN_MINUTES -> 2
+        GenerationQuotaType.REQUESTS_PER_MINUTE,
+        GenerationQuotaType.INPUT_TOKENS_PER_MINUTE -> 1
+
+        GenerationQuotaType.UNKNOWN -> 0
+    }
+
+private val GenerationQuotaType.isDailyQuota: Boolean
+    get() = this == GenerationQuotaType.REQUESTS_PER_DAY || this == GenerationQuotaType.INPUT_TOKENS_PER_DAY
 
 private fun String.retryDurationMillis(): Long = RETRY_DURATION_PART_PATTERN.findAll(this).sumOf { match ->
     val amount = match.groupValues[1].toDoubleOrNull() ?: return@sumOf 0L
-    when (match.groupValues[2]) {
+    when (match.groupValues[2].lowercase()) {
         "h" -> amount.times(60 * 60 * 1_000).toLong()
         "m" -> amount.times(60 * 1_000).toLong()
         "s" -> amount.times(1_000).toLong()

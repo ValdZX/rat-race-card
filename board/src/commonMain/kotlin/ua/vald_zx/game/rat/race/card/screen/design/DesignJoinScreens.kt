@@ -42,6 +42,7 @@ import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 import ua.vald_zx.game.rat.race.card.shared.BoardGenerationProgress
 import ua.vald_zx.game.rat.race.card.shared.BoardGenerationStage
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
+import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -64,6 +65,7 @@ fun DesignBoardGenerationContent(
         }
     }
     val elapsed = progress.elapsedMillisAt(nowEpochMs).formatElapsedTime()
+    val estimatedRemaining = progress.estimatedRemainingMillisAt(nowEpochMs)?.formatElapsedTime()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -93,7 +95,7 @@ fun DesignBoardGenerationContent(
                 text = stringResource(
                     Res.string.generation_rate_limit_wait,
                     progress.retryProvider,
-                    remainingSeconds,
+                    remainingSeconds.times(1_000).formatElapsedTime(),
                 ),
                 style = Design.type.body,
                 color = colors.scaffold.accent,
@@ -117,6 +119,13 @@ fun DesignBoardGenerationContent(
             style = Design.type.monoMeta,
             color = colors.scaffold.onSurfaceMuted,
         )
+        estimatedRemaining?.let { remaining ->
+            Text(
+                text = stringResource(Res.string.generation_estimated_remaining, remaining),
+                style = Design.type.monoMeta,
+                color = colors.scaffold.onSurfaceMuted,
+            )
+        }
         Text(
             text = stringResource(
                 Res.string.generation_token_usage,
@@ -127,6 +136,31 @@ fun DesignBoardGenerationContent(
             style = Design.type.monoMeta,
             color = colors.scaffold.onSurfaceMuted,
         )
+        Text(
+            text = stringResource(Res.string.generation_request_count, progress.requestCount),
+            style = Design.type.monoMeta,
+            color = colors.scaffold.onSurfaceMuted,
+        )
+        if (progress.quotaLimit > 0 && progress.quotaType != GenerationQuotaType.UNKNOWN) {
+            Text(
+                text = stringResource(
+                    Res.string.generation_quota_usage,
+                    generationQuotaName(progress.quotaType),
+                    progress.quotaRemaining.splitDecimal(),
+                    progress.quotaLimit.splitDecimal(),
+                ),
+                style = Design.type.monoMeta,
+                color = colors.scaffold.onSurfaceMuted,
+            )
+            progress.quotaResetAtEpochMs?.let { resetAt ->
+                val resetIn = (resetAt - nowEpochMs).coerceAtLeast(0).formatElapsedTime()
+                Text(
+                    text = stringResource(Res.string.generation_quota_reset_in, resetIn),
+                    style = Design.type.monoMeta,
+                    color = colors.scaffold.onSurfaceMuted,
+                )
+            }
+        }
         if (progress.isFailed) {
             Text(
                 text = progress.error.ifBlank { stringResource(Res.string.generation_failed) },
@@ -152,6 +186,16 @@ fun DesignBoardGenerationContent(
         Spacer(Modifier.weight(1f))
     }
 }
+
+@Composable
+private fun generationQuotaName(type: GenerationQuotaType): String = stringResource(when (type) {
+    GenerationQuotaType.REQUESTS_PER_MINUTE -> Res.string.generation_quota_requests_minute
+    GenerationQuotaType.INPUT_TOKENS_PER_MINUTE -> Res.string.generation_quota_tokens_minute
+    GenerationQuotaType.REQUESTS_PER_DAY -> Res.string.generation_quota_requests_day
+    GenerationQuotaType.INPUT_TOKENS_PER_DAY -> Res.string.generation_quota_tokens_day
+    GenerationQuotaType.SPEND_PER_TEN_MINUTES -> Res.string.generation_quota_spend
+    GenerationQuotaType.UNKNOWN -> Res.string.generation_quota_unknown
+})
 
 private fun Long.formatElapsedTime(): String {
     val totalSeconds = div(1_000).coerceAtLeast(0)

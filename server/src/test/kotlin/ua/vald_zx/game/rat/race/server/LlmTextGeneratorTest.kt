@@ -414,4 +414,93 @@ class LlmTextGeneratorTest {
             server.stop(0)
         }
     }
+
+    @Test
+    fun googleRetryInfoWaitsUntilTheSameRequestSucceeds() = runTest {
+        val requests = AtomicInteger()
+        val server = HttpServer.create(InetSocketAddress(0), 0).apply {
+            createContext("/chat") { exchange ->
+                val attempt = requests.incrementAndGet()
+                val body = if (attempt <= 10) {
+                    """{"error":{"code":429,"message":"Quota exceeded. Please retry in 0.001s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"0.001s"}]}}"""
+                } else {
+                    """{"choices":[{"message":{"content":"completed"}}]}"""
+                }
+                val bytes = body.encodeToByteArray()
+                exchange.sendResponseHeaders(if (attempt <= 10) 429 else 200, bytes.size.toLong())
+                exchange.responseBody.use { it.write(bytes) }
+            }
+            start()
+        }
+        val retries = mutableListOf<LlmRetryWait>()
+        try {
+            val chat = HttpChatCompletion(
+                provider = LlmProviderSettings(
+                    name = "gemini",
+                    url = "http://127.0.0.1:${server.address.port}/chat",
+                    key = "key",
+                    balanceModel = "model",
+                    textModel = "model",
+                ),
+                model = "model",
+                onRetry = { retries += it },
+                wait = {},
+            )
+
+            assertEquals("completed", chat.complete("system", "user"))
+            assertEquals(11, requests.get())
+            assertEquals(10, retries.size)
+            assertTrue(retries.all { it.provider == "gemini" && it.delayMillis > 0 })
+            assertTrue(retries.all { it.quota?.type == ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType.REQUESTS_PER_MINUTE })
+            assertTrue(retries.all { it.quota?.limit == 20L && it.quota?.used == 20L })
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun dailyQuotaWaitsUntilThePacificReset() = runTest {
+        val requests = AtomicInteger()
+        val server = HttpServer.create(InetSocketAddress(0), 0).apply {
+            createContext("/chat") { exchange ->
+                val attempt = requests.incrementAndGet()
+                val body = if (attempt == 1) {
+                    """{"error":{"code":429,"message":"Quota exceeded. Please retry in 4s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaValue":"250"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"4s"}]}}"""
+                } else {
+                    """{"choices":[{"message":{"content":"completed"}}]}"""
+                }
+                val bytes = body.encodeToByteArray()
+                exchange.sendResponseHeaders(if (attempt == 1) 429 else 200, bytes.size.toLong())
+                exchange.responseBody.use { it.write(bytes) }
+            }
+            start()
+        }
+        val retries = mutableListOf<LlmRetryWait>()
+        try {
+            val chat = HttpChatCompletion(
+                provider = LlmProviderSettings(
+                    name = "gemini",
+                    url = "http://127.0.0.1:${server.address.port}/chat",
+                    key = "key",
+                    balanceModel = "daily-model",
+                    textModel = "daily-model",
+                ),
+                model = "daily-model",
+                onRetry = { retries += it },
+                wait = {},
+            )
+
+            assertEquals("completed", chat.complete("system", "user"))
+            assertEquals(2, requests.get())
+            assertEquals(1, retries.size)
+            assertTrue(retries.single().delayMillis > 60 * 60 * 1_000)
+            assertEquals(
+                ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType.REQUESTS_PER_DAY,
+                retries.single().quota?.type,
+            )
+            assertEquals(250, retries.single().quota?.limit)
+        } finally {
+            server.stop(0)
+        }
+    }
 }
