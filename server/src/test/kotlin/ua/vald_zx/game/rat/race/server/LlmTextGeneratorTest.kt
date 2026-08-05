@@ -8,6 +8,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.GeneratedText
 import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import ua.vald_zx.game.rat.race.card.shared.PayerType
+import ua.vald_zx.game.rat.race.card.shared.ShopType
 import java.net.InetSocketAddress
 import java.time.Instant
 import java.util.Collections
@@ -88,6 +89,35 @@ class LlmTextGeneratorTest {
     }
 
     @Test
+    fun everyDeckPromptExplainsWhatTheVisibleTextMustContain() = runTest {
+        val representativeCards = listOf(
+            BoardCardType.SmallBusiness to BoardCard.SmallBusiness("", "", 100, 10),
+            BoardCardType.Shopping to BoardCard.Shopping("", 100, ShopType.AUTO, ""),
+            BoardCardType.Chance to BoardCard.Chance.RandomJob("", 100),
+            BoardCardType.EventStore to BoardCard.EventStore.Announcement(""),
+            BoardCardType.Deputy to BoardCard.Deputy("", false),
+        )
+
+        val prompts = representativeCards.map { (type, card) ->
+            val chat = FakeChat(::answerFor)
+            LlmTextGenerator(chat).generateComplete(
+                world = world,
+                cards = mapOf(type to mapOf(1 to card)),
+                professions = emptyList(),
+            )
+            chat.prompts.single()
+        }.joinToString("\n")
+
+        assertTrue(prompts.contains("Name відображається гравцю як головний заголовок"))
+        assertTrue(prompts.contains("description пояснює, чим він займається і звідки отримує дохід"))
+        assertTrue(prompts.contains("description пояснює, що саме купують і навіщо"))
+        assertTrue(prompts.contains("можливість, підробіток, актив або корупційну схему"))
+        assertTrue(prompts.contains("конкретним заголовком ринкової новини"))
+        assertTrue(prompts.contains("посадовця, роль або скандал"))
+        assertTrue(prompts.contains("не додавай нових чисел, умов або наслідків"))
+    }
+
+    @Test
     fun acceptedNamesReachLaterBatchesWithoutDescriptions() = runTest {
         val cardChat = FakeChat(::answerFor)
         LlmTextGenerator(cardChat, batchSize = 2).generateComplete(world, cards, emptyList())
@@ -135,6 +165,67 @@ class LlmTextGeneratorTest {
         )
 
         assertTrue(chat.prompts.single().contains("лише незаміжні жінки та одружені чоловіки"))
+        assertTrue(chat.prompts.single().contains("name коротко й конкретно називає предмет оплати"))
+        assertTrue(chat.prompts.single().contains("не повторюй їх і не замінюй ними причину витрати"))
+    }
+
+    @Test
+    fun mechanicalExpenseTextIsRegeneratedWithASpecificPurpose() = runTest {
+        var attempt = 0
+        val chat = FakeChat { user ->
+            attempt += 1
+            val id = promptIds(user).single()
+            if (attempt == 1) {
+                """[{"id":$id,"uk":{"name":"Обов'язкова витрата","description":"Обов'язкова витрата 4000 лише для гравців за умовою: платять усі без винятку."},"en":{"name":"Mandatory expense","description":"Mandatory expense for all players. Everyone pays without exception."}}]"""
+            } else {
+                """[{"id":$id,"uk":{"name":"Ремонт купола","description":"Метеорит залишив тріщину в захисному куполі колонії."},"en":{"name":"Dome repair","description":"A meteorite cracked the colony's protective dome."}}]"""
+            }
+        }
+        val expense = BoardCard.Expenses("", "", 4_000, PayerType.ALL)
+
+        val generated = LlmTextGenerator(chat).generateComplete(
+            world = world,
+            cards = mapOf(BoardCardType.Expenses to mapOf(1 to expense)),
+            professions = emptyList(),
+        )
+
+        assertEquals(2, chat.prompts.size)
+        assertEquals(
+            "Ремонт купола",
+            generated.getValue("uk").cards.getValue(BoardCardType.Expenses).getValue(1).name,
+        )
+    }
+
+    @Test
+    fun genericCategoryTitleIsRegeneratedForOtherDecks() = runTest {
+        var attempt = 0
+        val chat = FakeChat { user ->
+            attempt += 1
+            val id = promptIds(user).single()
+            if (attempt == 1) {
+                """[{"id":$id,"uk":{"name":"Покупка","description":"Гравець купує актив."},"en":{"name":"Shopping","description":"The player buys an asset."}}]"""
+            } else {
+                """[{"id":$id,"uk":{"name":"Місячний всюдихід","description":"Маневрений транспорт для поїздок між куполами."},"en":{"name":"Lunar rover","description":"Agile transport for trips between colony domes."}}]"""
+            }
+        }
+        val shopping = BoardCard.Shopping(
+            description = "",
+            price = 4_000,
+            shopType = ShopType.AUTO,
+            credit = "",
+        )
+
+        val generated = LlmTextGenerator(chat).generateComplete(
+            world = world,
+            cards = mapOf(BoardCardType.Shopping to mapOf(1 to shopping)),
+            professions = emptyList(),
+        )
+
+        assertEquals(2, chat.prompts.size)
+        assertEquals(
+            "Місячний всюдихід",
+            generated.getValue("uk").cards.getValue(BoardCardType.Shopping).getValue(1).name,
+        )
     }
 
     @Test
@@ -351,11 +442,14 @@ class LlmTextGeneratorTest {
     }
 
     @Test
-    fun repeatedNamesAreAcceptedWhenTheCardDoesNotUseThem() = runTest {
+    fun repeatedNamesAreRegeneratedForEveryCardType() = runTest {
+        var attempt = 0
         val chat = FakeChat { user ->
+            attempt += 1
             promptIds(user).joinToString(prefix = "[", postfix = "]") { id ->
-                """{"id":$id,"uk":{"name":"Акції компанії","description":"Пропозиція $id"},""" +
-                        """"en":{"name":"Company shares","description":"Offer $id"}}"""
+                val suffix = if (attempt == 1) "" else " $id"
+                """{"id":$id,"uk":{"name":"Акції Аероліту$suffix","description":"Пропозиція $id"},""" +
+                        """"en":{"name":"Aerolith shares$suffix","description":"Offer $id"}}"""
             }
         }
         val shareCards = mapOf(
@@ -368,7 +462,58 @@ class LlmTextGeneratorTest {
         val generated = LlmTextGenerator(chat).generateComplete(world, shareCards, emptyList())
 
         assertEquals(setOf(67, 68), generated.getValue("uk").cards.getValue(BoardCardType.Chance).keys)
+        assertEquals(listOf("68"), promptIds(chat.prompts[1]))
+        assertEquals(2, chat.prompts.size)
+    }
+
+    @Test
+    fun repeatedDescriptionsAreAcceptedForMechanicallyIdenticalCards() = runTest {
+        val chat = FakeChat { user ->
+            promptIds(user).joinToString(prefix = "[", postfix = "]") { id ->
+                """{"id":$id,"uk":{"name":"Тихий ринок $id","description":"На ринку тихий день."},""" +
+                        """"en":{"name":"Quiet market $id","description":"A quiet day at the market."}}"""
+            }
+        }
+        val eventCards = mapOf(
+            BoardCardType.EventStore to mapOf<Int, BoardCard>(
+                59 to BoardCard.EventStore.Announcement(""),
+                64 to BoardCard.EventStore.Announcement(""),
+                70 to BoardCard.EventStore.Announcement(""),
+                72 to BoardCard.EventStore.Announcement(""),
+            ),
+        )
+
+        val generated = LlmTextGenerator(chat).generateComplete(world, eventCards, emptyList())
+
+        assertEquals(
+            setOf(59, 64, 70, 72),
+            generated.getValue("uk").cards.getValue(BoardCardType.EventStore).keys,
+        )
         assertEquals(1, chat.prompts.size)
+    }
+
+    @Test
+    fun repeatedDescriptionsAreRejectedForDifferentCards() = runTest {
+        var attempt = 0
+        val chat = FakeChat { user ->
+            attempt += 1
+            promptIds(user).joinToString(prefix = "[", postfix = "]") { id ->
+                val suffix = if (attempt == 1) "" else " $id"
+                """{"id":$id,"uk":{"name":"Продаж землі $id","description":"Ціна землі змінилася$suffix."},""" +
+                        """"en":{"name":"Land sale $id","description":"The land price changed$suffix."}}"""
+            }
+        }
+        val eventCards = mapOf(
+            BoardCardType.EventStore to mapOf<Int, BoardCard>(
+                1 to BoardCard.EventStore.Land("", 100),
+                2 to BoardCard.EventStore.Land("", 200),
+            ),
+        )
+
+        LlmTextGenerator(chat).generateComplete(world, eventCards, emptyList())
+
+        assertEquals(listOf("2"), promptIds(chat.prompts[1]))
+        assertEquals(2, chat.prompts.size)
     }
 
     @Test
@@ -447,6 +592,22 @@ class LlmTextGeneratorTest {
         )
 
         assertEquals("fallback answer", pool.complete("system", "user"))
+    }
+
+    @Test
+    fun consecutiveRequestsRotateAcrossProviders() = runTest {
+        val pool = LlmProviderPool(
+            members = listOf("groq", "cerebras", "mistral", "openrouter").map { provider ->
+                poolMember(provider, ChatCompletion { _, _ -> provider })
+            },
+        )
+
+        val answers = List(8) { pool.complete("system", "user") }
+
+        assertEquals(
+            listOf("groq", "cerebras", "mistral", "openrouter", "groq", "cerebras", "mistral", "openrouter"),
+            answers,
+        )
     }
 
     @Test

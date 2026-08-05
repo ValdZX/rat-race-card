@@ -47,7 +47,7 @@ fun BoxWithConstraintsScope.DeputyCardFront(
     Column(modifier = Modifier.padding(padding)) {
         Row {
             Text(
-                text = stringResource(Res.string.deputies),
+                text = deputy?.name.orEmpty().ifBlank { stringResource(Res.string.deputies) },
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
                 lineHeight = unitTS * 19,

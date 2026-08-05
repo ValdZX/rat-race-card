@@ -91,7 +91,7 @@ private fun BoxWithConstraintsScope.EstateCardFront(
     Column(modifier = Modifier.padding(padding)) {
         Row {
             Text(
-                text = stringResource(Res.string.realEstate),
+                text = card.name.ifBlank { stringResource(Res.string.realEstate) },
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
                 lineHeight = unitTS * 19,
@@ -186,7 +186,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
     Column(modifier = Modifier.padding(padding)) {
         Row {
             Text(
-                text = "Земля",
+                text = card.name.ifBlank { "Земля" },
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
                 lineHeight = unitTS * 19,
@@ -307,7 +307,7 @@ private fun BoxWithConstraintsScope.RandomJobCardFront(
     Column(modifier = Modifier.padding(padding)) {
         Row {
             Text(
-                text = "Випадковий заробіток",
+                text = card.name.ifBlank { "Випадковий заробіток" },
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
                 lineHeight = unitTS * 19,
@@ -365,7 +365,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
     Column(modifier = Modifier.padding(padding)) {
         Row {
             Text(
-                text = "Акції",
+                text = card.name.ifBlank { "Акції" },
                 modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                 fontSize = unitTS * 14,
                 lineHeight = unitTS * 19,

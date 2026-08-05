@@ -50,6 +50,7 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
         val price: Long,
         val shopType: ShopType,
         val credit: String,
+        val name: String = "",
     ) : BoardCard(BoardCardType.Shopping)
 
     @Serializable
@@ -60,34 +61,40 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
             val description: String,
             val price: Long,
             val forcedSale: Boolean = false,
+            val name: String = "",
         ) : EventStore()
 
         @Serializable
         data class Land(
             val description: String,
-            val price: Long
+            val price: Long,
+            val name: String = "",
         ) : EventStore()
 
         @Serializable
         data class Estate(
             val description: String,
-            val price: Long
+            val price: Long,
+            val name: String = "",
         ) : EventStore()
 
         @Serializable
         data class BusinessExtending(
             val description: String,
-            val profit: Long
+            val profit: Long,
+            val name: String = "",
         ) : EventStore()
 
         @Serializable
         data class Reelection(
             val description: String,
+            val name: String = "",
         ) : EventStore()
 
         @Serializable
         data class Announcement(
             val description: String,
+            val name: String = "",
         ) : EventStore()
     }
 
@@ -95,6 +102,7 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
     data class Deputy(
         val description: String,
         val corrupt: Boolean,
+        val name: String = "",
     ) : BoardCard(BoardCardType.Deputy)
 
     @Serializable
@@ -102,7 +110,8 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
         @Serializable
         data class RandomJob(
             val description: String,
-            val profit: Long
+            val profit: Long,
+            val name: String = "",
         ) : Chance()
 
         @Serializable
@@ -118,7 +127,8 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
             val description: String,
             val price: Long,
             val maxCount: Long,
-            val sharesType: String
+            val sharesType: String,
+            val name: String = "",
         ) : Chance()
 
         @Serializable
@@ -135,6 +145,7 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
             val profit: Long,
             val oneTimeProfit: Long,
             val deputies: Int,
+            val name: String = "",
         ) : Chance()
 
         @Serializable
@@ -143,6 +154,7 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
             val price: Long,
             val area: Long,
             val deputies: Int,
+            val name: String = "",
         ) : Chance()
     }
 
@@ -153,6 +165,7 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
         val price: Long,
         val payer: PayerType,
         val grantsAnimal: Boolean = false,
+        val name: String = "",
     ) : BoardCard(BoardCardType.Expenses)
 }
 
@@ -193,21 +206,21 @@ fun BoardCard.withText(text: CardText): BoardCard {
         is BoardCard.SmallBusiness -> copy(name = name ?: this.name, description = description ?: this.description)
         is BoardCard.MediumBusiness -> copy(name = name ?: this.name, description = description ?: this.description)
         is BoardCard.BigBusiness -> copy(name = name ?: this.name, description = description ?: this.description)
-        is BoardCard.Shopping -> copy(description = description ?: this.description)
-        is BoardCard.Deputy -> copy(description = description ?: this.description)
-        is BoardCard.Expenses -> copy(description = description ?: this.description)
-        is BoardCard.EventStore.Shares -> copy(description = description ?: this.description)
-        is BoardCard.EventStore.Land -> copy(description = description ?: this.description)
-        is BoardCard.EventStore.Estate -> copy(description = description ?: this.description)
-        is BoardCard.EventStore.BusinessExtending -> copy(description = description ?: this.description)
-        is BoardCard.EventStore.Reelection -> copy(description = description ?: this.description)
-        is BoardCard.EventStore.Announcement -> copy(description = description ?: this.description)
-        is BoardCard.Chance.RandomJob -> copy(description = description ?: this.description)
+        is BoardCard.Shopping -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.Deputy -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.Expenses -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.EventStore.Shares -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.EventStore.Land -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.EventStore.Estate -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.EventStore.BusinessExtending -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.EventStore.Reelection -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.EventStore.Announcement -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.Chance.RandomJob -> copy(name = name ?: this.name, description = description ?: this.description)
         is BoardCard.Chance.Land -> copy(name = name ?: this.name, description = description ?: this.description)
         is BoardCard.Chance.Estate -> copy(name = name ?: this.name, description = description ?: this.description)
-        is BoardCard.Chance.Shares -> copy(description = description ?: this.description)
-        is BoardCard.Chance.CorruptBusiness -> copy(description = description ?: this.description)
-        is BoardCard.Chance.CorruptLand -> copy(description = description ?: this.description)
+        is BoardCard.Chance.Shares -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.Chance.CorruptBusiness -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.Chance.CorruptLand -> copy(name = name ?: this.name, description = description ?: this.description)
     }
 }
 

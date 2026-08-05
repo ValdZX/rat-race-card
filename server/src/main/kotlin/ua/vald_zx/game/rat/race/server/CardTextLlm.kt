@@ -235,6 +235,8 @@ internal class LlmProviderPool(
     private val wait: suspend (Long) -> Unit = { delay(it) },
 ) : ChatCompletion {
 
+    private val nextMemberIndex = AtomicInteger()
+
     internal class Member(
         val provider: String,
         val model: String,
@@ -259,7 +261,7 @@ internal class LlmProviderPool(
             val candidates = members.filterNot { it in exhausted }
             if (candidates.isEmpty()) break
             val now = nowEpochMs()
-            val ready = candidates.filter { it.availableAt(now) <= now }
+            val ready = candidates.filter { it.availableAt(now) <= now }.inRotationOrder()
             if (ready.isEmpty()) {
                 val soonest = candidates.minBy { it.availableAt(now) }
                 val delayMillis = (soonest.availableAt(now) - now).coerceAtLeast(0)
@@ -297,6 +299,12 @@ internal class LlmProviderPool(
         }
         lastFailure?.let { throw it }
         return null
+    }
+
+    private fun List<Member>.inRotationOrder(): List<Member> {
+        if (size < 2) return this
+        val start = Math.floorMod(nextMemberIndex.getAndIncrement(), size)
+        return drop(start) + take(start)
     }
 }
 
@@ -487,7 +495,7 @@ internal class LlmTextGenerator(
         val cardBatches = cards.mapValues { (type, deck) ->
             val nameBearingIds = deck.filterValues { it.usesGeneratedName() }.keys
             deck.entries.sortedBy { it.key }.chunked(batchSize).mapIndexed { index, items ->
-                CardBatch(type, index, batches(deck.size), items, nameBearingIds)
+                CardBatch(type, index, batches(deck.size), items, deck, nameBearingIds)
             }
         }
         val professionBatches = professions.chunked(batchSize).mapIndexed { index, items ->
@@ -499,7 +507,7 @@ internal class LlmTextGenerator(
         val restored = store.snapshot()
         val total = cardBatches.values.sumOf { it.size } + professionBatches.size + dreamBatches.size
         val done = cardBatches.values.flatten()
-            .count { batch -> restored.hasCards(batch.type, batch.items.map { it.key }) } +
+            .count { batch -> restored.hasCards(batch.type, batch.items) } +
                 professionBatches.count { batch -> restored.hasProfessions(batch.items.map { it.id }) } +
                 dreamBatches.count { batch -> restored.hasDreams(batch.items.map { it.value.id }) }
         val progress = Progress(total, done, store, onCheckpoint)
@@ -534,14 +542,15 @@ internal class LlmTextGenerator(
         progress: Progress,
     ) {
         val ids = batch.items.map { it.key }
-        if (store.snapshot().hasCards(batch.type, ids)) return
+        if (store.snapshot().hasCards(batch.type, batch.items)) return
         val detail = "${batch.type.name} ${batch.index + 1}/${batch.count}"
         val rejected = mutableMapOf<Int, MutableList<Map<String, CardText>>>()
 
         repeat(MAX_TEXT_BATCH_ATTEMPTS) { attempt ->
             val current = store.snapshot()
-            val missing = batch.items.filterNot { current.hasCard(batch.type, it.key) }
+            val missing = batch.items.filterNot { current.hasCard(batch.type, it.key, it.value) }
             if (missing.isEmpty()) return@repeat
+            val expectedIds = missing.map { it.key }.toSet()
             val answer = chat.complete(
                 system = systemPrompt(),
                 user = deckPrompt(
@@ -550,25 +559,26 @@ internal class LlmTextGenerator(
                     briefs = missing.joinToString("\n") { (id, card) -> "$id. ${card.brief(shareNames)}" },
                     acceptedNames = current.cardNameContext(batch.type, batch.nameBearingIds),
                     attempt = attempt,
-                    rejected = rejected,
+                    rejected = rejected.filterKeys { it in expectedIds },
                 ),
             ) ?: return@repeat
             val candidates = answer.parseLocalizedItems()
             val updated = store.acceptCards(
                 batch.type,
                 candidates,
-                missing.map { it.key }.toSet(),
+                expectedIds,
+                batch.cardsById,
                 batch.nameBearingIds,
             )
-            missing.filterNot { updated.hasCard(batch.type, it.key) }.forEach { (id) ->
+            missing.filterNot { updated.hasCard(batch.type, it.key, it.value) }.forEach { (id) ->
                 candidates[id]?.let { candidate -> rejected.getOrPut(id, ::mutableListOf) += candidate }
             }
-            if (!updated.hasCards(batch.type, ids)) progress.report(detail)
+            if (!updated.hasCards(batch.type, batch.items)) progress.report(detail)
         }
 
         repeat(MAX_REPAIR_BATCH_ATTEMPTS) { repairAttempt ->
             val missing = store.snapshot().let { current ->
-                batch.items.filterNot { current.hasCard(batch.type, it.key) }
+                batch.items.filterNot { current.hasCard(batch.type, it.key, it.value) }
             }
             if (missing.isEmpty()) return@repeat
             missing.chunked(REPAIR_BATCH_SIZE).forEach repairBatchLoop@{ repairBatch ->
@@ -581,12 +591,18 @@ internal class LlmTextGenerator(
                         briefs = repairBatch.joinToString("\n") { (id, card) -> "$id. ${card.brief(shareNames)}" },
                         acceptedNames = store.snapshot().cardNameContext(batch.type, batch.nameBearingIds),
                         attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
-                        rejected = rejected,
+                        rejected = rejected.filterKeys { it in expectedIds },
                     ),
                 ) ?: return@repairBatchLoop
                 val candidates = answer.parseLocalizedItems(expectedSingleId = expectedIds.singleOrNull())
-                val updated = store.acceptCards(batch.type, candidates, expectedIds, batch.nameBearingIds)
-                repairBatch.filterNot { updated.hasCard(batch.type, it.key) }.forEach { (id) ->
+                val updated = store.acceptCards(
+                    batch.type,
+                    candidates,
+                    expectedIds,
+                    batch.cardsById,
+                    batch.nameBearingIds,
+                )
+                repairBatch.filterNot { updated.hasCard(batch.type, it.key, it.value) }.forEach { (id) ->
                     candidates[id]?.let { candidate -> rejected.getOrPut(id, ::mutableListOf) += candidate }
                 }
                 progress.report(detail)
@@ -594,12 +610,12 @@ internal class LlmTextGenerator(
         }
 
         val stillMissing = store.snapshot().let { current ->
-            batch.items.filterNot { current.hasCard(batch.type, it.key) }
+            batch.items.filterNot { current.hasCard(batch.type, it.key, it.value) }
         }
         stillMissing.forEach { missingCard ->
             val id = missingCard.key
             repeat(MAX_SINGLE_ITEM_ATTEMPTS) { repairAttempt ->
-                if (store.snapshot().hasCard(batch.type, id)) return@repeat
+                if (store.snapshot().hasCard(batch.type, id, missingCard.value)) return@repeat
                 val answer = chat.complete(
                     system = systemPrompt(),
                     user = deckPrompt(
@@ -608,12 +624,18 @@ internal class LlmTextGenerator(
                         briefs = "$id. ${missingCard.value.brief(shareNames)}",
                         acceptedNames = store.snapshot().cardNameContext(batch.type, batch.nameBearingIds),
                         attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
-                        rejected = rejected,
+                        rejected = rejected.filterKeys { it == id },
                     ),
                 ) ?: return@repeat
                 val candidates = answer.parseLocalizedItems(expectedSingleId = id)
-                val updated = store.acceptCards(batch.type, candidates, setOf(id), batch.nameBearingIds)
-                if (!updated.hasCard(batch.type, id)) {
+                val updated = store.acceptCards(
+                    batch.type,
+                    candidates,
+                    setOf(id),
+                    batch.cardsById,
+                    batch.nameBearingIds,
+                )
+                if (!updated.hasCard(batch.type, id, missingCard.value)) {
                     candidates[id]?.let { candidate ->
                         rejected.getOrPut(id, ::mutableListOf) += candidate
                         llmLogger.warn("Rejected duplicate localized card text for ${batch.type} $id")
@@ -625,7 +647,9 @@ internal class LlmTextGenerator(
             }
         }
 
-        val missingIds = store.snapshot().let { current -> ids.filterNot { current.hasCard(batch.type, it) } }
+        val missingIds = store.snapshot().let { current ->
+            batch.items.filterNot { current.hasCard(batch.type, it.key, it.value) }.map { it.key }
+        }
         check(missingIds.isEmpty()) {
             "Incomplete uk/en texts for ${batch.type}: ${missingIds.take(MAX_ERROR_IDS)}"
         }
@@ -647,6 +671,7 @@ internal class LlmTextGenerator(
             val current = store.snapshot()
             val missing = batch.items.filterNot { current.hasProfession(it.id) }
             if (missing.isEmpty()) return@repeat
+            val expectedIds = missing.map { it.id }.toSet()
             val answer = chat.complete(
                 system = systemPrompt(),
                 user = professionPrompt(
@@ -654,11 +679,11 @@ internal class LlmTextGenerator(
                     briefs = missing.joinToString("\n", transform = ::professionBrief),
                     acceptedNames = current.professionNameContext(),
                     attempt = attempt,
-                    rejected = rejected,
+                    rejected = rejected.filterKeys { it in expectedIds },
                 ),
             ) ?: return@repeat
             val candidates = answer.parseLocalizedItems()
-            val updated = store.acceptProfessions(candidates, missing.map { it.id }.toSet())
+            val updated = store.acceptProfessions(candidates, expectedIds)
             missing.filterNot { updated.hasProfession(it.id) }.forEach { profession ->
                 candidates[profession.id]?.let { candidate ->
                     rejected.getOrPut(profession.id, ::mutableListOf) += candidate
@@ -681,7 +706,7 @@ internal class LlmTextGenerator(
                         briefs = repairBatch.joinToString("\n", transform = ::professionBrief),
                         acceptedNames = store.snapshot().professionNameContext(),
                         attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
-                        rejected = rejected,
+                        rejected = rejected.filterKeys { it in expectedIds },
                     ),
                 ) ?: return@repairBatchLoop
                 val candidates = answer.parseLocalizedItems(expectedSingleId = expectedIds.singleOrNull())
@@ -709,7 +734,7 @@ internal class LlmTextGenerator(
                         briefs = professionBrief(missingProfession),
                         acceptedNames = store.snapshot().professionNameContext(),
                         attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
-                        rejected = rejected,
+                        rejected = rejected.filterKeys { it == id },
                     ),
                 ) ?: return@repeat
                 val candidates = answer.parseLocalizedItems(expectedSingleId = id)
@@ -754,7 +779,7 @@ internal class LlmTextGenerator(
                     },
                     acceptedNames = current.dreamNameContext(),
                     attempt = attempt,
-                    rejected = rejected,
+                    rejected = rejected.filterKeys { it in missing.keys },
                 ),
             ) ?: return@repeat
             val candidates = answer.parseLocalizedItems(expectedSingleId = missing.keys.singleOrNull())
@@ -784,10 +809,11 @@ internal class LlmTextGenerator(
             type: BoardCardType,
             candidates: Map<Int, Map<String, CardText>>,
             allowedIds: Set<Int>,
+            cardsById: Map<Int, BoardCard>,
             nameBearingIds: Set<Int>,
         ): Map<String, GeneratedText> = lock.withLock {
             texts = texts.toMutableMap().apply {
-                acceptCards(type, candidates, allowedIds, nameBearingIds)
+                acceptCards(type, candidates, allowedIds, cardsById, nameBearingIds)
             }
             texts
         }
@@ -848,12 +874,22 @@ internal class LlmTextGenerator(
             check(namedTexts.values.map { it.name.normalized() }.distinct().size == namedTexts.size) {
                 "Repeated $locale names for $type"
             }
-            check(texts.values.map { it.description }.distinct().size == texts.size) {
-                "Repeated $locale descriptions for $type"
+            val repeatedDescriptions = texts.entries.groupBy { it.value.description.normalized() }
+                .values
+                .filter { it.size > 1 }
+            check(repeatedDescriptions.all { repeated ->
+                repeated.map { (id) -> deck.getValue(id) }.distinct().size == 1
+            }) {
+                "Repeated $locale descriptions for different $type cards"
             }
         }
-        val descriptions = generated.cards.values.flatMap { deck -> deck.values.map { it.description.normalized() } }
-        check(descriptions.distinct().size == descriptions.size) { "Repeated $locale card descriptions" }
+        val localizedCards = generated.cards.flatMap { (type, deck) ->
+            deck.map { (id, text) -> Triple(type, id, text.description.normalized()) }
+        }
+        val repeatedDescriptions = localizedCards.groupBy { it.third }.values.filter { it.size > 1 }
+        check(repeatedDescriptions.all { repeated ->
+            repeated.map { (type, id) -> cards.getValue(type).getValue(id) }.distinct().size == 1
+        }) { "Repeated $locale descriptions for different cards" }
         check(generated.professions.keys == professions.map { it.id }.toSet()) {
             "Incomplete $locale profession names"
         }
@@ -900,7 +936,42 @@ internal class LlmTextGenerator(
         append(worldPrompt(world))
         append("Створи унікальну назву та унікальний опис (до 140 символів) для кожної картки колоди «${deckName(type)}». ")
         append("У цій грі доречний легкий дотепний гумор, пов'язаний зі світом і ситуацією картки. ")
-        append("Не повторюй сюжети, назви чи описи. Механіка в кожному рядку є точною й обов'язковою: відобрази її в описі, не додавай нових чисел, умов або наслідків. ")
+        append("Name відображається гравцю як головний заголовок, тому він має самостійно й конкретно називати об'єкт, персонажа або подію, а не лише тип колоди. ")
+        append("Не повторюй сюжети, назви чи описи. ")
+        when (type) {
+            BoardCardType.SmallBusiness,
+            BoardCardType.MediumBusiness,
+            BoardCardType.BigBusiness -> {
+                append("Назва конкретно називає бізнес, а description пояснює, чим він займається і звідки отримує дохід у цьому світі. ")
+                append("Ціну й дохід інтерфейс показує окремо; не роби опис лише переказом цих чисел. ")
+            }
+
+            BoardCardType.Shopping -> {
+                append("Назва конкретно називає придбання, а description пояснює, що саме купують і навіщо воно потрібне у цьому світі. ")
+                append("Тип активу й ціну інтерфейс показує окремо; не підміняй ними сюжет покупки. ")
+            }
+
+            BoardCardType.Expenses -> {
+                append("Для витрат name коротко й конкретно називає предмет оплати, послугу або подію. ")
+                append("Description пояснює, що сталося і за що сплачують. ")
+                append("Сума та умова платника вже показані на картці окремо: не повторюй їх і не замінюй ними причину витрати. ")
+                append("Для картки з твариною обов'язково поясни порятунок або прихисток тварини та подальше утримання. ")
+            }
+
+            BoardCardType.Chance -> {
+                append("Назва конкретно називає можливість, підробіток, актив або корупційну схему. ")
+                append("Description спочатку пояснює ситуацію, а потім природно передає точний ефект із рядка. ")
+            }
+
+            BoardCardType.EventStore -> {
+                append("Назва є конкретним заголовком ринкової новини, а description пояснює її причину та точний вплив на гравців або активи. ")
+            }
+
+            BoardCardType.Deputy -> {
+                append("Назва конкретно називає посадовця, роль або скандал, а description пояснює ситуацію та чесний чи корупційний наслідок. ")
+            }
+        }
+        append("Механіка в кожному рядку є точною й обов'язковою: не додавай нових чисел, умов або наслідків. ")
         append("Поверни рівно по одному об'єкту для кожного переданого ID. ")
         append("Поля uk та en мають передавати той самий зміст відповідними мовами.\n")
         appendAcceptedNames(acceptedNames)
@@ -1059,12 +1130,25 @@ internal class LlmTextGenerator(
         type: BoardCardType,
         candidates: Map<Int, Map<String, CardText>>,
         allowedIds: Set<Int>,
+        cardsById: Map<Int, BoardCard>,
         nameBearingIds: Set<Int>,
     ) {
         candidates.forEach { (id, localized) ->
             if (id !in allowedIds) return@forEach
+            val card = cardsById[id] ?: return@forEach
+            val suitable = generatedLocales.all { locale ->
+                localized.getValue(locale).isSuitableFor(card, locale)
+            }
+            if (!suitable) return@forEach
             val unique = generatedLocales.all { locale ->
-                localized.getValue(locale).isUniqueCard(this, locale, type, id, nameBearingIds)
+                localized.getValue(locale).isUniqueCard(
+                    this,
+                    locale,
+                    type,
+                    id,
+                    cardsById,
+                    nameBearingIds,
+                )
             }
             if (!unique) return@forEach
             generatedLocales.forEach { locale -> putCard(locale, type, id, localized.getValue(locale)) }
@@ -1115,6 +1199,7 @@ internal class LlmTextGenerator(
         locale: String,
         type: BoardCardType,
         id: Int,
+        cardsById: Map<Int, BoardCard>,
         nameBearingIds: Set<Int>,
     ): Boolean {
         val decks = texts.getValue(locale).cards
@@ -1124,7 +1209,8 @@ internal class LlmTextGenerator(
         val uniqueDescription = decks.none { (existingType, deck) ->
             deck.any { (existingId, existing) ->
                 val sameCard = existingType == type && existingId == id
-                !sameCard && existing.description.normalized() == description.normalized()
+                val sameMechanics = existingType == type && cardsById[existingId] == cardsById[id]
+                !sameCard && !sameMechanics && existing.description.normalized() == description.normalized()
             }
         }
         return uniqueName && uniqueDescription
@@ -1163,11 +1249,15 @@ internal class LlmTextGenerator(
         )
     }
 
-    private fun Map<String, GeneratedText>.hasCard(type: BoardCardType, id: Int): Boolean =
-        generatedLocales.all { locale -> this[locale]?.cards?.get(type)?.get(id)?.isUsable() == true }
+    private fun Map<String, GeneratedText>.hasCard(type: BoardCardType, id: Int, card: BoardCard): Boolean =
+        generatedLocales.all { locale ->
+            this[locale]?.cards?.get(type)?.get(id)?.isSuitableFor(card, locale) == true
+        }
 
-    private fun Map<String, GeneratedText>.hasCards(type: BoardCardType, ids: List<Int>): Boolean =
-        ids.all { hasCard(type, it) }
+    private fun Map<String, GeneratedText>.hasCards(
+        type: BoardCardType,
+        cards: List<Map.Entry<Int, BoardCard>>,
+    ): Boolean = cards.all { hasCard(type, it.key, it.value) }
 
     private fun Map<String, GeneratedText>.hasProfession(id: Int): Boolean = generatedLocales.all { locale ->
         this[locale]?.professions?.get(id).orEmpty().isNotBlank() &&
@@ -1225,6 +1315,7 @@ private data class CardBatch(
     val index: Int,
     val count: Int,
     val items: List<Map.Entry<Int, BoardCard>>,
+    val cardsById: Map<Int, BoardCard>,
     val nameBearingIds: Set<Int>,
 )
 
@@ -1242,20 +1333,35 @@ private data class DreamBatch(
 
 private fun CardText.isUsable(): Boolean = name.isNotBlank() && description.isNotBlank()
 
+private fun CardText.isSuitableFor(card: BoardCard, locale: String): Boolean =
+    isUsable() && hasSpecificName(locale) &&
+            (card !is BoardCard.Expenses || expensePurposeWords(locale).isNotEmpty())
+
+private fun CardText.hasSpecificName(locale: String): Boolean {
+    val genericNames = if (locale.startsWith("en")) GENERIC_EN_CARD_NAMES else GENERIC_UK_CARD_NAMES
+    return name.qualityNormalized() !in genericNames
+}
+
+private fun CardText.expensePurposeWords(locale: String): List<String> {
+    val ignored = if (locale.startsWith("en")) EN_EXPENSE_MECHANIC_WORDS else UK_EXPENSE_MECHANIC_WORDS
+    return EXPENSE_WORD_PATTERN.findAll("$name $description".lowercase().replace("'", "").replace("’", ""))
+        .map { it.value }
+        .filterNot { it in ignored }
+        .toList()
+}
+
+private fun String.qualityNormalized(): String = lowercase()
+    .replace("'", "")
+    .replace("’", "")
+    .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
+    .trim()
+
 private fun CardText.collidesWith(other: CardText): Boolean =
     name.normalized() == other.name.normalized() || description.normalized() == other.description.normalized()
 
 private fun String.normalized(): String = trim().lowercase()
 
-private fun BoardCard.usesGeneratedName(): Boolean = when (this) {
-    is BoardCard.SmallBusiness,
-    is BoardCard.MediumBusiness,
-    is BoardCard.BigBusiness,
-    is BoardCard.Chance.Land,
-    is BoardCard.Chance.Estate -> true
-
-    else -> false
-}
+private fun BoardCard.usesGeneratedName(): Boolean = true
 
 private const val MAX_LLM_REQUEST_ATTEMPTS = 8
 private const val MAX_LLM_UNAVAILABLE_ATTEMPTS = 3
@@ -1286,6 +1392,28 @@ private val RETRY_MESSAGE_DELAY_PATTERN = Regex(
 )
 private val ERROR_MESSAGE_PATTERN = Regex("\\\"message\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"")
 private val RETRY_DURATION_PART_PATTERN = Regex("([\\d.]+)(ms|[hms])", RegexOption.IGNORE_CASE)
+private val EXPENSE_WORD_PATTERN = Regex("\\p{L}+")
+private val UK_EXPENSE_MECHANIC_WORDS = setOf(
+    "без", "винятку", "всі", "витрата", "витрати", "гравець", "гравці", "гравців", "для", "за",
+    "заплатити", "кожен", "лише", "має", "обовязкова", "обовязковий", "оплата", "платіж", "платять",
+    "повинен", "повинні", "сплата", "сплатити", "сплачують", "сума", "суму", "тільки", "умовою", "усі",
+    "хто",
+)
+private val EN_EXPENSE_MECHANIC_WORDS = setOf(
+    "all", "amount", "everyone", "expense", "for", "mandatory", "must", "only", "pay", "pays", "payment",
+    "players", "required", "the", "those", "who", "without",
+)
+private val GENERIC_UK_CARD_NAMES = setOf(
+    "акції", "бізнес", "великий бізнес", "випадковий заробіток", "випадок", "витрати", "депутат", "депутати",
+    "земля", "корупційна земля", "корупційний бізнес", "малий бізнес", "нерухомість", "обовязкова витрата",
+    "подія", "подія ринку", "покупка", "перевибори", "ринкова новина", "ринкова подія", "розширення бізнесу",
+    "середній бізнес", "шанс",
+)
+private val GENERIC_EN_CARD_NAMES = setOf(
+    "big business", "business", "chance", "corrupt business", "corrupt land", "deputies", "deputy", "event",
+    "expenses", "land", "mandatory expense", "market event", "market news", "medium business", "random job",
+    "real estate", "reelection", "shares", "shopping", "small business",
+)
 
 private fun quotaType(value: String): GenerationQuotaType {
     val normalized = value.lowercase().filter(Char::isLetterOrDigit)

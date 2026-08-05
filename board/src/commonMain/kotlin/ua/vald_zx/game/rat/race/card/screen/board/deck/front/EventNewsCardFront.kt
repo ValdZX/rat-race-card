@@ -32,7 +32,7 @@ fun BoxWithConstraintsScope.ReelectionCardFront(
     val state by vm.uiState.collectAsState()
     NewsCard(
         cardLink = cardLink,
-        title = stringResource(Res.string.reelection),
+        title = card.name.ifBlank { stringResource(Res.string.reelection) },
         description = card.description,
         footer = stringResource(Res.string.deputies_owned, state.player.deputies),
         vm = vm,
@@ -48,7 +48,7 @@ fun BoxWithConstraintsScope.AnnouncementCardFront(
 ) {
     NewsCard(
         cardLink = cardLink,
-        title = stringResource(Res.string.market_news),
+        title = card.name.ifBlank { stringResource(Res.string.market_news) },
         description = card.description,
         footer = null,
         vm = vm,

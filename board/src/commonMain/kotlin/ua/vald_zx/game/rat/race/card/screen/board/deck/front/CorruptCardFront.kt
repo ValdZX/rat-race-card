@@ -37,7 +37,7 @@ fun BoxWithConstraintsScope.CorruptBusinessCardFront(
     CorruptCard(
         cardLink = cardLink,
         vm = vm,
-        title = stringResource(Res.string.corrupt_business),
+        title = card.name.ifBlank { stringResource(Res.string.corrupt_business) },
         description = card.description,
         price = card.price,
         deputies = card.deputies,
@@ -60,7 +60,7 @@ fun BoxWithConstraintsScope.CorruptLandCardFront(
     CorruptCard(
         cardLink = cardLink,
         vm = vm,
-        title = stringResource(Res.string.corrupt_land),
+        title = card.name.ifBlank { stringResource(Res.string.corrupt_land) },
         description = card.description,
         price = card.price,
         deputies = card.deputies,

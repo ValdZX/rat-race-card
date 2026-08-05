@@ -55,12 +55,24 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
         val smallPadding = unitDp * 6
         Column(modifier = Modifier.padding(padding)) {
             Row {
-                Text(
+                Column(
                     modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
-                    text = card.description,
-                    fontSize = unitTS * 12,
-                    lineHeight = unitTS * 16,
-                )
+                    verticalArrangement = Arrangement.spacedBy(smallPadding),
+                ) {
+                    if (card.name.isNotBlank()) {
+                        Text(
+                            text = card.name,
+                            fontSize = unitTS * 13,
+                            lineHeight = unitTS * 16,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    Text(
+                        text = card.description,
+                        fontSize = unitTS * 12,
+                        lineHeight = unitTS * 16,
+                    )
+                }
                 CardStamp(glyph = "НВ", unitTS = unitTS, unitDp = unitDp, glyphSize = 20f)
             }
             Text(
