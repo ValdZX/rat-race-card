@@ -30,9 +30,9 @@ internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
 private const val CORRUPT_NAME_LENGTH = 48
 private const val SPEECH_LIFETIME_MS = 8_000
-private val LEGACY_CORRUPT_CARD_IDS = mapOf(
-    BoardCardType.Chance to 121..138,
-    BoardCardType.EventStore to 111..124,
+private val LEGACY_OUTER_ONLY_CARD_IDS = mapOf(
+    BoardCardType.Chance to (121..138).toSet(),
+    BoardCardType.EventStore to setOf(107) + (111..124),
 )
 
 private val boardMutexes = ConcurrentHashMap<String, Mutex>()
@@ -1412,15 +1412,16 @@ internal fun Board.prepareCardDeck(cardType: BoardCardType, layer: BoardLayer): 
 }
 
 private fun Board.cardIsAvailable(cardType: BoardCardType, cardId: Int, layer: BoardLayer): Boolean {
-    if (layer != BoardLayer.INNER || cardType !in LEGACY_CORRUPT_CARD_IDS) return true
+    if (layer != BoardLayer.INNER || cardType !in LEGACY_OUTER_ONLY_CARD_IDS) return true
     val generatedDeck = generatedCards[cardType]
     return when (generatedDeck?.get(cardId)) {
         is BoardCard.Chance.CorruptBusiness,
         is BoardCard.Chance.CorruptLand,
+        is BoardCard.EventStore.Reelection,
         is BoardCard.EventStore.CorruptBusiness,
         is BoardCard.EventStore.CorruptLand -> false
 
-        null -> generatedDeck != null || cardId !in LEGACY_CORRUPT_CARD_IDS.getValue(cardType)
+        null -> generatedDeck != null || cardId !in LEGACY_OUTER_ONLY_CARD_IDS.getValue(cardType)
         else -> true
     }
 }

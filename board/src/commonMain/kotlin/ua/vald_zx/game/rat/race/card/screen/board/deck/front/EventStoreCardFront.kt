@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -373,8 +374,12 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                                 modifier = Modifier.padding(top = smallPadding),
                                 placeholder = stringResource(Res.string.quantity),
                                 fieldHeight = unitDp * 34,
+                                textStyle = TextStyle(
+                                    fontSize = unitTS * 9,
+                                    fontWeight = FontWeight.Bold,
+                                ),
                                 contentPadding = PaddingValues(
-                                    horizontal = unitDp * 9,
+                                    horizontal = unitDp * 4,
                                     vertical = unitDp * 4,
                                 ),
                                 keyboardOptions = KeyboardOptions(

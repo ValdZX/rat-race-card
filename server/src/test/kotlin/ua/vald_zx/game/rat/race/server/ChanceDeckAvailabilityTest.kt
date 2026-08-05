@@ -59,26 +59,27 @@ class ChanceDeckAvailabilityTest {
     }
 
     @Test
-    fun innerCircleExcludesCorruptionFromGeneratedMarketEvents() {
+    fun innerCircleExcludesOuterOnlyGeneratedMarketEvents() {
         val eventCards = mapOf(
             1 to BoardCard.EventStore.CorruptBusiness("Corrupt business sale", 300),
             2 to BoardCard.EventStore.CorruptLand("Corrupt land sale", 10_000),
             3 to BoardCard.EventStore.Announcement("Market news"),
+            4 to BoardCard.EventStore.Reelection("Deputies lose their mandates"),
         )
         val board = board(
-            drawPile = listOf(1, 2, 3),
+            drawPile = listOf(1, 2, 3, 4),
             generated = eventCards,
             cardType = BoardCardType.EventStore,
         )
 
         assertEquals(listOf(3), board.availableCardIds(BoardCardType.EventStore, BoardLayer.INNER))
-        assertEquals(listOf(1, 2, 3), board.availableCardIds(BoardCardType.EventStore, BoardLayer.OUTER))
+        assertEquals(listOf(1, 2, 3, 4), board.availableCardIds(BoardCardType.EventStore, BoardLayer.OUTER))
     }
 
     @Test
-    fun innerCircleExcludesCorruptionFromLegacyMarketEvents() {
+    fun innerCircleExcludesOuterOnlyLegacyMarketEvents() {
         val board = board(
-            drawPile = listOf(110, 111, 124),
+            drawPile = listOf(107, 110, 111, 124),
             generated = emptyMap(),
             cardType = BoardCardType.EventStore,
         )

@@ -3,39 +3,38 @@ package ua.vald_zx.game.rat.race.card.screen.board.deck.front
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults.contentPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
-import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.components.EButton
-import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
-import ua.vald_zx.game.rat.race.card.design.DesignTextField
 import ua.vald_zx.game.rat.race.card.components.OutlinedBasicTextField
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
-import ua.vald_zx.game.rat.race.card.formatAmount
+import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
+import ua.vald_zx.game.rat.race.card.design.DesignTextField
 import ua.vald_zx.game.rat.race.card.designV2Enabled
+import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
-import ua.vald_zx.game.rat.race.card.screen.board.cards.cardOf
+import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.AuctionScreen
+import ua.vald_zx.game.rat.race.card.screen.board.cards.cardOf
 import ua.vald_zx.game.rat.race.card.screen.design.LocalAuctionPanelToggle
-import ua.vald_zx.game.rat.race.card.screen.board.cards.chanceCards
 import ua.vald_zx.game.rat.race.card.shared.*
 
 @Composable
@@ -451,8 +450,12 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                         modifier = Modifier.weight(1f),
                         placeholder = stringResource(Res.string.quantity),
                         fieldHeight = unitDp * 34,
+                        textStyle = TextStyle(
+                            fontSize = unitTS * 9,
+                            fontWeight = FontWeight.Bold,
+                        ),
                         contentPadding = PaddingValues(
-                            horizontal = unitDp * 9,
+                            horizontal = unitDp * 4,
                             vertical = unitDp * 4,
                         ),
                         keyboardOptions = KeyboardOptions(

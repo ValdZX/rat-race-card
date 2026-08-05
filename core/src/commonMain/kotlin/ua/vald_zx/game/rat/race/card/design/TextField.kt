@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -94,6 +95,8 @@ fun DesignTextField(
                                 placeholder,
                                 style = textStyle ?: type.subtitle,
                                 color = colors.scaffold.onSurfaceMuted,
+                                maxLines = if (singleLine) 1 else maxLines,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                         inner()
