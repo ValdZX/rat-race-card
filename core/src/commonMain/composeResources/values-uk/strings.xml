@@ -270,6 +270,10 @@
     <string name="enter_outer_circle">Перейти на зовнішнє коло</string>
     <string name="choose_dream_on_board">Торкніться клітинки «Мрія» на дошці</string>
     <string name="dream_offer_title">Купити свою мрію?</string>
+    <string name="dream_already_selected">Це вже ваша мрія</string>
+    <string name="dream_taken_by_other">Її вже обрав інший гравець</string>
+    <string name="dream_chosen_by">Обрали</string>
+    <string name="dream_already_purchased">Цю мрію вже здійснили</string>
     <string name="dream_offer_message">%1$s коштує %2$s $</string>
     <string name="victory">Перемога!</string>
     <string name="you_won">Ви виконали всі умови та перемогли!</string>

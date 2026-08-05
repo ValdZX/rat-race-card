@@ -1200,8 +1200,12 @@ class RaceRatServiceImpl(
 
     override suspend fun selectDream(dreamId: String) {
         val currentBoard = board()
-        if (currentBoard.dreamById(dreamId) == null) return
-        if (dreamId in currentBoard.purchasedDreamIds) return
+        val allowed = currentBoard.canSelectDream(
+            dreamId = dreamId,
+            playerId = playerId,
+            players = Storage.players(currentBoard.id),
+        )
+        if (!allowed) return
         updatePlayer {
             copy(selectedDreamId = dreamId)
         }

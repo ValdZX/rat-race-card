@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -55,6 +56,7 @@ import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.components.rotateLayout
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
+import androidx.compose.foundation.shape.CircleShape
 
 enum class CellFamily { Service, Card, Loss, Asset, Life }
 
@@ -101,6 +103,8 @@ fun DesignPlaceCell(
     expanded: Boolean = false,
     expandedIcon: Dp = expandedIconSize,
     waitingAmount: Long? = null,
+    expandedDetail: (@Composable ColumnScope.() -> Unit)? = null,
+    claimMarks: List<Color> = emptyList(),
     onTap: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
@@ -151,7 +155,27 @@ fun DesignPlaceCell(
                 modifier = modifier,
             )
         }
-        if (expanded && label != null) {
+        if (expanded && label != null && expandedDetail != null) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    icon(Modifier.size(expandedIcon))
+                    Text(
+                        text = label,
+                        style = expandedLabelStyle(),
+                        color = ink,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
+                expandedDetail()
+            }
+        } else if (expanded && label != null) {
             Row(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -168,6 +192,21 @@ fun DesignPlaceCell(
             }
         } else {
             icon(Modifier.fillMaxSize(0.66f))
+        }
+        if (claimMarks.isNotEmpty() && !expanded) {
+            Row(
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(1.5.dp),
+            ) {
+                claimMarks.take(MAX_CLAIM_MARKS).forEach { mark ->
+                    Box(
+                        modifier = Modifier
+                            .size(4.dp)
+                            .background(mark, CircleShape)
+                            .border(0.5.dp, colors.scaffold.onFill, CircleShape)
+                    )
+                }
+            }
         }
     }
         if (waitingAmount != null && expanded) {
@@ -251,6 +290,8 @@ private class CellShape(private val family: CellFamily) : Shape {
         return Outline.Generic(path)
     }
 }
+
+private const val MAX_CLAIM_MARKS = 4
 
 internal val expandedIconSize = 24.dp
 

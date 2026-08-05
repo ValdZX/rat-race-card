@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.card.shared
 
+import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -146,6 +147,42 @@ class PlayerProgressionTest {
             player(cars = 1, flight = 1)
                 .movementSteps(dice = 4, transportMovementBonusEnabled = false),
         )
+    }
+
+    @Test
+    fun aDreamBelongsToWhoeverClaimedItFirst() {
+        val board = Board(
+            id = "board",
+            name = "board",
+            loanLimit = 0,
+            businessLimit = 0,
+            createDateTime = LocalDateTime(2026, 1, 1, 0, 0),
+            cards = emptyMap(),
+        )
+        val dreamId = ratRaceDreams.first().id
+        val owner = player().copy(id = "owner", selectedDreamId = dreamId)
+        val rival = player().copy(id = "rival")
+
+        assertTrue(board.canSelectDream(dreamId, rival.id, listOf(rival)))
+        assertFalse(board.canSelectDream(dreamId, rival.id, listOf(owner, rival)))
+        assertTrue(board.canSelectDream(dreamId, owner.id, listOf(owner, rival)))
+        assertEquals(listOf(owner), listOf(owner, rival).dreamSelectors(dreamId))
+    }
+
+    @Test
+    fun aPurchasedDreamCannotBeClaimed() {
+        val dreamId = ratRaceDreams.first().id
+        val board = Board(
+            id = "board",
+            name = "board",
+            loanLimit = 0,
+            businessLimit = 0,
+            createDateTime = LocalDateTime(2026, 1, 1, 0, 0),
+            cards = emptyMap(),
+            purchasedDreamIds = setOf(dreamId),
+        )
+
+        assertFalse(board.canSelectDream(dreamId, "anyone", emptyList()))
     }
 
     @Test

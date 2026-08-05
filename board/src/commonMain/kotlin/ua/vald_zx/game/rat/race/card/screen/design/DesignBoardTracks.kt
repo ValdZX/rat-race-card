@@ -35,22 +35,34 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.intl.Locale
+import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.ColumnScope
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.BoardLayout
 import ua.vald_zx.game.rat.race.card.screen.board.Place
 import ua.vald_zx.game.rat.race.card.screen.board.RouteLayout
 import ua.vald_zx.game.rat.race.card.screen.board.SalaryScreen
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
+import ua.vald_zx.game.rat.race.card.shared.Dream
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.cashFlow
+import ua.vald_zx.game.rat.race.card.shared.dreamById
+import ua.vald_zx.game.rat.race.card.shared.canSelectDream
+import ua.vald_zx.game.rat.race.card.shared.dreamSelectors
 import ua.vald_zx.game.rat.race.card.shared.fundAmount
 import ua.vald_zx.game.rat.race.card.shared.moveTo
+import ua.vald_zx.game.rat.race.card.splitDecimal
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 
 private val trackGap = 1.5.dp
 private val tokenRowGap = 2.dp
@@ -59,6 +71,16 @@ private val tokenCellGap = 4.dp
 internal const val FOCUSED_CELL_Z = 10f
 
 private val minExpandedHeight = 34.dp
+private val dreamCellSize = DpSize(width = 172.dp, height = 136.dp)
+
+internal class DreamCellContext(
+    val dream: (String) -> Dream?,
+    val selectors: (String) -> List<Player>,
+    val canSelect: (String) -> Boolean,
+    val currentPlayerId: String,
+    val purchasedDreamIds: Set<String>,
+    val onSelect: (String) -> Unit,
+)
 
 private fun Int.onTrack(layout: RouteLayout): Int =
     moveTo(this, layout.layer.cellCount, layout.route.offset)
@@ -76,6 +98,16 @@ fun BoxScope.DesignBoardTracks(
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     val onSalary = { bottomSheetNavigator.show(SalaryScreen(vm)) }
     val onStart = { vm.capitalizeFunds() }
+    val locale = Locale.current.language
+    val allPlayers by players.collectAsState()
+    val dreams = DreamCellContext(
+        dream = { dreamId -> state.board.dreamById(dreamId, locale) },
+        selectors = { dreamId -> allPlayers.dreamSelectors(dreamId) },
+        canSelect = { dreamId -> state.board.canSelectDream(dreamId, state.player.id, allPlayers) },
+        currentPlayerId = state.player.id,
+        purchasedDreamIds = state.board.purchasedDreamIds,
+        onSelect = vm::selectDream,
+    )
 
     DesignTrack(
         layout = layout.outerRoute,
@@ -84,6 +116,7 @@ fun BoxScope.DesignBoardTracks(
         focus = focus,
         onSalaryClick = onSalary,
         onStartClick = onStart,
+        dreams = dreams,
     ) { DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus, bubble = bubble) }
     DesignTrack(
         layout = layout.innerRoute,
@@ -92,6 +125,7 @@ fun BoxScope.DesignBoardTracks(
         focus = focus,
         onSalaryClick = onSalary,
         onStartClick = onStart,
+        dreams = dreams,
     ) { DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus, bubble = bubble) }
 }
 
@@ -326,6 +360,7 @@ private fun BoxScope.DesignTrack(
     focus: CellFocus,
     onSalaryClick: (() -> Unit)?,
     onStartClick: (() -> Unit)?,
+    dreams: DreamCellContext? = null,
     tokenContent: @Composable BoxScope.() -> Unit,
 ) {
     val colors = Design.colors
@@ -365,7 +400,7 @@ private fun BoxScope.DesignTrack(
             TrackCell(
                 layout, place, index, live, surface, player, focus,
                 expandedBox, expandedIcon, index == focusedIndex,
-                onSalaryClick, onStartClick, bedAlpha,
+                onSalaryClick, onStartClick, bedAlpha, dreams,
             )
         }
         tokenContent()
@@ -387,6 +422,7 @@ private fun BoxScope.TrackCell(
     onSalaryClick: (() -> Unit)?,
     onStartClick: (() -> Unit)?,
     cellAlpha: Float,
+    dreams: DreamCellContext?,
 ) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
@@ -412,7 +448,15 @@ private fun BoxScope.TrackCell(
             measurer.measure(label, labelStyle).size.width.toDp()
         } + expandedLabelChrome(expandedIcon)
     }
-    val openBox = DpSize(maxOf(expandedBox.width, expandedWidth), expandedBox.height)
+    val dreamDetail = dreamDetail(place.type, expanded, dreams)
+    val openBox = if (dreamDetail != null) {
+        DpSize(
+            width = maxOf(expandedBox.width, dreamCellSize.width),
+            height = maxOf(expandedBox.height, dreamCellSize.height),
+        )
+    } else {
+        DpSize(maxOf(expandedBox.width, expandedWidth), expandedBox.height)
+    }
     LaunchedEffect(expanded, openBox) {
         if (expanded) focus.reportExpandedBox(openBox)
     }
@@ -421,7 +465,7 @@ private fun BoxScope.TrackCell(
         label = "CellWidth",
     )
     val height by animateDpAsState(
-        targetValue = if (expanded) expandedBox.height else place.size.height - trackGap,
+        targetValue = if (expanded) openBox.height else place.size.height - trackGap,
         label = "CellHeight",
     )
     val bounds = cellBounds(layout, place, DpSize(width, height))
@@ -438,6 +482,8 @@ private fun BoxScope.TrackCell(
         },
         compact = minOf(place.size.width, place.size.height) < 30.dp,
         waitingAmount = waitingAmount,
+        expandedDetail = dreamDetail,
+        claimMarks = dreamClaimMarks(place.type, dreams),
         onClick = when {
             salaryHere -> onSalaryClick
             startHere -> onStartClick
@@ -449,6 +495,107 @@ private fun BoxScope.TrackCell(
             .alpha(cellAlpha)
             .zIndex(if (expanded) 2f else if (waitingAmount != null) 1f else 0f),
     )
+}
+
+private fun dreamClaimMarks(type: PlaceType, dreams: DreamCellContext?): List<Color> {
+    if (dreams == null || type !is PlaceType.Desire) return emptyList()
+    return dreams.selectors(type.dreamId).map { Color(it.attrs.color) }
+}
+
+@Composable
+private fun dreamDetail(
+    type: PlaceType,
+    expanded: Boolean,
+    dreams: DreamCellContext?,
+): (@Composable ColumnScope.() -> Unit)? {
+    if (!expanded || dreams == null || type !is PlaceType.Desire) return null
+    val dream = dreams.dream(type.dreamId) ?: return null
+    val selectors = dreams.selectors(dream.id)
+    val isSelected = selectors.any { it.id == dreams.currentPlayerId }
+    val isTakenByOther = selectors.any { it.id != dreams.currentPlayerId }
+    val isPurchased = dream.id in dreams.purchasedDreamIds
+    val selectLabel = stringResource(Res.string.select_action)
+    val chosenByLabel = stringResource(Res.string.dream_chosen_by)
+    val disabledReason = when {
+        isPurchased -> stringResource(Res.string.dream_already_purchased)
+        isSelected -> stringResource(Res.string.dream_already_selected)
+        else -> stringResource(Res.string.dream_taken_by_other)
+    }
+    val colors = Design.colors
+    return {
+        Text(
+            text = dream.name,
+            style = Design.type.cellSm,
+            color = colors.scaffold.onFill,
+            maxLines = 2,
+        )
+        Text(
+            text = dream.price.splitDecimal(),
+            style = Design.type.monoMeta,
+            color = colors.scaffold.onFill,
+            maxLines = 1,
+            softWrap = false,
+        )
+        if (dream.description.isNotBlank()) {
+            Text(
+                text = dream.description,
+                style = Design.type.monoMeta,
+                color = colors.scaffold.onFill,
+                maxLines = 2,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+        }
+        if (selectors.isNotEmpty()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = "$chosenByLabel:",
+                    style = Design.type.monoMeta,
+                    color = colors.scaffold.onFill,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                selectors.forEach { selector ->
+                    DreamSelectorChip(selector)
+                }
+            }
+        }
+        DesignButton(
+            text = selectLabel,
+            enabled = !isSelected && dreams.canSelect(dream.id),
+            disabledReason = disabledReason,
+            height = 26.dp,
+            fontSize = 11.sp,
+            padding = 10.dp,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            onClick = { dreams.onSelect(dream.id) },
+        )
+    }
+}
+
+@Composable
+private fun DreamSelectorChip(player: Player) {
+    val colors = Design.colors
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(7.dp)
+                .background(Color(player.attrs.color), CircleShape)
+                .border(1.dp, colors.scaffold.onFill, CircleShape)
+        )
+        Text(
+            text = player.card.name.ifBlank { player.card.profession },
+            style = Design.type.monoMeta,
+            color = colors.scaffold.onFill,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
 }
 
 private fun DrawScope.drawBlendedBed(color: Color, fade: Float) {

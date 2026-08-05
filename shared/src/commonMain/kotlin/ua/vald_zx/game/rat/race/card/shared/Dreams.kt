@@ -147,6 +147,14 @@ val ratRaceDreams = listOf(
 
 val dreamSlotIds: List<String> = ratRaceDreams.map { it.id }
 
+fun List<Player>.dreamSelectors(dreamId: String): List<Player> =
+    filter { it.selectedDreamId == dreamId }
+
+fun Board.canSelectDream(dreamId: String, playerId: String, players: List<Player>): Boolean =
+    dreams.any { it.id == dreamId } &&
+            dreamId !in purchasedDreamIds &&
+            players.dreamSelectors(dreamId).none { it.id != playerId }
+
 fun Board.dreamById(id: String?, locale: String = DEFAULT_LOCALE): Dream? {
     val dream = dreams.find { it.id == id } ?: return null
     val text = textsFor(locale).dreams[dream.id] ?: return dream

@@ -61,6 +61,7 @@ import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.design.DesignShapes
 import ua.vald_zx.game.rat.race.card.screen.design.DesignActiveWaves
+import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDetailsDialog
 import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDialog
 import ua.vald_zx.game.rat.race.card.screen.design.DesignPlayerSheet
 import ua.vald_zx.game.rat.race.card.screen.design.DesignBoardOverlay
@@ -627,6 +628,22 @@ class BoardScreen(
                     vm.pass()
                     dreamOfferedDialog = false
                 },
+            )
+        }
+        val inspectedDreamId by vm.inspectedDreamId.collectAsState()
+        val inspectedDream = inspectedDreamId?.let { dreamId ->
+            state.board.dreamById(dreamId, Locale.current.language)
+        }
+        inspectedDream?.let { dream ->
+            val allPlayers by players.collectAsState()
+            DesignDreamDetailsDialog(
+                dream = dream,
+                selectors = allPlayers.dreamSelectors(dream.id),
+                currentPlayerId = state.player.id,
+                isPurchased = dream.id in state.board.purchasedDreamIds,
+                canSelect = state.board.canSelectDream(dream.id, state.player.id, allPlayers),
+                onSelect = { vm.selectDream(dream.id) },
+                onDismiss = { vm.closeInspectedDream() },
             )
         }
         victoryDialog?.let { victory ->

@@ -157,6 +157,9 @@ class BoardViewModel(
     private val _actions = Channel<BoardUiAction>()
     val actions = _actions.receiveAsFlow()
 
+    private val _inspectedDreamId = MutableStateFlow<String?>(null)
+    val inspectedDreamId: StateFlow<String?> = _inspectedDreamId.asStateFlow()
+
     private val _playerMessages = MutableStateFlow<Map<String, PlayerMessage>>(emptyMap())
     val playerMessages: StateFlow<Map<String, PlayerMessage>> = _playerMessages.asStateFlow()
     private val _playerMessageLog = MutableStateFlow<Map<String, List<PlayerMessage>>>(emptyMap())
@@ -750,7 +753,16 @@ class BoardViewModel(
         }
     }
 
+    fun inspectDream(dreamId: String) {
+        _inspectedDreamId.value = dreamId
+    }
+
+    fun closeInspectedDream() {
+        _inspectedDreamId.value = null
+    }
+
     fun selectDream(dreamId: String) {
+        _inspectedDreamId.value = null
         safeLaunch {
             selectDream(dreamId)
         }

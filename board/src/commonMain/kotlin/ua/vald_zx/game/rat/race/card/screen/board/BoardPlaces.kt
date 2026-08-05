@@ -241,7 +241,7 @@ fun BoxScope.PlaceContent(
             val isPurchased = dream?.id?.let { it in state.board.purchasedDreamIds } == true
             val isSelected = dream?.id == state.player.selectedDreamId
             val allPlayers by players.collectAsState()
-            val selectors = allPlayers.filter { !it.isInactive && it.selectedDreamId == dream?.id }
+            val selectors = allPlayers.filter { it.selectedDreamId == dream?.id }
             Box(
                 Modifier
                     .fillMaxSize()
@@ -252,8 +252,8 @@ fun BoxScope.PlaceContent(
                             place.type.color()
                         }
                     )
-                    .clickable(enabled = dream != null && !isPurchased) {
-                        dream?.let { vm.selectDream(it.id) }
+                    .clickable(enabled = dream != null) {
+                        dream?.let { vm.inspectDream(it.id) }
                     }
             ) {
                 OutlinedText(

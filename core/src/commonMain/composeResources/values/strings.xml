@@ -265,6 +265,10 @@
     <string name="enter_outer_circle">Enter the outer circle</string>
     <string name="choose_dream_on_board">Tap a Dream space on the board</string>
     <string name="dream_offer_title">Buy your dream?</string>
+    <string name="dream_already_selected">This is already your dream</string>
+    <string name="dream_taken_by_other">Another player has chosen it</string>
+    <string name="dream_chosen_by">Chosen by</string>
+    <string name="dream_already_purchased">This dream is already taken</string>
     <string name="dream_offer_message">%1$s costs %2$s $</string>
     <string name="victory">Victory!</string>
     <string name="you_won">You have fulfilled every condition and won!</string>
