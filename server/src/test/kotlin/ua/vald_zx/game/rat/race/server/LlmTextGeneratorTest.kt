@@ -5,6 +5,7 @@ import kotlinx.coroutines.test.runTest
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
+import ua.vald_zx.game.rat.race.card.shared.Dream
 import ua.vald_zx.game.rat.race.card.shared.GeneratedText
 import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import ua.vald_zx.game.rat.race.card.shared.PayerType
@@ -115,6 +116,25 @@ class LlmTextGeneratorTest {
         assertTrue(prompts.contains("конкретним заголовком ринкової новини"))
         assertTrue(prompts.contains("посадовця, роль або скандал"))
         assertTrue(prompts.contains("не додавай нових чисел, умов або наслідків"))
+    }
+
+    @Test
+    fun professionAndDreamPromptsRequireSpecificPlayerFacingText() = runTest {
+        val professionChat = FakeChat(::answerFor)
+        LlmTextGenerator(professionChat).generateComplete(world, emptyMap(), professions.take(1))
+
+        val dreamChat = FakeChat(::answerFor)
+        LlmTextGenerator(dreamChat).generateComplete(
+            world = world,
+            cards = emptyMap(),
+            professions = emptyList(),
+            dreams = listOf(Dream("dream", "", "", 1_000_000)),
+        )
+
+        assertTrue(professionChat.prompts.single().contains("конкретно називає професію або посаду"))
+        assertTrue(professionChat.prompts.single().contains("щоденну роль і джерело зарплати"))
+        assertTrue(dreamChat.prompts.single().contains("конкретно називає мету"))
+        assertTrue(dreamChat.prompts.single().contains("не повторюючи ціну"))
     }
 
     @Test
