@@ -10,6 +10,7 @@ import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import ua.vald_zx.game.rat.race.card.shared.PayerType
 import java.net.InetSocketAddress
 import java.time.Instant
+import java.util.Collections
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,13 +24,16 @@ class LlmTextGeneratorTest {
     private val professions = BoardGenerator(world, testBalance()).generateProfessions()
 
     private class FakeChat(val answer: (String) -> String?) : ChatCompletion {
-        val prompts = mutableListOf<String>()
+        val prompts: MutableList<String> = Collections.synchronizedList(mutableListOf())
 
         override suspend fun complete(system: String, user: String): String? {
             prompts += user
             return answer(user)
         }
     }
+
+    private fun poolMember(name: String, completion: ChatCompletion) =
+        LlmProviderPool.Member(provider = name, model = "model", completion = completion)
 
     private fun answerFor(user: String): String {
         val ids = promptIds(user)
@@ -388,162 +392,219 @@ class LlmTextGeneratorTest {
     }
 
     @Test
-    fun fallbackIsUsedAfterRateLimit() = runTest {
-        val chat = FallbackChatCompletion(
-            listOf(
-                ChatCompletion { _, _ -> throw LlmRateLimitException("primary", "model", 120_000) },
-                ChatCompletion { _, _ -> "fallback answer" },
-            )
-        )
-
-        assertEquals("fallback answer", chat.complete("system", "user"))
-    }
-
-    @Test
-    fun fallbackIsUsedWhenProviderIsUnavailable() = runTest {
-        val chat = FallbackChatCompletion(
-            listOf(
-                ChatCompletion { _, _ -> throw LlmProviderException("primary is unavailable") },
-                ChatCompletion { _, _ -> "fallback answer" },
-            )
-        )
-
-        assertEquals("fallback answer", chat.complete("system", "user"))
-    }
-
-    @Test
-    fun preciseRateLimitWaitsUntilTheSameRequestSucceeds() = runTest {
-        val requests = AtomicInteger()
-        val server = HttpServer.create(InetSocketAddress(0), 0).apply {
-            createContext("/chat") { exchange ->
-                val attempt = requests.incrementAndGet()
-                val body = if (attempt <= 10) {
-                    exchange.responseHeaders.add("Retry-After", "0.001")
-                    "{}"
-                } else {
-                    """{"choices":[{"message":{"content":"completed"}}]}"""
-                }
-                val bytes = body.encodeToByteArray()
-                exchange.sendResponseHeaders(if (attempt <= 10) 429 else 200, bytes.size.toLong())
-                exchange.responseBody.use { it.write(bytes) }
+    fun theSameNameInAnotherDeckIsAccepted() = runTest {
+        val chat = FakeChat { user ->
+            val deck = if ("малий бізнес" in user) "small" else "medium"
+            promptIds(user).joinToString(prefix = "[", postfix = "]") { id ->
+                """{"id":$id,"uk":{"name":"Спільна назва","description":"Опис $deck"},""" +
+                        """"en":{"name":"Shared name","description":"Description $deck"}}"""
             }
-            start()
         }
-        val retries = mutableListOf<LlmRetryWait>()
+        val twoDecks = BoardGenerator(world, testBalance()).generate(
+            mapOf(BoardCardType.SmallBusiness to 1, BoardCardType.MediumBusiness to 1)
+        )
+
+        val generated = LlmTextGenerator(chat).generateComplete(world, twoDecks, emptyList())
+
+        val uk = generated.getValue("uk").cards
+        assertEquals("Спільна назва", uk.getValue(BoardCardType.SmallBusiness).getValue(1).name)
+        assertEquals("Спільна назва", uk.getValue(BoardCardType.MediumBusiness).getValue(1).name)
+    }
+
+    @Test
+    fun theNextProviderAnswersWhenTheFirstIsRateLimited() = runTest {
+        val pool = LlmProviderPool(
+            members = listOf(
+                poolMember("primary", ChatCompletion { _, _ ->
+                    throw LlmRateLimitException("primary", "model", 120_000)
+                }),
+                poolMember("fallback", ChatCompletion { _, _ -> "fallback answer" }),
+            ),
+            wait = {},
+        )
+
+        assertEquals("fallback answer", pool.complete("system", "user"))
+    }
+
+    @Test
+    fun anUnavailableProviderIsSkipped() = runTest {
+        val pool = LlmProviderPool(
+            members = listOf(
+                poolMember("primary", ChatCompletion { _, _ ->
+                    throw LlmProviderException("primary is unavailable")
+                }),
+                poolMember("fallback", ChatCompletion { _, _ -> "fallback answer" }),
+            ),
+            wait = {},
+        )
+
+        assertEquals("fallback answer", pool.complete("system", "user"))
+    }
+
+    @Test
+    fun aRateLimitedProviderIsNotCalledAgainWhileItCoolsDown() = runTest {
+        var now = 0L
+        val primaryCalls = AtomicInteger()
+        val fallbackCalls = AtomicInteger()
+        val pool = LlmProviderPool(
+            members = listOf(
+                poolMember("primary", ChatCompletion { _, _ ->
+                    primaryCalls.incrementAndGet()
+                    throw LlmRateLimitException("primary", "model", 60_000)
+                }),
+                poolMember("fallback", ChatCompletion { _, _ ->
+                    fallbackCalls.incrementAndGet()
+                    "answer"
+                }),
+            ),
+            nowEpochMs = { now },
+            wait = { now += it },
+        )
+
+        repeat(3) { assertEquals("answer", pool.complete("system", "user")) }
+
+        assertEquals(1, primaryCalls.get())
+        assertEquals(3, fallbackCalls.get())
+    }
+
+    @Test
+    fun aDailyQuotaFailsTheRequestInsteadOfWaiting() = runTest {
+        var now = 0L
+        var waited = 0L
+        val pool = LlmProviderPool(
+            members = listOf(
+                poolMember("only", ChatCompletion { _, _ ->
+                    throw LlmRateLimitException("only", "model", 20 * 60 * 60 * 1_000)
+                }),
+            ),
+            nowEpochMs = { now },
+            wait = { waited += it; now += it },
+        )
+
+        assertFailsWith<LlmRateLimitException> { pool.complete("system", "user") }
+        assertEquals(0, waited)
+    }
+
+    @Test
+    fun aMinuteQuotaIsWaitedOutWhenNoProviderIsFree() = runTest {
+        var now = 0L
+        var waited = 0L
+        var attempt = 0
+        val pool = LlmProviderPool(
+            members = listOf(
+                poolMember("only", ChatCompletion { _, _ ->
+                    attempt += 1
+                    if (attempt == 1) throw LlmRateLimitException("only", "model", 30_000)
+                    "answer"
+                }),
+            ),
+            nowEpochMs = { now },
+            wait = { waited += it; now += it },
+        )
+
+        assertEquals("answer", pool.complete("system", "user"))
+        assertEquals(30_000, waited)
+    }
+
+    @Test
+    fun aRateLimitIsReportedInsteadOfBeingWaitedOut() = runTest {
+        val requests = AtomicInteger()
+        val server = rateLimitedServer { requests.incrementAndGet() }
         try {
             val chat = HttpChatCompletion(
-                provider = LlmProviderSettings(
-                    name = "test",
-                    url = "http://127.0.0.1:${server.address.port}/chat",
-                    key = "key",
-                    balanceModel = "model",
-                    textModel = "model",
-                ),
+                provider = testProvider(server.address.port, "test"),
                 model = "model",
-                onRetry = { retries += it },
-                wait = {},
             )
 
-            assertEquals("completed", chat.complete("system", "user"))
-            assertEquals(11, requests.get())
-            assertEquals(10, retries.size)
-            assertTrue(retries.all { it.delayMillis > 0 })
+            val failure = assertFailsWith<LlmRateLimitException> { chat.complete("system", "user") }
+
+            assertEquals(1, requests.get())
+            assertTrue(failure.retryAfterMillis > 0)
         } finally {
             server.stop(0)
         }
     }
 
     @Test
-    fun googleRetryInfoWaitsUntilTheSameRequestSucceeds() = runTest {
-        val requests = AtomicInteger()
-        val server = HttpServer.create(InetSocketAddress(0), 0).apply {
-            createContext("/chat") { exchange ->
-                val attempt = requests.incrementAndGet()
-                val body = if (attempt <= 10) {
-                    """{"error":{"code":429,"message":"Quota exceeded. Please retry in 0.001s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"0.001s"}]}}"""
-                } else {
-                    """{"choices":[{"message":{"content":"completed"}}]}"""
-                }
-                val bytes = body.encodeToByteArray()
-                exchange.sendResponseHeaders(if (attempt <= 10) 429 else 200, bytes.size.toLong())
-                exchange.responseBody.use { it.write(bytes) }
-            }
-            start()
-        }
-        val retries = mutableListOf<LlmRetryWait>()
+    fun googleQuotaDetailsTravelWithTheRateLimit() = runTest {
+        val server = quotaServer(
+            """{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaValue":"20"}""",
+            "0.001s",
+        )
+        val quotas = mutableListOf<LlmQuotaSnapshot>()
         try {
             val chat = HttpChatCompletion(
-                provider = LlmProviderSettings(
-                    name = "gemini",
-                    url = "http://127.0.0.1:${server.address.port}/chat",
-                    key = "key",
-                    balanceModel = "model",
-                    textModel = "model",
-                ),
+                provider = testProvider(server.address.port, "gemini"),
                 model = "model",
-                onRetry = { retries += it },
-                wait = {},
+                onQuota = { quotas += it },
             )
 
-            assertEquals("completed", chat.complete("system", "user"))
-            assertEquals(11, requests.get())
-            assertEquals(10, retries.size)
-            assertTrue(retries.all { it.provider == "gemini" && it.delayMillis > 0 })
-            assertTrue(retries.all { it.quota?.type == GenerationQuotaType.REQUESTS_PER_MINUTE })
-            assertTrue(retries.all { retry ->
-                retry.quota?.let { it.limit == 20L && it.used == 20L } == true
-            })
+            val failure = assertFailsWith<LlmRateLimitException> { chat.complete("system", "user") }
+
+            assertEquals(GenerationQuotaType.REQUESTS_PER_MINUTE, failure.quota?.type)
+            assertEquals(20L, failure.quota?.limit)
+            assertEquals(1, quotas.size)
         } finally {
             server.stop(0)
         }
     }
 
     @Test
-    fun dailyQuotaWaitsUntilThePacificReset() = runTest {
-        val requests = AtomicInteger()
-        val server = HttpServer.create(InetSocketAddress(0), 0).apply {
-            createContext("/chat") { exchange ->
-                val attempt = requests.incrementAndGet()
-                val body = if (attempt == 1) {
-                    """{"error":{"code":429,"message":"Quota exceeded. Please retry in 4s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaValue":"250"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"4s"}]}}"""
-                } else {
-                    """{"choices":[{"message":{"content":"completed"}}]}"""
-                }
-                val bytes = body.encodeToByteArray()
-                exchange.sendResponseHeaders(if (attempt == 1) 429 else 200, bytes.size.toLong())
-                exchange.responseBody.use { it.write(bytes) }
-            }
-            start()
-        }
-        val retries = mutableListOf<LlmRetryWait>()
+    fun aDailyQuotaCoolsDownUntilThePacificReset() = runTest {
+        val server = quotaServer(
+            """{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaValue":"250"}""",
+            "4s",
+        )
         val now = Instant.parse("2026-08-05T12:00:00Z").toEpochMilli()
         try {
             val chat = HttpChatCompletion(
-                provider = LlmProviderSettings(
-                    name = "gemini",
-                    url = "http://127.0.0.1:${server.address.port}/chat",
-                    key = "key",
-                    balanceModel = "daily-model",
-                    textModel = "daily-model",
-                ),
+                provider = testProvider(server.address.port, "gemini"),
                 model = "daily-model",
-                onRetry = { retries += it },
-                wait = {},
                 quotaTracker = LlmQuotaTracker { now },
                 nowEpochMs = { now },
             )
 
-            assertEquals("completed", chat.complete("system", "user"))
-            assertEquals(2, requests.get())
-            assertEquals(1, retries.size)
-            assertTrue(retries.single().delayMillis > 18 * 60 * 60 * 1_000)
-            assertEquals(
-                GenerationQuotaType.REQUESTS_PER_DAY,
-                retries.single().quota?.type,
-            )
-            assertEquals(250, retries.single().quota?.limit)
+            val failure = assertFailsWith<LlmRateLimitException> { chat.complete("system", "user") }
+
+            assertEquals(GenerationQuotaType.REQUESTS_PER_DAY, failure.quota?.type)
+            assertEquals(250L, failure.quota?.limit)
+            assertTrue(failure.retryAfterMillis > 18 * 60 * 60 * 1_000)
         } finally {
             server.stop(0)
         }
     }
+
+    private fun testProvider(port: Int, name: String) = LlmProviderSettings(
+        name = name,
+        url = "http://127.0.0.1:$port/chat",
+        key = "key",
+        balanceModel = "model",
+        textModel = "model",
+    )
+
+    private fun rateLimitedServer(onRequest: () -> Unit): HttpServer =
+        HttpServer.create(InetSocketAddress(0), 0).apply {
+            createContext("/chat") { exchange ->
+                onRequest()
+                exchange.responseHeaders.add("Retry-After", "0.001")
+                val bytes = "{}".encodeToByteArray()
+                exchange.sendResponseHeaders(429, bytes.size.toLong())
+                exchange.responseBody.use { it.write(bytes) }
+            }
+            start()
+        }
+
+    private fun quotaServer(violation: String, retryDelay: String): HttpServer =
+        HttpServer.create(InetSocketAddress(0), 0).apply {
+            createContext("/chat") { exchange ->
+                val body = """{"error":{"code":429,"message":"Quota exceeded.","status":"RESOURCE_EXHAUSTED",""" +
+                        """"details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure",""" +
+                        """"violations":[$violation]},""" +
+                        """{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"$retryDelay"}]}}"""
+                val bytes = body.encodeToByteArray()
+                exchange.sendResponseHeaders(429, bytes.size.toLong())
+                exchange.responseBody.use { it.write(bytes) }
+            }
+            start()
+        }
 }

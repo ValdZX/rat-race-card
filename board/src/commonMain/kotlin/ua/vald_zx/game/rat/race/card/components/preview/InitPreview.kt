@@ -136,6 +136,9 @@ fun InitPreview(
                         override suspend fun minusCash(price: Long) {
                         }
 
+                        override suspend fun payExpenses(card: BoardCard.Expenses) {
+                        }
+
                         override suspend fun buyThing(card: BoardCard.Shopping) {
                         }
 

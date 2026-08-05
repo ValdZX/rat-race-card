@@ -4,13 +4,16 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
+import ua.vald_zx.game.rat.race.card.shared.Dream
 import ua.vald_zx.game.rat.race.card.shared.Gender
 import ua.vald_zx.game.rat.race.card.shared.GeneratedBalance
 import ua.vald_zx.game.rat.race.card.shared.PayerType
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 import ua.vald_zx.game.rat.race.card.shared.code
+import ua.vald_zx.game.rat.race.card.shared.dreamSlotIds
 import ua.vald_zx.game.rat.race.card.shared.seedFor
+import ua.vald_zx.game.rat.race.card.shared.shopTiers
 import kotlin.random.Random
 
 internal class BoardGenerator(
@@ -41,6 +44,20 @@ internal class BoardGenerator(
     fun generatePlaces(): Map<BoardLayer, List<String>> {
         if (!world.enabled) return emptyMap()
         return BoardLayer.entries.associateWith { layer -> shuffledPlaces(layer).map { it.code() } }
+    }
+
+    fun generateDreams(): List<Dream> {
+        if (!world.enabled) return emptyList()
+        val ids = dreamSlotIds
+        val step = (balance.dreamMaxPrice - balance.dreamMinPrice) / (ids.size - 1)
+        return ids.mapIndexed { index, id ->
+            Dream(
+                id = id,
+                name = "",
+                description = "",
+                price = balance.dreamMinPrice + step * index,
+            )
+        }
     }
 
     private fun profession(gender: Gender, id: Int): ProfessionCard {
@@ -84,7 +101,7 @@ internal class BoardGenerator(
     private fun PlaceType.isMovable(): Boolean =
         !isBig && this != PlaceType.Start && this !is PlaceType.Desire
 
-    private fun Long.share(percent: Long): Long = (this * percent / 100 / 10).coerceAtLeast(1) * 10
+    private fun Long.share(percent: Long): Long = expenseShare(percent)
 
     private fun card(type: BoardCardType, id: Int): BoardCard {
         val random = Random(world.seedFor(type, id))
@@ -136,22 +153,24 @@ internal class BoardGenerator(
     }
 
     private fun shopping(type: BoardCardType, id: Int, random: Random): BoardCard {
-        val price = balance.shoppingPrices.pick(random)
+        val shopType = weighted(random, shopTiers.associateWith { balance.shopWeights.getValue(it) })
         return BoardCard.Shopping(
             description = "",
-            price = price,
+            price = balance.shoppingPrices.getValue(shopType).pick(random),
             credit = "",
-            shopType = ShopTypes.pick(random),
+            shopType = shopType,
         )
     }
 
     private fun expenses(type: BoardCardType, id: Int, random: Random): BoardCard {
         val price = balance.expensePrices.pick(random)
+        val strayAnimal = random.nextInt(100) < balance.strayAnimalPercentage
         return BoardCard.Expenses(
             description = "",
             priceTitle = price.generatedPriceTitle(),
             price = price,
-            payer = PayerTypes.pick(random),
+            payer = if (strayAnimal) PayerType.ALL else PayerTypes.pick(random),
+            grantsAnimal = strayAnimal,
         )
     }
 
@@ -165,12 +184,15 @@ internal class BoardGenerator(
                 price = price,
             )
 
-            ChanceKind.LAND -> BoardCard.Chance.Land(
-                name = "",
-                description = "",
-                price = price,
-                area = balance.landAreas.pick(random),
-            )
+            ChanceKind.LAND -> {
+                val area = balance.landAreas.pick(random)
+                BoardCard.Chance.Land(
+                    name = "",
+                    description = "",
+                    price = area * balance.landPricePerUnit.pick(random),
+                    area = area,
+                )
+            }
 
             ChanceKind.SHARES -> BoardCard.Chance.Shares(
                 description = "",
@@ -181,11 +203,11 @@ internal class BoardGenerator(
 
             ChanceKind.CORRUPT_BUSINESS -> corruptBusiness(type, id, random)
             ChanceKind.CORRUPT_LAND -> {
-                val corruptPrice = balance.corruptLandPrices.pick(random)
+                val area = balance.corruptLandAreas.pick(random)
                 BoardCard.Chance.CorruptLand(
                     description = "",
-                    price = corruptPrice,
-                    area = balance.corruptLandAreas.pick(random),
+                    price = area * balance.corruptLandPricePerUnit.pick(random),
+                    area = area,
                     deputies = balance.corruptLandDeputies.pick(random),
                 )
             }
@@ -209,7 +231,11 @@ internal class BoardGenerator(
     private fun eventStore(type: BoardCardType, id: Int, random: Random): BoardCard {
         val price = balance.eventPrices.pick(random)
         return when (eventKind(id, random)) {
-            EventKind.LAND -> BoardCard.EventStore.Land("", price)
+            EventKind.LAND -> BoardCard.EventStore.Land(
+                description = "",
+                price = (balance.landPricePerUnit.pick(random) *
+                        balance.eventLandPricePercentages.pick(random) / 100).coerceAtLeast(1),
+            )
             EventKind.ESTATE -> BoardCard.EventStore.Estate("", price)
             EventKind.SHARES -> {
                 val forcedSaleAvailable = balance.forcedShareSalePrices.isNotEmpty()
@@ -272,22 +298,25 @@ internal class BoardGenerator(
             EventKind.ANNOUNCEMENT to balance.eventWeights.announcement,
         )
 
-    private fun <T> weighted(random: Random, vararg values: Pair<T, Int>): T {
-        var position = random.nextInt(values.sumOf { it.second })
-        values.forEach { (value, weight) ->
+    private fun <T> weighted(random: Random, vararg values: Pair<T, Int>): T = weighted(random, values.toMap())
+
+    private fun <T> weighted(random: Random, weights: Map<T, Int>): T {
+        var position = random.nextInt(weights.values.sum())
+        weights.forEach { (value, weight) ->
             if (position < weight) return value
             position -= weight
         }
-        return values.last().first
+        return weights.keys.last()
     }
 
 }
+internal fun Long.expenseShare(percent: Long): Long = (this * percent / 100 / 10).coerceAtLeast(1) * 10
+
 private const val PROFESSIONS_PER_GENDER = 30
 
 private enum class ChanceKind { RANDOM_JOB, ESTATE, LAND, SHARES, CORRUPT_BUSINESS, CORRUPT_LAND }
 
 private enum class EventKind { LAND, ESTATE, SHARES, BUSINESS_EXTENDING, REELECTION, ANNOUNCEMENT }
-private val ShopTypes = ua.vald_zx.game.rat.race.card.shared.ShopType.entries
 private val PayerTypes = PayerType.entries
 
 private fun Long.generatedPriceTitle(): String = "\$" + toString()

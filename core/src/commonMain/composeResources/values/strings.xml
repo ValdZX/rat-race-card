@@ -286,6 +286,7 @@
     <string name="debug_outer_circle">Outer circle</string>
     <string name="debug_cards">Card selection</string>
     <string name="debug_pets">Pets</string>
+    <string name="pets">Pets</string>
     <string name="debug_show_board_state">Show board state</string>
     <string name="debug_hide_board_state">Hide board state</string>
     <string name="debug_card_auto_move">The token will move to the nearest space for the selected deck, then the card will open.</string>
@@ -352,8 +353,7 @@
     <string name="generation_stage_professions">Creating unique professions</string>
     <string name="generation_stage_cards">Building card decks</string>
     <string name="generation_stage_places">Generating the board cells</string>
-    <string name="generation_stage_ukrainian">Writing Ukrainian and English names and stories</string>
-    <string name="generation_stage_english">Writing English names and stories</string>
+    <string name="generation_stage_texts">Writing Ukrainian and English names and stories</string>
     <string name="generation_failed">Generation failed</string>
     <string name="generation_elapsed_time">Time: %1$s</string>
     <string name="generation_estimated_remaining">Estimated remaining: %1$s</string>

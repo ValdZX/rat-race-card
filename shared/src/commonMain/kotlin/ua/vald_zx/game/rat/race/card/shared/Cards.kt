@@ -152,6 +152,7 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
         val priceTitle: String,
         val price: Long,
         val payer: PayerType,
+        val grantsAnimal: Boolean = false,
     ) : BoardCard(BoardCardType.Expenses)
 }
 
@@ -160,8 +161,18 @@ enum class ShopType {
     HOUSE,
     APARTMENT,
     YACHT,
-    FLY
+    FLY,
+    ANIMAL,
 }
+
+val shopTiers = listOf(
+    ShopType.ANIMAL,
+    ShopType.AUTO,
+    ShopType.APARTMENT,
+    ShopType.HOUSE,
+    ShopType.YACHT,
+    ShopType.FLY,
+)
 
 enum class PayerType {
     ALL,

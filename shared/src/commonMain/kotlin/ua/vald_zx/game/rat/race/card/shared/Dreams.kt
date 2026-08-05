@@ -145,6 +145,13 @@ val ratRaceDreams = listOf(
     ),
 )
 
-fun Board.dreamById(id: String?): Dream? {
-    return dreams.find { it.id == id }
+val dreamSlotIds: List<String> = ratRaceDreams.map { it.id }
+
+fun Board.dreamById(id: String?, locale: String = DEFAULT_LOCALE): Dream? {
+    val dream = dreams.find { it.id == id } ?: return null
+    val text = textsFor(locale).dreams[dream.id] ?: return dream
+    return dream.copy(
+        name = text.name.ifBlank { dream.name },
+        description = text.description.ifBlank { dream.description },
+    )
 }

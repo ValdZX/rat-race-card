@@ -109,6 +109,13 @@ fun StatePage(
                 count = player.flight,
                 price = player.flight * player.config.flightCost
             )
+            StateItem(
+                name = stringResource(Res.string.pets),
+                imageVector = Images.Rat,
+                enabled = player.animal > 0,
+                count = player.animal,
+                price = player.animal * player.config.animalCost
+            )
         }
         when (player.location.level.toLayer()) {
             BoardLayer.INNER -> {

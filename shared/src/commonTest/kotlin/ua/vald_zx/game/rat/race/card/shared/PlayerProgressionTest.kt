@@ -149,6 +149,15 @@ class PlayerProgressionTest {
     }
 
     @Test
+    fun keepingAnAnimalCostsEveryTurn() {
+        val childless = player()
+        val withPets = childless.copy(animal = 3, config = childless.config.copy(animalCost = 150))
+
+        assertEquals(childless.totalExpenses() + 450, withPets.totalExpenses())
+        assertEquals(childless.cashFlow() - 450, withPets.cashFlow())
+    }
+
+    @Test
     fun debugValuesUpdatePlayerAndClampNegativeNumbers() {
         val updated = player().withDebugValues(
             DebugPlayerValues(

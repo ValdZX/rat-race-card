@@ -86,7 +86,7 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
                         kind = DesignButtonKind.Filled,
                         enabled = !state.isProgress,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
-                        onClick = { vm.sideExpenses(card.price) },
+                        onClick = { vm.sideExpenses(card) },
                         title = stringResource(Res.string.pay),
                         unitTS = unitTS,
                         unitDp = unitDp,

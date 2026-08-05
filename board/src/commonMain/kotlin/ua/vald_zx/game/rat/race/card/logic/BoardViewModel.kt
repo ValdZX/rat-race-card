@@ -525,10 +525,9 @@ class BoardViewModel(
         }
     }
 
-    fun sideExpenses(price: Long) {
+    fun sideExpenses(card: BoardCard.Expenses) {
         safeLaunch {
-            minusCash(price)
-            next()
+            payExpenses(card)
         }
     }
 

@@ -3,8 +3,10 @@ package ua.vald_zx.game.rat.race.server
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.OuterCircleConditions
+import ua.vald_zx.game.rat.race.card.shared.ShopType
 import ua.vald_zx.game.rat.race.card.shared.VictoryConditions
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,6 +21,7 @@ class BalanceLlmTest {
         epoch = "2600 рік",
         seed = 41,
     )
+    private val deckSizes = BoardCardType.entries.associateWith { 24 }
 
     @Test
     fun llmCreatesTheWholeEconomicModelForTheWorld() = runTest {
@@ -28,7 +31,7 @@ class BalanceLlmTest {
             Json.encodeToString(testBalance())
         }
 
-        val generated = LlmBalanceGenerator(chat).generate(world)
+        val generated = LlmBalanceGenerator(chat).generate(world, deckSizes)
 
         assertEquals(testBalance(), generated)
         assertTrue(prompts.single().contains("підводна цивілізація"))
@@ -95,7 +98,7 @@ class BalanceLlmTest {
             if (attempts == 1) "{}" else Json.encodeToString(testBalance())
         }
 
-        assertEquals(testBalance(), LlmBalanceGenerator(chat).generate(world))
+        assertEquals(testBalance(), LlmBalanceGenerator(chat).generate(world, deckSizes))
         assertEquals(2, attempts)
     }
 
@@ -108,7 +111,7 @@ class BalanceLlmTest {
             Json.encodeToString(if (prompts.size == 1) invalid else testBalance())
         }
 
-        assertEquals(testBalance(), LlmBalanceGenerator(chat).generate(world))
+        assertEquals(testBalance(), LlmBalanceGenerator(chat).generate(world, deckSizes))
         assertTrue(prompts[1].contains("shares has too few instruments"))
     }
 
@@ -119,9 +122,46 @@ class BalanceLlmTest {
         )
         val chat = ChatCompletion { _, _ -> Json.encodeToString(repeated) }
 
-        val generated = LlmBalanceGenerator(chat).generate(world)
+        val generated = LlmBalanceGenerator(chat).generate(world, deckSizes)
 
         assertEquals(listOf(500L, 750L, 800L, 1_000L), generated.corruptOneTimeReturnPercentages)
+    }
+
+    @Test
+    fun aSalaryThatCannotCoverItsOwnExpensesIsRejected() {
+        val invalid = testBalance().copy(salaries = testBalance().salaries + 40)
+
+        assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
+
+    @Test
+    fun shopTiersOutOfOrderAreRejected() {
+        val prices = testBalance().shoppingPrices.toMutableMap()
+        prices[ShopType.FLY] = listOf(100, 200, 300)
+        val invalid = testBalance().copy(shoppingPrices = prices)
+
+        assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
+
+    @Test
+    fun aMissingShopKindIsRejected() {
+        val invalid = testBalance().copy(shoppingPrices = testBalance().shoppingPrices - ShopType.ANIMAL)
+
+        assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
+
+    @Test
+    fun landThatResellsForTooMuchIsRejected() {
+        val invalid = testBalance().copy(landPricePerUnit = listOf(100, 1_000, 5_000))
+
+        assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
+
+    @Test
+    fun anUnaffordableCheapestDreamIsRejected() {
+        val invalid = testBalance().copy(dreamMinPrice = testBalance().victoryMinimumAccountBalance + 1)
+
+        assertFailsWith<IllegalStateException> { invalid.validate() }
     }
 
     @Test

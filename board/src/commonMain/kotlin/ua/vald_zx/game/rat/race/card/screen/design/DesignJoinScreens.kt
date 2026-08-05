@@ -220,8 +220,7 @@ private fun generationStageText(progress: BoardGenerationProgress): String {
         BoardGenerationStage.PROFESSIONS -> Res.string.generation_stage_professions
         BoardGenerationStage.CARDS -> Res.string.generation_stage_cards
         BoardGenerationStage.PLACES -> Res.string.generation_stage_places
-        BoardGenerationStage.UKRAINIAN_TEXT -> Res.string.generation_stage_ukrainian
-        BoardGenerationStage.ENGLISH_TEXT -> Res.string.generation_stage_english
+        BoardGenerationStage.TEXTS -> Res.string.generation_stage_texts
         BoardGenerationStage.FAILED -> Res.string.generation_failed
     })
     if (progress.stage != BoardGenerationStage.CARDS) return stage

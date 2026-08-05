@@ -14,6 +14,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGenerationProgress
 import ua.vald_zx.game.rat.race.card.shared.BoardGenerationStage
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
+import ua.vald_zx.game.rat.race.card.shared.dreamSlotIds
 import ua.vald_zx.game.rat.race.server.data.Storage
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Clock
@@ -101,16 +102,22 @@ internal object BoardGenerationCoordinator {
             val usageRecorder: suspend (LlmTokenUsage) -> Unit = { usage ->
                 recordTokenUsage(boardId, usage)
             }
+            val quotaRecorder: suspend (LlmQuotaSnapshot) -> Unit = { quota ->
+                recordQuota(boardId, quota)
+            }
             val retryRecorder: suspend (LlmRetryWait) -> Unit = { retry ->
                 recordRetryWait(boardId, retry)
             }
 
             val baseUnits = 1 + 1 + BoardCardType.entries.size + 1
             val deckSizes = initial.cards.mapValues { it.value.size }
-            val textGenerator = LlmTextGenerator(LlmSettings.textChat(usageRecorder, retryRecorder))
+            val textGenerator = LlmTextGenerator(
+                LlmSettings.textChat(usageRecorder, quotaRecorder, retryRecorder)
+            )
             val textUnits = textGenerator.workUnits(
                 deckSizes = deckSizes.values,
                 professionCount = BoardGenerator.professionCount,
+                dreamCount = dreamSlotIds.size,
             )
             val totalUnits = baseUnits + textUnits
 
@@ -119,7 +126,8 @@ internal object BoardGenerationCoordinator {
                 runCatching { balance.validate() }.isSuccess
             }
             val balance = cachedBalance
-                ?: LlmBalanceGenerator(LlmSettings.balanceChat(usageRecorder, retryRecorder)).generate(initial.generation)
+                ?: LlmBalanceGenerator(LlmSettings.balanceChat(usageRecorder, quotaRecorder, retryRecorder))
+                    .generate(initial.generation, deckSizes)
             checkpoint(boardId, BoardGenerationStage.BALANCE, 1, totalUnits) {
                 copy(
                     loanLimit = balance.loanLimit,
@@ -135,6 +143,7 @@ internal object BoardGenerationCoordinator {
                 )
             }
             val generator = BoardGenerator(initial.generation, balance)
+            val dreams = generator.generateDreams()
 
             progress(boardId, BoardGenerationStage.PROFESSIONS, 1, totalUnits)
             val cachedProfessions = initial.generatedProfessions.takeIf { professions ->
@@ -188,7 +197,7 @@ internal object BoardGenerationCoordinator {
             }
             val places = cachedPlaces ?: generator.generatePlaces().also { generated ->
                 checkpoint(boardId, BoardGenerationStage.PLACES, textOffset + 1, totalUnits) {
-                    copy(generatedPlaces = generated)
+                    copy(generatedPlaces = generated, dreams = dreams)
                 }
             }
             progress(boardId, BoardGenerationStage.PLACES, textOffset + 1, totalUnits)
@@ -198,6 +207,7 @@ internal object BoardGenerationCoordinator {
                 world = initial.generation,
                 cards = generatedCards,
                 professions = professions,
+                dreams = dreams,
                 existingTexts = storedBeforeTexts.generatedTexts,
                 shareNames = balance.shares.associate { share ->
                     val uk = share.names["uk"] ?: share.ticker
@@ -207,7 +217,7 @@ internal object BoardGenerationCoordinator {
             ) { checkpointedTexts, completed, _, detail ->
                 checkpoint(
                     boardId = boardId,
-                    stage = BoardGenerationStage.UKRAINIAN_TEXT,
+                    stage = BoardGenerationStage.TEXTS,
                     completed = textOffset + 1 + completed,
                     total = totalUnits,
                     detail = detail,
@@ -223,6 +233,7 @@ internal object BoardGenerationCoordinator {
                     generatedPlaces = places,
                     generatedTexts = texts,
                     generatedBalance = balance,
+                    dreams = dreams,
                 )
             }
         } catch (cancellation: CancellationException) {
@@ -273,6 +284,23 @@ internal object BoardGenerationCoordinator {
                         retryStartedAtEpochMs = null,
                         retryAtEpochMs = null,
                         retryProvider = "",
+                    )
+                )
+            )
+        }
+    }
+
+    private suspend fun recordQuota(boardId: String, quota: LlmQuotaSnapshot) {
+        boardMutex(boardId).withLock {
+            val board = Storage.getBoardOrNull(boardId) ?: return
+            val progress = board.generationProgress
+            Storage.updateBoard(
+                board.copy(
+                    generationProgress = progress.copy(
+                        quotaType = quota.type,
+                        quotaLimit = quota.limit,
+                        quotaUsed = quota.used,
+                        quotaResetAtEpochMs = quota.resetAtEpochMs,
                     )
                 )
             )

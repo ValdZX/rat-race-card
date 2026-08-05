@@ -72,6 +72,7 @@ class RaceRatServiceImpl(
     private suspend fun subscribeToBoard(boardId: String) {
         boardStateSubJob?.cancel()
         boardStateSubJob = Storage.observeBoard(boardId)
+            .distinctUntilChanged { previous, board -> board.differsOnlyByGenerationProgress(previous) }
             .onEach { board -> eventBus.emit(Event.BoardChanged(board)) }
             .launchIn(this)
 
@@ -203,12 +204,10 @@ class RaceRatServiceImpl(
     ): Board {
         require(decks.keys.containsAll(BoardCardType.entries)) { "All card decks are required" }
         require(decks.values.all { it in 1..500 }) { "Deck size must be between 1 and 500" }
-        if (generation.enabled) {
-            require(listOf(generation.theme, generation.locality, generation.epoch).all { it.isNotBlank() }) {
-                "Theme, locality and epoch are required for generation"
-            }
-        }
         val world = generation.copy(
+            theme = generation.theme.sanitizedWorldField(),
+            locality = generation.locality.sanitizedWorldField(),
+            epoch = generation.epoch.sanitizedWorldField(),
             seed = if (generation.seed != 0L) generation.seed else Clock.System.now().toEpochMilliseconds()
         )
         val board = Board(
@@ -688,6 +687,14 @@ class RaceRatServiceImpl(
         updatePlayer { minusCash(price) }
     }
 
+    override suspend fun payExpenses(card: BoardCard.Expenses) {
+        updatePlayer {
+            val paid = minusCash(card.price)
+            if (card.grantsAnimal) paid.copy(animal = paid.animal + 1) else paid
+        }
+        nextPlayer()
+    }
+
     private suspend fun updateBoard(change: suspend Board.() -> Board) {
         val id = boardIdState.value
         boardMutex(id).withLock {
@@ -793,6 +800,7 @@ class RaceRatServiceImpl(
                 ShopType.APARTMENT -> copy(apartment = apartment + 1)
                 ShopType.YACHT -> copy(yacht = yacht + 1)
                 ShopType.FLY -> copy(flight = flight + 1)
+                ShopType.ANIMAL -> copy(animal = animal + 1)
             }
             updated.minusCash(card.price)
         }
@@ -1307,6 +1315,16 @@ private fun Board.invalidateDecks(): Board {
     }
     return copy(cards = newCards, discard = newDiscard)
 }
+
+private const val MAX_WORLD_FIELD_LENGTH = 60
+
+private fun String.sanitizedWorldField(): String =
+    filterNot(Char::isISOControl).trim().take(MAX_WORLD_FIELD_LENGTH).trim()
+
+internal fun Board.differsOnlyByGenerationProgress(previous: Board): Boolean =
+    previous.copy(generationProgress = generationProgress) == this &&
+            previous.generationProgress.isReady == generationProgress.isReady &&
+            previous.generationProgress.isFailed == generationProgress.isFailed
 
 private fun Board.generatedShareEventOrNull(): BoardCard.EventStore.Shares? {
     val link = takenCard?.takeIf { it.type == BoardCardType.EventStore } ?: return null

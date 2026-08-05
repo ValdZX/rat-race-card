@@ -188,6 +188,7 @@ data class Config(
     val cottageCost: Long = 1000,
     val yachtCost: Long = 1500,
     val flightCost: Long = 5000,
+    val animalCost: Long = 100,
     val fundBaseRate: Long = 20,
     val fundStartRate: Long = 30,
     val marriageCost: Long = 5000,
@@ -237,6 +238,7 @@ fun Player.totalExpenses(): Long {
     totalExpenses += cottage * config.cottageCost
     totalExpenses += yacht * config.yachtCost
     totalExpenses += flight * config.flightCost
+    totalExpenses += animal * config.animalCost
     totalExpenses += creditExpenses()
     return totalExpenses
 }

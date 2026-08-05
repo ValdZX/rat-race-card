@@ -291,6 +291,7 @@
     <string name="debug_outer_circle">Зовнішнє коло</string>
     <string name="debug_cards">Вибір картки</string>
     <string name="debug_pets">Домашні тварини</string>
+    <string name="pets">Тварини</string>
     <string name="debug_show_board_state">Показати стан дошки</string>
     <string name="debug_hide_board_state">Сховати стан дошки</string>
     <string name="debug_card_auto_move">Фішка перейде на найближчу клітинку вибраної колоди, після чого відкриється картка.</string>
@@ -357,8 +358,7 @@
     <string name="generation_stage_professions">Створюємо унікальні професії</string>
     <string name="generation_stage_cards">Формуємо колоди карток</string>
     <string name="generation_stage_places">Генеруємо набір клітинок</string>
-    <string name="generation_stage_ukrainian">Пишемо українські й англійські назви та історії</string>
-    <string name="generation_stage_english">Пишемо англійські назви та історії</string>
+    <string name="generation_stage_texts">Пишемо українські й англійські назви та історії</string>
     <string name="generation_failed">Не вдалося завершити генерацію</string>
     <string name="generation_elapsed_time">Час: %1$s</string>
     <string name="generation_estimated_remaining">Залишилось приблизно: %1$s</string>

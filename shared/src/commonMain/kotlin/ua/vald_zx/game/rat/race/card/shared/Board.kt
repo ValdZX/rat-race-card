@@ -85,7 +85,7 @@ fun Board.shareTicker(id: String): String = generatedBalance?.shares
     ?.ticker
     ?: id.replace(SharesType.ShchHP, "ЩГП")
 
-private fun Board.textsFor(locale: String): GeneratedText =
+internal fun Board.textsFor(locale: String): GeneratedText =
     generatedTexts[locale]
         ?: generatedTexts[locale.take(2)]
         ?: generatedTexts[DEFAULT_LOCALE]

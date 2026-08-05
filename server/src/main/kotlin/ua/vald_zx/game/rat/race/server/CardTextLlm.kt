@@ -2,7 +2,13 @@ package ua.vald_zx.game.rat.race.server
 
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -19,6 +25,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.CardText
+import ua.vald_zx.game.rat.race.card.shared.Dream
 import ua.vald_zx.game.rat.race.card.shared.GeneratedText
 import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import ua.vald_zx.game.rat.race.card.shared.Gender
@@ -32,13 +39,18 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 private val llmLogger = KtorSimpleLogger("CardTextLlm")
 private val llmQuotaTracker = LlmQuotaTracker()
+private val llmHttpClient: HttpClient by lazy {
+    HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build()
+}
 
 internal object LlmSettings {
-    val providers: List<LlmProviderSettings>
-        get() = buildList {
+    val providers: List<LlmProviderSettings> by lazy {
+        buildList {
             provider(
                 prefix = "LLM_",
                 defaultName = "gemini",
@@ -50,37 +62,54 @@ internal object LlmSettings {
                 provider(prefix = "LLM_FALLBACK_${index}_", defaultName = "fallback-$index")
             }
         }
+    }
 
     val enabled: Boolean get() = providers.isNotEmpty()
 
-    fun balanceChat(
-        onUsage: suspend (LlmTokenUsage) -> Unit = {},
-        onRetry: suspend (LlmRetryWait) -> Unit = {},
-    ): ChatCompletion = fallbackChat({ it.balanceModel }, onUsage, onRetry)
-
-    fun textChat(
-        onUsage: suspend (LlmTokenUsage) -> Unit = {},
-        onRetry: suspend (LlmRetryWait) -> Unit = {},
-    ): ChatCompletion = fallbackChat({ it.textModel }, onUsage, onRetry)
-
-    private fun fallbackChat(
-        model: (LlmProviderSettings) -> String,
-        onUsage: suspend (LlmTokenUsage) -> Unit,
-        onRetry: suspend (LlmRetryWait) -> Unit,
-    ): ChatCompletion {
-        val configured = providers
-        return FallbackChatCompletion(
-            configured.mapIndexed { index, provider ->
-                HttpChatCompletion(
-                    provider = provider,
-                    model = model(provider),
-                    retryRateLimits = index == configured.lastIndex,
-                    onUsage = onUsage,
-                    onRetry = onRetry,
-                )
+    fun logConfiguration() {
+        if (providers.isEmpty()) {
+            llmLogger.warn("No LLM provider is configured, board generation is unavailable")
+            return
+        }
+        llmLogger.info(
+            "LLM pool of ${providers.size}: " + providers.joinToString {
+                "${it.name} balance=${it.balanceModel} text=${it.textModel}"
             }
         )
     }
+
+    fun balanceChat(
+        onUsage: suspend (LlmTokenUsage) -> Unit = {},
+        onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
+        onRetry: suspend (LlmRetryWait) -> Unit = {},
+    ): ChatCompletion = pool({ it.balanceModel }, onUsage, onQuota, onRetry)
+
+    fun textChat(
+        onUsage: suspend (LlmTokenUsage) -> Unit = {},
+        onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
+        onRetry: suspend (LlmRetryWait) -> Unit = {},
+    ): ChatCompletion = pool({ it.textModel }, onUsage, onQuota, onRetry)
+
+    private fun pool(
+        model: (LlmProviderSettings) -> String,
+        onUsage: suspend (LlmTokenUsage) -> Unit,
+        onQuota: suspend (LlmQuotaSnapshot) -> Unit,
+        onRetry: suspend (LlmRetryWait) -> Unit,
+    ): ChatCompletion = LlmProviderPool(
+        members = providers.map { provider ->
+            LlmProviderPool.Member(
+                provider = provider.name,
+                model = model(provider),
+                completion = HttpChatCompletion(
+                    provider = provider,
+                    model = model(provider),
+                    onUsage = onUsage,
+                    onQuota = onQuota,
+                ),
+            )
+        },
+        onRetry = onRetry,
+    )
 
     private fun provider(
         prefix: String,
@@ -92,15 +121,26 @@ internal object LlmSettings {
         val key = Env["${prefix}API_KEY"].orEmpty()
         if (key.isBlank()) return null
         val model = Env["${prefix}MODEL"]
-        val url = Env["${prefix}API_URL"] ?: defaultUrl ?: return null
-        val balanceModel = Env["${prefix}BALANCE_MODEL"] ?: model ?: defaultBalanceModel ?: return null
-        val textModel = Env["${prefix}TEXT_MODEL"] ?: model ?: defaultTextModel ?: return null
+        val url = Env["${prefix}API_URL"] ?: defaultUrl
+        val balanceModel = Env["${prefix}BALANCE_MODEL"] ?: model ?: defaultBalanceModel
+        val textModel = Env["${prefix}TEXT_MODEL"] ?: model ?: defaultTextModel
+        val missing = buildList {
+            if (url == null) add("${prefix}API_URL")
+            if (balanceModel == null) add("${prefix}BALANCE_MODEL or ${prefix}MODEL")
+            if (textModel == null) add("${prefix}TEXT_MODEL or ${prefix}MODEL")
+        }
+        if (missing.isNotEmpty()) {
+            llmLogger.warn(
+                "${prefix}API_KEY is set but the provider is ignored, missing: ${missing.joinToString()}"
+            )
+            return null
+        }
         return LlmProviderSettings(
             name = Env["${prefix}PROVIDER_NAME"] ?: defaultName,
-            url = url,
+            url = requireNotNull(url),
             key = key,
-            balanceModel = balanceModel,
-            textModel = textModel,
+            balanceModel = requireNotNull(balanceModel),
+            textModel = requireNotNull(textModel),
         )
     }
 }
@@ -131,42 +171,94 @@ internal fun interface ChatCompletion {
     suspend fun complete(system: String, user: String): String?
 }
 
-internal class FallbackChatCompletion(
-    private val completions: List<ChatCompletion>,
+internal class LlmProviderPool(
+    private val members: List<Member>,
+    private val maxWaitMillis: Long = MAX_POOL_WAIT_MILLIS,
+    private val onRetry: suspend (LlmRetryWait) -> Unit = {},
+    private val nowEpochMs: () -> Long = System::currentTimeMillis,
+    private val wait: suspend (Long) -> Unit = { delay(it) },
 ) : ChatCompletion {
+
+    internal class Member(
+        val provider: String,
+        val model: String,
+        val completion: ChatCompletion,
+    ) {
+        internal val slot = Semaphore(1)
+        internal val cooldown = AtomicReference<Cooldown?>(null)
+
+        val name: String get() = "$provider/$model"
+
+        fun availableAt(now: Long): Long = cooldown.get()
+            ?.takeIf { it.untilEpochMs > now }
+            ?.untilEpochMs
+            ?: now
+    }
+
     override suspend fun complete(system: String, user: String): String? {
-        var providerFailure: LlmProviderException? = null
-        completions.forEachIndexed { index, completion ->
+        val exhausted = mutableSetOf<Member>()
+        var waitedMillis = 0L
+        var lastFailure: LlmProviderException? = null
+        while (true) {
+            val candidates = members.filterNot { it in exhausted }
+            if (candidates.isEmpty()) break
+            val now = nowEpochMs()
+            val ready = candidates.filter { it.availableAt(now) <= now }
+            if (ready.isEmpty()) {
+                val soonest = candidates.minBy { it.availableAt(now) }
+                val delayMillis = (soonest.availableAt(now) - now).coerceAtLeast(0)
+                if (waitedMillis + delayMillis > maxWaitMillis) break
+                waitedMillis += delayMillis
+                llmLogger.warn("Every LLM provider is cooling down, waiting ${delayMillis}ms for ${soonest.name}")
+                onRetry(LlmRetryWait(soonest.provider, soonest.model, delayMillis, soonest.cooldown.get()?.quota))
+                wait(delayMillis)
+                continue
+            }
+            val member = ready.firstOrNull { it.slot.tryAcquire() }
+                ?: ready.first().also { it.slot.acquire() }
+            var coolingDown = false
             val answer = try {
-                completion.complete(system, user)
-            } catch (error: LlmProviderException) {
-                providerFailure = error
-                if (index < completions.lastIndex) {
-                    llmLogger.warn("${error.message}; switching to fallback ${index + 2}")
-                }
+                member.completion.complete(system, user)
+            } catch (rateLimit: LlmRateLimitException) {
+                coolingDown = true
+                member.cooldown.set(
+                    Cooldown(nowEpochMs() + rateLimit.retryAfterMillis, rateLimit.quota)
+                )
+                lastFailure = rateLimit
+                llmLogger.warn(
+                    "${member.name} is rate limited, cooling it down for ${rateLimit.retryAfterMillis}ms"
+                )
                 null
+            } catch (failure: LlmProviderException) {
+                lastFailure = failure
+                llmLogger.warn("${failure.message}; excluding ${member.name} from this request")
+                null
+            } finally {
+                member.slot.release()
             }
             if (answer != null) return answer
+            if (!coolingDown) exhausted += member
         }
-        providerFailure?.let { throw it }
+        lastFailure?.let { throw it }
         return null
     }
 }
 
+internal data class Cooldown(
+    val untilEpochMs: Long,
+    val quota: LlmQuotaSnapshot?,
+)
+
 internal class HttpChatCompletion(
     private val provider: LlmProviderSettings,
     private val model: String,
-    private val retryRateLimits: Boolean = true,
     private val onUsage: suspend (LlmTokenUsage) -> Unit = {},
-    private val onRetry: suspend (LlmRetryWait) -> Unit = {},
+    private val onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
     private val wait: suspend (Long) -> Unit = { delay(it) },
     private val quotaTracker: LlmQuotaTracker = llmQuotaTracker,
     private val nowEpochMs: () -> Long = System::currentTimeMillis,
+    private val client: HttpClient = llmHttpClient,
 ) : ChatCompletion {
-
-    private val client: HttpClient by lazy {
-        HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build()
-    }
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -198,35 +290,20 @@ internal class HttpChatCompletion(
             }
             if (response.statusCode() == 429) {
                 val reportedRetry = response.retryDelay()
-                val reportedQuota = response.reportedQuota()
-                val quota = reportedQuota?.let { reported ->
+                val quota = response.reportedQuota()?.let { reported ->
                     quotaTracker.recordLimit(
                         provider = provider.name,
                         model = model,
                         type = reported.type,
                         limit = reported.limit,
-                        retryDelayMillis = reportedRetry.millis,
+                        retryDelayMillis = reportedRetry,
                     )
                 }
-                val retry = quota?.takeIf { it.type.isDailyQuota }?.let { dailyQuota ->
-                    RetryDelay(
-                        millis = maxOf(reportedRetry.millis, dailyQuota.resetAtEpochMs - nowEpochMs()),
-                        precise = true,
-                    )
-                } ?: reportedRetry
-                if (!retryRateLimits) {
-                    throw LlmRateLimitException(provider.name, model, retry.millis)
-                }
-                if (!retry.precise) {
-                    failedAttempts += 1
-                    if (failedAttempts >= MAX_LLM_REQUEST_ATTEMPTS) {
-                        throw LlmRateLimitException(provider.name, model, retry.millis)
-                    }
-                }
-                llmLogger.warn("${provider.name}/$model rate limit reached, retrying in ${retry.millis}ms")
-                onRetry(LlmRetryWait(provider.name, model, retry.millis, quota))
-                wait(retry.millis)
-                continue
+                quota?.let { onQuota(it) }
+                val retryAfterMillis = quota?.takeIf { it.type.isDailyQuota }
+                    ?.let { maxOf(reportedRetry, it.resetAtEpochMs - nowEpochMs()) }
+                    ?: reportedRetry
+                throw LlmRateLimitException(provider.name, model, retryAfterMillis, quota)
             }
             if (response.statusCode() in 500..599) {
                 val message = response.errorMessage()
@@ -268,17 +345,13 @@ internal class HttpChatCompletion(
         put("content", content)
     }
 
-    private fun HttpResponse<String>.retryDelay(): RetryDelay {
+    private fun HttpResponse<String>.retryDelay(): Long {
         val headerSeconds = headers().firstValue("Retry-After").orElse(null)?.toDoubleOrNull()
         val responseBody = body()
         val bodyDelay = RETRY_INFO_DELAY_PATTERN.find(responseBody)?.groupValues?.get(1)?.retryDurationMillis()
             ?: RETRY_MESSAGE_DELAY_PATTERN.find(responseBody)?.groupValues?.get(1)?.retryDurationMillis()
         val value = headerSeconds?.times(1_000)?.toLong() ?: bodyDelay ?: DEFAULT_RETRY_DELAY_MILLIS
-        return RetryDelay(
-            millis = value.coerceIn(MIN_RETRY_DELAY_MILLIS, MAX_REPORTED_RETRY_DELAY_MILLIS) +
-                    RETRY_DELAY_BUFFER_MILLIS,
-            precise = headerSeconds != null || bodyDelay != null,
-        )
+        return value.coerceIn(MIN_RETRY_DELAY_MILLIS, MAX_REPORTED_RETRY_DELAY_MILLIS) + RETRY_DELAY_BUFFER_MILLIS
     }
 
     private fun HttpResponse<String>.errorMessage(): String =
@@ -310,11 +383,6 @@ internal class HttpChatCompletion(
     }
 }
 
-private data class RetryDelay(
-    val millis: Long,
-    val precise: Boolean,
-)
-
 private data class ReportedQuota(
     val type: GenerationQuotaType,
     val limit: Long,
@@ -325,7 +393,8 @@ internal open class LlmProviderException(message: String) : IllegalStateExceptio
 internal class LlmRateLimitException(
     provider: String,
     model: String,
-    retryAfterMillis: Long,
+    val retryAfterMillis: Long,
+    val quota: LlmQuotaSnapshot? = null,
 ) : LlmProviderException(
     "LLM rate limit reached for $provider/$model. Try again in ${retryAfterMillis.retryDelayText()}",
 )
@@ -340,12 +409,14 @@ internal class LlmTextGenerator(
     fun workUnits(
         deckSizes: Collection<Int>,
         professionCount: Int,
-    ): Int = deckSizes.sumOf(::batches) + batches(professionCount)
+        dreamCount: Int,
+    ): Int = deckSizes.sumOf(::batches) + batches(professionCount) + batches(dreamCount)
 
     suspend fun generateComplete(
         world: BoardGeneration,
         cards: Map<BoardCardType, Map<Int, BoardCard>>,
         professions: List<ProfessionCard>,
+        dreams: List<Dream> = emptyList(),
         existingTexts: Map<String, GeneratedText> = emptyMap(),
         shareNames: Map<String, String> = emptyMap(),
         onCheckpoint: suspend (
@@ -355,207 +426,344 @@ internal class LlmTextGenerator(
             detail: String,
         ) -> Unit = { _, _, _, _ -> },
     ): Map<String, GeneratedText> {
-        val texts = generatedLocales.associateWith { existingTexts[it] ?: GeneratedText() }.toMutableMap()
-        val cardBatches = cards.entries.flatMap { (type, deck) ->
-            deck.entries.sortedBy { it.key }.chunked(batchSize).mapIndexed { index, batch ->
-                CardBatch(type, index, batches(deck.size), batch)
+        val store = Texts(existingTexts)
+        val cardBatches = cards.mapValues { (type, deck) ->
+            deck.entries.sortedBy { it.key }.chunked(batchSize).mapIndexed { index, items ->
+                CardBatch(type, index, batches(deck.size), items)
             }
         }
-        val professionBatches = professions.chunked(batchSize).mapIndexed { index, batch ->
-            ProfessionBatch(index, batches(professions.size), batch)
+        val professionBatches = professions.chunked(batchSize).mapIndexed { index, items ->
+            ProfessionBatch(index, batches(professions.size), items)
         }
-        val total = cardBatches.size + professionBatches.size
-        var completed = cardBatches.count { batch -> texts.hasCards(batch.type, batch.items.map { it.key }) } +
-                professionBatches.count { batch -> texts.hasProfessions(batch.items.map { it.id }) }
-        onCheckpoint(texts.snapshot(), completed, total, "")
+        val dreamBatches = dreams.withIndex().toList().chunked(batchSize).mapIndexed { index, items ->
+            DreamBatch(index, batches(dreams.size), items)
+        }
+        val restored = store.snapshot()
+        val total = cardBatches.values.sumOf { it.size } + professionBatches.size + dreamBatches.size
+        val done = cardBatches.values.flatten()
+            .count { batch -> restored.hasCards(batch.type, batch.items.map { it.key }) } +
+                professionBatches.count { batch -> restored.hasProfessions(batch.items.map { it.id }) } +
+                dreamBatches.count { batch -> restored.hasDreams(batch.items.map { it.value.id }) }
+        val progress = Progress(total, done, store, onCheckpoint)
+        progress.report("")
 
-        cardBatches.forEach { batch ->
-            if (texts.hasCards(batch.type, batch.items.map { it.key })) return@forEach
-            val detail = "${batch.type.name} ${batch.index + 1}/${batch.count}"
-            val rejected = mutableMapOf<Int, MutableList<Map<String, CardText>>>()
-            repeat(MAX_TEXT_BATCH_ATTEMPTS) { attempt ->
-                val missing = batch.items.filterNot { texts.hasCard(batch.type, it.key) }
-                if (missing.isEmpty()) return@repeat
-                val briefs = missing.joinToString("\n") { (id, card) -> "$id. ${card.brief(shareNames)}" }
+        coroutineScope {
+            val deckJobs = cardBatches.values.map { batchesOfDeck ->
+                async { batchesOfDeck.forEach { generateCardBatch(world, it, shareNames, store, progress) } }
+            }
+            val professionJob = async {
+                professionBatches.forEach { generateProfessionBatch(world, it, store, progress) }
+            }
+            val dreamJob = async {
+                dreamBatches.forEach { generateDreamBatch(world, it, store, progress) }
+            }
+            (deckJobs + professionJob + dreamJob).awaitAll()
+        }
+
+        val generated = store.snapshot()
+        generatedLocales.forEach { locale ->
+            validateComplete(locale, generated.getValue(locale), cards, professions, dreams)
+        }
+        progress.finish()
+        return generated
+    }
+
+    private suspend fun generateCardBatch(
+        world: BoardGeneration,
+        batch: CardBatch,
+        shareNames: Map<String, String>,
+        store: Texts,
+        progress: Progress,
+    ) {
+        val ids = batch.items.map { it.key }
+        if (store.snapshot().hasCards(batch.type, ids)) return
+        val detail = "${batch.type.name} ${batch.index + 1}/${batch.count}"
+        val rejected = mutableMapOf<Int, MutableList<Map<String, CardText>>>()
+
+        repeat(MAX_TEXT_BATCH_ATTEMPTS) { attempt ->
+            val current = store.snapshot()
+            val missing = batch.items.filterNot { current.hasCard(batch.type, it.key) }
+            if (missing.isEmpty()) return@repeat
+            val answer = chat.complete(
+                system = systemPrompt(),
+                user = deckPrompt(
+                    world = world,
+                    type = batch.type,
+                    briefs = missing.joinToString("\n") { (id, card) -> "$id. ${card.brief(shareNames)}" },
+                    acceptedNames = current.cardNameContext(batch.type),
+                    attempt = attempt,
+                    rejected = rejected,
+                ),
+            ) ?: return@repeat
+            val candidates = answer.parseLocalizedItems()
+            val updated = store.acceptCards(batch.type, candidates, missing.map { it.key }.toSet())
+            missing.filterNot { updated.hasCard(batch.type, it.key) }.forEach { (id) ->
+                candidates[id]?.let { candidate -> rejected.getOrPut(id, ::mutableListOf) += candidate }
+            }
+            if (!updated.hasCards(batch.type, ids)) progress.report(detail)
+        }
+
+        repeat(MAX_REPAIR_BATCH_ATTEMPTS) { repairAttempt ->
+            val missing = store.snapshot().let { current ->
+                batch.items.filterNot { current.hasCard(batch.type, it.key) }
+            }
+            if (missing.isEmpty()) return@repeat
+            missing.chunked(REPAIR_BATCH_SIZE).forEach repairBatchLoop@{ repairBatch ->
+                val expectedIds = repairBatch.map { it.key }.toSet()
                 val answer = chat.complete(
                     system = systemPrompt(),
                     user = deckPrompt(
                         world = world,
                         type = batch.type,
-                        briefs = briefs,
-                        acceptedNames = texts.cardNameContext(batch.type),
-                        attempt = attempt,
+                        briefs = repairBatch.joinToString("\n") { (id, card) -> "$id. ${card.brief(shareNames)}" },
+                        acceptedNames = store.snapshot().cardNameContext(batch.type),
+                        attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
+                        rejected = rejected,
+                    ),
+                ) ?: return@repairBatchLoop
+                val candidates = answer.parseLocalizedItems(expectedSingleId = expectedIds.singleOrNull())
+                val updated = store.acceptCards(batch.type, candidates, expectedIds)
+                repairBatch.filterNot { updated.hasCard(batch.type, it.key) }.forEach { (id) ->
+                    candidates[id]?.let { candidate -> rejected.getOrPut(id, ::mutableListOf) += candidate }
+                }
+                progress.report(detail)
+            }
+        }
+
+        val stillMissing = store.snapshot().let { current ->
+            batch.items.filterNot { current.hasCard(batch.type, it.key) }
+        }
+        stillMissing.forEach { missingCard ->
+            val id = missingCard.key
+            repeat(MAX_SINGLE_ITEM_ATTEMPTS) { repairAttempt ->
+                if (store.snapshot().hasCard(batch.type, id)) return@repeat
+                val answer = chat.complete(
+                    system = systemPrompt(),
+                    user = deckPrompt(
+                        world = world,
+                        type = batch.type,
+                        briefs = "$id. ${missingCard.value.brief(shareNames)}",
+                        acceptedNames = store.snapshot().cardNameContext(batch.type),
+                        attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
                         rejected = rejected,
                     ),
                 ) ?: return@repeat
-                val candidates = answer.parseLocalizedItems()
-                texts.acceptCards(batch.type, candidates, missing.map { it.key }.toSet())
-                missing.filterNot { texts.hasCard(batch.type, it.key) }.forEach { (id) ->
-                    candidates[id]?.let { candidate -> rejected.getOrPut(id, ::mutableListOf) += candidate }
-                }
-                if (!texts.hasCards(batch.type, batch.items.map { it.key })) {
-                    onCheckpoint(texts.snapshot(), completed, total, detail)
-                }
-            }
-            repeat(MAX_REPAIR_BATCH_ATTEMPTS) { repairAttempt ->
-                val missing = batch.items.filterNot { texts.hasCard(batch.type, it.key) }
-                if (missing.isEmpty()) return@repeat
-                missing.chunked(REPAIR_BATCH_SIZE).forEach repairBatchLoop@{ repairBatch ->
-                    val briefs = repairBatch.joinToString("\n") { (id, card) ->
-                        "$id. ${card.brief(shareNames)}"
-                    }
-                    val answer = chat.complete(
-                        system = systemPrompt(),
-                        user = deckPrompt(
-                            world = world,
-                            type = batch.type,
-                            briefs = briefs,
-                            acceptedNames = texts.cardNameContext(batch.type),
-                            attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
-                            rejected = rejected,
-                        ),
-                    ) ?: return@repairBatchLoop
-                    val expectedIds = repairBatch.map { it.key }.toSet()
-                    val candidates = answer.parseLocalizedItems(
-                        expectedSingleId = expectedIds.singleOrNull(),
+                val candidates = answer.parseLocalizedItems(expectedSingleId = id)
+                val updated = store.acceptCards(batch.type, candidates, setOf(id))
+                if (!updated.hasCard(batch.type, id)) {
+                    candidates[id]?.let { candidate ->
+                        rejected.getOrPut(id, ::mutableListOf) += candidate
+                        llmLogger.warn("Rejected duplicate localized card text for ${batch.type} $id")
+                    } ?: llmLogger.warn(
+                        "LLM repair response has no usable localized card text for ${batch.type} $id"
                     )
-                    texts.acceptCards(batch.type, candidates, expectedIds)
-                    repairBatch.filterNot { texts.hasCard(batch.type, it.key) }.forEach { (id) ->
-                        candidates[id]?.let { candidate -> rejected.getOrPut(id, ::mutableListOf) += candidate }
-                    }
-                    onCheckpoint(texts.snapshot(), completed, total, detail)
                 }
+                progress.report(detail)
             }
-            batch.items.filterNot { texts.hasCard(batch.type, it.key) }.forEach { missingCard ->
-                repeat(MAX_SINGLE_ITEM_ATTEMPTS) { repairAttempt ->
-                    if (texts.hasCard(batch.type, missingCard.key)) return@repeat
-                    val id = missingCard.key
-                    val answer = chat.complete(
-                        system = systemPrompt(),
-                        user = deckPrompt(
-                            world = world,
-                            type = batch.type,
-                            briefs = "$id. ${missingCard.value.brief(shareNames)}",
-                            acceptedNames = texts.cardNameContext(batch.type),
-                            attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
-                            rejected = rejected,
-                        ),
-                    ) ?: return@repeat
-                    val candidates = answer.parseLocalizedItems(expectedSingleId = id)
-                    texts.acceptCards(batch.type, candidates, setOf(id))
-                    if (!texts.hasCard(batch.type, id)) {
-                        candidates[id]?.let { candidate ->
-                            rejected.getOrPut(id, ::mutableListOf) += candidate
-                            llmLogger.warn("Rejected duplicate localized card text for ${batch.type} $id")
-                        } ?: llmLogger.warn("LLM repair response has no usable localized card text for ${batch.type} $id")
-                    }
-                    onCheckpoint(texts.snapshot(), completed, total, detail)
-                }
-            }
-            val missingIds = batch.items.map { it.key }.filterNot { texts.hasCard(batch.type, it) }
-            check(missingIds.isEmpty()) {
-                "Incomplete uk/en texts for ${batch.type}: ${missingIds.take(MAX_ERROR_IDS)}"
-            }
-            completed += 1
-            onCheckpoint(texts.snapshot(), completed, total, detail)
         }
 
-        professionBatches.forEach { batch ->
-            if (texts.hasProfessions(batch.items.map { it.id })) return@forEach
-            val detail = "professions ${batch.index + 1}/${batch.count}"
-            val rejected = mutableMapOf<Int, MutableList<Map<String, CardText>>>()
-            repeat(MAX_TEXT_BATCH_ATTEMPTS) { attempt ->
-                val missing = batch.items.filterNot { texts.hasProfession(it.id) }
-                if (missing.isEmpty()) return@repeat
-                val briefs = missing.joinToString("\n") { card ->
-                    "${card.id}. ${if (card.gender == Gender.FEMALE) "жінка" else "чоловік"}, зарплата ${card.salary}"
+        val missingIds = store.snapshot().let { current -> ids.filterNot { current.hasCard(batch.type, it) } }
+        check(missingIds.isEmpty()) {
+            "Incomplete uk/en texts for ${batch.type}: ${missingIds.take(MAX_ERROR_IDS)}"
+        }
+        progress.complete(detail)
+    }
+
+    private suspend fun generateProfessionBatch(
+        world: BoardGeneration,
+        batch: ProfessionBatch,
+        store: Texts,
+        progress: Progress,
+    ) {
+        val ids = batch.items.map { it.id }
+        if (store.snapshot().hasProfessions(ids)) return
+        val detail = "professions ${batch.index + 1}/${batch.count}"
+        val rejected = mutableMapOf<Int, MutableList<Map<String, CardText>>>()
+
+        repeat(MAX_TEXT_BATCH_ATTEMPTS) { attempt ->
+            val current = store.snapshot()
+            val missing = batch.items.filterNot { current.hasProfession(it.id) }
+            if (missing.isEmpty()) return@repeat
+            val answer = chat.complete(
+                system = systemPrompt(),
+                user = professionPrompt(
+                    world = world,
+                    briefs = missing.joinToString("\n", transform = ::professionBrief),
+                    acceptedNames = current.professionNameContext(),
+                    attempt = attempt,
+                    rejected = rejected,
+                ),
+            ) ?: return@repeat
+            val candidates = answer.parseLocalizedItems()
+            val updated = store.acceptProfessions(candidates, missing.map { it.id }.toSet())
+            missing.filterNot { updated.hasProfession(it.id) }.forEach { profession ->
+                candidates[profession.id]?.let { candidate ->
+                    rejected.getOrPut(profession.id, ::mutableListOf) += candidate
                 }
+            }
+            if (!updated.hasProfessions(ids)) progress.report(detail)
+        }
+
+        repeat(MAX_REPAIR_BATCH_ATTEMPTS) { repairAttempt ->
+            val missing = store.snapshot().let { current ->
+                batch.items.filterNot { current.hasProfession(it.id) }
+            }
+            if (missing.isEmpty()) return@repeat
+            missing.chunked(REPAIR_BATCH_SIZE).forEach repairBatchLoop@{ repairBatch ->
+                val expectedIds = repairBatch.map { it.id }.toSet()
                 val answer = chat.complete(
                     system = systemPrompt(),
                     user = professionPrompt(
                         world = world,
-                        briefs = briefs,
-                        acceptedNames = texts.professionNameContext(),
-                        attempt = attempt,
+                        briefs = repairBatch.joinToString("\n", transform = ::professionBrief),
+                        acceptedNames = store.snapshot().professionNameContext(),
+                        attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
                         rejected = rejected,
                     ),
-                ) ?: return@repeat
-                val candidates = answer.parseLocalizedItems()
-                texts.acceptProfessions(candidates, missing.map { it.id }.toSet())
-                missing.filterNot { texts.hasProfession(it.id) }.forEach { profession ->
+                ) ?: return@repairBatchLoop
+                val candidates = answer.parseLocalizedItems(expectedSingleId = expectedIds.singleOrNull())
+                val updated = store.acceptProfessions(candidates, expectedIds)
+                repairBatch.filterNot { updated.hasProfession(it.id) }.forEach { profession ->
                     candidates[profession.id]?.let { candidate ->
                         rejected.getOrPut(profession.id, ::mutableListOf) += candidate
                     }
                 }
-                if (!texts.hasProfessions(batch.items.map { it.id })) {
-                    onCheckpoint(texts.snapshot(), completed, total, detail)
-                }
+                progress.report(detail)
             }
-            repeat(MAX_REPAIR_BATCH_ATTEMPTS) { repairAttempt ->
-                val missing = batch.items.filterNot { texts.hasProfession(it.id) }
-                if (missing.isEmpty()) return@repeat
-                missing.chunked(REPAIR_BATCH_SIZE).forEach repairBatchLoop@{ repairBatch ->
-                    val briefs = repairBatch.joinToString("\n") { profession ->
-                        "${profession.id}. ${if (profession.gender == Gender.FEMALE) "жінка" else "чоловік"}, зарплата ${profession.salary}"
-                    }
-                    val answer = chat.complete(
-                        system = systemPrompt(),
-                        user = professionPrompt(
-                            world = world,
-                            briefs = briefs,
-                            acceptedNames = texts.professionNameContext(),
-                            attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
-                            rejected = rejected,
-                        ),
-                    ) ?: return@repairBatchLoop
-                    val expectedIds = repairBatch.map { it.id }.toSet()
-                    val candidates = answer.parseLocalizedItems(
-                        expectedSingleId = expectedIds.singleOrNull(),
-                    )
-                    texts.acceptProfessions(candidates, expectedIds)
-                    repairBatch.filterNot { texts.hasProfession(it.id) }.forEach { profession ->
-                        candidates[profession.id]?.let { candidate ->
-                            rejected.getOrPut(profession.id, ::mutableListOf) += candidate
-                        }
-                    }
-                    onCheckpoint(texts.snapshot(), completed, total, detail)
-                }
-            }
-            batch.items.filterNot { texts.hasProfession(it.id) }.forEach { missingProfession ->
-                repeat(MAX_SINGLE_ITEM_ATTEMPTS) { repairAttempt ->
-                    if (texts.hasProfession(missingProfession.id)) return@repeat
-                    val answer = chat.complete(
-                        system = systemPrompt(),
-                        user = professionPrompt(
-                            world = world,
-                            briefs = "${missingProfession.id}. ${if (missingProfession.gender == Gender.FEMALE) "жінка" else "чоловік"}, зарплата ${missingProfession.salary}",
-                            acceptedNames = texts.professionNameContext(),
-                            attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
-                            rejected = rejected,
-                        ),
-                    ) ?: return@repeat
-                    val candidates = answer.parseLocalizedItems(expectedSingleId = missingProfession.id)
-                    texts.acceptProfessions(candidates, setOf(missingProfession.id))
-                    if (!texts.hasProfession(missingProfession.id)) {
-                        candidates[missingProfession.id]?.let { candidate ->
-                            rejected.getOrPut(missingProfession.id, ::mutableListOf) += candidate
-                            llmLogger.warn("Rejected duplicate localized profession ${missingProfession.id}")
-                        } ?: llmLogger.warn(
-                            "LLM repair response has no usable localized profession ${missingProfession.id}"
-                        )
-                    }
-                    onCheckpoint(texts.snapshot(), completed, total, detail)
-                }
-            }
-            val missingIds = batch.items.map { it.id }.filterNot { texts.hasProfession(it) }
-            check(missingIds.isEmpty()) { "Incomplete uk/en professions: ${missingIds.take(MAX_ERROR_IDS)}" }
-            completed += 1
-            onCheckpoint(texts.snapshot(), completed, total, detail)
         }
 
-        val generated = texts.snapshot()
-        generatedLocales.forEach { locale -> validateComplete(locale, generated.getValue(locale), cards, professions) }
-        return generated
+        val stillMissing = store.snapshot().let { current ->
+            batch.items.filterNot { current.hasProfession(it.id) }
+        }
+        stillMissing.forEach { missingProfession ->
+            val id = missingProfession.id
+            repeat(MAX_SINGLE_ITEM_ATTEMPTS) { repairAttempt ->
+                if (store.snapshot().hasProfession(id)) return@repeat
+                val answer = chat.complete(
+                    system = systemPrompt(),
+                    user = professionPrompt(
+                        world = world,
+                        briefs = professionBrief(missingProfession),
+                        acceptedNames = store.snapshot().professionNameContext(),
+                        attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
+                        rejected = rejected,
+                    ),
+                ) ?: return@repeat
+                val candidates = answer.parseLocalizedItems(expectedSingleId = id)
+                val updated = store.acceptProfessions(candidates, setOf(id))
+                if (!updated.hasProfession(id)) {
+                    candidates[id]?.let { candidate ->
+                        rejected.getOrPut(id, ::mutableListOf) += candidate
+                        llmLogger.warn("Rejected duplicate localized profession $id")
+                    } ?: llmLogger.warn("LLM repair response has no usable localized profession $id")
+                }
+                progress.report(detail)
+            }
+        }
+
+        val missingIds = store.snapshot().let { current -> ids.filterNot { current.hasProfession(it) } }
+        check(missingIds.isEmpty()) { "Incomplete uk/en professions: ${missingIds.take(MAX_ERROR_IDS)}" }
+        progress.complete(detail)
+    }
+
+    private suspend fun generateDreamBatch(
+        world: BoardGeneration,
+        batch: DreamBatch,
+        store: Texts,
+        progress: Progress,
+    ) {
+        val ids = batch.items.map { it.value.id }
+        if (store.snapshot().hasDreams(ids)) return
+        val detail = "dreams ${batch.index + 1}/${batch.count}"
+        val slots = batch.items.associate { (index, dream) -> index + 1 to dream }
+        val rejected = mutableMapOf<Int, MutableList<Map<String, CardText>>>()
+
+        repeat(MAX_TEXT_BATCH_ATTEMPTS + MAX_REPAIR_BATCH_ATTEMPTS) { attempt ->
+            val current = store.snapshot()
+            val missing = slots.filterValues { !current.hasDream(it.id) }
+            if (missing.isEmpty()) return@repeat
+            val answer = chat.complete(
+                system = systemPrompt(),
+                user = dreamPrompt(
+                    world = world,
+                    briefs = missing.entries.joinToString("\n") { (slot, dream) ->
+                        "$slot. мрія вартістю ${dream.price}"
+                    },
+                    acceptedNames = current.dreamNameContext(),
+                    attempt = attempt,
+                    rejected = rejected,
+                ),
+            ) ?: return@repeat
+            val candidates = answer.parseLocalizedItems(expectedSingleId = missing.keys.singleOrNull())
+            val updated = store.acceptDreams(candidates, slots)
+            missing.filterValues { !updated.hasDream(it.id) }.forEach { (slot) ->
+                candidates[slot]?.let { candidate -> rejected.getOrPut(slot, ::mutableListOf) += candidate }
+            }
+            progress.report(detail)
+        }
+
+        val missingIds = store.snapshot().let { current -> ids.filterNot { current.hasDream(it) } }
+        check(missingIds.isEmpty()) { "Incomplete uk/en dreams: ${missingIds.take(MAX_ERROR_IDS)}" }
+        progress.complete(detail)
+    }
+
+    private fun professionBrief(card: ProfessionCard): String =
+        "${card.id}. ${if (card.gender == Gender.FEMALE) "жінка" else "чоловік"}, зарплата ${card.salary}"
+
+    private inner class Texts(existing: Map<String, GeneratedText>) {
+        private val lock = Mutex()
+        private var texts: Map<String, GeneratedText> =
+            generatedLocales.associateWith { existing[it] ?: GeneratedText() }
+
+        suspend fun snapshot(): Map<String, GeneratedText> = lock.withLock { texts }
+
+        suspend fun acceptCards(
+            type: BoardCardType,
+            candidates: Map<Int, Map<String, CardText>>,
+            allowedIds: Set<Int>,
+        ): Map<String, GeneratedText> = lock.withLock {
+            texts = texts.toMutableMap().apply { acceptCards(type, candidates, allowedIds) }
+            texts
+        }
+
+        suspend fun acceptProfessions(
+            candidates: Map<Int, Map<String, CardText>>,
+            allowedIds: Set<Int>,
+        ): Map<String, GeneratedText> = lock.withLock {
+            texts = texts.toMutableMap().apply { acceptProfessions(candidates, allowedIds) }
+            texts
+        }
+
+        suspend fun acceptDreams(
+            candidates: Map<Int, Map<String, CardText>>,
+            slots: Map<Int, Dream>,
+        ): Map<String, GeneratedText> = lock.withLock {
+            texts = texts.toMutableMap().apply { acceptDreams(candidates, slots) }
+            texts
+        }
+    }
+
+    private inner class Progress(
+        private val total: Int,
+        completedBatches: Int,
+        private val store: Texts,
+        private val onCheckpoint: suspend (Map<String, GeneratedText>, Int, Int, String) -> Unit,
+    ) {
+        private val completed = AtomicInteger(completedBatches)
+        private val lock = Mutex()
+
+        suspend fun report(detail: String) = lock.withLock {
+            onCheckpoint(store.snapshot(), completed.get(), total, detail)
+        }
+
+        suspend fun complete(detail: String) {
+            completed.incrementAndGet()
+            report(detail)
+        }
+
+        suspend fun finish() = lock.withLock {
+            onCheckpoint(store.snapshot(), total, total, "")
+        }
     }
 
     private fun validateComplete(
@@ -563,6 +771,7 @@ internal class LlmTextGenerator(
         generated: GeneratedText,
         cards: Map<BoardCardType, Map<Int, BoardCard>>,
         professions: List<ProfessionCard>,
+        dreams: List<Dream>,
     ) {
         cards.forEach { (type, deck) ->
             val texts = generated.cards[type].orEmpty()
@@ -576,10 +785,8 @@ internal class LlmTextGenerator(
                 "Repeated $locale descriptions for $type"
             }
         }
-        val cardIdentities = generated.cards.values
-            .flatMap { it.values }
-            .map { text -> text.name.lowercase() to text.description.lowercase() }
-        check(cardIdentities.distinct().size == cardIdentities.size) { "Repeated $locale cards" }
+        val descriptions = generated.cards.values.flatMap { deck -> deck.values.map { it.description.normalized() } }
+        check(descriptions.distinct().size == descriptions.size) { "Repeated $locale card descriptions" }
         check(generated.professions.keys == professions.map { it.id }.toSet()) {
             "Incomplete $locale profession names"
         }
@@ -595,6 +802,14 @@ internal class LlmTextGenerator(
         }
         check(generated.professionDescriptions.values.map { it.lowercase() }.distinct().size == professions.size) {
             "Repeated $locale profession descriptions"
+        }
+        check(generated.dreams.keys == dreams.map { it.id }.toSet()) { "Incomplete $locale dreams" }
+        check(generated.dreams.values.all { it.isUsable() }) { "Empty $locale dream text" }
+        check(generated.dreams.values.map { it.name.normalized() }.distinct().size == dreams.size) {
+            "Repeated $locale dream names"
+        }
+        check(generated.dreams.values.map { it.description.normalized() }.distinct().size == dreams.size) {
+            "Repeated $locale dream descriptions"
         }
     }
 
@@ -646,6 +861,28 @@ internal class LlmTextGenerator(
         appendAcceptedNames(acceptedNames)
         appendRetryInstructions(attempt, rejected)
         append("Професії:\n")
+        append(briefs)
+    }
+
+    private fun dreamPrompt(
+        world: BoardGeneration,
+        briefs: String,
+        acceptedNames: List<String>,
+        attempt: Int,
+        rejected: Map<Int, List<Map<String, CardText>>>,
+    ) = buildString {
+        append(worldPrompt(world))
+        append("Створи унікальну назву та опис великої мрії для кожного рядка. ")
+        append("Мрія — це не актив і не бізнес, а те, заради чого гравець виходить із щурячих перегонів: ")
+        append("вчинок, місце або справа життя, доречні цьому світу. ")
+        append("Ціна показує масштаб мрії: чим дорожча, тим величніша. ")
+        append("Опис до 140 символів пояснює, що саме гравець отримує. ")
+        append("Не повторюй назви чи описи. ")
+        append("Поверни рівно по одному об'єкту для кожного переданого ID. ")
+        append("Поля uk та en мають передавати ту саму мрію відповідними мовами.\n")
+        appendAcceptedNames(acceptedNames)
+        appendRetryInstructions(attempt, rejected)
+        append("Мрії:\n")
         append(briefs)
     }
 
@@ -766,6 +1003,31 @@ internal class LlmTextGenerator(
         }
     }
 
+    private fun MutableMap<String, GeneratedText>.acceptDreams(
+        candidates: Map<Int, Map<String, CardText>>,
+        slots: Map<Int, Dream>,
+    ) {
+        candidates.forEach { (slot, localized) ->
+            val dream = slots[slot] ?: return@forEach
+            val unique = generatedLocales.all { locale ->
+                localized.getValue(locale).isUniqueDream(this, locale, dream.id)
+            }
+            if (!unique) return@forEach
+            generatedLocales.forEach { locale ->
+                val generated = getValue(locale)
+                this[locale] = generated.copy(dreams = generated.dreams + (dream.id to localized.getValue(locale)))
+            }
+        }
+    }
+
+    private fun CardText.isUniqueDream(
+        texts: Map<String, GeneratedText>,
+        locale: String,
+        id: String,
+    ): Boolean = texts.getValue(locale).dreams.none { (existingId, existing) ->
+        existingId != id && existing.collidesWith(this)
+    }
+
     private fun MutableMap<String, GeneratedText>.acceptProfessions(
         candidates: Map<Int, Map<String, CardText>>,
         allowedIds: Set<Int>,
@@ -785,9 +1047,13 @@ internal class LlmTextGenerator(
         locale: String,
         type: BoardCardType,
         id: Int,
-    ): Boolean = texts.getValue(locale).cards.none { (existingType, deck) ->
-        deck.any { (existingId, existing) ->
-            (existingType != type || existingId != id) && existing.collidesWith(this)
+    ): Boolean {
+        val decks = texts.getValue(locale).cards
+        val uniqueInDeck = decks[type].orEmpty().none { (existingId, existing) ->
+            existingId != id && existing.collidesWith(this)
+        }
+        return uniqueInDeck && decks.none { (existingType, deck) ->
+            existingType != type && deck.values.any { it.description.normalized() == description.normalized() }
         }
     }
 
@@ -837,20 +1103,26 @@ internal class LlmTextGenerator(
 
     private fun Map<String, GeneratedText>.hasProfessions(ids: List<Int>): Boolean = ids.all { hasProfession(it) }
 
-    private fun Map<String, GeneratedText>.snapshot(): Map<String, GeneratedText> =
-        generatedLocales.associateWith { getValue(it) }
+    private fun Map<String, GeneratedText>.hasDream(id: String): Boolean = generatedLocales.all { locale ->
+        this[locale]?.dreams?.get(id)?.isUsable() == true
+    }
 
-    private fun Map<String, GeneratedText>.cardNameContext(preferredType: BoardCardType): List<String> {
-        val orderedTypes = listOf(preferredType) + BoardCardType.entries.filterNot { it == preferredType }
-        return orderedTypes.flatMap { type ->
-            val ids = generatedLocales.flatMap { locale ->
-                this[locale]?.cards?.get(type)?.keys.orEmpty()
-            }.distinct().sorted()
-            ids.mapNotNull { id ->
-                localizedNameContext { locale -> this[locale]?.cards?.get(type)?.get(id)?.name }
-                    ?.let { names -> "${type.name}: $names" }
-            }
-        }.take(MAX_ACCEPTED_CARD_NAMES_IN_PROMPT)
+    private fun Map<String, GeneratedText>.hasDreams(ids: List<String>): Boolean = ids.all { hasDream(it) }
+
+    private fun Map<String, GeneratedText>.dreamNameContext(): List<String> {
+        val ids = generatedLocales.flatMap { locale -> this[locale]?.dreams?.keys.orEmpty() }.distinct().sorted()
+        return ids.mapNotNull { id ->
+            localizedNameContext { locale -> this[locale]?.dreams?.get(id)?.name }
+        }.takeLast(MAX_ACCEPTED_PROFESSION_NAMES_IN_PROMPT)
+    }
+
+    private fun Map<String, GeneratedText>.cardNameContext(type: BoardCardType): List<String> {
+        val ids = generatedLocales.flatMap { locale ->
+            this[locale]?.cards?.get(type)?.keys.orEmpty()
+        }.distinct().sorted()
+        return ids.mapNotNull { id ->
+            localizedNameContext { locale -> this[locale]?.cards?.get(type)?.get(id)?.name }
+        }.takeLast(MAX_ACCEPTED_CARD_NAMES_IN_PROMPT)
     }
 
     private fun Map<String, GeneratedText>.professionNameContext(): List<String> {
@@ -885,6 +1157,12 @@ private data class ProfessionBatch(
     val items: List<ProfessionCard>,
 )
 
+private data class DreamBatch(
+    val index: Int,
+    val count: Int,
+    val items: List<IndexedValue<Dream>>,
+)
+
 private fun CardText.isUsable(): Boolean = name.isNotBlank() && description.isNotBlank()
 
 private fun CardText.collidesWith(other: CardText): Boolean =
@@ -897,6 +1175,7 @@ private const val MAX_LLM_UNAVAILABLE_ATTEMPTS = 3
 private const val UNAVAILABLE_RETRY_DELAY_MILLIS = 2_000L
 private const val MAX_ERROR_MESSAGE_LENGTH = 300
 private const val MAX_LLM_FALLBACKS = 3
+private const val MAX_POOL_WAIT_MILLIS = 5 * 60 * 1_000L
 private const val MAX_TEXT_BATCH_ATTEMPTS = 3
 private const val MAX_REPAIR_BATCH_ATTEMPTS = 4
 private const val REPAIR_BATCH_SIZE = 4
@@ -979,7 +1258,11 @@ private fun BoardCard.brief(shareNames: Map<String, String>): String = when (thi
     is BoardCard.MediumBusiness -> "можна купити середній бізнес за $price; він додає регулярний дохід $profit"
     is BoardCard.BigBusiness -> "можна купити великий бізнес за $price; він додає регулярний дохід $profit"
     is BoardCard.Shopping -> "можна купити ${shopType.promptAsset()} за $price; покупка додає один такий актив"
-    is BoardCard.Expenses -> "обов'язкова витрата $price лише для гравців за умовою: ${payer.promptRule()}"
+    is BoardCard.Expenses -> if (grantsAnimal) {
+        "гравець підбирає бродячу або врятовану тварину: платить $price і назавжди отримує домашню тварину, за яку далі щоходу йдуть витрати на утримання"
+    } else {
+        "обов'язкова витрата $price лише для гравців за умовою: ${payer.promptRule()}"
+    }
     is BoardCard.Deputy -> if (corrupt) {
         "продажний посадовець приєднується до гравця як депутат"
     } else {
@@ -1013,6 +1296,7 @@ private fun ShopType.promptAsset(): String = when (this) {
     ShopType.APARTMENT -> "квартиру"
     ShopType.YACHT -> "яхту"
     ShopType.FLY -> "літак"
+    ShopType.ANIMAL -> "домашню тварину"
 }
 
 private fun PayerType.promptRule(): String = when (this) {

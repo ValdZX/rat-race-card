@@ -2,23 +2,28 @@ package ua.vald_zx.game.rat.race.server
 
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.serialization.json.Json
+import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.GeneratedBalance
 import ua.vald_zx.game.rat.race.card.shared.Config
 import ua.vald_zx.game.rat.race.card.shared.OuterCircleConditions
+import ua.vald_zx.game.rat.race.card.shared.PlaceType
+import ua.vald_zx.game.rat.race.card.shared.ShopType
 import ua.vald_zx.game.rat.race.card.shared.VictoryConditions
+import ua.vald_zx.game.rat.race.card.shared.dreamSlotIds
 import ua.vald_zx.game.rat.race.card.shared.generatedLocales
+import ua.vald_zx.game.rat.race.card.shared.shopTiers
 
 internal class LlmBalanceGenerator(
     private val chat: ChatCompletion = LlmSettings.balanceChat(),
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun generate(world: BoardGeneration): GeneratedBalance {
+    suspend fun generate(world: BoardGeneration, deckSizes: Map<BoardCardType, Int>): GeneratedBalance {
         var lastError: Throwable? = null
         repeat(MAX_BALANCE_ATTEMPTS) { attempt ->
-            val answer = chat.complete(systemPrompt(), userPrompt(world, lastError?.message))
+            val answer = chat.complete(systemPrompt(), userPrompt(world, deckSizes, lastError?.message))
             if (answer == null) {
                 lastError = IllegalStateException("LLM did not return a balance")
                 balanceLogger.warn("Balance attempt ${attempt + 1} returned no response")
@@ -58,14 +63,27 @@ internal class LlmBalanceGenerator(
         append(" Згенеруй унікальні компанії цього світу: стабільний ASCII id, короткий тикер і природні назви всіма вказаними мовами.")
     }
 
-    private fun userPrompt(world: BoardGeneration, previousError: String?) = buildString {
-        append("Тематика: ${world.theme}.\n")
-        append("Місцевість: ${world.locality}.\n")
-        append("Епоха: ${world.epoch}.\n")
+    private fun userPrompt(
+        world: BoardGeneration,
+        deckSizes: Map<BoardCardType, Int>,
+        previousError: String?,
+    ) = buildString {
+        val described = listOfNotNull(
+            world.theme.ifBlank { null }?.let { "Тематика: $it." },
+            world.locality.ifBlank { null }?.let { "Місцевість: $it." },
+            world.epoch.ifBlank { null }?.let { "Епоха: $it." },
+        )
+        if (described.isEmpty()) {
+            appendLine("Світ: звичайне сучасне місто.")
+        } else {
+            described.forEach(::appendLine)
+        }
         append("Seed світу: ${world.seed}.\n")
         append("Валюта, масштаби зарплат, цін, ділянок, пакетів акцій і прибутків мають природно відповідати цьому світу.\n")
         append(GAME_MECHANICS)
         append(boardLayoutPrompt())
+        append(tempoPrompt())
+        append(deckSizesPrompt(deckSizes))
         append(BALANCE_REQUIREMENTS)
         previousError?.takeIf { it.isNotBlank() }?.let { error ->
             append("Попередню відповідь відхилено: ${error.substringBefore('\n')}. Виправ цю помилку в новій повній відповіді.\n")
@@ -93,6 +111,17 @@ internal fun GeneratedBalance.validate() {
         rentPercentages.max() + foodPercentages.max() + clothPercentages.max() +
                 transportPercentages.max() + phonePercentages.max() < 95
     ) { "Profession expenses leave no positive cash flow" }
+    val poorestSalary = salaries.min()
+    val heaviestExpenses = listOf(
+        rentPercentages,
+        foodPercentages,
+        clothPercentages,
+        transportPercentages,
+        phonePercentages,
+    ).sumOf { percentages -> poorestSalary.expenseShare(percentages.max()) }
+    check(poorestSalary > heaviestExpenses) {
+        "The lowest salary $poorestSalary does not cover its $heaviestExpenses of expenses"
+    }
 
     smallBusinessPrices.requireAmounts("smallBusinessPrices")
     mediumBusinessPrices.requireAmounts("mediumBusinessPrices")
@@ -103,7 +132,15 @@ internal fun GeneratedBalance.validate() {
     mediumBusinessReturnPercentages.requireRange("mediumBusinessReturnPercentages", 1L..100L)
     bigBusinessReturnPercentages.requireRange("bigBusinessReturnPercentages", 1L..60L)
 
-    shoppingPrices.requireAmounts("shoppingPrices")
+    check(shoppingPrices.keys == ShopType.entries.toSet()) { "shoppingPrices misses a shop type" }
+    check(shopWeights.keys == ShopType.entries.toSet()) { "shopWeights misses a shop type" }
+    shoppingPrices.forEach { (type, prices) -> prices.requireAmounts("shoppingPrices[$type]") }
+    shopWeights.values.toList().requireRange("shopWeights", 1..10_000)
+    val tierMedians = shopTiers.map { type -> shoppingPrices.getValue(type).median() }
+    check(tierMedians.zipWithNext().all { (cheaper, dearer) -> cheaper < dearer }) {
+        "Shop tiers must grow in price in the order ${shopTiers.joinToString()}"
+    }
+
     expensePrices.requireAmounts("expensePrices")
     chancePrices.requireAmounts("chancePrices")
     eventPrices.requireAmounts("eventPrices")
@@ -132,16 +169,23 @@ internal fun GeneratedBalance.validate() {
     shareCounts.requireAmounts("shareCounts")
     businessExtensionProfits.requireAmounts("businessExtensionProfits")
     landAreas.requireAmounts("landAreas")
+    landPricePerUnit.requireAmounts("landPricePerUnit")
+    eventLandPricePercentages.requireRange("eventLandPricePercentages", 30L..180L)
+    val dearestLandSale = landPricePerUnit.max() * eventLandPricePercentages.max() / 100
+    check(dearestLandSale <= landPricePerUnit.min() * MAX_LAND_SPREAD) {
+        "Land speculation is too profitable: $dearestLandSale per unit against ${landPricePerUnit.min()} to buy"
+    }
     corruptBusinessPrices.requireAmounts("corruptBusinessPrices")
     corruptBusinessReturnPercentages.requireRange("corruptBusinessReturnPercentages", 1L..500L)
     corruptOneTimeReturnPercentages.requireRange("corruptOneTimeReturnPercentages", 100L..5_000L)
     corruptBusinessDeputies.requireRange("corruptBusinessDeputies", 1..20)
-    corruptLandPrices.requireAmounts("corruptLandPrices")
+    corruptLandPricePerUnit.requireAmounts("corruptLandPricePerUnit")
     corruptLandAreas.requireAmounts("corruptLandAreas")
     corruptLandDeputies.requireRange("corruptLandDeputies", 1..20)
     check(corruptDeputyPercentage in 1..99) { "corruptDeputyPercentage is invalid" }
     check(corruptOneTimePercentage in 1..99) { "corruptOneTimePercentage is invalid" }
     check(forcedShareSalePercentage in 5..40) { "forcedShareSalePercentage is invalid" }
+    check(strayAnimalPercentage in 1..30) { "strayAnimalPercentage is invalid" }
     check(depositRate in 1..20) { "depositRate is invalid" }
     check(loanRate in 1..50) { "loanRate is invalid" }
     check(listOf(
@@ -151,6 +195,7 @@ internal fun GeneratedBalance.validate() {
         houseRecurringCost,
         yachtRecurringCost,
         planeRecurringCost,
+        animalRecurringCost,
         marriageCost,
         childBenefit,
     ).all { it in 1..MAX_GENERATED_AMOUNT }) { "player economy values are invalid" }
@@ -167,6 +212,14 @@ internal fun GeneratedBalance.validate() {
     }
     check(victoryMinimumAccountBalance > outerCircleMinimumAccountBalance) {
         "Victory balance must exceed the outer-circle balance"
+    }
+    check(dreamMinPrice in 1..MAX_GENERATED_AMOUNT) { "dreamMinPrice is invalid" }
+    check(dreamMaxPrice in 1..MAX_GENERATED_AMOUNT) { "dreamMaxPrice is invalid" }
+    check(dreamMaxPrice - dreamMinPrice >= dreamSlotIds.size) {
+        "Dream prices leave no room for ${dreamSlotIds.size} distinct dreams"
+    }
+    check(dreamMinPrice <= victoryMinimumAccountBalance) {
+        "The cheapest dream costs more than the victory balance"
     }
 
     listOf(
@@ -208,8 +261,11 @@ internal fun GeneratedBalance.playerConfig() = Config(
     cottageCost = houseRecurringCost,
     yachtCost = yachtRecurringCost,
     flightCost = planeRecurringCost,
+    animalCost = animalRecurringCost,
     marriageCost = marriageCost,
 )
+
+private fun List<Long>.median(): Long = sorted()[size / 2]
 
 private fun GeneratedBalance.withoutDuplicateOptions(): GeneratedBalance = copy(
     salaries = salaries.distinct(),
@@ -224,7 +280,7 @@ private fun GeneratedBalance.withoutDuplicateOptions(): GeneratedBalance = copy(
     mediumBusinessReturnPercentages = mediumBusinessReturnPercentages.distinct(),
     bigBusinessPrices = bigBusinessPrices.distinct(),
     bigBusinessReturnPercentages = bigBusinessReturnPercentages.distinct(),
-    shoppingPrices = shoppingPrices.distinct(),
+    shoppingPrices = shoppingPrices.mapValues { (_, prices) -> prices.distinct() },
     expensePrices = expensePrices.distinct(),
     chancePrices = chancePrices.distinct(),
     eventPrices = eventPrices.distinct(),
@@ -233,10 +289,12 @@ private fun GeneratedBalance.withoutDuplicateOptions(): GeneratedBalance = copy(
     shareCounts = shareCounts.distinct(),
     businessExtensionProfits = businessExtensionProfits.distinct(),
     landAreas = landAreas.distinct(),
+    landPricePerUnit = landPricePerUnit.distinct(),
+    eventLandPricePercentages = eventLandPricePercentages.distinct(),
     corruptBusinessPrices = corruptBusinessPrices.distinct(),
     corruptBusinessReturnPercentages = corruptBusinessReturnPercentages.distinct(),
     corruptOneTimeReturnPercentages = corruptOneTimeReturnPercentages.distinct(),
-    corruptLandPrices = corruptLandPrices.distinct(),
+    corruptLandPricePerUnit = corruptLandPricePerUnit.distinct(),
     corruptLandAreas = corruptLandAreas.distinct(),
 )
 
@@ -259,6 +317,8 @@ private fun List<Int>.requireRange(name: String, range: IntRange) {
 }
 
 private const val MAX_BALANCE_ATTEMPTS = 3
+private const val AVERAGE_STEP = 3.5
+private const val MAX_LAND_SPREAD = 3
 private const val MAX_GENERATED_AMOUNT = 1_000_000_000L
 private val SHARE_ID_PATTERN = Regex("[a-z][a-z0-9_-]{1,31}")
 private val balanceLogger = KtorSimpleLogger("BalanceLlm")
@@ -270,6 +330,29 @@ private fun boardLayoutPrompt() = buildString {
             .sortedBy { it.key }
             .joinToString(", ") { (name, count) -> "$name=$count" }
         append("- ${layer.name}: ${layer.places.size} клітинок; $counts.\n")
+    }
+}
+
+private fun tempoPrompt() = buildString {
+    append("Темп гри, від якого залежить, чи окупляться ціни:\n")
+    append("- Гравець кидає один кубик 1..6, тобто в середньому проходить $AVERAGE_STEP клітинки за хід.\n")
+    BoardLayer.entries.forEach { layer ->
+        val salaryCount = layer.places.count { it == PlaceType.Salary }
+        val movesPerLap = (layer.places.size / AVERAGE_STEP).toInt()
+        val movesPerSalary = if (salaryCount > 0) (layer.places.size / salaryCount / AVERAGE_STEP).toInt() else 0
+        append("- ${layer.name}: повне коло за ~$movesPerLap ходів")
+        if (movesPerSalary > 0) append(", зарплата приблизно кожні $movesPerSalary ходів")
+        append(".\n")
+    }
+    append("- Гравець починає з нульовою готівкою, перший дохід — це зарплата.\n")
+    append("- Стартові ціни мають бути досяжними за кілька зарплат, інакше перші ходи будуть порожніми.\n")
+}
+
+private fun deckSizesPrompt(deckSizes: Map<BoardCardType, Int>) = buildString {
+    if (deckSizes.isEmpty()) return@buildString
+    append("Розміри колод цього столу — від них залежить, скільки разів ефект трапиться за партію:\n")
+    deckSizes.entries.sortedBy { it.key.name }.forEach { (type, size) ->
+        append("- ${type.name}: $size карток.\n")
     }
 }
 
@@ -297,6 +380,16 @@ private val BALANCE_REQUIREMENTS = """
 - Кожен share id відповідає regex [a-z][a-z0-9_-]{1,31}, використовує лише малі латинські літери, цифри, _ або -.
 - Кожен ticker має 2..8 символів без пробілів.
 - Кожен інший числовий масив: щонайменше 3 унікальні значення.
+- shoppingPrices і shopWeights мають ключі ANIMAL, AUTO, APARTMENT, HOUSE, YACHT, FLY — усі шість обов'язкові.
+- Медіани shoppingPrices мають строго зростати саме в порядку ANIMAL < AUTO < APARTMENT < HOUSE < YACHT < FLY.
+- Тварину купують у крамниці як помітну, але найдешевшу з покупок; вона додає animalRecurringCost щоходу.
+- landPricePerUnit — ціна ОДНІЄЇ одиниці площі. Загальна ціна ділянки = площа × ця ціна, тож вона має бути малою поряд із цінами бізнесів.
+- eventLandPricePercentages: 30..180 — за скільки відсотків від landPricePerUnit ринок викуповує одиницю площі. Значення нижче 100 — збиток власника, вище 100 — вигідний продаж.
+- Продавати землю необов'язково, тож гравець завжди дочекається найкращої ціни: найдорожчий продаж (max landPricePerUnit × max eventLandPricePercentages) не може перевищувати найдешевшу купівлю більш ніж утричі. Тримай landPricePerUnit у вузькому діапазоні.
+- corruptLandPricePerUnit працює так само для корупційних ділянок.
+- strayAnimalPercentage: 1..30 — частка карток витрат, де гравець підбирає бродячу або врятовану тварину: він платить за неї й отримує тварину.
+- dreamMinPrice і dreamMaxPrice — межі цін ${dreamSlotIds.size} мрій; сервер рівномірно розподілить решту між ними.
+- dreamMinPrice не може перевищувати victoryMinimumAccountBalance, інакше мрію неможливо купити, а вона є умовою перемоги.
 - forcedShareSalePrices: щонайменше 3 унікальні додатні ціни; кожна нижча за найменше значення sharePrices.
 - rentPercentages: 10..30; foodPercentages: 5..20; clothPercentages: 2..10; transportPercentages: 2..15; phonePercentages: 1..5.
 - smallBusinessReturnPercentages: 1..200; mediumBusinessReturnPercentages: 1..100; bigBusinessReturnPercentages: 1..60.
@@ -305,7 +398,8 @@ private val BALANCE_REQUIREMENTS = """
 - corruptDeputyPercentage і corruptOneTimePercentage: 1..99.
 - forcedShareSalePercentage: 5..40; примусові продажі мають бути відчутними, але не домінувати в колоді.
 - depositRate: 1..20; loanRate: 1..50.
-- babyRecurringCost, carRecurringCost, apartmentRecurringCost, houseRecurringCost, yachtRecurringCost, planeRecurringCost, marriageCost і childBenefit — додатні суми, узгоджені із зарплатами та цінами активів.
+- Найменша зарплата має покривати свої витрати: сума rent+food+cloth+transport+phone від неї рахується у відсотках і округлюється до десятків, тож надто дрібні зарплати відхиляються.
+- babyRecurringCost, carRecurringCost, apartmentRecurringCost, houseRecurringCost, yachtRecurringCost, planeRecurringCost, animalRecurringCost, marriageCost і childBenefit — додатні суми, узгоджені із зарплатами та цінами активів.
 - Усі суми та кількості додатні й не перевищують 1000000000.
 - Усі ваги карток: 1..10000.
 - loanLimit, businessLimit, умови переходу на зовнішнє коло та перемоги мають відповідати масштабу цієї економіки.
@@ -322,18 +416,23 @@ private val BALANCE_SCHEMA = """
   "smallBusinessPrices":[...], "smallBusinessReturnPercentages":[...],
   "mediumBusinessPrices":[...], "mediumBusinessReturnPercentages":[...],
   "bigBusinessPrices":[...], "bigBusinessReturnPercentages":[...],
-  "shoppingPrices":[...], "expensePrices":[...], "chancePrices":[...], "eventPrices":[...],
+  "shoppingPrices":{"ANIMAL":[...],"AUTO":[...],"APARTMENT":[...],"HOUSE":[...],"YACHT":[...],"FLY":[...]},
+  "shopWeights":{"ANIMAL":10,"AUTO":30,"APARTMENT":25,"HOUSE":20,"YACHT":10,"FLY":5},
+  "expensePrices":[...], "chancePrices":[...], "eventPrices":[...],
   "shares":[{"id":"ascii_id","ticker":"CODE","names":{"uk":"Назва","en":"Name"}}],
   "sharePrices":[...], "forcedShareSalePrices":[...], "shareCounts":[...],
   "businessExtensionProfits":[...], "landAreas":[...],
+  "landPricePerUnit":[...], "eventLandPricePercentages":[...],
   "corruptBusinessPrices":[...], "corruptBusinessReturnPercentages":[...],
   "corruptOneTimeReturnPercentages":[...], "corruptBusinessDeputies":[...],
-  "corruptLandPrices":[...], "corruptLandAreas":[...], "corruptLandDeputies":[...],
+  "corruptLandPricePerUnit":[...], "corruptLandAreas":[...], "corruptLandDeputies":[...],
   "corruptDeputyPercentage":49, "corruptOneTimePercentage":30, "forcedShareSalePercentage":20,
+  "strayAnimalPercentage":10,
   "depositRate":2, "loanRate":10,
   "babyRecurringCost":300, "carRecurringCost":600, "apartmentRecurringCost":200,
   "houseRecurringCost":1000, "yachtRecurringCost":1500, "planeRecurringCost":5000,
-  "marriageCost":5000, "childBenefit":1000,
+  "animalRecurringCost":100, "marriageCost":5000, "childBenefit":1000,
+  "dreamMinPrice":1000000, "dreamMaxPrice":20000000,
   "chanceWeights":{"randomJob":30,"estate":25,"land":30,"shares":35,"corruptBusiness":13,"corruptLand":5},
   "eventWeights":{"land":26,"estate":15,"shares":45,"businessExtending":20,"reelection":2,"announcement":4},
   "loanLimit":10000, "businessLimit":10, "transportMovementBonusEnabled":true,

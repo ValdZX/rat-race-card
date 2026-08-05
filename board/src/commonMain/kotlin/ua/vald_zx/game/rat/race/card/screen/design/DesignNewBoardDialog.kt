@@ -53,8 +53,7 @@ fun DesignNewBoardDialog(
     } else {
         listOf(loanLimit, businessLimit, minimumCashFlow, minimumAccountBalance, victoryAccountBalance)
     }
-    val worldComplete = !generateCards || listOf(theme, locality, epoch).all { it.isNotBlank() }
-    val complete = name.isNotBlank() && amounts.none { it.isEmpty() } && worldComplete
+    val complete = name.isNotBlank() && amounts.none { it.isEmpty() }
 
     DesignDialog(
         title = stringResource(Res.string.new_table),

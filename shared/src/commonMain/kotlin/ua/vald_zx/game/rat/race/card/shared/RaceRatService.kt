@@ -164,6 +164,7 @@ interface RaceRatService {
     suspend fun dismissalConfirmed(business: Business)
     suspend fun sellingAllBusinessConfirmed(business: Business)
     suspend fun minusCash(price: Long)
+    suspend fun payExpenses(card: BoardCard.Expenses)
     suspend fun buyThing(card: BoardCard.Shopping)
     suspend fun changePosition(position: Int)
     suspend fun debugChangePosition(location: PlayerLocation)

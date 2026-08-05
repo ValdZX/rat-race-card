@@ -89,6 +89,7 @@ fun getGlobalEventBus(boardId: String): MutableSharedFlow<GlobalEvent> {
 fun Application.module() {
     install(Krpc)
     installCORS()
+    LlmSettings.logConfiguration()
     instanceScope.launch { BoardGenerationCoordinator.markPendingAsPaused() }
     monitor.subscribe(ApplicationStopping) {
         runBlocking {
