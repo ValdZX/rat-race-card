@@ -55,14 +55,12 @@ internal class LlmBalanceGenerator(
     }
 
     private fun systemPrompt() = buildString {
-        append("Ти геймдизайнер економічної настільної гри. ")
-        append("Створи цілісну економічну модель світу й відповідай лише одним JSON-об'єктом без markdown. ")
-        append("Усі значення мають бути цілими числами, додатними, різноманітними та придатними для тривалої гри. ")
-        append("Малий, середній і великий бізнес повинні утворювати три відчутні рівні капіталу. ")
-        append("Сума максимальних побутових відсотків має бути меншою за 95. ")
-        append("Ваги визначають відносну частоту типів карток і мають бути більшими за нуль.")
-        append(" Гра допускає доречний легкий гумор, тому назви компаній можуть бути дотепними й органічними для світу.")
-        append(" Згенеруй унікальні компанії цього світу: стабільний ASCII id, короткий тикер і природні назви всіма вказаними мовами.")
+        append("You design economic board games. Build a coherent economy for the described world. ")
+        append("Return one JSON object only, without markdown. All values must be positive, diverse integers suited to a long game. ")
+        append("Small, medium, and big businesses must form three distinct capital tiers. ")
+        append("The sum of the maximum household expense percentages must be below 95. ")
+        append("Weights are positive relative card frequencies. Light contextual humor is welcome in company names. ")
+        append("Generate unique world-specific companies with stable ASCII ids, short tickers, and natural names in every requested language.")
     }
 
     private fun userPrompt(
@@ -71,26 +69,26 @@ internal class LlmBalanceGenerator(
         previousError: String?,
     ) = buildString {
         val described = listOfNotNull(
-            world.theme.ifBlank { null }?.let { "Тематика: $it." },
-            world.locality.ifBlank { null }?.let { "Місцевість: $it." },
-            world.epoch.ifBlank { null }?.let { "Епоха: $it." },
+            world.theme.ifBlank { null }?.let { "Theme: $it." },
+            world.locality.ifBlank { null }?.let { "Location: $it." },
+            world.epoch.ifBlank { null }?.let { "Era: $it." },
         )
         if (described.isEmpty()) {
-            appendLine("Світ: звичайне сучасне місто.")
+            appendLine("World: an ordinary modern city.")
         } else {
             described.forEach(::appendLine)
         }
-        append("Seed світу: ${world.seed}.\n")
-        append("Валюта, масштаби зарплат, цін, ділянок, пакетів акцій і прибутків мають природно відповідати цьому світу.\n")
+        append("World seed: ${world.seed}.\n")
+        append("Currency and the scale of salaries, prices, land, share bundles, and profits must fit this world naturally.\n")
         append(GAME_MECHANICS)
         append(boardLayoutPrompt())
         append(tempoPrompt())
         append(deckSizesPrompt(deckSizes))
         append(BALANCE_REQUIREMENTS)
         previousError?.takeIf { it.isNotBlank() }?.let { error ->
-            append("Попередню відповідь відхилено: ${error.substringBefore('\n')}. Виправ цю помилку в новій повній відповіді.\n")
+            append("Previous response rejected: ${error.substringBefore('\n')}. Fix it in a new complete response.\n")
         }
-        append("Поверни всі поля цієї структури:\n")
+        append("Return every field in this structure:\n")
         append(BALANCE_SCHEMA)
     }
 
@@ -349,91 +347,91 @@ private val SHARE_ID_PATTERN = Regex("[a-z][a-z0-9_-]{1,31}")
 private val balanceLogger = KtorSimpleLogger("BalanceLlm")
 
 private fun boardLayoutPrompt() = buildString {
-    append("Фіксована структура поля, яку треба врахувати в частотах і сумах карток:\n")
+    append("Fixed board layout; account for it in card frequencies and amounts:\n")
     BoardLayer.entries.forEach { layer ->
         val counts = layer.places.groupingBy { it.name }.eachCount().entries
             .sortedBy { it.key }
             .joinToString(", ") { (name, count) -> "$name=$count" }
-        append("- ${layer.name}: ${layer.places.size} клітинок; $counts.\n")
+        append("- ${layer.name}: ${layer.places.size} spaces; $counts.\n")
     }
 }
 
 private fun tempoPrompt() = buildString {
-    append("Темп гри, від якого залежить, чи окупляться ціни:\n")
-    append("- Гравець кидає один кубик 1..6, тобто в середньому проходить $AVERAGE_STEP клітинки за хід.\n")
+    append("Game pace, which determines whether prices can pay off:\n")
+    append("- One 1..6 die moves a player $AVERAGE_STEP spaces per turn on average.\n")
     BoardLayer.entries.forEach { layer ->
         val salaryCount = layer.places.count { it == PlaceType.Salary }
         val movesPerLap = (layer.places.size / AVERAGE_STEP).toInt()
         val movesPerSalary = if (salaryCount > 0) (layer.places.size / salaryCount / AVERAGE_STEP).toInt() else 0
-        append("- ${layer.name}: повне коло за ~$movesPerLap ходів")
-        if (movesPerSalary > 0) append(", зарплата приблизно кожні $movesPerSalary ходів")
+        append("- ${layer.name}: one lap takes ~$movesPerLap turns")
+        if (movesPerSalary > 0) append(", salary roughly every $movesPerSalary turns")
         append(".\n")
     }
-    append("- Гравець починає з нульовою готівкою, перший дохід — це зарплата.\n")
-    append("- Стартові ціни мають бути досяжними за кілька зарплат, інакше перші ходи будуть порожніми.\n")
+    append("- Players start with no cash; salary is their first income.\n")
+    append("- Entry prices must be reachable within a few salaries so early turns are meaningful.\n")
 }
 
 private fun deckSizesPrompt(deckSizes: Map<BoardCardType, Int>) = buildString {
     if (deckSizes.isEmpty()) return@buildString
-    append("Розміри колод цього столу — від них залежить, скільки разів ефект трапиться за партію:\n")
+    append("Deck sizes for this board; they determine how often effects occur:\n")
     deckSizes.entries.sortedBy { it.key.name }.forEach { (type, size) ->
-        append("- ${type.name}: $size карток.\n")
+        append("- ${type.name}: $size cards.\n")
     }
 }
 
 private val GAME_MECHANICS = """
-Механіки, з якими баланс має бути узгоджений:
-- На внутрішньому колі гравець отримує зарплату, купує малий/середній бізнес, землю, нерухомість, речі й акції та сплачує загальні або умовні витрати.
-- Професія задає стать, зарплату й регулярні витрати; стать, шлюб, діти та володіння активами впливають на події й на те, хто платить умовну витрату.
-- Акції купують пакетами на картках Chance. Звичайна ринкова подія дозволяє продати будь-яку кількість або відмовитися.
-- Частина ринкових подій примусово продає всі акції вказаної компанії кожного власника без права відмовитися. forcedShareSalePrices завжди нижчі за будь-яку ціну купівлі з sharePrices; це збиток, але не обнулення ціни.
-- Корупційні угоди потребують депутатів. Корупційний бізнес дає або регулярний прибуток, або одну разову виплату, але не обидва ефекти одночасно.
-- Розширення бізнесу збільшує регулярний прибуток одного малого бізнесу. Перевибори змінюють склад депутатів.
-- Депозит дає depositRate відсотків доходу, кредит створює loanRate відсотків витрат. Діти, автомобілі, квартири, будинки, яхти й літаки додають відповідні регулярні витрати.
-- Клітинка шлюбу одружує гравця; чоловік сплачує marriageCost. Клітинка дитини додає дитину жінці або одруженому чоловіку, дає childBenefit і надалі збільшує регулярні витрати.
-- Розлучення знімає шлюб; чоловік також втрачає половину готівки й депозиту та дітей. Банкрутство забирає випадковий бізнес, відставка — роботу, відпочинок — два ходи.
-- Прохід повз Salary виплачує поточний грошовий потік. На клітинках Salary доступні фонди зі ставками 20%, 15%, 10% або 5%; на Start фонди капіталізуються, а при точному попаданні ставка дорівнює 30%.
-- Desire пропонує купити ще не придбану мрію; придбані мрії спільні для дошки й можуть бути умовою перемоги. TaxInspection наразі не має прямого фінансового ефекту.
-- Ризикові інвестиції мають фіксовані виплати: середній ризик x2, високий ризик x6. Ці множники врахуй у загальній складності економіки.
-- Перехід на зовнішнє коло та перемога залежать від згенерованих фінансових і майнових умов; значення мають робити шлях складним, але досяжним.
+Mechanics the balance must support:
+- On the inner circle, players receive salary; buy small/medium businesses, land, real estate, goods, and shares; and pay general or conditional expenses.
+- A profession defines gender, salary, and recurring expenses. Gender, marriage, children, and owned assets affect events and conditional payers.
+- Chance cards sell shares in bundles. A regular market event lets owners sell any quantity or decline.
+- Some market events force every owner to sell all shares of one company. forcedShareSalePrices are always below every sharePrices purchase price: a loss, but never zero.
+- Corrupt deals require deputies. A corrupt business yields either recurring profit or one immediate payout, never both.
+- Business extension raises one small business's recurring profit. Reelection changes the deputies.
+- Deposits yield depositRate percent income; loans add loanRate percent expense. Children, cars, apartments, houses, yachts, and planes add their recurring costs.
+- Marriage marries the player; a man pays marriageCost. Child adds a child to a woman or married man, pays childBenefit, and raises recurring expenses.
+- Divorce ends marriage; a man also loses half his cash and deposit plus his children. Bankruptcy removes a random business, resignation removes the job, and rest skips two turns.
+- Passing Salary pays current cash flow. Salary spaces offer funds at 20%, 15%, 10%, or 5%. Start capitalizes funds; landing exactly gives 30%.
+- Desire offers an unowned dream; purchased dreams are board-wide and may be required to win. TaxInspection currently has no direct financial effect.
+- Risk investments have fixed payouts: medium risk x2, high risk x6. Account for them in overall difficulty.
+- Generated financial and ownership conditions control outer-circle entry and victory. Make the path challenging but achievable.
 """.trimIndent() + "\n"
 
 private val BALANCE_REQUIREMENTS = """
-Обов'язкові обмеження:
-- salaries: щонайменше 10 унікальних сум.
-- shares: щонайменше 6 унікальних компаній; усі id, ticker, uk та en назви унікальні.
-- Кожен share id відповідає regex [a-z][a-z0-9_-]{1,31}, використовує лише малі латинські літери, цифри, _ або -.
-- Кожен ticker має 2..8 символів без пробілів.
-- Кожен інший числовий масив: щонайменше 3 унікальні значення.
-- shoppingPrices і shopWeights мають ключі ANIMAL, AUTO, APARTMENT, HOUSE, YACHT, FLY — усі шість обов'язкові.
-- Медіани shoppingPrices мають строго зростати саме в порядку ANIMAL < AUTO < APARTMENT < HOUSE < YACHT < FLY.
-- Тварину купують у крамниці як помітну, але найдешевшу з покупок; вона додає animalRecurringCost щоходу.
-- landPricePerUnit — ціна ОДНІЄЇ одиниці площі. Загальна ціна ділянки = площа × ця ціна, тож вона має бути малою поряд із цінами бізнесів.
-- eventLandPricePercentages: 30..180 — за скільки відсотків від landPricePerUnit ринок викуповує одиницю площі. Значення нижче 100 — збиток власника, вище 100 — вигідний продаж.
-- Продавати землю необов'язково, тож гравець завжди дочекається найкращої ціни: найдорожчий продаж (max landPricePerUnit × max eventLandPricePercentages / 100) не може перевищувати найдешевшу купівлю (min landPricePerUnit) більш ніж утричі. Тримай landPricePerUnit у вузькому діапазоні.
-- estatePrices — ціна одного об'єкта нерухомості на картці випадку. estateSalePercentages: 30..180 — за скільки відсотків від тієї ж бази ринкова подія викуповує об'єкт.
-- Те саме правило втричі діє й для нерухомості: max estatePrices × max estateSalePercentages / 100 <= min estatePrices × 3. Наприклад, якщо min estatePrices = 20000 і max estateSalePercentages = 140, тоді max estatePrices має бути не більше 42857.
-- randomJobProfits — разовий дохід від підробітку. Це дохід, а не ціна активу: тримай його помітно нижчим за estatePrices, інакше випадкова робота знецінить нерухомість.
-- corruptLandPricePerUnit працює так само для корупційних ділянок.
-- strayAnimalPercentage: 1..30 — частка карток витрат, де гравець підбирає бродячу або врятовану тварину: він платить за неї й отримує тварину.
-- dreamMinPrice і dreamMaxPrice — межі цін ${dreamSlotIds.size} мрій; сервер рівномірно розподілить решту між ними.
-- dreamMinPrice не може перевищувати victoryMinimumAccountBalance, інакше мрію неможливо купити, а вона є умовою перемоги.
-- forcedShareSalePrices: щонайменше 3 унікальні додатні ціни; кожна нижча за найменше значення sharePrices.
+Required constraints:
+- salaries: at least 10 unique amounts.
+- shares: at least 6 unique companies; every id, ticker, uk name, and en name is unique.
+- Each share id matches [a-z][a-z0-9_-]{1,31}: lowercase ASCII letters, digits, _ or - only.
+- Each ticker has 2..8 non-whitespace characters.
+- Every other numeric array has at least 3 unique values.
+- shoppingPrices and shopWeights contain all six keys: ANIMAL, AUTO, APARTMENT, HOUSE, YACHT, FLY.
+- shoppingPrices medians strictly increase in this order: ANIMAL < AUTO < APARTMENT < HOUSE < YACHT < FLY.
+- An animal is a meaningful but cheapest shop purchase and adds animalRecurringCost each turn.
+- landPricePerUnit is the price of ONE area unit. Total land price = area × unit price, so keep it low relative to businesses.
+- eventLandPricePercentages: 30..180, the market sale price as a percentage of landPricePerUnit. Below 100 is a loss; above 100 is profitable.
+- Land sales are optional, so max landPricePerUnit × max eventLandPricePercentages / 100 <= min landPricePerUnit × 3. Keep unit prices narrow.
+- estatePrices is one Chance-card property's purchase price. estateSalePercentages: 30..180, the market sale price as a percentage of the same base.
+- Real estate follows the same cap: max estatePrices × max estateSalePercentages / 100 <= min estatePrices × 3. Example: if min price is 20000 and max sale percentage is 140, max price is 42857.
+- randomJobProfits is immediate income, not an asset price. Keep it well below estatePrices so random jobs do not trivialize real estate.
+- corruptLandPricePerUnit works the same way for corrupt land.
+- strayAnimalPercentage: 1..30, the share of expense cards where the player pays for and adopts a stray or rescued animal.
+- dreamMinPrice and dreamMaxPrice bound ${dreamSlotIds.size} dreams; the server distributes the others evenly between them.
+- dreamMinPrice <= victoryMinimumAccountBalance, otherwise a required dream may be unaffordable.
+- forcedShareSalePrices: at least 3 unique positive prices, each below min sharePrices.
 - rentPercentages: 10..30; foodPercentages: 5..20; clothPercentages: 2..10; transportPercentages: 2..15; phonePercentages: 1..5.
 - smallBusinessReturnPercentages: 1..200; mediumBusinessReturnPercentages: 1..100; bigBusinessReturnPercentages: 1..60.
 - corruptBusinessReturnPercentages: 1..500; corruptOneTimeReturnPercentages: 100..5000.
-- corruptBusinessDeputies і corruptLandDeputies: 1..20.
-- corruptDeputyPercentage і corruptOneTimePercentage: 1..99.
-- forcedShareSalePercentage: 5..40; примусові продажі мають бути відчутними, але не домінувати в колоді.
+- corruptBusinessDeputies and corruptLandDeputies: 1..20.
+- corruptDeputyPercentage and corruptOneTimePercentage: 1..99.
+- forcedShareSalePercentage: 5..40; forced sales should matter without dominating the deck.
 - depositRate: 1..20; loanRate: 1..50.
-- Найменша зарплата має покривати свої витрати: сума rent+food+cloth+transport+phone від неї рахується у відсотках і округлюється до десятків, тож надто дрібні зарплати відхиляються.
-- babyRecurringCost, carRecurringCost, apartmentRecurringCost, houseRecurringCost, yachtRecurringCost, planeRecurringCost, animalRecurringCost, marriageCost і childBenefit — додатні суми, узгоджені із зарплатами та цінами активів.
-- Усі суми та кількості додатні й не перевищують 1000000000.
-- Усі ваги карток: 1..10000.
-- loanLimit, businessLimit, умови переходу на зовнішнє коло та перемоги мають відповідати масштабу цієї економіки.
+- The lowest salary must cover rent+food+cloth+transport+phone, calculated as percentages and rounded to tens; tiny salaries may fail.
+- babyRecurringCost, carRecurringCost, apartmentRecurringCost, houseRecurringCost, yachtRecurringCost, planeRecurringCost, animalRecurringCost, marriageCost, and childBenefit are positive amounts consistent with salaries and asset prices.
+- All amounts and counts are positive and <= 1000000000.
+- All card weights: 1..10000.
+- loanLimit, businessLimit, outer-circle conditions, and victory conditions must fit this economy's scale.
 - businessLimit: 1..1000.
-- victoryMinimumAccountBalance має бути більшим за outerCircleMinimumAccountBalance.
-- Булеві умови володіння й бонус руху обери так, щоб партія була різноманітною, але прохідною.
+- victoryMinimumAccountBalance > outerCircleMinimumAccountBalance.
+- Choose ownership booleans and the movement bonus for a varied but achievable game.
 """.trimIndent() + "\n"
 
 private val BALANCE_SCHEMA = """
@@ -448,7 +446,7 @@ private val BALANCE_SCHEMA = """
   "shopWeights":{"ANIMAL":10,"AUTO":30,"APARTMENT":25,"HOUSE":20,"YACHT":10,"FLY":5},
   "expensePrices":[...], "randomJobProfits":[...],
   "estatePrices":[...], "estateSalePercentages":[...],
-  "shares":[{"id":"ascii_id","ticker":"CODE","names":{"uk":"Назва","en":"Name"}}],
+  "shares":[{"id":"ascii_id","ticker":"CODE","names":{"uk":"...","en":"..."}}],
   "sharePrices":[...], "forcedShareSalePrices":[...], "shareCounts":[...],
   "businessExtensionProfits":[...], "landAreas":[...],
   "landPricePerUnit":[...], "eventLandPricePercentages":[...],

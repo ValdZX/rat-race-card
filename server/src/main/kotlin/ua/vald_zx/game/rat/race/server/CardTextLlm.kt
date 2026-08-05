@@ -833,7 +833,7 @@ internal class LlmTextGenerator(
                 user = dreamPrompt(
                     world = world,
                     briefs = missing.entries.joinToString("\n") { (slot, dream) ->
-                        "$slot. мрія вартістю ${dream.price}"
+                        "$slot. dream priced at ${dream.price}"
                     },
                     acceptedNames = current.dreamNameContext(),
                     attempt = attempt,
@@ -859,12 +859,12 @@ internal class LlmTextGenerator(
         card: BoardCard,
         shareNames: Map<String, String>,
     ): String {
-        val angle = card.narrativeAngle(world, id)?.let { "; кут подачі — $it" }.orEmpty()
+        val angle = card.narrativeAngle(world, id)?.let { "; narrative angle: $it" }.orEmpty()
         return "$id. ${card.brief(shareNames)}$angle"
     }
 
     private fun professionBrief(card: ProfessionCard): String =
-        "${card.id}. ${if (card.gender == Gender.FEMALE) "жінка" else "чоловік"}, зарплата ${card.salary}"
+        "${card.id}. ${if (card.gender == Gender.FEMALE) "woman" else "man"}, salary ${card.salary}"
 
     private inner class Texts(existing: Map<String, GeneratedText>) {
         private val lock = Mutex()
@@ -985,12 +985,10 @@ internal class LlmTextGenerator(
     }
 
     private fun systemPrompt() = buildString {
-        append("Ти пишеш тексти карток для настільної економічної гри. ")
-        append("Відповідай виключно JSON-масивом об'єктів ")
-        append("{\"id\":число,\"uk\":{\"name\":рядок,\"description\":рядок},")
-        append("\"en\":{\"name\":рядок,\"description\":рядок}}, ")
-        append("без пояснень і без markdown. ")
-        append("Для кожного ID обов'язково поверни природні українські та англійські тексти.")
+        append("Write card text for an economic board game. Return only a JSON array of objects: ")
+        append("{\"id\":number,\"uk\":{\"name\":string,\"description\":string},")
+        append("\"en\":{\"name\":string,\"description\":string}}. ")
+        append("No explanations or markdown. For every ID, return natural Ukrainian and English text.")
     }
 
     private fun deckPrompt(
@@ -1002,49 +1000,47 @@ internal class LlmTextGenerator(
         rejected: Map<Int, List<Map<String, CardText>>>,
     ) = buildString {
         append(worldPrompt(world))
-        append("Створи унікальну назву та унікальний опис (до 140 символів) для кожної картки колоди «${deckName(type)}». ")
-        append("У цій грі доречний легкий дотепний гумор, пов'язаний зі світом і ситуацією картки. ")
-        append("Name відображається гравцю як головний заголовок, тому він має самостійно й конкретно називати об'єкт, персонажа або подію, а не лише тип колоди. ")
-        append("Не повторюй сюжети, назви чи описи. ")
+        append("Create a unique name and description (max 140 characters) for each ${deckName(type)} card. ")
+        append("Use light, clever humor tied to the world and card situation. ")
+        append("The name is the main visible title: it must specifically identify an object, character, or event, not merely the deck type. ")
+        append("Do not repeat plots, names, or descriptions. ")
         when (type) {
             BoardCardType.SmallBusiness,
             BoardCardType.MediumBusiness,
             BoardCardType.BigBusiness -> {
-                append("Назва конкретно називає бізнес, а description пояснює, чим він займається і звідки отримує дохід у цьому світі. ")
-                append("Ціну й дохід інтерфейс показує окремо; не роби опис лише переказом цих чисел. ")
+                append("Name the specific business; describe what it does and how it earns income in this world. ")
+                append("The UI shows price and income separately; do not merely restate them. ")
             }
 
             BoardCardType.Shopping -> {
-                append("Назва конкретно називає придбання, а description пояснює, що саме купують і навіщо воно потрібне у цьому світі. ")
-                append("Тип активу й ціну інтерфейс показує окремо; не підміняй ними сюжет покупки. ")
+                append("Name the specific purchase; describe what is bought and why it matters in this world. ")
+                append("The UI shows asset type and price separately; they are not the purchase's story. ")
             }
 
             BoardCardType.Expenses -> {
-                append("Для витрат name коротко й конкретно називає предмет оплати, послугу або подію. ")
-                append("Description пояснює, що сталося і за що сплачують. ")
-                append("Сума та умова платника вже показані на картці окремо: не повторюй їх і не замінюй ними причину витрати. ")
-                append("Для картки з твариною обов'язково поясни порятунок або прихисток тварини та подальше утримання. ")
+                append("Name the specific paid item, service, or event; describe what happened and why payment is due. ")
+                append("The UI shows amount and payer condition separately; do not repeat them or use them as the reason. ")
+                append("For an animal card, explain its rescue or adoption and ongoing care. ")
             }
 
             BoardCardType.Chance -> {
-                append("Назва конкретно називає можливість, підробіток, актив або корупційну схему. ")
-                append("Description спочатку пояснює ситуацію, а потім природно передає точний ефект із рядка. ")
+                append("Name the specific opportunity, side job, asset, or corrupt scheme. ")
+                append("Describe the situation, then convey the row's exact effect naturally. ")
             }
 
             BoardCardType.EventStore -> {
-                append("Назва є конкретним заголовком ринкової новини, а description пояснює її причину та точний вплив на гравців або активи. ")
+                append("Use a specific market-news headline; describe its cause and exact impact on players or assets. ")
             }
 
             BoardCardType.Deputy -> {
-                append("Назва конкретно називає посадовця, роль або скандал, а description пояснює ситуацію та чесний чи корупційний наслідок. ")
+                append("Name a specific official, role, or scandal; describe the situation and its honest or corrupt outcome. ")
             }
         }
-        append("Механіка в кожному рядку є точною й обов'язковою: не додавай нових чисел, умов або наслідків. ")
-        append("Поверни рівно по одному об'єкту для кожного переданого ID. ")
-        append("Поля uk та en мають передавати той самий зміст відповідними мовами.\n")
+        append("Each row's mechanic is exact and mandatory. Add no numbers, conditions, or effects. ")
+        append("Return exactly one object per supplied ID. uk and en must convey the same meaning in their respective languages.\n")
         appendAcceptedNames(acceptedNames)
         appendRetryInstructions(attempt, rejected)
-        append("Картки:\n")
+        append("Cards:\n")
         append(briefs)
     }
 
@@ -1056,18 +1052,16 @@ internal class LlmTextGenerator(
         rejected: Map<Int, List<Map<String, CardText>>>,
     ) = buildString {
         append(worldPrompt(world))
-        append("Створи унікальну назву й опис професії для кожного рядка. ")
-        append("У цій грі доречний легкий дотепний гумор, пов'язаний із професією та світом. ")
-        append("Name відображається як заголовок картки й конкретно називає професію або посаду, а не категорію «Професія». ")
-        append("Назва має відповідати статі, світу та розміру зарплати. ")
-        append("Стать є ігровою ознакою: вона впливає на шлюб, дітей, розлучення й умовні витрати, тому не роби професію гендерно суперечливою. ")
-        append("Опис до 140 символів має пояснювати щоденну роль і джерело зарплати у вказаних темі, місцевості й епосі. ")
-        append("Не повторюй назви чи описи. ")
-        append("Поверни рівно по одному об'єкту для кожного переданого ID. ")
-        append("Поля uk та en мають передавати ту саму професію відповідними мовами.\n")
+        append("Create a unique profession name and description for each row. ")
+        append("Use light, clever humor tied to the profession and world. ")
+        append("The name is the card title and must identify a specific profession or position, not the category 'Profession'. ")
+        append("It must fit the gender, world, and salary level. Gender affects marriage, children, divorce, and conditional expenses, so avoid contradictions. ")
+        append("The description (max 140 characters) explains the daily role and salary source in the given theme, location, and era. ")
+        append("Do not repeat names or descriptions. Return exactly one object per supplied ID. ")
+        append("uk and en must describe the same profession in their respective languages.\n")
         appendAcceptedNames(acceptedNames)
         appendRetryInstructions(attempt, rejected)
-        append("Професії:\n")
+        append("Professions:\n")
         append(briefs)
     }
 
@@ -1079,24 +1073,22 @@ internal class LlmTextGenerator(
         rejected: Map<Int, List<Map<String, CardText>>>,
     ) = buildString {
         append(worldPrompt(world))
-        append("Створи унікальну назву та опис великої мрії для кожного рядка. ")
-        append("Мрія — це не актив і не бізнес, а те, заради чого гравець виходить із щурячих перегонів: ")
-        append("вчинок, місце або справа життя, доречні цьому світу. ")
-        append("Name відображається як заголовок і конкретно називає мету, а не категорію «Мрія». ")
-        append("Ціна показує масштаб мрії: чим дорожча, тим величніша. ")
-        append("Опис до 140 символів пояснює, що саме гравець здійснює або створює, не повторюючи ціну. ")
-        append("Не повторюй назви чи описи. ")
-        append("Поверни рівно по одному об'єкту для кожного переданого ID. ")
-        append("Поля uk та en мають передавати ту саму мрію відповідними мовами.\n")
+        append("Create a unique grand-dream name and description for each row. ")
+        append("A dream is not an asset or business, but why a player escapes the rat race: a deed, place, or life's work suited to this world. ")
+        append("The name is the title and must identify a specific goal, not the category 'Dream'. ")
+        append("Price conveys scale: more expensive dreams are grander. ")
+        append("The description (max 140 characters) explains what the player accomplishes or creates without repeating the price. ")
+        append("Do not repeat names or descriptions. Return exactly one object per supplied ID. ")
+        append("uk and en must describe the same dream in their respective languages.\n")
         appendAcceptedNames(acceptedNames)
         appendRetryInstructions(attempt, rejected)
-        append("Мрії:\n")
+        append("Dreams:\n")
         append(briefs)
     }
 
     private fun StringBuilder.appendAcceptedNames(names: List<String>) {
         if (names.isEmpty()) return
-        append("Уже використані назви, які не можна повторювати:\n")
+        append("Already used names; do not repeat them:\n")
         names.forEach { name -> append("- $name\n") }
     }
 
@@ -1105,11 +1097,10 @@ internal class LlmTextGenerator(
         rejected: Map<Int, List<Map<String, CardText>>>,
     ) {
         if (attempt == 0) return
-        append("Це повторна спроба: попередня відповідь не пройшла перевірку або не містила всі ID. ")
-        append("Поверни всі передані нижче ID й створи для них нові варіанти. ")
-        append("Скопіюй кожен числовий ID без змін; не замінюй його на 1 і не пропускай поля uk/en, name або description.\n")
+        append("Retry: the prior response failed validation or omitted IDs. Create new variants for every ID below. ")
+        append("Copy each numeric ID exactly; do not replace it with 1 or omit uk/en, name, or description.\n")
         if (rejected.isEmpty()) return
-        append("Не повторюй ці відхилені назви й описи:\n")
+        append("Do not repeat these rejected names or descriptions:\n")
         rejected.forEach { (id, attempts) ->
             attempts.takeLast(MAX_REJECTED_TEXTS_IN_PROMPT).forEach { localized ->
                 append("$id: ")
@@ -1123,12 +1114,12 @@ internal class LlmTextGenerator(
     }
 
     private fun worldPrompt(world: BoardGeneration) = buildString {
-        append("Світ гри: ")
+        append("Game world: ")
         append(listOfNotNull(
-            world.theme.ifBlank { null }?.let { "тематика — $it" },
-            world.locality.ifBlank { null }?.let { "місцевість — $it" },
-            world.epoch.ifBlank { null }?.let { "епоха — $it" },
-        ).joinToString(", ").ifBlank { "звичайне сучасне місто" })
+            world.theme.ifBlank { null }?.let { "theme: $it" },
+            world.locality.ifBlank { null }?.let { "location: $it" },
+            world.epoch.ifBlank { null }?.let { "era: $it" },
+        ).joinToString(", ").ifBlank { "an ordinary modern city" })
         append(".\n")
     }
 
@@ -1531,14 +1522,14 @@ private fun Long.retryDelayText(): String = when {
 }
 
 private fun deckName(type: BoardCardType) = when (type) {
-    BoardCardType.SmallBusiness -> "малий бізнес"
-    BoardCardType.MediumBusiness -> "середній бізнес"
-    BoardCardType.BigBusiness -> "великий бізнес"
-    BoardCardType.Shopping -> "покупки"
-    BoardCardType.Expenses -> "витрати"
-    BoardCardType.Chance -> "випадок"
-    BoardCardType.EventStore -> "події ринку"
-    BoardCardType.Deputy -> "депутати"
+    BoardCardType.SmallBusiness -> "small business"
+    BoardCardType.MediumBusiness -> "medium business"
+    BoardCardType.BigBusiness -> "big business"
+    BoardCardType.Shopping -> "shopping"
+    BoardCardType.Expenses -> "expense"
+    BoardCardType.Chance -> "chance"
+    BoardCardType.EventStore -> "market event"
+    BoardCardType.Deputy -> "deputy"
 }
 
 private fun BoardCard.narrativeAngle(world: BoardGeneration, id: Int): String? {
@@ -1553,90 +1544,90 @@ private fun BoardCard.narrativeAngle(world: BoardGeneration, id: Int): String? {
 }
 
 private val DEPUTY_ANGLES = listOf(
-    "звідки він узявся у владі",
-    "чим він відомий серед людей",
-    "яка звичка його видає",
-    "хто стоїть за його спиною",
-    "яку обіцянку він порушив",
-    "де він проводить вільний час",
-    "як він говорить із виборцями",
-    "чого він боїться найбільше",
+    "how they came to power",
+    "what the public knows them for",
+    "the habit that gives them away",
+    "who stands behind them",
+    "which promise they broke",
+    "where they spend their free time",
+    "how they address voters",
+    "what they fear most",
 )
 
 private val ANNOUNCEMENT_ANGLES = listOf(
-    "погода або стихія",
-    "нова технологія",
-    "чутка, що пішла світом",
-    "сухі цифри звіту",
-    "гучний скандал",
-    "свято чи ювілей",
-    "проблеми з транспортом",
-    "перебої з постачанням",
+    "weather or a natural force",
+    "new technology",
+    "a rumor spreading through the world",
+    "dry report figures",
+    "a major scandal",
+    "a festival or anniversary",
+    "transport trouble",
+    "supply disruption",
 )
 
 private val REELECTION_ANGLES = listOf(
-    "закінчився термін повноважень",
-    "рада саморозпустилася",
-    "скандал змив стару команду",
-    "суд скасував попередні результати",
-    "виборці вийшли на вулиці",
-    "старий склад пішов у відставку сам",
+    "the term expired",
+    "the council dissolved itself",
+    "a scandal swept out the old team",
+    "a court annulled the previous result",
+    "voters took to the streets",
+    "the old council resigned voluntarily",
 )
 
 private fun BoardCard.brief(shareNames: Map<String, String>): String = when (this) {
-    is BoardCard.SmallBusiness -> "можна купити малий бізнес за $price; він додає регулярний дохід $profit"
-    is BoardCard.MediumBusiness -> "можна купити середній бізнес за $price; він додає регулярний дохід $profit"
-    is BoardCard.BigBusiness -> "можна купити великий бізнес за $price; він додає регулярний дохід $profit"
-    is BoardCard.Shopping -> "можна купити ${shopType.promptAsset()} за $price; покупка додає один такий актив"
+    is BoardCard.SmallBusiness -> "buy a small business for $price; it adds $profit recurring income"
+    is BoardCard.MediumBusiness -> "buy a medium business for $price; it adds $profit recurring income"
+    is BoardCard.BigBusiness -> "buy a big business for $price; it adds $profit recurring income"
+    is BoardCard.Shopping -> "buy ${shopType.promptAsset()} for $price; gain one such asset"
     is BoardCard.Expenses -> if (grantsAnimal) {
-        "гравець підбирає бродячу або врятовану тварину: платить $price і назавжди отримує домашню тварину, за яку далі щоходу йдуть витрати на утримання"
+        "adopt a stray or rescued animal: pay $price, gain a pet permanently, then pay its recurring care cost"
     } else {
-        "обов'язкова витрата $price лише для гравців за умовою: ${payer.promptRule()}"
+        "mandatory $price expense only for this condition: ${payer.promptRule()}"
     }
     is BoardCard.Deputy -> if (corrupt) {
-        "продажний посадовець приєднується до гравця як депутат"
+        "a corrupt official joins the player as a deputy"
     } else {
-        "чесний посадовець не приєднується до гравця"
+        "an honest official does not join the player"
     }
     is BoardCard.EventStore.Shares -> if (forcedSale) {
-        "примусовий продаж усіх акцій ${shareNames[sharesType] ?: sharesType} кожним власником за невигідною ціною $price; відмовитися чи продати частину не можна"
+        "every owner must sell all ${shareNames[sharesType] ?: sharesType} shares at the unfavorable price $price; no refusal or partial sale"
     } else {
-        "власники акцій ${shareNames[sharesType] ?: sharesType} можуть продати будь-яку кількість за ціною $price за акцію або відмовитися"
+        "${shareNames[sharesType] ?: sharesType} owners may sell any quantity at $price per share or decline"
     }
-    is BoardCard.EventStore.Land -> "власники землі можуть продати будь-яку площу за $price за одиницю площі або відмовитися"
-    is BoardCard.EventStore.Estate -> "власники нерухомості можуть продати вибрані об'єкти по $price за об'єкт або відмовитися"
-    is BoardCard.EventStore.BusinessExtending -> "активний гравець збільшує регулярний дохід одного випадкового малого бізнесу на $profit; без малого бізнесу ефекту немає"
-    is BoardCard.EventStore.Reelection -> "перевибори: усі гравці втрачають усіх депутатів"
-    is BoardCard.EventStore.Announcement -> "ринкова новина без прямої фінансової дії"
-    is BoardCard.Chance.RandomJob -> "гравець одразу отримує разовий дохід $profit"
-    is BoardCard.Chance.Land -> "можна купити землю площею $area за $price"
-    is BoardCard.Chance.Estate -> "можна купити один об'єкт нерухомості за $price"
-    is BoardCard.Chance.Shares -> "можна купити до $maxCount акцій ${shareNames[sharesType] ?: sharesType} за ціною $price за акцію"
+    is BoardCard.EventStore.Land -> "landowners may sell any area at $price per unit or decline"
+    is BoardCard.EventStore.Estate -> "property owners may sell selected properties at $price each or decline"
+    is BoardCard.EventStore.BusinessExtending -> "the active player adds $profit recurring income to one random small business; no effect without one"
+    is BoardCard.EventStore.Reelection -> "reelection: every player loses all deputies"
+    is BoardCard.EventStore.Announcement -> "market news with no direct financial effect"
+    is BoardCard.Chance.RandomJob -> "the player immediately receives $profit one-time income"
+    is BoardCard.Chance.Land -> "buy land of area $area for $price"
+    is BoardCard.Chance.Estate -> "buy one property for $price"
+    is BoardCard.Chance.Shares -> "buy up to $maxCount ${shareNames[sharesType] ?: sharesType} shares at $price each"
     is BoardCard.Chance.CorruptBusiness -> if (oneTimeProfit > 0) {
-        "можна витратити $deputies депутатів і $price та одразу отримати разову виплату $oneTimeProfit; регулярного доходу немає"
+        "spend $deputies deputies and $price for an immediate $oneTimeProfit payout; no recurring income"
     } else {
-        "можна витратити $deputies депутатів і $price та отримати корупційний бізнес із регулярним доходом $profit"
+        "spend $deputies deputies and $price for a corrupt business with $profit recurring income"
     }
-    is BoardCard.Chance.CorruptLand -> "можна витратити $deputies депутатів і $price та отримати корупційну землю площею $area"
+    is BoardCard.Chance.CorruptLand -> "spend $deputies deputies and $price for corrupt land of area $area"
 }
 
 private fun ShopType.promptAsset(): String = when (this) {
-    ShopType.AUTO -> "автомобіль"
-    ShopType.HOUSE -> "будинок"
-    ShopType.APARTMENT -> "квартиру"
-    ShopType.YACHT -> "яхту"
-    ShopType.FLY -> "літак"
-    ShopType.ANIMAL -> "домашню тварину"
+    ShopType.AUTO -> "a car"
+    ShopType.HOUSE -> "a house"
+    ShopType.APARTMENT -> "an apartment"
+    ShopType.YACHT -> "a yacht"
+    ShopType.FLY -> "a plane"
+    ShopType.ANIMAL -> "a pet"
 }
 
 private fun PayerType.promptRule(): String = when (this) {
-    PayerType.ALL -> "платять усі"
-    PayerType.FREE_W_OR_MARRIED_M -> "платять лише незаміжні жінки та одружені чоловіки"
-    PayerType.AUTO_OWNER -> "платять лише власники автомобілів"
-    PayerType.MEN -> "платять лише чоловіки"
-    PayerType.PARENT -> "платять лише гравці з дітьми"
-    PayerType.MARRIED_M -> "платять лише одружені чоловіки"
-    PayerType.APARTMENT_OWNER -> "платять лише власники квартир"
-    PayerType.APARTMENT_OR_HOUSE_OWNER -> "платять лише власники квартир або будинків"
-    PayerType.ANIMAL_OWNER -> "платять лише власники тварин"
+    PayerType.ALL -> "everyone pays"
+    PayerType.FREE_W_OR_MARRIED_M -> "only unmarried women and married men pay"
+    PayerType.AUTO_OWNER -> "only car owners pay"
+    PayerType.MEN -> "only men pay"
+    PayerType.PARENT -> "only players with children pay"
+    PayerType.MARRIED_M -> "only married men pay"
+    PayerType.APARTMENT_OWNER -> "only apartment owners pay"
+    PayerType.APARTMENT_OR_HOUSE_OWNER -> "only apartment or house owners pay"
+    PayerType.ANIMAL_OWNER -> "only animal owners pay"
 }

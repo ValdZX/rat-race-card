@@ -40,7 +40,7 @@ class LlmTextGeneratorTest {
         LlmProviderPool.Member(provider = name, model = "model", completion = completion)
 
     private companion object {
-        const val ANGLE_MARKER = "кут подачі — "
+        const val ANGLE_MARKER = "narrative angle: "
     }
 
     private fun answerFor(user: String): String {
@@ -91,8 +91,8 @@ class LlmTextGeneratorTest {
         LlmTextGenerator(chat).generateComplete(world, cards, professions)
 
         assertTrue(chat.prompts.all { "космічна колонія" in it })
-        assertTrue(chat.prompts.all { "uk та en" in it })
-        assertTrue(chat.prompts.all { "гумор" in it })
+        assertTrue(chat.prompts.all { "uk and en" in it })
+        assertTrue(chat.prompts.all { "humor" in it })
     }
 
     @Test
@@ -115,13 +115,13 @@ class LlmTextGeneratorTest {
             chat.prompts.single()
         }.joinToString("\n")
 
-        assertTrue(prompts.contains("Name відображається гравцю як головний заголовок"))
-        assertTrue(prompts.contains("description пояснює, чим він займається і звідки отримує дохід"))
-        assertTrue(prompts.contains("description пояснює, що саме купують і навіщо"))
-        assertTrue(prompts.contains("можливість, підробіток, актив або корупційну схему"))
-        assertTrue(prompts.contains("конкретним заголовком ринкової новини"))
-        assertTrue(prompts.contains("посадовця, роль або скандал"))
-        assertTrue(prompts.contains("не додавай нових чисел, умов або наслідків"))
+        assertTrue(prompts.contains("The name is the main visible title"))
+        assertTrue(prompts.contains("what it does and how it earns income"))
+        assertTrue(prompts.contains("what is bought and why it matters"))
+        assertTrue(prompts.contains("opportunity, side job, asset, or corrupt scheme"))
+        assertTrue(prompts.contains("specific market-news headline"))
+        assertTrue(prompts.contains("official, role, or scandal"))
+        assertTrue(prompts.contains("Add no numbers, conditions, or effects"))
     }
 
     @Test
@@ -137,10 +137,10 @@ class LlmTextGeneratorTest {
             dreams = listOf(Dream("dream", "", "", 1_000_000)),
         )
 
-        assertTrue(professionChat.prompts.single().contains("конкретно називає професію або посаду"))
-        assertTrue(professionChat.prompts.single().contains("щоденну роль і джерело зарплати"))
-        assertTrue(dreamChat.prompts.single().contains("конкретно називає мету"))
-        assertTrue(dreamChat.prompts.single().contains("не повторюючи ціну"))
+        assertTrue(professionChat.prompts.single().contains("identify a specific profession or position"))
+        assertTrue(professionChat.prompts.single().contains("daily role and salary source"))
+        assertTrue(dreamChat.prompts.single().contains("identify a specific goal"))
+        assertTrue(dreamChat.prompts.single().contains("without repeating the price"))
     }
 
     @Test
@@ -190,9 +190,9 @@ class LlmTextGeneratorTest {
             professions = emptyList(),
         )
 
-        assertTrue(chat.prompts.single().contains("лише незаміжні жінки та одружені чоловіки"))
-        assertTrue(chat.prompts.single().contains("name коротко й конкретно називає предмет оплати"))
-        assertTrue(chat.prompts.single().contains("не повторюй їх і не замінюй ними причину витрати"))
+        assertTrue(chat.prompts.single().contains("only unmarried women and married men pay"))
+        assertTrue(chat.prompts.single().contains("specific paid item, service, or event"))
+        assertTrue(chat.prompts.single().contains("do not repeat them or use them as the reason"))
     }
 
     @Test
@@ -266,8 +266,8 @@ class LlmTextGeneratorTest {
             shareNames = mapOf("aerolith" to "Аероліт / Aerolith"),
         )
 
-        assertTrue(chat.prompts.single().contains("примусовий продаж усіх акцій"))
-        assertTrue(chat.prompts.single().contains("відмовитися чи продати частину не можна"))
+        assertTrue(chat.prompts.single().contains("every owner must sell all"))
+        assertTrue(chat.prompts.single().contains("no refusal or partial sale"))
     }
 
     @Test
@@ -588,7 +588,7 @@ class LlmTextGeneratorTest {
     @Test
     fun theSameNameInAnotherDeckIsAccepted() = runTest {
         val chat = FakeChat { user ->
-            val deck = if ("малий бізнес" in user) "small" else "medium"
+            val deck = if ("small business card" in user) "small" else "medium"
             promptIds(user).joinToString(prefix = "[", postfix = "]") { id ->
                 """{"id":$id,"uk":{"name":"Спільна назва","description":"Опис $deck"},""" +
                         """"en":{"name":"Shared name","description":"Description $deck"}}"""

@@ -39,7 +39,7 @@ class BalanceLlmTest {
         assertTrue(prompts.single().contains("2600 рік"))
         assertTrue(prompts.single().contains("shares"))
         assertTrue(prompts.single().contains("forcedShareSalePrices"))
-        assertTrue(prompts.single().contains("примусово продає всі акції"))
+        assertTrue(prompts.single().contains("force every owner to sell all shares"))
         assertTrue(prompts.single().contains("INNER:"))
         assertTrue(prompts.single().contains("OUTER:"))
         assertTrue(prompts.single().contains("victoryMinimumAccountBalance"))
