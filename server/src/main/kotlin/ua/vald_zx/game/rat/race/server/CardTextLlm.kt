@@ -33,6 +33,7 @@ import ua.vald_zx.game.rat.race.card.shared.PayerType
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
 import ua.vald_zx.game.rat.race.card.shared.ShopType
 import ua.vald_zx.game.rat.race.card.shared.generatedLocales
+import ua.vald_zx.game.rat.race.card.shared.seedFor
 import ua.vald_zx.game.rat.race.server.data.Env
 import java.net.URI
 import java.net.http.HttpClient
@@ -41,6 +42,7 @@ import java.net.http.HttpResponse
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.absoluteValue
 
 private val llmLogger = KtorSimpleLogger("CardTextLlm")
 private val llmQuotaTracker = LlmQuotaTracker()
@@ -69,16 +71,32 @@ internal object LlmSettings {
         onUsage: suspend (LlmTokenUsage) -> Unit = {},
         onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
         onRetry: suspend (LlmRetryWait) -> Unit = {},
-    ): ChatCompletion = pool({ it.balanceModel }, onUsage, onQuota, onRetry)
+    ): ChatCompletion = pool(
+        model = { it.balanceModel },
+        extraBody = { it.balanceExtra },
+        maxOutputTokens = MAX_BALANCE_COMPLETION_TOKENS,
+        onUsage = onUsage,
+        onQuota = onQuota,
+        onRetry = onRetry,
+    )
 
     fun textChat(
         onUsage: suspend (LlmTokenUsage) -> Unit = {},
         onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
         onRetry: suspend (LlmRetryWait) -> Unit = {},
-    ): ChatCompletion = pool({ it.textModel }, onUsage, onQuota, onRetry)
+    ): ChatCompletion = pool(
+        model = { it.textModel },
+        extraBody = { it.textExtra },
+        maxOutputTokens = DEFAULT_TEXT_BATCH_SIZE * TEXT_COMPLETION_TOKENS_PER_ITEM,
+        onUsage = onUsage,
+        onQuota = onQuota,
+        onRetry = onRetry,
+    )
 
     private fun pool(
         model: (LlmProviderSettings) -> String,
+        extraBody: (LlmProviderSettings) -> JsonObject?,
+        maxOutputTokens: Int,
         onUsage: suspend (LlmTokenUsage) -> Unit,
         onQuota: suspend (LlmQuotaSnapshot) -> Unit,
         onRetry: suspend (LlmRetryWait) -> Unit,
@@ -90,6 +108,8 @@ internal object LlmSettings {
                 completion = HttpChatCompletion(
                     provider = provider,
                     model = model(provider),
+                    extraBody = extraBody(provider),
+                    maxOutputTokens = maxOutputTokens,
                     onUsage = onUsage,
                     onQuota = onQuota,
                 ),
@@ -145,7 +165,22 @@ private fun provider(
         key = key,
         balanceModel = requireNotNull(balanceModel),
         textModel = requireNotNull(textModel),
+        balanceExtra = extraBody(
+            configuration("${defaults.prefix}BALANCE_EXTRA") ?: defaults.balanceExtra,
+            "${defaults.prefix}BALANCE_EXTRA",
+        ),
+        textExtra = extraBody(
+            configuration("${defaults.prefix}TEXT_EXTRA") ?: defaults.textExtra,
+            "${defaults.prefix}TEXT_EXTRA",
+        ),
     )
+}
+
+private fun extraBody(raw: String?, key: String): JsonObject? {
+    val declared = raw?.takeIf { it.isNotBlank() } ?: return null
+    return runCatching { Json.parseToJsonElement(declared).jsonObject }
+        .onFailure { llmLogger.warn("$key is not a JSON object and is ignored: ${it.message}") }
+        .getOrNull()
 }
 
 private data class LlmProviderDefaults(
@@ -155,6 +190,8 @@ private data class LlmProviderDefaults(
     val url: String? = null,
     val balanceModel: String? = null,
     val textModel: String? = null,
+    val balanceExtra: String? = null,
+    val textExtra: String? = null,
 )
 
 private val PRIMARY_LLM_PROVIDER = LlmProviderDefaults(
@@ -164,6 +201,7 @@ private val PRIMARY_LLM_PROVIDER = LlmProviderDefaults(
     url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     balanceModel = "gemini-3.6-flash",
     textModel = "gemini-3.5-flash-lite",
+    textExtra = """{"reasoning_effort":"low"}""",
 )
 
 private val FREE_LLM_PROVIDERS = listOf(
@@ -207,6 +245,8 @@ internal data class LlmProviderSettings(
     val key: String,
     val balanceModel: String,
     val textModel: String,
+    val balanceExtra: JsonObject? = null,
+    val textExtra: JsonObject? = null,
 )
 
 internal data class LlmTokenUsage(
@@ -316,6 +356,8 @@ internal data class Cooldown(
 internal class HttpChatCompletion(
     private val provider: LlmProviderSettings,
     private val model: String,
+    private val extraBody: JsonObject? = null,
+    private val maxOutputTokens: Int = MAX_BALANCE_COMPLETION_TOKENS,
     private val onUsage: suspend (LlmTokenUsage) -> Unit = {},
     private val onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
     private val wait: suspend (Long) -> Unit = { delay(it) },
@@ -326,17 +368,14 @@ internal class HttpChatCompletion(
 
     private val json = Json { ignoreUnknownKeys = true }
 
+    @Volatile
+    private var extrasRejected = false
+
     override suspend fun complete(system: String, user: String): String? = withContext(Dispatchers.IO) {
-        val payload = buildJsonObject {
-            put("model", model)
-            put("max_tokens", MAX_LLM_COMPLETION_TOKENS)
-            put("messages", buildJsonArray {
-                add(message("system", system))
-                add(message("user", user))
-            })
-        }
+        var withExtras = extraBody != null && !extrasRejected
         var failedAttempts = 0
         while (true) {
+            val payload = payload(system, user, withExtras)
             val request = HttpRequest.newBuilder(URI.create(provider.url))
                 .timeout(Duration.ofSeconds(120))
                 .header("Content-Type", "application/json")
@@ -384,6 +423,15 @@ internal class HttpChatCompletion(
                 throw LlmProviderException("${provider.name}/$model is unavailable: $message")
             }
             if (response.statusCode() !in 200..299) {
+                if (withExtras) {
+                    extrasRejected = true
+                    withExtras = false
+                    llmLogger.warn(
+                        "${provider.name}/$model rejected the extra request fields " +
+                                "(${response.statusCode()}: ${response.errorMessage()}), retrying without them"
+                    )
+                    continue
+                }
                 throw LlmProviderException(
                     "${provider.name}/$model answered ${response.statusCode()}: ${response.errorMessage()}"
                 )
@@ -403,6 +451,16 @@ internal class HttpChatCompletion(
         }
         @Suppress("UNREACHABLE_CODE")
         return@withContext null
+    }
+
+    private fun payload(system: String, user: String, withExtras: Boolean) = buildJsonObject {
+        put("model", model)
+        put("max_tokens", maxOutputTokens)
+        put("messages", buildJsonArray {
+            add(message("system", system))
+            add(message("user", user))
+        })
+        if (withExtras) extraBody?.forEach { (field, value) -> put(field, value) }
     }
 
     private fun message(role: String, content: String) = buildJsonObject {
@@ -466,7 +524,7 @@ internal class LlmRateLimitException(
 
 internal class LlmTextGenerator(
     private val chat: ChatCompletion = LlmSettings.textChat(),
-    private val batchSize: Int = 24,
+    private val batchSize: Int = DEFAULT_TEXT_BATCH_SIZE,
 ) {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -556,7 +614,7 @@ internal class LlmTextGenerator(
                 user = deckPrompt(
                     world = world,
                     type = batch.type,
-                    briefs = missing.joinToString("\n") { (id, card) -> "$id. ${card.brief(shareNames)}" },
+                    briefs = missing.joinToString("\n") { (id, card) -> cardBrief(world, id, card, shareNames) },
                     acceptedNames = current.cardNameContext(batch.type, batch.nameBearingIds),
                     attempt = attempt,
                     rejected = rejected.filterKeys { it in expectedIds },
@@ -588,7 +646,7 @@ internal class LlmTextGenerator(
                     user = deckPrompt(
                         world = world,
                         type = batch.type,
-                        briefs = repairBatch.joinToString("\n") { (id, card) -> "$id. ${card.brief(shareNames)}" },
+                        briefs = repairBatch.joinToString("\n") { (id, card) -> cardBrief(world, id, card, shareNames) },
                         acceptedNames = store.snapshot().cardNameContext(batch.type, batch.nameBearingIds),
                         attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
                         rejected = rejected.filterKeys { it in expectedIds },
@@ -621,7 +679,7 @@ internal class LlmTextGenerator(
                     user = deckPrompt(
                         world = world,
                         type = batch.type,
-                        briefs = "$id. ${missingCard.value.brief(shareNames)}",
+                        briefs = cardBrief(world, id, missingCard.value, shareNames),
                         acceptedNames = store.snapshot().cardNameContext(batch.type, batch.nameBearingIds),
                         attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
                         rejected = rejected.filterKeys { it == id },
@@ -793,6 +851,16 @@ internal class LlmTextGenerator(
         val missingIds = store.snapshot().let { current -> ids.filterNot { current.hasDream(it) } }
         check(missingIds.isEmpty()) { "Incomplete uk/en dreams: ${missingIds.take(MAX_ERROR_IDS)}" }
         progress.complete(detail)
+    }
+
+    private fun cardBrief(
+        world: BoardGeneration,
+        id: Int,
+        card: BoardCard,
+        shareNames: Map<String, String>,
+    ): String {
+        val angle = card.narrativeAngle(world, id)?.let { "; кут подачі — $it" }.orEmpty()
+        return "$id. ${card.brief(shareNames)}$angle"
     }
 
     private fun professionBrief(card: ProfessionCard): String =
@@ -1367,10 +1435,12 @@ private fun BoardCard.usesGeneratedName(): Boolean = true
 
 private const val MAX_LLM_REQUEST_ATTEMPTS = 8
 private const val MAX_LLM_UNAVAILABLE_ATTEMPTS = 3
-private const val MAX_LLM_COMPLETION_TOKENS = 6_000
+private const val MAX_BALANCE_COMPLETION_TOKENS = 8_000
+private const val TEXT_COMPLETION_TOKENS_PER_ITEM = 140
 private const val UNAVAILABLE_RETRY_DELAY_MILLIS = 2_000L
 private const val MAX_ERROR_MESSAGE_LENGTH = 300
 private const val MAX_LLM_FALLBACKS = 3
+private const val DEFAULT_TEXT_BATCH_SIZE = 24
 private const val MAX_POOL_WAIT_MILLIS = 5 * 60 * 1_000L
 private const val MAX_TEXT_BATCH_ATTEMPTS = 3
 private const val MAX_REPAIR_BATCH_ATTEMPTS = 4
@@ -1470,6 +1540,48 @@ private fun deckName(type: BoardCardType) = when (type) {
     BoardCardType.EventStore -> "події ринку"
     BoardCardType.Deputy -> "депутати"
 }
+
+private fun BoardCard.narrativeAngle(world: BoardGeneration, id: Int): String? {
+    val angles = when (this) {
+        is BoardCard.Deputy -> DEPUTY_ANGLES
+        is BoardCard.EventStore.Announcement -> ANNOUNCEMENT_ANGLES
+        is BoardCard.EventStore.Reelection -> REELECTION_ANGLES
+        else -> return null
+    }
+    val offset = (world.seedFor("angle", 0) % angles.size).toInt().absoluteValue
+    return angles[(id + offset) % angles.size]
+}
+
+private val DEPUTY_ANGLES = listOf(
+    "звідки він узявся у владі",
+    "чим він відомий серед людей",
+    "яка звичка його видає",
+    "хто стоїть за його спиною",
+    "яку обіцянку він порушив",
+    "де він проводить вільний час",
+    "як він говорить із виборцями",
+    "чого він боїться найбільше",
+)
+
+private val ANNOUNCEMENT_ANGLES = listOf(
+    "погода або стихія",
+    "нова технологія",
+    "чутка, що пішла світом",
+    "сухі цифри звіту",
+    "гучний скандал",
+    "свято чи ювілей",
+    "проблеми з транспортом",
+    "перебої з постачанням",
+)
+
+private val REELECTION_ANGLES = listOf(
+    "закінчився термін повноважень",
+    "рада саморозпустилася",
+    "скандал змив стару команду",
+    "суд скасував попередні результати",
+    "виборці вийшли на вулиці",
+    "старий склад пішов у відставку сам",
+)
 
 private fun BoardCard.brief(shareNames: Map<String, String>): String = when (this) {
     is BoardCard.SmallBusiness -> "можна купити малий бізнес за $price; він додає регулярний дохід $profit"

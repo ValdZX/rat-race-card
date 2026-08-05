@@ -2,6 +2,8 @@ package ua.vald_zx.game.rat.race.server
 
 import com.sun.net.httpserver.HttpServer
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
@@ -36,6 +38,10 @@ class LlmTextGeneratorTest {
 
     private fun poolMember(name: String, completion: ChatCompletion) =
         LlmProviderPool.Member(provider = name, model = "model", completion = completion)
+
+    private companion object {
+        const val ANGLE_MARKER = "кут подачі — "
+    }
 
     private fun answerFor(user: String): String {
         val ids = promptIds(user)
@@ -777,6 +783,92 @@ class LlmTextGeneratorTest {
             server.stop(0)
         }
     }
+
+    @Test
+    fun cardsWithTheSameMechanicGetDifferentAngles() = runTest {
+        val chat = FakeChat(::answerFor)
+        val deputies = BoardGenerator(world, testBalance()).generate(mapOf(BoardCardType.Deputy to 8))
+
+        LlmTextGenerator(chat).generateComplete(world, deputies, emptyList())
+
+        val angles = chat.prompts.single()
+            .lineSequence()
+            .mapNotNull { line -> line.substringAfter(ANGLE_MARKER, "").takeIf { it.isNotBlank() } }
+            .toList()
+        assertEquals(8, angles.size, "не кожна картка депутата отримала кут подачі")
+        assertEquals(angles.size, angles.toSet().size, "кути подачі повторюються всередині колоди")
+    }
+
+    @Test
+    fun cardsThatAlreadyDifferGetNoAngle() = runTest {
+        val chat = FakeChat(::answerFor)
+
+        LlmTextGenerator(chat).generateComplete(world, cards, emptyList())
+
+        assertTrue(chat.prompts.none { ANGLE_MARKER in it }, "малий бізнес не потребує кута подачі")
+    }
+
+    @Test
+    fun extraRequestFieldsAreSentToTheProvider() = runTest {
+        val bodies = mutableListOf<String>()
+        val server = echoServer(bodies) { true }
+        try {
+            val chat = HttpChatCompletion(
+                provider = testProvider(server.address.port, "test"),
+                model = "model",
+                extraBody = Json.parseToJsonElement("""{"reasoning_effort":"none"}""").jsonObject,
+                maxOutputTokens = 1_234,
+            )
+
+            assertEquals("completed", chat.complete("system", "user"))
+            assertTrue("\"reasoning_effort\":\"none\"" in bodies.single())
+            assertTrue("\"max_tokens\":1234" in bodies.single())
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun aProviderThatRejectsExtraFieldsIsRetriedWithoutThem() = runTest {
+        val bodies = mutableListOf<String>()
+        val server = echoServer(bodies) { body -> "reasoning_effort" !in body }
+        try {
+            val chat = HttpChatCompletion(
+                provider = testProvider(server.address.port, "test"),
+                model = "model",
+                extraBody = Json.parseToJsonElement("""{"reasoning_effort":"none"}""").jsonObject,
+            )
+
+            assertEquals("completed", chat.complete("system", "user"))
+            assertEquals(2, bodies.size, "запит без зайвих полів не повторили")
+            assertTrue("reasoning_effort" in bodies.first())
+            assertTrue("reasoning_effort" !in bodies.last())
+
+            assertEquals("completed", chat.complete("system", "user"))
+            assertEquals(3, bodies.size, "зайві поля продовжили слатись після відмови")
+            assertTrue("reasoning_effort" !in bodies.last())
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    private fun echoServer(bodies: MutableList<String>, accepts: (String) -> Boolean): HttpServer =
+        HttpServer.create(InetSocketAddress(0), 0).apply {
+            createContext("/chat") { exchange ->
+                val body = exchange.requestBody.readBytes().decodeToString()
+                bodies += body
+                val accepted = accepts(body)
+                val answer = if (accepted) {
+                    """{"choices":[{"message":{"content":"completed"}}]}"""
+                } else {
+                    """{"error":{"message":"Unsupported parameter"}}"""
+                }
+                val bytes = answer.encodeToByteArray()
+                exchange.sendResponseHeaders(if (accepted) 200 else 400, bytes.size.toLong())
+                exchange.responseBody.use { it.write(bytes) }
+            }
+            start()
+        }
 
     private fun testProvider(port: Int, name: String) = LlmProviderSettings(
         name = name,
