@@ -128,6 +128,23 @@ class BalanceLlmTest {
     }
 
     @Test
+    fun overlyWideAssetPriceBandsAreNormalized() = runTest {
+        val wide = testBalance().copy(
+            estatePrices = listOf(20_000, 60_000, 120_000),
+            estateSalePercentages = listOf(80, 110, 140),
+            landPricePerUnit = listOf(1_000, 4_000, 8_000),
+            eventLandPricePercentages = listOf(60, 100, 150),
+        )
+        val chat = ChatCompletion { _, _ -> Json.encodeToString(wide) }
+
+        val generated = LlmBalanceGenerator(chat).generate(world, deckSizes)
+
+        assertEquals(listOf(20_000L, 31_428L, 42_857L), generated.estatePrices)
+        assertEquals(listOf(1_000L, 1_500L, 2_000L), generated.landPricePerUnit)
+        generated.validate()
+    }
+
+    @Test
     fun aSalaryThatCannotCoverItsOwnExpensesIsRejected() {
         val invalid = testBalance().copy(salaries = testBalance().salaries + 40)
 

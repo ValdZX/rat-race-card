@@ -30,7 +30,9 @@ internal class LlmBalanceGenerator(
                 return@repeat
             }
             val generated = runCatching {
-                json.decodeFromString<GeneratedBalance>(answer.jsonObject()).withoutDuplicateOptions()
+                json.decodeFromString<GeneratedBalance>(answer.jsonObject())
+                    .withoutDuplicateOptions()
+                    .withBoundedAssetPrices()
             }
                 .onFailure {
                     lastError = it
@@ -304,6 +306,23 @@ private fun GeneratedBalance.withoutDuplicateOptions(): GeneratedBalance = copy(
     corruptLandAreas = corruptLandAreas.distinct(),
 )
 
+private fun GeneratedBalance.withBoundedAssetPrices(): GeneratedBalance = copy(
+    estatePrices = estatePrices.withinSaleSpread(estateSalePercentages),
+    landPricePerUnit = landPricePerUnit.withinSaleSpread(eventLandPricePercentages),
+)
+
+private fun List<Long>.withinSaleSpread(salePercentages: List<Long>): List<Long> {
+    if (size < 2 || salePercentages.isEmpty()) return this
+    val sortedPrices = sorted()
+    val cheapestPrice = sortedPrices.first()
+    val highestSalePercentage = salePercentages.max()
+    val highestPrice = cheapestPrice * MAX_ASSET_SPREAD * 100 / highestSalePercentage
+    if (sortedPrices.last() <= highestPrice || highestPrice - cheapestPrice < lastIndex) return this
+    return sortedPrices.mapIndexed { index, _ ->
+        cheapestPrice + (highestPrice - cheapestPrice) * index / lastIndex
+    }
+}
+
 private fun List<Long>.requireAmounts(name: String, minimumSize: Int = 3) {
     requireRange(name, 1L..MAX_GENERATED_AMOUNT, minimumSize)
 }
@@ -391,9 +410,9 @@ private val BALANCE_REQUIREMENTS = """
 - Тварину купують у крамниці як помітну, але найдешевшу з покупок; вона додає animalRecurringCost щоходу.
 - landPricePerUnit — ціна ОДНІЄЇ одиниці площі. Загальна ціна ділянки = площа × ця ціна, тож вона має бути малою поряд із цінами бізнесів.
 - eventLandPricePercentages: 30..180 — за скільки відсотків від landPricePerUnit ринок викуповує одиницю площі. Значення нижче 100 — збиток власника, вище 100 — вигідний продаж.
-- Продавати землю необов'язково, тож гравець завжди дочекається найкращої ціни: найдорожчий продаж (max landPricePerUnit × max eventLandPricePercentages) не може перевищувати найдешевшу купівлю більш ніж утричі. Тримай landPricePerUnit у вузькому діапазоні.
+- Продавати землю необов'язково, тож гравець завжди дочекається найкращої ціни: найдорожчий продаж (max landPricePerUnit × max eventLandPricePercentages / 100) не може перевищувати найдешевшу купівлю (min landPricePerUnit) більш ніж утричі. Тримай landPricePerUnit у вузькому діапазоні.
 - estatePrices — ціна одного об'єкта нерухомості на картці випадку. estateSalePercentages: 30..180 — за скільки відсотків від тієї ж бази ринкова подія викуповує об'єкт.
-- Те саме правило втричі діє й для нерухомості: max estatePrices × max estateSalePercentages не може перевищувати min estatePrices більш ніж утричі.
+- Те саме правило втричі діє й для нерухомості: max estatePrices × max estateSalePercentages / 100 <= min estatePrices × 3. Наприклад, якщо min estatePrices = 20000 і max estateSalePercentages = 140, тоді max estatePrices має бути не більше 42857.
 - randomJobProfits — разовий дохід від підробітку. Це дохід, а не ціна активу: тримай його помітно нижчим за estatePrices, інакше випадкова робота знецінить нерухомість.
 - corruptLandPricePerUnit працює так само для корупційних ділянок.
 - strayAnimalPercentage: 1..30 — частка карток витрат, де гравець підбирає бродячу або врятовану тварину: він платить за неї й отримує тварину.
