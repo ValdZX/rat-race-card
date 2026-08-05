@@ -1,5 +1,8 @@
 package ua.vald_zx.game.rat.race.server
 
+import ua.vald_zx.game.rat.race.server.generation.configuredLlmProviders
+import ua.vald_zx.game.rat.race.server.generation.configuredTextReviewer
+
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

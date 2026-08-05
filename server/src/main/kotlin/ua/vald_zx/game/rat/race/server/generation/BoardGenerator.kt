@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.server
+package ua.vald_zx.game.rat.race.server.generation
 
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType

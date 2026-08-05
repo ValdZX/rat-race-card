@@ -1,4 +1,4 @@
-package ua.vald_zx.game.rat.race.server
+package ua.vald_zx.game.rat.race.server.generation
 
 import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import java.time.Instant
@@ -132,4 +132,3 @@ private val GenerationQuotaType.isLocallyTrackable: Boolean
     get() = this == GenerationQuotaType.REQUESTS_PER_MINUTE ||
             this == GenerationQuotaType.INPUT_TOKENS_PER_MINUTE ||
             isDaily
-

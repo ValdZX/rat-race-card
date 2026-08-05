@@ -1,5 +1,7 @@
 package ua.vald_zx.game.rat.race.server
 
+import ua.vald_zx.game.rat.race.server.generation.LlmQuotaTracker
+
 import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import kotlin.test.Test
 import kotlin.test.assertEquals

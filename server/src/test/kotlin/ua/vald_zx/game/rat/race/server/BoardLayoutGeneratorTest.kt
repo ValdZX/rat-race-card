@@ -1,5 +1,7 @@
 package ua.vald_zx.game.rat.race.server
 
+import ua.vald_zx.game.rat.race.server.generation.BoardGenerator
+
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.PlaceType

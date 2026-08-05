@@ -1,5 +1,7 @@
 package ua.vald_zx.game.rat.race.server
 
+import ua.vald_zx.game.rat.race.server.generation.BoardGenerator
+
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.json.Json
 import ua.vald_zx.game.rat.race.card.shared.Board

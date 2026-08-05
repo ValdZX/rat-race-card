@@ -15,7 +15,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardGenerationStage
 import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
-import ua.vald_zx.game.rat.race.server.BoardGenerator
+import ua.vald_zx.game.rat.race.server.generation.BoardGenerator
 import ua.vald_zx.game.rat.race.server.testBalance
 import kotlin.test.Test
 import kotlin.test.assertEquals
