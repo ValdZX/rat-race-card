@@ -49,20 +49,7 @@ private val llmHttpClient: HttpClient by lazy {
 }
 
 internal object LlmSettings {
-    val providers: List<LlmProviderSettings> by lazy {
-        buildList {
-            provider(
-                prefix = "LLM_",
-                defaultName = "gemini",
-                defaultUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-                defaultBalanceModel = "gemini-3.6-flash",
-                defaultTextModel = "gemini-3.5-flash-lite",
-            )?.let(::add)
-            (1..MAX_LLM_FALLBACKS).mapNotNullTo(this) { index ->
-                provider(prefix = "LLM_FALLBACK_${index}_", defaultName = "fallback-$index")
-            }
-        }
-    }
+    val providers: List<LlmProviderSettings> by lazy { configuredLlmProviders { Env[it] } }
 
     val enabled: Boolean get() = providers.isNotEmpty()
 
@@ -111,39 +98,108 @@ internal object LlmSettings {
         onRetry = onRetry,
     )
 
-    private fun provider(
-        prefix: String,
-        defaultName: String,
-        defaultUrl: String? = null,
-        defaultBalanceModel: String? = null,
-        defaultTextModel: String? = null,
-    ): LlmProviderSettings? {
-        val key = Env["${prefix}API_KEY"].orEmpty()
-        if (key.isBlank()) return null
-        val model = Env["${prefix}MODEL"]
-        val url = Env["${prefix}API_URL"] ?: defaultUrl
-        val balanceModel = Env["${prefix}BALANCE_MODEL"] ?: model ?: defaultBalanceModel
-        val textModel = Env["${prefix}TEXT_MODEL"] ?: model ?: defaultTextModel
-        val missing = buildList {
-            if (url == null) add("${prefix}API_URL")
-            if (balanceModel == null) add("${prefix}BALANCE_MODEL or ${prefix}MODEL")
-            if (textModel == null) add("${prefix}TEXT_MODEL or ${prefix}MODEL")
-        }
-        if (missing.isNotEmpty()) {
-            llmLogger.warn(
-                "${prefix}API_KEY is set but the provider is ignored, missing: ${missing.joinToString()}"
-            )
-            return null
-        }
-        return LlmProviderSettings(
-            name = Env["${prefix}PROVIDER_NAME"] ?: defaultName,
-            url = requireNotNull(url),
-            key = key,
-            balanceModel = requireNotNull(balanceModel),
-            textModel = requireNotNull(textModel),
+}
+
+internal fun configuredLlmProviders(
+    configuration: (String) -> String?,
+): List<LlmProviderSettings> = buildList {
+    (listOf(PRIMARY_LLM_PROVIDER) + FREE_LLM_PROVIDERS).mapNotNullTo(this) { defaults ->
+        provider(configuration, defaults)
+    }
+    (1..MAX_LLM_FALLBACKS).mapNotNullTo(this) { index ->
+        provider(
+            configuration,
+            LlmProviderDefaults(
+                prefix = "LLM_FALLBACK_${index}_",
+                apiKey = "LLM_FALLBACK_${index}_API_KEY",
+                name = "fallback-$index",
+            ),
         )
     }
 }
+
+private fun provider(
+    configuration: (String) -> String?,
+    defaults: LlmProviderDefaults,
+): LlmProviderSettings? {
+    val key = configuration(defaults.apiKey).orEmpty()
+    if (key.isBlank()) return null
+    val model = configuration("${defaults.prefix}MODEL")
+    val url = configuration("${defaults.prefix}API_URL") ?: defaults.url
+    val balanceModel = configuration("${defaults.prefix}BALANCE_MODEL") ?: model ?: defaults.balanceModel
+    val textModel = configuration("${defaults.prefix}TEXT_MODEL") ?: model ?: defaults.textModel
+    val missing = buildList {
+        if (url == null) add("${defaults.prefix}API_URL")
+        if (balanceModel == null) add("${defaults.prefix}BALANCE_MODEL or ${defaults.prefix}MODEL")
+        if (textModel == null) add("${defaults.prefix}TEXT_MODEL or ${defaults.prefix}MODEL")
+    }
+    if (missing.isNotEmpty()) {
+        llmLogger.warn(
+            "${defaults.apiKey} is set but the provider is ignored, missing: ${missing.joinToString()}"
+        )
+        return null
+    }
+    return LlmProviderSettings(
+        name = configuration("${defaults.prefix}PROVIDER_NAME") ?: defaults.name,
+        url = requireNotNull(url),
+        key = key,
+        balanceModel = requireNotNull(balanceModel),
+        textModel = requireNotNull(textModel),
+    )
+}
+
+private data class LlmProviderDefaults(
+    val prefix: String,
+    val apiKey: String,
+    val name: String,
+    val url: String? = null,
+    val balanceModel: String? = null,
+    val textModel: String? = null,
+)
+
+private val PRIMARY_LLM_PROVIDER = LlmProviderDefaults(
+    prefix = "LLM_",
+    apiKey = "LLM_API_KEY",
+    name = "gemini",
+    url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    balanceModel = "gemini-3.6-flash",
+    textModel = "gemini-3.5-flash-lite",
+)
+
+private val FREE_LLM_PROVIDERS = listOf(
+    LlmProviderDefaults(
+        prefix = "GROQ_",
+        apiKey = "GROQ_API_KEY",
+        name = "groq",
+        url = "https://api.groq.com/openai/v1/chat/completions",
+        balanceModel = "openai/gpt-oss-120b",
+        textModel = "openai/gpt-oss-20b",
+    ),
+    LlmProviderDefaults(
+        prefix = "CEREBRAS_",
+        apiKey = "CEREBRAS_API_KEY",
+        name = "cerebras",
+        url = "https://api.cerebras.ai/v1/chat/completions",
+        balanceModel = "gpt-oss-120b",
+        textModel = "gpt-oss-120b",
+    ),
+    LlmProviderDefaults(
+        prefix = "MISTRAL_",
+        apiKey = "MISTRAL_API_KEY",
+        name = "mistral",
+        url = "https://api.mistral.ai/v1/chat/completions",
+        balanceModel = "mistral-small-latest",
+        textModel = "mistral-small-latest",
+    ),
+    LlmProviderDefaults(
+        prefix = "OPENROUTER_",
+        apiKey = "OPENROUTER_API_KEY",
+        name = "openrouter",
+        url = "https://openrouter.ai/api/v1/chat/completions",
+        balanceModel = "openrouter/free",
+        textModel = "openrouter/free",
+    ),
+)
 
 internal data class LlmProviderSettings(
     val name: String,
@@ -265,6 +321,7 @@ internal class HttpChatCompletion(
     override suspend fun complete(system: String, user: String): String? = withContext(Dispatchers.IO) {
         val payload = buildJsonObject {
             put("model", model)
+            put("max_tokens", MAX_LLM_COMPLETION_TOKENS)
             put("messages", buildJsonArray {
                 add(message("system", system))
                 add(message("user", user))
@@ -428,8 +485,9 @@ internal class LlmTextGenerator(
     ): Map<String, GeneratedText> {
         val store = Texts(existingTexts)
         val cardBatches = cards.mapValues { (type, deck) ->
+            val nameBearingIds = deck.filterValues { it.usesGeneratedName() }.keys
             deck.entries.sortedBy { it.key }.chunked(batchSize).mapIndexed { index, items ->
-                CardBatch(type, index, batches(deck.size), items)
+                CardBatch(type, index, batches(deck.size), items, nameBearingIds)
             }
         }
         val professionBatches = professions.chunked(batchSize).mapIndexed { index, items ->
@@ -490,13 +548,18 @@ internal class LlmTextGenerator(
                     world = world,
                     type = batch.type,
                     briefs = missing.joinToString("\n") { (id, card) -> "$id. ${card.brief(shareNames)}" },
-                    acceptedNames = current.cardNameContext(batch.type),
+                    acceptedNames = current.cardNameContext(batch.type, batch.nameBearingIds),
                     attempt = attempt,
                     rejected = rejected,
                 ),
             ) ?: return@repeat
             val candidates = answer.parseLocalizedItems()
-            val updated = store.acceptCards(batch.type, candidates, missing.map { it.key }.toSet())
+            val updated = store.acceptCards(
+                batch.type,
+                candidates,
+                missing.map { it.key }.toSet(),
+                batch.nameBearingIds,
+            )
             missing.filterNot { updated.hasCard(batch.type, it.key) }.forEach { (id) ->
                 candidates[id]?.let { candidate -> rejected.getOrPut(id, ::mutableListOf) += candidate }
             }
@@ -516,13 +579,13 @@ internal class LlmTextGenerator(
                         world = world,
                         type = batch.type,
                         briefs = repairBatch.joinToString("\n") { (id, card) -> "$id. ${card.brief(shareNames)}" },
-                        acceptedNames = store.snapshot().cardNameContext(batch.type),
+                        acceptedNames = store.snapshot().cardNameContext(batch.type, batch.nameBearingIds),
                         attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
                         rejected = rejected,
                     ),
                 ) ?: return@repairBatchLoop
                 val candidates = answer.parseLocalizedItems(expectedSingleId = expectedIds.singleOrNull())
-                val updated = store.acceptCards(batch.type, candidates, expectedIds)
+                val updated = store.acceptCards(batch.type, candidates, expectedIds, batch.nameBearingIds)
                 repairBatch.filterNot { updated.hasCard(batch.type, it.key) }.forEach { (id) ->
                     candidates[id]?.let { candidate -> rejected.getOrPut(id, ::mutableListOf) += candidate }
                 }
@@ -543,13 +606,13 @@ internal class LlmTextGenerator(
                         world = world,
                         type = batch.type,
                         briefs = "$id. ${missingCard.value.brief(shareNames)}",
-                        acceptedNames = store.snapshot().cardNameContext(batch.type),
+                        acceptedNames = store.snapshot().cardNameContext(batch.type, batch.nameBearingIds),
                         attempt = MAX_TEXT_BATCH_ATTEMPTS + repairAttempt,
                         rejected = rejected,
                     ),
                 ) ?: return@repeat
                 val candidates = answer.parseLocalizedItems(expectedSingleId = id)
-                val updated = store.acceptCards(batch.type, candidates, setOf(id))
+                val updated = store.acceptCards(batch.type, candidates, setOf(id), batch.nameBearingIds)
                 if (!updated.hasCard(batch.type, id)) {
                     candidates[id]?.let { candidate ->
                         rejected.getOrPut(id, ::mutableListOf) += candidate
@@ -721,8 +784,11 @@ internal class LlmTextGenerator(
             type: BoardCardType,
             candidates: Map<Int, Map<String, CardText>>,
             allowedIds: Set<Int>,
+            nameBearingIds: Set<Int>,
         ): Map<String, GeneratedText> = lock.withLock {
-            texts = texts.toMutableMap().apply { acceptCards(type, candidates, allowedIds) }
+            texts = texts.toMutableMap().apply {
+                acceptCards(type, candidates, allowedIds, nameBearingIds)
+            }
             texts
         }
 
@@ -778,7 +844,8 @@ internal class LlmTextGenerator(
             check(texts.keys == deck.keys) { "Incomplete $locale texts for $type" }
             check(texts.values.all { it.name.isNotBlank() }) { "Empty $locale name for $type" }
             check(texts.values.all { it.description.isNotBlank() }) { "Empty $locale description for $type" }
-            check(texts.values.map { it.name.lowercase() }.distinct().size == texts.size) {
+            val namedTexts = texts.filterKeys { deck.getValue(it).usesGeneratedName() }
+            check(namedTexts.values.map { it.name.normalized() }.distinct().size == namedTexts.size) {
                 "Repeated $locale names for $type"
             }
             check(texts.values.map { it.description }.distinct().size == texts.size) {
@@ -992,11 +1059,12 @@ internal class LlmTextGenerator(
         type: BoardCardType,
         candidates: Map<Int, Map<String, CardText>>,
         allowedIds: Set<Int>,
+        nameBearingIds: Set<Int>,
     ) {
         candidates.forEach { (id, localized) ->
             if (id !in allowedIds) return@forEach
             val unique = generatedLocales.all { locale ->
-                localized.getValue(locale).isUniqueCard(this, locale, type, id)
+                localized.getValue(locale).isUniqueCard(this, locale, type, id, nameBearingIds)
             }
             if (!unique) return@forEach
             generatedLocales.forEach { locale -> putCard(locale, type, id, localized.getValue(locale)) }
@@ -1047,14 +1115,19 @@ internal class LlmTextGenerator(
         locale: String,
         type: BoardCardType,
         id: Int,
+        nameBearingIds: Set<Int>,
     ): Boolean {
         val decks = texts.getValue(locale).cards
-        val uniqueInDeck = decks[type].orEmpty().none { (existingId, existing) ->
-            existingId != id && existing.collidesWith(this)
+        val uniqueName = id !in nameBearingIds || decks[type].orEmpty().none { (existingId, existing) ->
+            existingId != id && existingId in nameBearingIds && existing.name.normalized() == name.normalized()
         }
-        return uniqueInDeck && decks.none { (existingType, deck) ->
-            existingType != type && deck.values.any { it.description.normalized() == description.normalized() }
+        val uniqueDescription = decks.none { (existingType, deck) ->
+            deck.any { (existingId, existing) ->
+                val sameCard = existingType == type && existingId == id
+                !sameCard && existing.description.normalized() == description.normalized()
+            }
         }
+        return uniqueName && uniqueDescription
     }
 
     private fun CardText.isUniqueProfession(
@@ -1116,10 +1189,13 @@ internal class LlmTextGenerator(
         }.takeLast(MAX_ACCEPTED_PROFESSION_NAMES_IN_PROMPT)
     }
 
-    private fun Map<String, GeneratedText>.cardNameContext(type: BoardCardType): List<String> {
+    private fun Map<String, GeneratedText>.cardNameContext(
+        type: BoardCardType,
+        nameBearingIds: Set<Int>,
+    ): List<String> {
         val ids = generatedLocales.flatMap { locale ->
             this[locale]?.cards?.get(type)?.keys.orEmpty()
-        }.distinct().sorted()
+        }.distinct().filter { it in nameBearingIds }.sorted()
         return ids.mapNotNull { id ->
             localizedNameContext { locale -> this[locale]?.cards?.get(type)?.get(id)?.name }
         }.takeLast(MAX_ACCEPTED_CARD_NAMES_IN_PROMPT)
@@ -1149,6 +1225,7 @@ private data class CardBatch(
     val index: Int,
     val count: Int,
     val items: List<Map.Entry<Int, BoardCard>>,
+    val nameBearingIds: Set<Int>,
 )
 
 private data class ProfessionBatch(
@@ -1170,8 +1247,19 @@ private fun CardText.collidesWith(other: CardText): Boolean =
 
 private fun String.normalized(): String = trim().lowercase()
 
+private fun BoardCard.usesGeneratedName(): Boolean = when (this) {
+    is BoardCard.SmallBusiness,
+    is BoardCard.MediumBusiness,
+    is BoardCard.BigBusiness,
+    is BoardCard.Chance.Land,
+    is BoardCard.Chance.Estate -> true
+
+    else -> false
+}
+
 private const val MAX_LLM_REQUEST_ATTEMPTS = 8
 private const val MAX_LLM_UNAVAILABLE_ATTEMPTS = 3
+private const val MAX_LLM_COMPLETION_TOKENS = 6_000
 private const val UNAVAILABLE_RETRY_DELAY_MILLIS = 2_000L
 private const val MAX_ERROR_MESSAGE_LENGTH = 300
 private const val MAX_LLM_FALLBACKS = 3

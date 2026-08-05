@@ -336,7 +336,9 @@ class LlmTextGeneratorTest {
             attempt += 1
             val ids = promptIds(user)
             ids.joinToString(prefix = "[", postfix = "]") { id ->
-                if (attempt == 1 && id == "4") localizedItem("1").replace("\"id\":1", "\"id\":4")
+                if (attempt == 1 && id == "4") {
+                    localizedItem(id).replace("Назва 4", "Назва 1").replace("Name 4", "Name 1")
+                }
                 else localizedItem(id)
             }
         }
@@ -346,6 +348,27 @@ class LlmTextGeneratorTest {
         assertEquals(listOf("4"), promptIds(chat.prompts[1]))
         assertTrue(chat.prompts[1].contains("Назва 1"))
         assertEquals("Назва 4", generated.getValue("uk").cards.getValue(BoardCardType.SmallBusiness).getValue(4).name)
+    }
+
+    @Test
+    fun repeatedNamesAreAcceptedWhenTheCardDoesNotUseThem() = runTest {
+        val chat = FakeChat { user ->
+            promptIds(user).joinToString(prefix = "[", postfix = "]") { id ->
+                """{"id":$id,"uk":{"name":"Акції компанії","description":"Пропозиція $id"},""" +
+                        """"en":{"name":"Company shares","description":"Offer $id"}}"""
+            }
+        }
+        val shareCards = mapOf(
+            BoardCardType.Chance to mapOf<Int, BoardCard>(
+                67 to BoardCard.Chance.Shares("", 50, 1_000, "aerolith"),
+                68 to BoardCard.Chance.Shares("", 75, 500, "aerolith"),
+            ),
+        )
+
+        val generated = LlmTextGenerator(chat).generateComplete(world, shareCards, emptyList())
+
+        assertEquals(setOf(67, 68), generated.getValue("uk").cards.getValue(BoardCardType.Chance).keys)
+        assertEquals(1, chat.prompts.size)
     }
 
     @Test
