@@ -124,6 +124,20 @@ class DesignStatePageRenderTest {
     }
 
     @Test
+    fun statePageShowsPlayerAnimals() = runComposeUiTest {
+        setContent {
+            AppTheme(forceDark = true) {
+                Column(Modifier.size(400.dp, 600.dp)) {
+                    DesignPlayerStatePageForTest(player.copy(animal = 2), previewBoard)
+                }
+            }
+        }
+        waitForIdle()
+
+        onNodeWithText("Pets ×2").assertExists()
+    }
+
+    @Test
     fun statePageScrollsDownToTheLastBlock() = runComposeUiTest {
         setContent {
             AppTheme(forceDark = true) {

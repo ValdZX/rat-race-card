@@ -12,6 +12,7 @@ import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
@@ -42,5 +43,25 @@ class DesignTextFieldSizeTest {
             height < screenHeight / 3,
             "поле розтягнулось на $height замість висоти під три рядки",
         )
+    }
+
+    @Test
+    fun explicitFieldHeightIsUsedForCompactCardInputs() = runComposeUiTest {
+        setContent {
+            AppTheme(forceDark = true) {
+                Column(Modifier.size(400.dp, screenHeight)) {
+                    DesignTextField(
+                        value = "",
+                        onValueChange = {},
+                        modifier = Modifier.fillMaxWidth().testTag("compact-field"),
+                        fieldHeight = 34.dp,
+                    )
+                }
+            }
+        }
+        waitForIdle()
+
+        val bounds = onNodeWithTag("compact-field").getBoundsInRoot()
+        assertEquals(34.dp, bounds.bottom - bounds.top)
     }
 }

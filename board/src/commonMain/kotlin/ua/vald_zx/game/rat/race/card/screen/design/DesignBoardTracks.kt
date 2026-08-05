@@ -96,7 +96,13 @@ fun BoxScope.DesignBoardTracks(
     val playerLevel = state.player.location.level
 
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
-    val onSalary = { bottomSheetNavigator.show(SalaryScreen(vm)) }
+    val onSalary = {
+        if (state.player.investmentPosition == null) {
+            vm.takeSalary()
+        } else {
+            bottomSheetNavigator.show(SalaryScreen(vm))
+        }
+    }
     val onStart = { vm.capitalizeFunds() }
     val locale = Locale.current.language
     val allPlayers by players.collectAsState()

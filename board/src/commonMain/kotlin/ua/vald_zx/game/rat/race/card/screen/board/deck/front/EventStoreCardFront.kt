@@ -336,7 +336,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                     horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.Bottom,
                 ) {
                     EButton(
                         enabled = !state.isProgress,
@@ -362,7 +362,12 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                                     if (enteredCount <= maxCount) count = enteredCount
                                 },
                                 modifier = Modifier.padding(top = smallPadding),
-                                label = stringResource(Res.string.quantity),
+                                placeholder = stringResource(Res.string.quantity),
+                                fieldHeight = unitDp * 34,
+                                contentPadding = PaddingValues(
+                                    horizontal = unitDp * 9,
+                                    vertical = unitDp * 4,
+                                ),
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Number,
                                     imeAction = ImeAction.Done,

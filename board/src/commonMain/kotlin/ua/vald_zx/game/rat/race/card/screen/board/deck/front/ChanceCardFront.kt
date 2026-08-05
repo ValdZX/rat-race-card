@@ -449,7 +449,12 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                             if (enteredCount <= availableCount) count = enteredCount
                         },
                         modifier = Modifier.weight(1f),
-                        label = stringResource(Res.string.quantity),
+                        placeholder = stringResource(Res.string.quantity),
+                        fieldHeight = unitDp * 34,
+                        contentPadding = PaddingValues(
+                            horizontal = unitDp * 9,
+                            vertical = unitDp * 4,
+                        ),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done,

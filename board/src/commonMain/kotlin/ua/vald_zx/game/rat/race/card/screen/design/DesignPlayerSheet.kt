@@ -22,6 +22,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,8 +37,8 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Deposit
 import ua.vald_zx.game.rat.race.card.resource.images.Repay
+import ua.vald_zx.game.rat.race.card.resource.images.Rat
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
-import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.foundation.verticalScroll
 import ua.vald_zx.game.rat.race.card.resources.*
@@ -235,9 +237,14 @@ internal fun BalanceRow(player: Player, onRepay: () -> Unit = {}) {
     val type = Design.type
     Row(
         verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.padding(end = 44.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        AmountBlock(
+            label = stringResource(Res.string.cash),
+            amount = player.cash,
+            color = colors.semantic.cash.edge,
+            changes = emptyList(),
+        )
         AmountBlock(
             label = stringResource(Res.string.total_assets),
             amount = player.total(),
@@ -519,14 +526,15 @@ private fun DesignStatePage(player: Player, board: Board, onDeposit: () -> Unit)
 private fun PossessionsGrid(player: Player) {
     val config = player.config
     val items = listOf(
-        Possession(stringResource(Res.string.work), Res.drawable.asset_work, player.card.salary, 0, player.businesses.any { it.type == BusinessType.WORK }),
-        Possession(stringResource(Res.string.marriage), Res.drawable.cell_love, 0, 0, player.isMarried),
-        Possession(stringResource(Res.string.kids), Res.drawable.cell_child, player.babies * config.babyCost, player.babies, player.babies > 0),
-        Possession(stringResource(Res.string.car), Res.drawable.asset_car, player.cars * config.carCost, player.cars, player.cars > 0),
-        Possession(stringResource(Res.string.apartment), Res.drawable.asset_apartment, player.apartment * config.apartmentCost, player.apartment, player.apartment > 0),
-        Possession(stringResource(Res.string.estate), Res.drawable.asset_estate, player.cottage * config.cottageCost, player.cottage, player.cottage > 0),
-        Possession(stringResource(Res.string.yacht), Res.drawable.asset_yacht, player.yacht * config.yachtCost, player.yacht, player.yacht > 0),
-        Possession(stringResource(Res.string.plane), Res.drawable.asset_plane, player.flight * config.flightCost, player.flight, player.flight > 0),
+        Possession(stringResource(Res.string.work), painterResource(Res.drawable.asset_work), player.card.salary, 0, player.businesses.any { it.type == BusinessType.WORK }),
+        Possession(stringResource(Res.string.marriage), painterResource(Res.drawable.cell_love), 0, 0, player.isMarried),
+        Possession(stringResource(Res.string.kids), painterResource(Res.drawable.cell_child), player.babies * config.babyCost, player.babies, player.babies > 0),
+        Possession(stringResource(Res.string.car), painterResource(Res.drawable.asset_car), player.cars * config.carCost, player.cars, player.cars > 0),
+        Possession(stringResource(Res.string.apartment), painterResource(Res.drawable.asset_apartment), player.apartment * config.apartmentCost, player.apartment, player.apartment > 0),
+        Possession(stringResource(Res.string.estate), painterResource(Res.drawable.asset_estate), player.cottage * config.cottageCost, player.cottage, player.cottage > 0),
+        Possession(stringResource(Res.string.yacht), painterResource(Res.drawable.asset_yacht), player.yacht * config.yachtCost, player.yacht, player.yacht > 0),
+        Possession(stringResource(Res.string.plane), painterResource(Res.drawable.asset_plane), player.flight * config.flightCost, player.flight, player.flight > 0),
+        Possession(stringResource(Res.string.pets), rememberVectorPainter(Images.Rat), player.animal * config.animalCost, player.animal, player.animal > 0),
     )
     SectionCard(stringResource(Res.string.status)) {
         FlowRow(
@@ -541,7 +549,7 @@ private fun PossessionsGrid(player: Player) {
 
 private data class Possession(
     val label: String,
-    val icon: DrawableResource,
+    val icon: Painter,
     val price: Long,
     val count: Long,
     val owned: Boolean,
@@ -566,7 +574,7 @@ private fun PossessionTile(possession: Possession) {
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
     ) {
         Icon(
-            painter = painterResource(possession.icon),
+            painter = possession.icon,
             contentDescription = possession.label,
             tint = ink,
             modifier = Modifier.size(24.dp),

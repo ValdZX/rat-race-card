@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -35,6 +36,8 @@ fun DesignTextField(
     suffix: String? = null,
     textStyle: TextStyle? = null,
     inputTestTag: String? = null,
+    fieldHeight: Dp? = null,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
 ) {
     val colors = Design.colors
     val type = Design.type
@@ -69,7 +72,10 @@ fun DesignTextField(
                     else Modifier
                 )
                 .then(if (inputTestTag != null) Modifier.testTag(inputTestTag) else Modifier)
-                .heightIn(min = if (singleLine) 60.dp else 104.dp)
+                .then(
+                    if (fieldHeight != null) Modifier.height(fieldHeight)
+                    else Modifier.heightIn(min = if (singleLine) 60.dp else 104.dp)
+                )
                 .clip(DesignShapes.md)
                 .background(colors.scaffold.surface2)
                 .border(
@@ -79,7 +85,7 @@ fun DesignTextField(
                 ),
             decorationBox = { inner ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                    modifier = Modifier.fillMaxWidth().padding(contentPadding),
                     verticalAlignment = if (singleLine) Alignment.CenterVertically else Alignment.Top,
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
