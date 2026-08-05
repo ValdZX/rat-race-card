@@ -5,6 +5,9 @@ import ua.vald_zx.game.rat.race.server.generation.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.OuterCircleConditions
@@ -16,6 +19,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class BalanceLlmTest {
+    private val balanceJson = Json { encodeDefaults = true }
     private val world = BoardGeneration(
         enabled = true,
         theme = "підводна цивілізація",
@@ -30,7 +34,7 @@ class BalanceLlmTest {
         val prompts = mutableListOf<String>()
         val chat = ChatCompletion { _, user ->
             prompts += user
-            Json.encodeToString(testBalance())
+            balanceJson.encodeToString(testBalance())
         }
 
         val generated = LlmBalanceGenerator(chat).generate(world, deckSizes)
@@ -45,6 +49,9 @@ class BalanceLlmTest {
         assertTrue(prompts.single().contains("INNER:"))
         assertTrue(prompts.single().contains("OUTER:"))
         assertTrue(prompts.single().contains("victoryMinimumAccountBalance"))
+        assertTrue(prompts.single().contains("childBenefit"))
+        assertTrue(prompts.single().contains("deputyCardPrice"))
+        assertTrue(prompts.single().contains("salaryFundRates"))
     }
 
     @Test
@@ -90,6 +97,20 @@ class BalanceLlmTest {
         assertEquals(balance.loanRate, balance.playerConfig().loadRate)
         assertEquals(balance.babyRecurringCost, balance.playerConfig().babyCost)
         assertEquals(balance.marriageCost, balance.playerConfig().marriageCost)
+        assertEquals(balance.childBenefit, balance.playerConfig().childBenefit)
+        assertEquals(balance.deputyCardPrice, balance.playerConfig().deputyCardPrice)
+        assertEquals(balance.mediumRiskMultiplier, balance.playerConfig().mediumRiskMultiplier)
+        assertEquals(balance.highRiskMultiplier, balance.playerConfig().highRiskMultiplier)
+        assertEquals(balance.salaryFundRates, balance.playerConfig().salaryFundRates)
+        assertEquals(balance.fundBaseRate, balance.playerConfig().fundBaseRate)
+        assertEquals(balance.fundStartRate, balance.playerConfig().fundStartRate)
+        assertEquals(balance.restTurnCount, balance.playerConfig().restTurnCount)
+        assertEquals(
+            balance.divorceAssetRetentionPercentage,
+            balance.playerConfig().divorceAssetRetentionPercentage,
+        )
+        assertEquals(balance.carMovementBonus, balance.playerConfig().carMovementBonus)
+        assertEquals(balance.planeMovementBonus, balance.playerConfig().planeMovementBonus)
     }
 
     @Test
@@ -97,7 +118,7 @@ class BalanceLlmTest {
         var attempts = 0
         val chat = ChatCompletion { _, _ ->
             attempts += 1
-            if (attempts == 1) "{}" else Json.encodeToString(testBalance())
+            if (attempts == 1) "{}" else balanceJson.encodeToString(testBalance())
         }
 
         assertEquals(testBalance(), LlmBalanceGenerator(chat).generate(world, deckSizes))
@@ -110,7 +131,7 @@ class BalanceLlmTest {
         val invalid = testBalance().copy(shares = testBalance().shares.take(5))
         val chat = ChatCompletion { _, user ->
             prompts += user
-            Json.encodeToString(if (prompts.size == 1) invalid else testBalance())
+            balanceJson.encodeToString(if (prompts.size == 1) invalid else testBalance())
         }
 
         assertEquals(testBalance(), LlmBalanceGenerator(chat).generate(world, deckSizes))
@@ -122,7 +143,7 @@ class BalanceLlmTest {
         val repeated = testBalance().copy(
             corruptOneTimeReturnPercentages = listOf(500, 750, 750, 800, 1_000),
         )
-        val chat = ChatCompletion { _, _ -> Json.encodeToString(repeated) }
+        val chat = ChatCompletion { _, _ -> balanceJson.encodeToString(repeated) }
 
         val generated = LlmBalanceGenerator(chat).generate(world, deckSizes)
 
@@ -137,7 +158,7 @@ class BalanceLlmTest {
             landPricePerUnit = listOf(1_000, 4_000, 8_000),
             eventLandPricePercentages = listOf(60, 100, 150),
         )
-        val chat = ChatCompletion { _, _ -> Json.encodeToString(wide) }
+        val chat = ChatCompletion { _, _ -> balanceJson.encodeToString(wide) }
 
         val generated = LlmBalanceGenerator(chat).generate(world, deckSizes)
 
@@ -188,6 +209,20 @@ class BalanceLlmTest {
         val invalid = testBalance().copy(dreamMinPrice = testBalance().victoryMinimumAccountBalance + 1)
 
         assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
+
+    @Test
+    fun omittedChildBenefitIsRegeneratedInsteadOfUsingTheLegacyDefault() = runTest {
+        var attempts = 0
+        val complete = balanceJson.encodeToJsonElement(testBalance()).jsonObject
+        val withoutChildBenefit = JsonObject(complete - "childBenefit").toString()
+        val chat = ChatCompletion { _, _ ->
+            attempts += 1
+            if (attempts == 1) withoutChildBenefit else complete.toString()
+        }
+
+        assertEquals(testBalance(), LlmBalanceGenerator(chat).generate(world, deckSizes))
+        assertEquals(2, attempts)
     }
 
     @Test

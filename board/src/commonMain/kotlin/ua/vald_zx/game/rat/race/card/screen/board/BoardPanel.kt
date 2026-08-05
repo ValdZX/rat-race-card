@@ -5,11 +5,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -20,6 +22,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.runtime.collectAsState
+import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.screen.design.DesignBoardRoutes
@@ -34,13 +37,24 @@ fun BoxWithConstraintsScope.rememberBoardLayout(vm: BoardViewModel, isVertical: 
     val board = vm.uiState.collectAsState().value.board
     val layers = remember(board.generatedPlaces) { boardLayersOf(board) }
     return remember(isVertical, maxWidth, maxHeight, layers) {
+        val contentSize = DpSize(maxWidth, maxHeight).boardContentSize()
         calculateBoardLayout(
-            boardSize = DpSize(maxWidth, maxHeight),
+            boardSize = contentSize,
             isVertical = isVertical,
             layers = layers,
         )
     }
 }
+
+internal fun DpSize.boardContentSize(): DpSize {
+    if (width <= 0.dp || height <= 0.dp) return DpSize.Zero
+    val availableWidth = (width - boardContentPadding * 2).coerceAtLeast(0.dp)
+    val availableHeight = (height - boardContentPadding * 2).coerceAtLeast(0.dp)
+    val scale = minOf(availableWidth / width, availableHeight / height).coerceIn(0f, 1f)
+    return DpSize(width * scale, height * scale)
+}
+
+private val boardContentPadding = 12.dp
 
 @Composable
 fun BoxWithConstraintsScope.BoardPanel(
@@ -53,18 +67,30 @@ fun BoxWithConstraintsScope.BoardPanel(
     val maxHeight = maxHeight
     val density = LocalDensity.current
     val isDark by LocalThemeIsDark.current
+    val boardBrush = boardBackgroundBrush(
+        isDark = isDark,
+        radius = with(density) { min(maxWidth, maxHeight).toPx() },
+    )
+    val background = if (designV2Enabled.value) {
+        Modifier.background(Design.scaffold.surface4)
+    } else {
+        Modifier.background(boardBrush)
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
             .shadow(30.dp, shape = RoundedCornerShape(8.dp))
             .clip(RoundedCornerShape(8.dp))
-            .background(
-                boardBackgroundBrush(
-                    isDark = isDark,
-                    radius = with(density) { min(maxWidth, maxHeight).toPx() }
-                )
-            )
+            .then(background)
     ) {
+        if (designV2Enabled.value) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(layout.outerRoute.size)
+                    .background(boardBrush)
+            )
+        }
         BoardRoutes(
             layout = layout,
             vm = vm,

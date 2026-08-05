@@ -27,8 +27,8 @@ class SalaryScreenRenderTest {
         setContent {
             Box(Modifier.size(400.dp, 800.dp).testTag("sheet")) {
                 BottomSheetContainer {
-                    HighRiskCard { _, _ -> }
-                    MediumRiskCard { _, _ -> }
+                    HighRiskCard(multiplier = 6) { _, _ -> }
+                    MediumRiskCard(multiplier = 2) { _, _ -> }
                     LowRiskCard(rate = 20) { }
                 }
             }
@@ -43,7 +43,7 @@ class SalaryScreenRenderTest {
         setContent {
             Box(Modifier.size(400.dp, 800.dp)) {
                 BottomSheetContainer {
-                    HighRiskCard { stake, guess -> played += stake to guess }
+                    HighRiskCard(multiplier = 6) { stake, guess -> played += stake to guess }
                 }
             }
         }

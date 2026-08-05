@@ -23,9 +23,14 @@ internal fun LegacySalaryScreen(vm: BoardViewModel) {
         val state by vm.uiState.collectAsState()
         val player = state.player
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
-        val fundRate = remember(player.investmentPosition, player.location.level, state.places) {
+        val fundRate = remember(
+            player.investmentPosition,
+            player.location.level,
+            player.config.salaryFundRates,
+            state.places,
+        ) {
             player.investmentPosition?.let { position ->
-                state.places.fundRateAtSalary(position)
+                state.places.fundRateAtSalary(position, player.config.salaryFundRates)
             }
         }
         LaunchedEffect(player.salaryPosition, player.investmentPosition) {
@@ -50,8 +55,12 @@ internal fun LegacySalaryScreen(vm: BoardViewModel) {
                     text = stringResource(Res.string.investments),
                     style = MaterialTheme.typography.titleMedium,
                 )
-                HighRiskCard { stake, guess -> vm.playHighRiskInvestment(stake, guess) }
-                MediumRiskCard { stake, even -> vm.playMediumRiskInvestment(stake, even) }
+                HighRiskCard(player.config.highRiskMultiplier) { stake, guess ->
+                    vm.playHighRiskInvestment(stake, guess)
+                }
+                MediumRiskCard(player.config.mediumRiskMultiplier) { stake, even ->
+                    vm.playMediumRiskInvestment(stake, even)
+                }
                 LowRiskCard(rate = fundRate) { amount -> vm.investInFund(amount) }
             }
         }
@@ -80,12 +89,12 @@ private fun InvestmentCard(
 }
 
 @Composable
-internal fun HighRiskCard(onPlay: (stake: Long, guess: Int) -> Unit) {
+internal fun HighRiskCard(multiplier: Long, onPlay: (stake: Long, guess: Int) -> Unit) {
     val stake = remember { mutableStateOf(TextFieldValue("")) }
     var guess by remember { mutableStateOf<Int?>(null) }
     InvestmentCard(
         title = stringResource(Res.string.high_risk),
-        hint = stringResource(Res.string.high_risk_hint),
+        hint = stringResource(Res.string.high_risk_hint, multiplier.toString()),
     ) {
         NumberTextField(input = stake, inputLabel = stringResource(Res.string.stake))
         Row(
@@ -114,12 +123,12 @@ internal fun HighRiskCard(onPlay: (stake: Long, guess: Int) -> Unit) {
 }
 
 @Composable
-internal fun MediumRiskCard(onPlay: (stake: Long, even: Boolean) -> Unit) {
+internal fun MediumRiskCard(multiplier: Long, onPlay: (stake: Long, even: Boolean) -> Unit) {
     val stake = remember { mutableStateOf(TextFieldValue("")) }
     var even by remember { mutableStateOf<Boolean?>(null) }
     InvestmentCard(
         title = stringResource(Res.string.medium_risk),
-        hint = stringResource(Res.string.medium_risk_hint),
+        hint = stringResource(Res.string.medium_risk_hint, multiplier.toString()),
     ) {
         NumberTextField(input = stake, inputLabel = stringResource(Res.string.stake))
         Row(

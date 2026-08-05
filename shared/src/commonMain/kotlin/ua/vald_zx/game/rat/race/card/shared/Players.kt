@@ -192,6 +192,15 @@ data class Config(
     val fundBaseRate: Long = 20,
     val fundStartRate: Long = 30,
     val marriageCost: Long = 5000,
+    val childBenefit: Long = 1000,
+    val deputyCardPrice: Long = 50_000,
+    val mediumRiskMultiplier: Long = 2,
+    val highRiskMultiplier: Long = 6,
+    val salaryFundRates: List<Long> = listOf(20, 15, 10, 5),
+    val restTurnCount: Long = 2,
+    val divorceAssetRetentionPercentage: Long = 50,
+    val carMovementBonus: Int = 1,
+    val planeMovementBonus: Int = 2,
     val hasFunds: Boolean = true,
     val tts: Boolean = false,
 )
@@ -268,8 +277,8 @@ fun Player.hasMetVictoryConditions(conditions: VictoryConditions): Boolean {
 fun Player.movementSteps(dice: Int, transportMovementBonusEnabled: Boolean): Int {
     val transportBonus = if (transportMovementBonusEnabled) {
         when {
-            flight > 0 -> 2
-            cars > 0 -> 1
+            flight > 0 -> config.planeMovementBonus
+            cars > 0 -> config.carMovementBonus
             else -> 0
         }
     } else {

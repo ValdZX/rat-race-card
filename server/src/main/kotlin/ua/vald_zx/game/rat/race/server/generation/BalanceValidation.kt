@@ -112,7 +112,26 @@ internal fun GeneratedBalance.validate() {
         animalRecurringCost,
         marriageCost,
         childBenefit,
+        deputyCardPrice,
     ).all { it in 1..MAX_GENERATED_AMOUNT }) { "player economy values are invalid" }
+    check(mediumRiskMultiplier in 2..20) { "mediumRiskMultiplier is invalid" }
+    check(highRiskMultiplier in 2..20 && highRiskMultiplier > mediumRiskMultiplier) {
+        "highRiskMultiplier is invalid"
+    }
+    check(salaryFundRates.size == 4 && salaryFundRates.all { it in 1..100 }) {
+        "salaryFundRates are invalid"
+    }
+    check(salaryFundRates.zipWithNext().all { (higher, lower) -> higher > lower }) {
+        "salaryFundRates must decrease towards Start"
+    }
+    check(fundBaseRate in 1..100) { "fundBaseRate is invalid" }
+    check(fundStartRate in 1..100) { "fundStartRate is invalid" }
+    check(restTurnCount in 1..10) { "restTurnCount is invalid" }
+    check(divorceAssetRetentionPercentage in 10..90) {
+        "divorceAssetRetentionPercentage is invalid"
+    }
+    check(carMovementBonus in 0..6) { "carMovementBonus is invalid" }
+    check(planeMovementBonus in carMovementBonus..12) { "planeMovementBonus is invalid" }
     check(loanLimit in 1..MAX_GENERATED_AMOUNT) { "loanLimit is invalid" }
     check(businessLimit in 1..1_000) { "businessLimit is invalid" }
     check(outerCircleMinimumCashFlow in 1..MAX_GENERATED_AMOUNT) {
@@ -176,7 +195,18 @@ internal fun GeneratedBalance.playerConfig() = Config(
     yachtCost = yachtRecurringCost,
     flightCost = planeRecurringCost,
     animalCost = animalRecurringCost,
+    fundBaseRate = fundBaseRate,
+    fundStartRate = fundStartRate,
     marriageCost = marriageCost,
+    childBenefit = childBenefit,
+    deputyCardPrice = deputyCardPrice,
+    mediumRiskMultiplier = mediumRiskMultiplier,
+    highRiskMultiplier = highRiskMultiplier,
+    salaryFundRates = salaryFundRates,
+    restTurnCount = restTurnCount,
+    divorceAssetRetentionPercentage = divorceAssetRetentionPercentage,
+    carMovementBonus = carMovementBonus,
+    planeMovementBonus = planeMovementBonus,
 )
 
 internal fun List<Long>.median(): Long = sorted()[size / 2]

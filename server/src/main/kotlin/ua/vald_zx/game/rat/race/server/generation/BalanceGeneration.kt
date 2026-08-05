@@ -2,6 +2,7 @@ package ua.vald_zx.game.rat.race.server.generation
 
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
@@ -24,7 +25,13 @@ internal class LlmBalanceGenerator(
                 return@repeat
             }
             val generated = runCatching {
-                json.decodeFromString<GeneratedBalance>(answer.jsonObject())
+                val response = answer.jsonObject()
+                val fields = json.parseToJsonElement(response).jsonObject.keys
+                val missingFields = generatedBalanceFields - fields
+                check(missingFields.isEmpty()) {
+                    "Balance response misses ${missingFields.sorted().joinToString()}"
+                }
+                json.decodeFromString<GeneratedBalance>(response)
                     .withoutDuplicateOptions()
                     .withBoundedAssetPrices()
             }
@@ -97,6 +104,46 @@ internal class LlmBalanceGenerator(
 private const val MAX_BALANCE_ATTEMPTS = 3
 private const val AVERAGE_STEP = 3.5
 private val balanceLogger = KtorSimpleLogger("BalanceLlm")
+private val generatedBalanceFields = setOf(
+    "shares",
+    "forcedShareSalePrices",
+    "forcedShareSalePercentage",
+    "strayAnimalPercentage",
+    "depositRate",
+    "loanRate",
+    "babyRecurringCost",
+    "carRecurringCost",
+    "apartmentRecurringCost",
+    "houseRecurringCost",
+    "yachtRecurringCost",
+    "planeRecurringCost",
+    "animalRecurringCost",
+    "marriageCost",
+    "childBenefit",
+    "deputyCardPrice",
+    "mediumRiskMultiplier",
+    "highRiskMultiplier",
+    "salaryFundRates",
+    "fundBaseRate",
+    "fundStartRate",
+    "restTurnCount",
+    "divorceAssetRetentionPercentage",
+    "carMovementBonus",
+    "planeMovementBonus",
+    "dreamMinPrice",
+    "dreamMaxPrice",
+    "loanLimit",
+    "businessLimit",
+    "transportMovementBonusEnabled",
+    "outerCircleMinimumCashFlow",
+    "outerCircleMinimumAccountBalance",
+    "outerCircleApartmentRequired",
+    "outerCircleCarRequired",
+    "victoryMinimumAccountBalance",
+    "victoryDreamRequired",
+    "victoryPlaneRequired",
+    "victoryEstateRequired",
+)
 
 private fun boardLayoutPrompt() = buildString {
     append("Fixed board layout; account for it in card frequencies and amounts:\n")
@@ -141,10 +188,11 @@ Mechanics the balance must support:
 - Business extension raises one small business's recurring profit. Reelection changes the deputies.
 - Deposits yield depositRate percent income; loans add loanRate percent expense. Children, cars, apartments, houses, yachts, and planes add their recurring costs.
 - Marriage marries the player; a man pays marriageCost. Child adds a child to a woman or married man, pays childBenefit, and raises recurring expenses.
-- Divorce ends marriage; a man also loses half his cash and deposit plus his children. Bankruptcy removes a random business, resignation removes the job, and rest skips two turns.
-- Passing Salary pays current cash flow. Salary spaces offer funds at 20%, 15%, 10%, or 5%. Start capitalizes funds; landing exactly gives 30%.
+- Divorce ends marriage; a man keeps divorceAssetRetentionPercentage of his cash and deposit but loses his children. Bankruptcy removes a random business, resignation removes the job, and rest skips restTurnCount turns.
+- Passing Salary pays current cash flow. Salary spaces offer the descending salaryFundRates. Start capitalizes funds at their own rates into fundBaseRate; landing exactly uses fundStartRate.
 - Desire offers an unowned dream; purchased dreams are board-wide and may be required to win. TaxInspection currently has no direct financial effect.
-- Risk investments have fixed payouts: medium risk x2, high risk x6. Account for them in overall difficulty.
+- Risk investments pay mediumRiskMultiplier and highRiskMultiplier. Buying a deputy costs deputyCardPrice. Account for them in overall difficulty.
+- Cars and planes add carMovementBonus and planeMovementBonus steps when transport bonuses are enabled.
 - Generated financial and ownership conditions control outer-circle entry and victory. Make the path challenging but achievable.
 """.trimIndent() + "\n"
 
@@ -177,7 +225,11 @@ Required constraints:
 - forcedShareSalePercentage: 5..40; forced sales should matter without dominating the deck.
 - depositRate: 1..20; loanRate: 1..50.
 - The lowest salary must cover rent+food+cloth+transport+phone, calculated as percentages and rounded to tens; tiny salaries may fail.
-- babyRecurringCost, carRecurringCost, apartmentRecurringCost, houseRecurringCost, yachtRecurringCost, planeRecurringCost, animalRecurringCost, marriageCost, and childBenefit are positive amounts consistent with salaries and asset prices.
+- babyRecurringCost, carRecurringCost, apartmentRecurringCost, houseRecurringCost, yachtRecurringCost, planeRecurringCost, animalRecurringCost, marriageCost, childBenefit, and deputyCardPrice are positive amounts consistent with salaries and asset prices.
+- mediumRiskMultiplier: 2..20; highRiskMultiplier: 2..20 and greater than mediumRiskMultiplier.
+- salaryFundRates contains exactly four strictly descending rates in 1..100; fundBaseRate and fundStartRate: 1..100.
+- restTurnCount: 1..10; divorceAssetRetentionPercentage: 10..90.
+- carMovementBonus: 0..6; planeMovementBonus: carMovementBonus..12.
 - All amounts and counts are positive and <= 1000000000.
 - All card weights: 1..10000.
 - loanLimit, businessLimit, outer-circle conditions, and victory conditions must fit this economy's scale.
@@ -211,6 +263,10 @@ private val BALANCE_SCHEMA = """
   "babyRecurringCost":300, "carRecurringCost":600, "apartmentRecurringCost":200,
   "houseRecurringCost":1000, "yachtRecurringCost":1500, "planeRecurringCost":5000,
   "animalRecurringCost":100, "marriageCost":5000, "childBenefit":1000,
+  "deputyCardPrice":50000, "mediumRiskMultiplier":2, "highRiskMultiplier":6,
+  "salaryFundRates":[20,15,10,5], "fundBaseRate":20, "fundStartRate":30,
+  "restTurnCount":2, "divorceAssetRetentionPercentage":50,
+  "carMovementBonus":1, "planeMovementBonus":2,
   "dreamMinPrice":1000000, "dreamMaxPrice":20000000,
   "chanceWeights":{"randomJob":30,"estate":25,"land":30,"shares":35,"corruptBusiness":13,"corruptLand":5},
   "eventWeights":{"land":26,"estate":15,"shares":45,"businessExtending":20,"reelection":2,"announcement":4},

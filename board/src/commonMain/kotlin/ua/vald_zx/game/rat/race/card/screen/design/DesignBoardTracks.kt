@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.intl.Locale
@@ -71,7 +72,7 @@ private val tokenCellGap = 4.dp
 internal const val FOCUSED_CELL_Z = 10f
 
 private val minExpandedHeight = 34.dp
-private val dreamCellSize = DpSize(width = 172.dp, height = 136.dp)
+private val dreamCellWidth = 220.dp
 
 internal class DreamCellContext(
     val dream: (String) -> Dream?,
@@ -347,6 +348,7 @@ internal fun BoxScope.DesignTrackForTest(
     layout: RouteLayout,
     surface: CellSurface,
     focus: CellFocus = rememberCellFocus(),
+    dreams: DreamCellContext? = null,
     tokenContent: @Composable BoxScope.() -> Unit = {},
 ) = DesignTrack(
     layout,
@@ -355,6 +357,7 @@ internal fun BoxScope.DesignTrackForTest(
     focus = focus,
     onSalaryClick = null,
     onStartClick = null,
+    dreams = dreams,
     tokenContent = tokenContent,
 )
 
@@ -433,6 +436,7 @@ private fun BoxScope.TrackCell(
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
     val labelStyle = expandedLabelStyle()
+    val amountStyle = Design.type.monoMeta
     val level = layout.layer.level
     val onThisLayer = live && player != null
     val salaryHere = onThisLayer && place.type == PlaceType.Salary &&
@@ -448,17 +452,31 @@ private fun BoxScope.TrackCell(
 
     val label = place.type.shortLabel()
     val canExpand = live
-    val expandedWidth = remember(label, expanded, expandedIcon) {
-        if (!expanded) 0.dp
-        else with(density) {
+    val expandedWidth = remember(label, expanded, expandedIcon, waitingAmount, amountStyle) {
+        if (!expanded) return@remember 0.dp
+        val labelWidth = with(density) {
             measurer.measure(label, labelStyle).size.width.toDp()
         } + expandedLabelChrome(expandedIcon)
+        val amountWidth = waitingAmount?.let { amount ->
+            with(density) {
+                measurer.measure(waitingAmountLabel(amount), amountStyle).size.width.toDp()
+            } + 14.dp
+        } ?: 0.dp
+        maxOf(labelWidth, amountWidth)
     }
-    val dreamDetail = dreamDetail(place.type, expanded, dreams)
-    val openBox = if (dreamDetail != null) {
-        DpSize(
-            width = maxOf(expandedBox.width, dreamCellSize.width),
-            height = maxOf(expandedBox.height, dreamCellSize.height),
+    val dream = if (expanded && place.type is PlaceType.Desire) {
+        dreams?.dream(place.type.dreamId)
+    } else {
+        null
+    }
+    val dreamSelectors = dream?.let { dreams?.selectors(it.id).orEmpty() }.orEmpty()
+    val dreamDetail = dreamDetail(dream, dreamSelectors, dreams)
+    val openBox = if (dreamDetail != null && dream != null) {
+        dreamCellSize(
+            dream = dream,
+            selectorCount = dreamSelectors.size,
+            expandedBox = expandedBox,
+            expandedIcon = expandedIcon,
         )
     } else {
         DpSize(maxOf(expandedBox.width, expandedWidth), expandedBox.height)
@@ -510,15 +528,12 @@ private fun dreamClaimMarks(type: PlaceType, dreams: DreamCellContext?): List<Co
 
 @Composable
 private fun dreamDetail(
-    type: PlaceType,
-    expanded: Boolean,
+    dream: Dream?,
+    selectors: List<Player>,
     dreams: DreamCellContext?,
 ): (@Composable ColumnScope.() -> Unit)? {
-    if (!expanded || dreams == null || type !is PlaceType.Desire) return null
-    val dream = dreams.dream(type.dreamId) ?: return null
-    val selectors = dreams.selectors(dream.id)
+    if (dream == null || dreams == null) return null
     val isSelected = selectors.any { it.id == dreams.currentPlayerId }
-    val isTakenByOther = selectors.any { it.id != dreams.currentPlayerId }
     val isPurchased = dream.id in dreams.purchasedDreamIds
     val selectLabel = stringResource(Res.string.select_action)
     val chosenByLabel = stringResource(Res.string.dream_chosen_by)
@@ -533,7 +548,6 @@ private fun dreamDetail(
             text = dream.name,
             style = Design.type.cellSm,
             color = colors.scaffold.onFill,
-            maxLines = 2,
         )
         Text(
             text = dream.price.splitDecimal(),
@@ -547,14 +561,11 @@ private fun dreamDetail(
                 text = dream.description,
                 style = Design.type.monoMeta,
                 color = colors.scaffold.onFill,
-                maxLines = 2,
-                modifier = Modifier.weight(1f, fill = false),
             )
         }
         if (selectors.isNotEmpty()) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
                     text = "$chosenByLabel:",
@@ -579,6 +590,55 @@ private fun dreamDetail(
             onClick = { dreams.onSelect(dream.id) },
         )
     }
+}
+
+@Composable
+private fun dreamCellSize(
+    dream: Dream,
+    selectorCount: Int,
+    expandedBox: DpSize,
+    expandedIcon: Dp,
+): DpSize {
+    val density = LocalDensity.current
+    val measurer = rememberTextMeasurer()
+    val contentWidth = dreamCellWidth - 16.dp
+    val maxWidth = with(density) { contentWidth.roundToPx() }
+    val cellStyle = Design.type.cellSm
+    val metaStyle = Design.type.monoMeta
+    val headerStyle = expandedLabelStyle()
+    fun measuredHeight(text: String, maxLines: Int = Int.MAX_VALUE): Dp = with(density) {
+        measurer.measure(
+            text = text,
+            style = if (maxLines == 1) headerStyle else metaStyle,
+            maxLines = maxLines,
+            constraints = Constraints(maxWidth = maxWidth),
+        ).size.height.toDp()
+    }
+    val headerHeight = maxOf(expandedIcon, measuredHeight("Dream", maxLines = 1))
+    val nameHeight = with(density) {
+        measurer.measure(
+            text = dream.name,
+            style = cellStyle,
+            constraints = Constraints(maxWidth = maxWidth),
+        ).size.height.toDp()
+    }
+    val detailHeights = buildList {
+        add(headerHeight)
+        add(nameHeight)
+        add(measuredHeight(dream.price.toString()))
+        if (dream.description.isNotBlank()) add(measuredHeight(dream.description))
+        if (selectorCount > 0) {
+            val lineHeight = measuredHeight("Selected by")
+            add(lineHeight * (selectorCount + 1) + 2.dp * selectorCount)
+        }
+        add(26.dp)
+    }
+    val contentHeight = detailHeights.fold(12.dp) { total, height -> total + height } +
+            4.dp * (detailHeights.size - 1)
+    return DpSize(
+        width = maxOf(expandedBox.width, dreamCellWidth),
+        height = maxOf(expandedBox.height, contentHeight),
+    )
 }
 
 @Composable

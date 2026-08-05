@@ -147,6 +147,12 @@ class PlayerProgressionTest {
             player(cars = 1, flight = 1)
                 .movementSteps(dice = 4, transportMovementBonusEnabled = false),
         )
+        assertEquals(
+            9,
+            player(cars = 1, flight = 1).copy(
+                config = Config(carMovementBonus = 3, planeMovementBonus = 5),
+            ).movementSteps(dice = 4, transportMovementBonusEnabled = true),
+        )
     }
 
     @Test

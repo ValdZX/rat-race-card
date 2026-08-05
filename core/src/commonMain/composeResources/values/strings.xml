@@ -302,8 +302,8 @@
     <string name="high_risk">High risk</string>
     <string name="medium_risk">Medium risk</string>
     <string name="low_risk">Low risk</string>
-    <string name="high_risk_hint">Guess the die roll — the stake pays 6x</string>
-    <string name="medium_risk_hint">Guess even or odd — the stake pays 2x</string>
+    <string name="high_risk_hint">Guess the die roll — the stake pays %1$sx</string>
+    <string name="medium_risk_hint">Guess even or odd — the stake pays %1$sx</string>
     <string name="low_risk_hint">Put money into a fund at %1$s%% per lap</string>
     <string name="stake">Stake</string>
     <string name="play">Play</string>

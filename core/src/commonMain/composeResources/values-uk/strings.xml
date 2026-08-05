@@ -307,8 +307,8 @@
     <string name="high_risk">Високоризикові</string>
     <string name="medium_risk">Середньоризикові</string>
     <string name="low_risk">Низькоризикові</string>
-    <string name="high_risk_hint">Вгадай число на кубику — ставка множиться на 6</string>
-    <string name="medium_risk_hint">Вгадай парне чи непарне — ставка подвоюється</string>
+    <string name="high_risk_hint">Вгадай число на кубику — ставка множиться на %1$s</string>
+    <string name="medium_risk_hint">Вгадай парне чи непарне — ставка множиться на %1$s</string>
     <string name="low_risk_hint">Покласти гроші у фонд під %1$s%% за коло</string>
     <string name="stake">Ставка</string>
     <string name="play">Грати</string>

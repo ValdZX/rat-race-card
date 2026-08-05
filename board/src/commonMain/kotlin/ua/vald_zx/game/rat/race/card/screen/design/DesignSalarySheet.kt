@@ -29,9 +29,14 @@ fun DesignSalarySheet(vm: BoardViewModel) {
     val player = state.player
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     var openGame by remember { mutableStateOf<Game?>(null) }
-    val fundRate = remember(player.investmentPosition, player.location.level, state.places) {
+    val fundRate = remember(
+        player.investmentPosition,
+        player.location.level,
+        player.config.salaryFundRates,
+        state.places,
+    ) {
         player.investmentPosition?.let { position ->
-            state.places.fundRateAtSalary(position)
+            state.places.fundRateAtSalary(position, player.config.salaryFundRates)
         }
     }
 
@@ -54,6 +59,8 @@ fun DesignSalarySheet(vm: BoardViewModel) {
             null -> Overview(
                 salary = player.salaryPosition?.let { player.cashFlow() },
                 fundRate = fundRate,
+                highRiskMultiplier = player.config.highRiskMultiplier,
+                mediumRiskMultiplier = player.config.mediumRiskMultiplier,
                 onTakeSalary = {
                     bottomSheetNavigator.hide()
                     vm.takeSalary()
@@ -64,6 +71,8 @@ fun DesignSalarySheet(vm: BoardViewModel) {
             else -> GameForm(
                 game = game,
                 fundRate = fundRate ?: 0,
+                highRiskMultiplier = player.config.highRiskMultiplier,
+                mediumRiskMultiplier = player.config.mediumRiskMultiplier,
                 available = player.cash,
                 onBack = { openGame = null },
                 onPlay = { amount, guess, even ->
@@ -83,6 +92,8 @@ fun DesignSalarySheet(vm: BoardViewModel) {
 private fun ColumnScope.Overview(
     salary: Long?,
     fundRate: Long?,
+    highRiskMultiplier: Long,
+    mediumRiskMultiplier: Long,
     onTakeSalary: () -> Unit,
     onPick: (Game) -> Unit,
 ) {
@@ -111,11 +122,11 @@ private fun ColumnScope.Overview(
         DesignSectionTitle(stringResource(Res.string.investments))
         GameTile(
             title = stringResource(Res.string.high_risk),
-            hint = stringResource(Res.string.high_risk_hint),
+            hint = stringResource(Res.string.high_risk_hint, highRiskMultiplier.toString()),
         ) { onPick(Game.High) }
         GameTile(
             title = stringResource(Res.string.medium_risk),
-            hint = stringResource(Res.string.medium_risk_hint),
+            hint = stringResource(Res.string.medium_risk_hint, mediumRiskMultiplier.toString()),
         ) { onPick(Game.Medium) }
         GameTile(
             title = stringResource(Res.string.low_risk),
@@ -146,6 +157,8 @@ private fun GameTile(title: String, hint: String, onClick: () -> Unit) {
 private fun ColumnScope.GameForm(
     game: Game,
     fundRate: Long,
+    highRiskMultiplier: Long,
+    mediumRiskMultiplier: Long,
     available: Long,
     onBack: () -> Unit,
     onPlay: (amount: Long, guess: Int?, even: Boolean?) -> Unit,
@@ -163,8 +176,8 @@ private fun ColumnScope.GameForm(
         Game.Low -> stringResource(Res.string.low_risk)
     }
     val subtitle = when (game) {
-        Game.High -> stringResource(Res.string.high_risk_hint)
-        Game.Medium -> stringResource(Res.string.medium_risk_hint)
+        Game.High -> stringResource(Res.string.high_risk_hint, highRiskMultiplier.toString())
+        Game.Medium -> stringResource(Res.string.medium_risk_hint, mediumRiskMultiplier.toString())
         Game.Low -> stringResource(Res.string.low_risk_hint, fundRate.toString())
     }
     val actionWord = when (game) {

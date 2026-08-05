@@ -26,7 +26,6 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.cards.cardOf
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.CardLink
-import ua.vald_zx.game.rat.race.card.shared.DEPUTY_CARD_PRICE
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
 @Composable
@@ -92,11 +91,11 @@ fun BoxWithConstraintsScope.DeputyCardFront(
                 )
                 EButton(
                     kind = DesignButtonKind.Filled,
-                    enabled = state.canBuy(DEPUTY_CARD_PRICE),
+                    enabled = state.canBuy(state.player.config.deputyCardPrice),
                     onClick = { vm.buyDeputy() },
                     title = stringResource(
                         Res.string.deputy_buy_more,
-                        DEPUTY_CARD_PRICE.splitDecimal(),
+                        state.player.config.deputyCardPrice.splitDecimal(),
                     ),
                     unitTS = unitTS,
                     unitDp = unitDp,

@@ -2,6 +2,7 @@ package ua.vald_zx.game.rat.race.card.screen.design
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.ui.Modifier
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
+import ua.vald_zx.game.rat.race.card.shared.Dream
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -254,6 +256,75 @@ class DesignCellExpandTest {
         expanded = true
         waitForIdle()
         onNodeWithText("+3 200", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun expandedWaitingAmountKeepsTheFloatingOverlay() = runComposeUiTest {
+        setContent {
+            AppTheme(forceDark = false) {
+                Box(Modifier.size(240.dp, 120.dp)) {
+                    DesignPlaceCell(
+                        type = PlaceType.Salary,
+                        label = "Salary",
+                        expanded = true,
+                        waitingAmount = 123_456_789,
+                        modifier = Modifier.offset(20.dp, 20.dp).size(160.dp, 64.dp).testTag("cell"),
+                    )
+                }
+            }
+        }
+        waitForIdle()
+
+        val cell = onNodeWithTag("cell").getBoundsInRoot()
+        val amount = onNodeWithText("+123 456 789", useUnmergedTree = true).getBoundsInRoot()
+        assertTrue(amount.top < cell.top)
+        assertTrue(amount.right > cell.right)
+    }
+
+    @Test
+    fun expandedDreamShowsTheWholeDescription() = runComposeUiTest {
+        val board = DpSize(960.dp, 700.dp)
+        val layout = calculateBoardLayout(board, isVertical = false)!!
+        val place = layout.outerRoute.places.first { it.place.type is PlaceType.Desire }.place
+        val dreamId = (place.type as PlaceType.Desire).dreamId
+        val description = "Створити міжнародний освітній простір, де діти й дорослі вчаться, досліджують світ та запускають корисні проєкти разом."
+        val dream = Dream(dreamId, "Відкрита академія майбутнього", description, 12_000_000)
+        setContent {
+            AppTheme(forceDark = false) {
+                val focus = rememberCellFocus()
+                Box(
+                    Modifier.size(board)
+                        .background(Design.scaffold.background)
+                        .cellFocusTracking(listOf(layout.outerRoute), focus)
+                        .testTag("board")
+                ) {
+                    DesignTrackForTest(
+                        layout = layout.outerRoute,
+                        surface = CellSurface.Tile,
+                        focus = focus,
+                        dreams = DreamCellContext(
+                            dream = { dream },
+                            selectors = { emptyList() },
+                            canSelect = { true },
+                            currentPlayerId = "player",
+                            purchasedDreamIds = emptySet(),
+                            onSelect = {},
+                        ),
+                    )
+                }
+            }
+        }
+        waitForIdle()
+
+        tapCell(cellCenter(layout.outerRoute.size, place, board))
+        waitForIdle()
+
+        val descriptionBounds = onNodeWithText(description, useUnmergedTree = true).getBoundsInRoot()
+        assertTrue(
+            descriptionBounds.bottom - descriptionBounds.top > 24.dp,
+            "опис мрії залишився обрізаним до двох рядків",
+        )
+        capture("build/design-dream-expanded.png")
     }
 
     private fun ComposeUiTest.showBoard(liveOuter: Boolean = false, board: DpSize = size) =

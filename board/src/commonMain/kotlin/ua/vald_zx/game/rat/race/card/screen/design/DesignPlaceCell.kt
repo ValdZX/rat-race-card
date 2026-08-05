@@ -228,7 +228,7 @@ private fun WaitingToken(amount: Long, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = if (amount >= 0) "+${amount.splitDecimal()}" else "−${(-amount).splitDecimal()}",
+            text = waitingAmountLabel(amount),
             style = Design.type.monoMeta,
             color = colors.scaffold.brassInk,
             maxLines = 1,
@@ -236,6 +236,9 @@ private fun WaitingToken(amount: Long, modifier: Modifier = Modifier) {
         )
     }
 }
+
+internal fun waitingAmountLabel(amount: Long): String =
+    if (amount >= 0) "+${amount.splitDecimal()}" else "−${(-amount).splitDecimal()}"
 
 private fun DrawScope.drawHatch(color: Color) {
     val step = 7.dp.toPx()

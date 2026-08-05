@@ -30,7 +30,6 @@ internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
 private const val CORRUPT_NAME_LENGTH = 48
 private const val SPEECH_LIFETIME_MS = 8_000
-private const val LEGACY_CHILD_BENEFIT = 1_000L
 
 private val boardMutexes = ConcurrentHashMap<String, Mutex>()
 private val playerMutexes = ConcurrentHashMap<String, Mutex>()
@@ -400,7 +399,7 @@ class RaceRatServiceImpl(
         val cardId = board.cards[BoardCardType.Deputy]?.randomOrNull() ?: return
         updatePlayer {
             val hired = if (board.deputyIsCorrupt(cardId)) deputies + 1 else deputies
-            copy(deputies = hired).minusCash(DEPUTY_CARD_PRICE)
+            copy(deputies = hired).minusCash(config.deputyCardPrice)
         }
         selectCard(cardId, BoardCardType.Deputy)
     }
@@ -602,7 +601,7 @@ class RaceRatServiceImpl(
                     updatePlayer {
                         val totalBabies = babies + 1
                         copy(babies = totalBabies)
-                            .plusCash(currentBoard.generatedBalance?.childBenefit ?: LEGACY_CHILD_BENEFIT)
+                            .plusCash(config.childBenefit)
                             .also {
                             globalEventBus.emit(GlobalEvent.PlayerHadBaby(playerId, totalBabies))
                         }
@@ -615,7 +614,13 @@ class RaceRatServiceImpl(
                 if (player.isMarried) {
                     updatePlayer {
                         (if (card.gender == Gender.MALE) {
-                            copy(isMarried = false, babies = 0, cash = cash / 2, deposit = deposit / 2)
+                            val retained = config.divorceAssetRetentionPercentage
+                            copy(
+                                isMarried = false,
+                                babies = 0,
+                                cash = cash * retained / 100,
+                                deposit = deposit * retained / 100,
+                            )
                         } else {
                             copy(isMarried = false)
                         }).also {
@@ -653,7 +658,7 @@ class RaceRatServiceImpl(
             }
 
             PlaceType.Rest -> {
-                updatePlayer { copy(inRest = 2) }
+                updatePlayer { copy(inRest = config.restTurnCount) }
                 nextPlayer()
             }
 
@@ -1025,13 +1030,13 @@ class RaceRatServiceImpl(
 
     override suspend fun playHighRiskInvestment(stake: Long, guess: Int) {
         if (guess !in 1..6) return
-        playInvestmentGame(stake, HIGH_RISK_MULTIPLIER, { dice -> dice == guess }) { outcome ->
+        playInvestmentGame(stake, player().config.highRiskMultiplier, { dice -> dice == guess }) { outcome ->
             Event.HighRiskPlayed(outcome, guess)
         }
     }
 
     override suspend fun playMediumRiskInvestment(stake: Long, even: Boolean) {
-        playInvestmentGame(stake, MEDIUM_RISK_MULTIPLIER, { dice -> (dice % 2 == 0) == even }) { outcome ->
+        playInvestmentGame(stake, player().config.mediumRiskMultiplier, { dice -> (dice % 2 == 0) == even }) { outcome ->
             Event.MediumRiskPlayed(outcome, even)
         }
     }
@@ -1063,7 +1068,10 @@ class RaceRatServiceImpl(
         val player = player()
         val salaryPosition = player.investmentPosition ?: return
         if (amount <= 0) return
-        val rate = board().placesOf(player.location).fundRateAtSalary(salaryPosition)
+        val rate = board().placesOf(player.location).fundRateAtSalary(
+            salaryPosition,
+            player.config.salaryFundRates,
+        )
         updatePlayer {
             val sameRate = funds.find { it.rate == rate }
             val newFunds = if (sameRate != null) {
@@ -1079,8 +1087,8 @@ class RaceRatServiceImpl(
     override suspend fun capitalizeFunds() {
         val player = player()
         val capitalization = player.startCapitalization ?: return
-        val rateOverride = if (capitalization.landed) START_LANDED_RATE else null
-        val (newFunds, profit) = player.funds.capitalize(rateOverride)
+        val rateOverride = if (capitalization.landed) player.config.fundStartRate else null
+        val (newFunds, profit) = player.funds.capitalize(rateOverride, player.config.fundBaseRate)
         updatePlayer {
             copy(funds = newFunds, startCapitalization = null)
         }
