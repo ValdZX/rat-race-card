@@ -87,6 +87,7 @@ import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 import kotlin.math.absoluteValue
+import androidx.compose.ui.text.intl.Locale
 
 val navigationBarHeightState = mutableStateOf(0.dp)
 val statusBarHeightState = mutableStateOf(0.dp)
@@ -613,7 +614,7 @@ class BoardScreen(
             )
         }
         if (dreamOfferedDialog) {
-            val dream = state.currentDream
+            val dream = state.board.dreamById(state.currentDream?.id, Locale.current.language)
             val canPay = dream != null && state.canPay(dream.price)
             DesignDreamDialog(
                 dream = dream,

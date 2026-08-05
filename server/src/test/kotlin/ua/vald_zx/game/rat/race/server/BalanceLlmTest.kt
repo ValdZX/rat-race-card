@@ -158,6 +158,13 @@ class BalanceLlmTest {
     }
 
     @Test
+    fun estateThatResellsForTooMuchIsRejected() {
+        val invalid = testBalance().copy(estatePrices = listOf(1_000, 40_000, 90_000))
+
+        assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
+
+    @Test
     fun anUnaffordableCheapestDreamIsRejected() {
         val invalid = testBalance().copy(dreamMinPrice = testBalance().victoryMinimumAccountBalance + 1)
 

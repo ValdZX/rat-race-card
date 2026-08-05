@@ -34,6 +34,7 @@ import ua.vald_zx.game.rat.race.card.screen.board.page.*
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
+import androidx.compose.ui.text.intl.Locale
 
 @Composable
 fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
@@ -229,7 +230,7 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                 when (page) {
                     0 -> StatePage(
                         player = player,
-                        selectedDream = state.board.dreamById(player.selectedDreamId),
+                        selectedDream = state.board.dreamById(player.selectedDreamId, Locale.current.language),
                         outerCircleConditions = state.board.outerCircleConditions,
                         victoryConditions = state.board.victoryConditions,
                         loanLimit = state.board.loanLimit,

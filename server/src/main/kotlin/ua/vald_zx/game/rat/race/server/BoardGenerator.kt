@@ -175,13 +175,12 @@ internal class BoardGenerator(
     }
 
     private fun chance(type: BoardCardType, id: Int, random: Random): BoardCard {
-        val price = balance.chancePrices.pick(random)
         return when (chanceKind(id, random)) {
-            ChanceKind.RANDOM_JOB -> BoardCard.Chance.RandomJob("", price)
+            ChanceKind.RANDOM_JOB -> BoardCard.Chance.RandomJob("", balance.randomJobProfits.pick(random))
             ChanceKind.ESTATE -> BoardCard.Chance.Estate(
                 name = "",
                 description = "",
-                price = price,
+                price = balance.estatePrices.pick(random),
             )
 
             ChanceKind.LAND -> {
@@ -229,14 +228,17 @@ internal class BoardGenerator(
     }
 
     private fun eventStore(type: BoardCardType, id: Int, random: Random): BoardCard {
-        val price = balance.eventPrices.pick(random)
         return when (eventKind(id, random)) {
             EventKind.LAND -> BoardCard.EventStore.Land(
                 description = "",
                 price = (balance.landPricePerUnit.pick(random) *
                         balance.eventLandPricePercentages.pick(random) / 100).coerceAtLeast(1),
             )
-            EventKind.ESTATE -> BoardCard.EventStore.Estate("", price)
+            EventKind.ESTATE -> BoardCard.EventStore.Estate(
+                description = "",
+                price = (balance.estatePrices.pick(random) *
+                        balance.estateSalePercentages.pick(random) / 100).coerceAtLeast(1),
+            )
             EventKind.SHARES -> {
                 val forcedSaleAvailable = balance.forcedShareSalePrices.isNotEmpty()
                 val forcedSale = forcedSaleAvailable && (

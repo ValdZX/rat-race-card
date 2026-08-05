@@ -142,8 +142,13 @@ internal fun GeneratedBalance.validate() {
     }
 
     expensePrices.requireAmounts("expensePrices")
-    chancePrices.requireAmounts("chancePrices")
-    eventPrices.requireAmounts("eventPrices")
+    randomJobProfits.requireAmounts("randomJobProfits")
+    estatePrices.requireAmounts("estatePrices")
+    estateSalePercentages.requireRange("estateSalePercentages", 30L..180L)
+    val dearestEstateSale = estatePrices.max() * estateSalePercentages.max() / 100
+    check(dearestEstateSale <= estatePrices.min() * MAX_ASSET_SPREAD) {
+        "Estate speculation is too profitable: $dearestEstateSale against ${estatePrices.min()} to buy"
+    }
     check(shares.size >= 6) { "shares has too few instruments" }
     check(shares.map { it.id }.distinct().size == shares.size) { "shares contains duplicate ids" }
     check(shares.map { it.ticker.lowercase() }.distinct().size == shares.size) { "shares contains duplicate tickers" }
@@ -172,7 +177,7 @@ internal fun GeneratedBalance.validate() {
     landPricePerUnit.requireAmounts("landPricePerUnit")
     eventLandPricePercentages.requireRange("eventLandPricePercentages", 30L..180L)
     val dearestLandSale = landPricePerUnit.max() * eventLandPricePercentages.max() / 100
-    check(dearestLandSale <= landPricePerUnit.min() * MAX_LAND_SPREAD) {
+    check(dearestLandSale <= landPricePerUnit.min() * MAX_ASSET_SPREAD) {
         "Land speculation is too profitable: $dearestLandSale per unit against ${landPricePerUnit.min()} to buy"
     }
     corruptBusinessPrices.requireAmounts("corruptBusinessPrices")
@@ -282,8 +287,9 @@ private fun GeneratedBalance.withoutDuplicateOptions(): GeneratedBalance = copy(
     bigBusinessReturnPercentages = bigBusinessReturnPercentages.distinct(),
     shoppingPrices = shoppingPrices.mapValues { (_, prices) -> prices.distinct() },
     expensePrices = expensePrices.distinct(),
-    chancePrices = chancePrices.distinct(),
-    eventPrices = eventPrices.distinct(),
+    randomJobProfits = randomJobProfits.distinct(),
+    estatePrices = estatePrices.distinct(),
+    estateSalePercentages = estateSalePercentages.distinct(),
     sharePrices = sharePrices.distinct(),
     forcedShareSalePrices = forcedShareSalePrices.distinct(),
     shareCounts = shareCounts.distinct(),
@@ -318,7 +324,7 @@ private fun List<Int>.requireRange(name: String, range: IntRange) {
 
 private const val MAX_BALANCE_ATTEMPTS = 3
 private const val AVERAGE_STEP = 3.5
-private const val MAX_LAND_SPREAD = 3
+private const val MAX_ASSET_SPREAD = 3
 private const val MAX_GENERATED_AMOUNT = 1_000_000_000L
 private val SHARE_ID_PATTERN = Regex("[a-z][a-z0-9_-]{1,31}")
 private val balanceLogger = KtorSimpleLogger("BalanceLlm")
@@ -386,6 +392,9 @@ private val BALANCE_REQUIREMENTS = """
 - landPricePerUnit — ціна ОДНІЄЇ одиниці площі. Загальна ціна ділянки = площа × ця ціна, тож вона має бути малою поряд із цінами бізнесів.
 - eventLandPricePercentages: 30..180 — за скільки відсотків від landPricePerUnit ринок викуповує одиницю площі. Значення нижче 100 — збиток власника, вище 100 — вигідний продаж.
 - Продавати землю необов'язково, тож гравець завжди дочекається найкращої ціни: найдорожчий продаж (max landPricePerUnit × max eventLandPricePercentages) не може перевищувати найдешевшу купівлю більш ніж утричі. Тримай landPricePerUnit у вузькому діапазоні.
+- estatePrices — ціна одного об'єкта нерухомості на картці випадку. estateSalePercentages: 30..180 — за скільки відсотків від тієї ж бази ринкова подія викуповує об'єкт.
+- Те саме правило втричі діє й для нерухомості: max estatePrices × max estateSalePercentages не може перевищувати min estatePrices більш ніж утричі.
+- randomJobProfits — разовий дохід від підробітку. Це дохід, а не ціна активу: тримай його помітно нижчим за estatePrices, інакше випадкова робота знецінить нерухомість.
 - corruptLandPricePerUnit працює так само для корупційних ділянок.
 - strayAnimalPercentage: 1..30 — частка карток витрат, де гравець підбирає бродячу або врятовану тварину: він платить за неї й отримує тварину.
 - dreamMinPrice і dreamMaxPrice — межі цін ${dreamSlotIds.size} мрій; сервер рівномірно розподілить решту між ними.
@@ -418,7 +427,8 @@ private val BALANCE_SCHEMA = """
   "bigBusinessPrices":[...], "bigBusinessReturnPercentages":[...],
   "shoppingPrices":{"ANIMAL":[...],"AUTO":[...],"APARTMENT":[...],"HOUSE":[...],"YACHT":[...],"FLY":[...]},
   "shopWeights":{"ANIMAL":10,"AUTO":30,"APARTMENT":25,"HOUSE":20,"YACHT":10,"FLY":5},
-  "expensePrices":[...], "chancePrices":[...], "eventPrices":[...],
+  "expensePrices":[...], "randomJobProfits":[...],
+  "estatePrices":[...], "estateSalePercentages":[...],
   "shares":[{"id":"ascii_id","ticker":"CODE","names":{"uk":"Назва","en":"Name"}}],
   "sharePrices":[...], "forcedShareSalePrices":[...], "shareCounts":[...],
   "businessExtensionProfits":[...], "landAreas":[...],

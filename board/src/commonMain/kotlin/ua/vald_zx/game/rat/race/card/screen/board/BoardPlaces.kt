@@ -44,6 +44,7 @@ import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.dreamById
 import ua.vald_zx.game.rat.race.card.shared.moveTo
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
+import androidx.compose.ui.text.intl.Locale
 
 @Composable
 private fun PlaceType.text(): String {
@@ -236,7 +237,7 @@ fun BoxScope.PlaceContent(
         }
 
         is PlaceType.Desire -> {
-            val dream = state.board.dreamById(place.type.dreamId)
+            val dream = state.board.dreamById(place.type.dreamId, Locale.current.language)
             val isPurchased = dream?.id?.let { it in state.board.purchasedDreamIds } == true
             val isSelected = dream?.id == state.player.selectedDreamId
             val allPlayers by players.collectAsState()

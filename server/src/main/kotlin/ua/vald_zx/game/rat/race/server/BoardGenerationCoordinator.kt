@@ -15,6 +15,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardGenerationProgress
 import ua.vald_zx.game.rat.race.card.shared.BoardGenerationStage
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.dreamSlotIds
+import ua.vald_zx.game.rat.race.card.shared.ratRaceDreams
 import ua.vald_zx.game.rat.race.server.data.Storage
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Clock
@@ -83,6 +84,7 @@ internal object BoardGenerationCoordinator {
                     generatedProfessions = emptyList(),
                     generatedPlaces = emptyMap(),
                     generatedTexts = emptyMap(),
+                    dreams = ratRaceDreams,
                     generationProgress = BoardGenerationProgress(
                         stage = BoardGenerationStage.PREPARING,
                         completed = 0,
@@ -270,6 +272,8 @@ internal object BoardGenerationCoordinator {
         boardMutex(boardId).withLock {
             val board = Storage.getBoardOrNull(boardId) ?: return
             val progress = board.generationProgress
+            val now = Clock.System.now().toEpochMilliseconds()
+            val stillWaiting = progress.retryAtEpochMs?.let { it > now } == true
             Storage.updateBoard(
                 board.copy(
                     generationProgress = progress.copy(
@@ -281,9 +285,9 @@ internal object BoardGenerationCoordinator {
                         quotaLimit = usage.quota?.limit ?: progress.quotaLimit,
                         quotaUsed = usage.quota?.used ?: progress.quotaUsed,
                         quotaResetAtEpochMs = usage.quota?.resetAtEpochMs ?: progress.quotaResetAtEpochMs,
-                        retryStartedAtEpochMs = null,
-                        retryAtEpochMs = null,
-                        retryProvider = "",
+                        retryStartedAtEpochMs = progress.retryStartedAtEpochMs.takeIf { stillWaiting },
+                        retryAtEpochMs = progress.retryAtEpochMs.takeIf { stillWaiting },
+                        retryProvider = if (stillWaiting) progress.retryProvider else "",
                     )
                 )
             )

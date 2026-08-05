@@ -81,6 +81,7 @@ import ua.vald_zx.game.rat.race.card.shared.hasPlaceFor
 import ua.vald_zx.game.rat.race.card.shared.placesOf
 import ua.vald_zx.game.rat.race.card.shared.nextPositionOf
 import kotlin.math.roundToInt
+import androidx.compose.ui.text.intl.Locale
 
 private val debugJson = Json { prettyPrint = true }
 
@@ -386,7 +387,7 @@ private fun PositionSelector(
     val lastPosition = layer.places.lastIndex
     val place = layer.places[position.coerceIn(0, lastPosition)]
     val placeName = when (place) {
-        is PlaceType.Desire -> board.dreamById(place.dreamId)?.name ?: place.name
+        is PlaceType.Desire -> board.dreamById(place.dreamId, Locale.current.language)?.name ?: place.name
         else -> place.name
     }
     Text(

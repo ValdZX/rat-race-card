@@ -44,6 +44,7 @@ import ua.vald_zx.game.rat.race.card.screen.board.*
 import ua.vald_zx.game.rat.race.card.screen.board.page.*
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import androidx.compose.ui.text.intl.Locale
 
 private const val SHEET_SCREEN_SHARE = 0.72f
 
@@ -628,7 +629,7 @@ private fun ConditionsBlock(player: Player, board: Board) {
                     Condition(
                         done = player.selectedDreamId != null &&
                                 player.selectedDreamId in player.purchasedDreamIds,
-                        text = board.dreamById(player.selectedDreamId)?.name
+                        text = board.dreamById(player.selectedDreamId, Locale.current.language)?.name
                             ?: stringResource(Res.string.choose_dream_on_board),
                     )
                 }

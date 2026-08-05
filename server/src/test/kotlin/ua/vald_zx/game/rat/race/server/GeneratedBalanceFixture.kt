@@ -36,8 +36,9 @@ internal fun testBalance() = GeneratedBalance(
         ShopType.FLY to 5,
     ),
     expensePrices = listOf(50, 100, 200, 500, 1_000, 2_000),
-    chancePrices = listOf(1_000, 5_000, 10_000, 20_000, 45_000, 60_000),
-    eventPrices = listOf(20_000, 30_000, 40_000, 50_000, 60_000, 75_000),
+    randomJobProfits = listOf(1_000, 3_000, 6_000, 12_000, 20_000),
+    estatePrices = listOf(50_000, 60_000, 75_000, 90_000),
+    estateSalePercentages = listOf(60, 90, 110, 150),
     shares = listOf(
         GeneratedShare("aerolith", "AERO", mapOf("uk" to "Аероліт", "en" to "Aerolith")),
         GeneratedShare("mars_water", "H2OM", mapOf("uk" to "Вода Марса", "en" to "Mars Water")),

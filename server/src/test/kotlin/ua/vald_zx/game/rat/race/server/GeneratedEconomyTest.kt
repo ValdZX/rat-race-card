@@ -58,6 +58,46 @@ class GeneratedEconomyTest {
     }
 
     @Test
+    fun sellingEstateCannotBeatBuyingItByMoreThanTheMarketBand() {
+        val purchases = deck(BoardCardType.Chance)
+            .filterIsInstance<BoardCard.Chance.Estate>()
+            .map { it.price }
+        val sales = deck(BoardCardType.EventStore)
+            .filterIsInstance<BoardCard.EventStore.Estate>()
+            .map { it.price }
+
+        assertTrue(purchases.isNotEmpty(), "у колоді випадків немає нерухомості")
+        assertTrue(sales.isNotEmpty(), "у колоді подій немає нерухомості")
+        purchases.forEach { price ->
+            assertTrue(price in balance.estatePrices, "об'єкт за $price куплений не за згенерованою ціною")
+        }
+        val dearestSale = balance.estatePrices.max() * balance.estateSalePercentages.max() / 100
+        sales.forEach { price ->
+            assertTrue(price <= dearestSale, "ринок викуповує об'єкт за $price, дорожче за стелю $dearestSale")
+        }
+        assertTrue(
+            dearestSale < purchases.min() * ARBITRAGE_LIMIT,
+            "найкращий продаж $dearestSale надто відірваний від найдешевшої купівлі ${purchases.min()}",
+        )
+    }
+
+    @Test
+    fun aRandomJobPaysLessThanAnEstateCosts() {
+        val jobs = deck(BoardCardType.Chance)
+            .filterIsInstance<BoardCard.Chance.RandomJob>()
+            .map { it.profit }
+
+        assertTrue(jobs.isNotEmpty(), "у колоді випадків немає підробітків")
+        jobs.forEach { profit ->
+            assertTrue(profit in balance.randomJobProfits, "підробіток $profit не з пулу доходів")
+        }
+        assertTrue(
+            jobs.max() < balance.estatePrices.min(),
+            "разовий підробіток ${jobs.max()} перекриває найдешевшу нерухомість ${balance.estatePrices.min()}",
+        )
+    }
+
+    @Test
     fun corruptLandIsPricedByItsAreaToo() {
         val lands = deck(BoardCardType.Chance).filterIsInstance<BoardCard.Chance.CorruptLand>()
 
