@@ -52,19 +52,23 @@ private val llmHttpClient: HttpClient by lazy {
 
 internal object LlmSettings {
     val providers: List<LlmProviderSettings> by lazy { configuredLlmProviders { Env[it] } }
+    val textReviewer: LlmProviderSettings? by lazy { configuredTextReviewer { Env[it] } }
 
     val enabled: Boolean get() = providers.isNotEmpty()
 
     fun logConfiguration() {
         if (providers.isEmpty()) {
             llmLogger.warn("No LLM provider is configured, board generation is unavailable")
-            return
+        } else {
+            llmLogger.info(
+                "LLM pool of ${providers.size}: " + providers.joinToString {
+                    "${it.name} balance=${it.balanceModel} text=${it.textModel}"
+                }
+            )
         }
-        llmLogger.info(
-            "LLM pool of ${providers.size}: " + providers.joinToString {
-                "${it.name} balance=${it.balanceModel} text=${it.textModel}"
-            }
-        )
+        textReviewer?.let { reviewer ->
+            llmLogger.info("LLM text reviewer: ${reviewer.name}/${reviewer.textModel}")
+        } ?: llmLogger.info("LLM text reviewer is not configured")
     }
 
     fun balanceChat(
@@ -93,6 +97,22 @@ internal object LlmSettings {
         onRetry = onRetry,
     )
 
+    fun textReviewer(
+        onUsage: suspend (LlmTokenUsage) -> Unit = {},
+        onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
+    ): TextReviewer = textReviewer?.let { reviewer ->
+        LlmTextReviewer(
+            HttpChatCompletion(
+                provider = reviewer,
+                model = reviewer.textModel,
+                extraBody = reviewer.textExtra,
+                maxOutputTokens = MAX_REVIEW_COMPLETION_TOKENS,
+                onUsage = onUsage,
+                onQuota = onQuota,
+            )
+        )
+    } ?: AcceptAllTextReviewer
+
     private fun pool(
         model: (LlmProviderSettings) -> String,
         extraBody: (LlmProviderSettings) -> JsonObject?,
@@ -105,6 +125,7 @@ internal object LlmSettings {
             LlmProviderPool.Member(
                 provider = provider.name,
                 model = model(provider),
+                fallbackOnly = provider.fallbackOnly,
                 completion = HttpChatCompletion(
                     provider = provider,
                     model = model(provider),
@@ -136,6 +157,28 @@ internal fun configuredLlmProviders(
             ),
         )
     }
+}
+
+internal fun configuredTextReviewer(
+    configuration: (String) -> String?,
+): LlmProviderSettings? {
+    val key = configuration("MISTRAL_API_KEY").orEmpty()
+    if (key.isBlank()) return null
+    val model = configuration("MISTRAL_REVIEW_MODEL")
+        ?: configuration("MISTRAL_MODEL")
+        ?: "mistral-small-2603"
+    return LlmProviderSettings(
+        name = configuration("MISTRAL_REVIEW_PROVIDER_NAME") ?: "mistral-reviewer",
+        url = configuration("MISTRAL_API_URL") ?: "https://api.mistral.ai/v1/chat/completions",
+        key = key,
+        balanceModel = model,
+        textModel = model,
+        textExtra = extraBody(
+            configuration("MISTRAL_REVIEW_EXTRA")
+                ?: """{"temperature":0,"response_format":{"type":"json_object"}}""",
+            "MISTRAL_REVIEW_EXTRA",
+        ),
+    )
 }
 
 private fun provider(
@@ -173,6 +216,7 @@ private fun provider(
             configuration("${defaults.prefix}TEXT_EXTRA") ?: defaults.textExtra,
             "${defaults.prefix}TEXT_EXTRA",
         ),
+        fallbackOnly = defaults.fallbackOnly,
     )
 }
 
@@ -192,6 +236,7 @@ private data class LlmProviderDefaults(
     val textModel: String? = null,
     val balanceExtra: String? = null,
     val textExtra: String? = null,
+    val fallbackOnly: Boolean = false,
 )
 
 private val PRIMARY_LLM_PROVIDER = LlmProviderDefaults(
@@ -211,7 +256,8 @@ private val FREE_LLM_PROVIDERS = listOf(
         name = "groq",
         url = "https://api.groq.com/openai/v1/chat/completions",
         balanceModel = "openai/gpt-oss-120b",
-        textModel = "openai/gpt-oss-20b",
+        textModel = "qwen/qwen3.6-27b",
+        textExtra = """{"reasoning_effort":"none"}""",
     ),
     LlmProviderDefaults(
         prefix = "CEREBRAS_",
@@ -222,20 +268,15 @@ private val FREE_LLM_PROVIDERS = listOf(
         textModel = "gpt-oss-120b",
     ),
     LlmProviderDefaults(
-        prefix = "MISTRAL_",
-        apiKey = "MISTRAL_API_KEY",
-        name = "mistral",
-        url = "https://api.mistral.ai/v1/chat/completions",
-        balanceModel = "mistral-small-latest",
-        textModel = "mistral-small-latest",
-    ),
-    LlmProviderDefaults(
         prefix = "OPENROUTER_",
         apiKey = "OPENROUTER_API_KEY",
         name = "openrouter",
         url = "https://openrouter.ai/api/v1/chat/completions",
-        balanceModel = "openrouter/free",
-        textModel = "openrouter/free",
+        balanceModel = "nvidia/nemotron-3-super-120b-a12b:free",
+        textModel = "google/gemma-4-31b-it:free",
+        balanceExtra = """{"reasoning":{"enabled":false},"response_format":{"type":"json_object"}}""",
+        textExtra = """{"reasoning":{"enabled":false}}""",
+        fallbackOnly = true,
     ),
 )
 
@@ -247,6 +288,7 @@ internal data class LlmProviderSettings(
     val textModel: String,
     val balanceExtra: JsonObject? = null,
     val textExtra: JsonObject? = null,
+    val fallbackOnly: Boolean = false,
 )
 
 internal data class LlmTokenUsage(
@@ -275,12 +317,11 @@ internal class LlmProviderPool(
     private val wait: suspend (Long) -> Unit = { delay(it) },
 ) : ChatCompletion {
 
-    private val nextMemberIndex = AtomicInteger()
-
     internal class Member(
         val provider: String,
         val model: String,
         val completion: ChatCompletion,
+        val fallbackOnly: Boolean = false,
     ) {
         internal val slot = Semaphore(1)
         internal val cooldown = AtomicReference<Cooldown?>(null)
@@ -301,7 +342,7 @@ internal class LlmProviderPool(
             val candidates = members.filterNot { it in exhausted }
             if (candidates.isEmpty()) break
             val now = nowEpochMs()
-            val ready = candidates.filter { it.availableAt(now) <= now }.inRotationOrder()
+            val ready = candidates.filter { it.availableAt(now) <= now }
             if (ready.isEmpty()) {
                 val soonest = candidates.minBy { it.availableAt(now) }
                 val delayMillis = (soonest.availableAt(now) - now).coerceAtLeast(0)
@@ -312,8 +353,10 @@ internal class LlmProviderPool(
                 wait(delayMillis)
                 continue
             }
-            val member = ready.firstOrNull { it.slot.tryAcquire() }
-                ?: ready.first().also { it.slot.acquire() }
+            val regular = ready.filterNot { it.fallbackOnly }
+            val eligible = regular.ifEmpty { ready }
+            val member = eligible.firstOrNull { it.slot.tryAcquire() }
+                ?: eligible.first().also { it.slot.acquire() }
             var coolingDown = false
             val answer = try {
                 member.completion.complete(system, user)
@@ -334,17 +377,14 @@ internal class LlmProviderPool(
             } finally {
                 member.slot.release()
             }
-            if (answer != null) return answer
+            if (answer != null) {
+                llmLogger.info("LLM response generated by ${member.name}")
+                return answer
+            }
             if (!coolingDown) exhausted += member
         }
         lastFailure?.let { throw it }
         return null
-    }
-
-    private fun List<Member>.inRotationOrder(): List<Member> {
-        if (size < 2) return this
-        val start = Math.floorMod(nextMemberIndex.getAndIncrement(), size)
-        return drop(start) + take(start)
     }
 }
 
@@ -522,9 +562,86 @@ internal class LlmRateLimitException(
     "LLM rate limit reached for $provider/$model. Try again in ${retryAfterMillis.retryDelayText()}",
 )
 
+internal fun interface TextReviewer {
+    suspend fun rejectedIds(kind: String, candidates: Map<Int, Map<String, CardText>>): Set<Int>
+}
+
+internal object AcceptAllTextReviewer : TextReviewer {
+    override suspend fun rejectedIds(
+        kind: String,
+        candidates: Map<Int, Map<String, CardText>>,
+    ): Set<Int> = emptySet()
+}
+
+internal class LlmTextReviewer(
+    private val chat: ChatCompletion,
+) : TextReviewer {
+
+    private val json = Json { ignoreUnknownKeys = true }
+
+    override suspend fun rejectedIds(
+        kind: String,
+        candidates: Map<Int, Map<String, CardText>>,
+    ): Set<Int> {
+        if (candidates.isEmpty()) return emptySet()
+        val answer = runCatching {
+            chat.complete(
+                system = REVIEW_SYSTEM_PROMPT,
+                user = reviewPrompt(kind, candidates),
+            )
+        }.onFailure { failure ->
+            llmLogger.warn("LLM text review failed open: ${failure.message}")
+        }.getOrNull() ?: return emptySet()
+        val review = runCatching {
+            val start = answer.indexOf('{')
+            val end = answer.lastIndexOf('}')
+            check(start >= 0 && end > start) { "review is not a JSON object" }
+            json.parseToJsonElement(answer.substring(start, end + 1)).jsonObject
+        }.onFailure { failure ->
+            llmLogger.warn("LLM text review returned invalid JSON and failed open: ${failure.message}")
+        }.getOrNull() ?: return emptySet()
+        val invalidIds = runCatching {
+            val values = checkNotNull(review["invalidIds"]) { "invalidIds is missing" }.jsonArray
+            values.mapNotNull { value ->
+                value.jsonPrimitive.intOrNull ?: value.jsonPrimitive.contentOrNull?.toIntOrNull()
+            }.toSet()
+        }.onFailure { failure ->
+            llmLogger.warn("LLM text review omitted invalidIds and failed open: ${failure.message}")
+        }.getOrNull() ?: return emptySet()
+        val rejected = invalidIds.intersect(candidates.keys)
+        if (rejected.isNotEmpty()) {
+            llmLogger.warn("LLM text reviewer rejected $kind IDs: ${rejected.sorted()}")
+        }
+        return rejected
+    }
+
+    private fun reviewPrompt(
+        kind: String,
+        candidates: Map<Int, Map<String, CardText>>,
+    ): String = buildString {
+        append("Content type: $kind. Review every object independently.\n")
+        append("Candidates:\n")
+        append(buildJsonArray {
+            candidates.toSortedMap().forEach { (id, localized) ->
+                add(buildJsonObject {
+                    put("id", id)
+                    generatedLocales.forEach { locale ->
+                        val text = localized.getValue(locale)
+                        put(locale, buildJsonObject {
+                            put("name", text.name)
+                            put("description", text.description)
+                        })
+                    }
+                })
+            }
+        })
+    }
+}
+
 internal class LlmTextGenerator(
     private val chat: ChatCompletion = LlmSettings.textChat(),
     private val batchSize: Int = DEFAULT_TEXT_BATCH_SIZE,
+    private val reviewer: TextReviewer = AcceptAllTextReviewer,
 ) {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -620,7 +737,7 @@ internal class LlmTextGenerator(
                     rejected = rejected.filterKeys { it in expectedIds },
                 ),
             ) ?: return@repeat
-            val candidates = answer.parseLocalizedItems()
+            val candidates = answer.parseLocalizedItems().reviewed("${batch.type} cards", rejected)
             val updated = store.acceptCards(
                 batch.type,
                 candidates,
@@ -653,6 +770,7 @@ internal class LlmTextGenerator(
                     ),
                 ) ?: return@repairBatchLoop
                 val candidates = answer.parseLocalizedItems(expectedSingleId = expectedIds.singleOrNull())
+                    .reviewed("${batch.type} cards", rejected)
                 val updated = store.acceptCards(
                     batch.type,
                     candidates,
@@ -686,6 +804,7 @@ internal class LlmTextGenerator(
                     ),
                 ) ?: return@repeat
                 val candidates = answer.parseLocalizedItems(expectedSingleId = id)
+                    .reviewed("${batch.type} cards", rejected)
                 val updated = store.acceptCards(
                     batch.type,
                     candidates,
@@ -740,7 +859,7 @@ internal class LlmTextGenerator(
                     rejected = rejected.filterKeys { it in expectedIds },
                 ),
             ) ?: return@repeat
-            val candidates = answer.parseLocalizedItems()
+            val candidates = answer.parseLocalizedItems().reviewed("professions", rejected)
             val updated = store.acceptProfessions(candidates, expectedIds)
             missing.filterNot { updated.hasProfession(it.id) }.forEach { profession ->
                 candidates[profession.id]?.let { candidate ->
@@ -768,6 +887,7 @@ internal class LlmTextGenerator(
                     ),
                 ) ?: return@repairBatchLoop
                 val candidates = answer.parseLocalizedItems(expectedSingleId = expectedIds.singleOrNull())
+                    .reviewed("professions", rejected)
                 val updated = store.acceptProfessions(candidates, expectedIds)
                 repairBatch.filterNot { updated.hasProfession(it.id) }.forEach { profession ->
                     candidates[profession.id]?.let { candidate ->
@@ -796,6 +916,7 @@ internal class LlmTextGenerator(
                     ),
                 ) ?: return@repeat
                 val candidates = answer.parseLocalizedItems(expectedSingleId = id)
+                    .reviewed("professions", rejected)
                 val updated = store.acceptProfessions(candidates, setOf(id))
                 if (!updated.hasProfession(id)) {
                     candidates[id]?.let { candidate ->
@@ -841,6 +962,7 @@ internal class LlmTextGenerator(
                 ),
             ) ?: return@repeat
             val candidates = answer.parseLocalizedItems(expectedSingleId = missing.keys.singleOrNull())
+                .reviewed("dreams", rejected)
             val updated = store.acceptDreams(candidates, slots)
             missing.filterValues { !updated.hasDream(it.id) }.forEach { (slot) ->
                 candidates[slot]?.let { candidate -> rejected.getOrPut(slot, ::mutableListOf) += candidate }
@@ -1121,6 +1243,17 @@ internal class LlmTextGenerator(
             world.epoch.ifBlank { null }?.let { "era: $it" },
         ).joinToString(", ").ifBlank { "an ordinary modern city" })
         append(".\n")
+    }
+
+    private suspend fun Map<Int, Map<String, CardText>>.reviewed(
+        kind: String,
+        rejected: MutableMap<Int, MutableList<Map<String, CardText>>>,
+    ): Map<Int, Map<String, CardText>> {
+        val rejectedIds = reviewer.rejectedIds(kind, this)
+        rejectedIds.forEach { id ->
+            this[id]?.let { candidate -> rejected.getOrPut(id, ::mutableListOf) += candidate }
+        }
+        return filterKeys { it !in rejectedIds }
     }
 
     private fun String.parseLocalizedItems(expectedSingleId: Int? = null): Map<Int, Map<String, CardText>> {
@@ -1427,6 +1560,7 @@ private fun BoardCard.usesGeneratedName(): Boolean = true
 private const val MAX_LLM_REQUEST_ATTEMPTS = 8
 private const val MAX_LLM_UNAVAILABLE_ATTEMPTS = 3
 private const val MAX_BALANCE_COMPLETION_TOKENS = 8_000
+private const val MAX_REVIEW_COMPLETION_TOKENS = 800
 private const val TEXT_COMPLETION_TOKENS_PER_ITEM = 140
 private const val UNAVAILABLE_RETRY_DELAY_MILLIS = 2_000L
 private const val MAX_ERROR_MESSAGE_LENGTH = 300
@@ -1445,6 +1579,11 @@ private const val DEFAULT_RETRY_DELAY_MILLIS = 3_000L
 private const val MIN_RETRY_DELAY_MILLIS = 500L
 private const val MAX_REPORTED_RETRY_DELAY_MILLIS = 24 * 60 * 60 * 1_000L
 private const val RETRY_DELAY_BUFFER_MILLIS = 300L
+private const val REVIEW_SYSTEM_PROMPT = """You are a strict bilingual editor for an economic board game.
+Review each candidate independently. Reject an ID when Ukrainian is Russian, mixed with Russian, unnatural,
+or meaningless; when English is unnatural or meaningless; or when uk and en convey materially different meanings.
+Names must identify something specific and descriptions must describe a coherent situation. Reject only confident
+quality problems, not harmless stylistic preferences. Return only JSON: {"invalidIds":[number],"reasons":{"number":"short reason"}}."""
 private val RETRY_INFO_DELAY_PATTERN = Regex(
     "\\\"retryDelay\\\"\\s*:\\s*\\\"((?:[\\d.]+(?:ms|[hms]))+)\\\"",
     RegexOption.IGNORE_CASE,

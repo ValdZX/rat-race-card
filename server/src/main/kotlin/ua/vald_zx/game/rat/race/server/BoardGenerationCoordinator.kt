@@ -114,7 +114,8 @@ internal object BoardGenerationCoordinator {
             val baseUnits = 1 + 1 + BoardCardType.entries.size + 1
             val deckSizes = initial.cards.mapValues { it.value.size }
             val textGenerator = LlmTextGenerator(
-                LlmSettings.textChat(usageRecorder, quotaRecorder, retryRecorder)
+                chat = LlmSettings.textChat(usageRecorder, quotaRecorder, retryRecorder),
+                reviewer = LlmSettings.textReviewer(usageRecorder, quotaRecorder),
             )
             val textUnits = textGenerator.workUnits(
                 deckSizes = deckSizes.values,

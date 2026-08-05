@@ -1,12 +1,15 @@
 package ua.vald_zx.game.rat.race.server
 
 import com.sun.net.httpserver.HttpServer
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
+import ua.vald_zx.game.rat.race.card.shared.CardText
 import ua.vald_zx.game.rat.race.card.shared.Dream
 import ua.vald_zx.game.rat.race.card.shared.GeneratedText
 import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
@@ -36,8 +39,16 @@ class LlmTextGeneratorTest {
         }
     }
 
-    private fun poolMember(name: String, completion: ChatCompletion) =
-        LlmProviderPool.Member(provider = name, model = "model", completion = completion)
+    private fun poolMember(
+        name: String,
+        completion: ChatCompletion,
+        fallbackOnly: Boolean = false,
+    ) = LlmProviderPool.Member(
+        provider = name,
+        model = "model",
+        completion = completion,
+        fallbackOnly = fallbackOnly,
+    )
 
     private companion object {
         const val ANGLE_MARKER = "narrative angle: "
@@ -71,6 +82,46 @@ class LlmTextGeneratorTest {
         assertEquals("Name 1", enDeck.getValue(1).name)
         assertEquals(professions.map { it.id }.toSet(), generated.getValue("uk").professions.keys)
         assertEquals(professions.map { it.id }.toSet(), generated.getValue("en").professionDescriptions.keys)
+    }
+
+    @Test
+    fun reviewerRejectsBadLanguageAndTheGeneratorRetriesIt() = runTest {
+        var request = 0
+        val chat = FakeChat { user ->
+            request += 1
+            answerFor(user).let { answer ->
+                if (request == 1) answer.replace("Назва 1", "Название 1") else answer
+            }
+        }
+        val reviewer = TextReviewer { _, candidates ->
+            candidates.filterValues { localized ->
+                localized.getValue("uk").name.startsWith("Название")
+            }.keys
+        }
+
+        val generated = LlmTextGenerator(chat = chat, reviewer = reviewer)
+            .generateComplete(world, cards, emptyList())
+
+        assertEquals(
+            "Назва 1",
+            generated.getValue("uk").cards.getValue(BoardCardType.SmallBusiness).getValue(1).name,
+        )
+        assertTrue(chat.prompts.size >= 2)
+    }
+
+    @Test
+    fun llmReviewerReadsRejectedIdsFromStructuredJson() = runTest {
+        val reviewer = LlmTextReviewer(ChatCompletion { _, _ ->
+            """{"invalidIds":[2],"reasons":{"2":"Russian text"}}"""
+        })
+        val candidates = (1..2).associateWith { id ->
+            mapOf(
+                "uk" to CardText("Назва $id", "Опис $id"),
+                "en" to CardText("Name $id", "Description $id"),
+            )
+        }
+
+        assertEquals(setOf(2), reviewer.rejectedIds("cards", candidates))
     }
 
     @Test
@@ -612,7 +663,7 @@ class LlmTextGeneratorTest {
                 poolMember("primary", ChatCompletion { _, _ ->
                     throw LlmRateLimitException("primary", "model", 120_000)
                 }),
-                poolMember("fallback", ChatCompletion { _, _ -> "fallback answer" }),
+                poolMember("fallback", ChatCompletion { _, _ -> "fallback answer" }, fallbackOnly = true),
             ),
             wait = {},
         )
@@ -621,19 +672,40 @@ class LlmTextGeneratorTest {
     }
 
     @Test
-    fun consecutiveRequestsRotateAcrossProviders() = runTest {
+    fun consecutiveRequestsPreferThePrimaryProvider() = runTest {
         val pool = LlmProviderPool(
-            members = listOf("groq", "cerebras", "mistral", "openrouter").map { provider ->
+            members = listOf("gemini", "groq", "cerebras").map { provider ->
                 poolMember(provider, ChatCompletion { _, _ -> provider })
             },
         )
 
-        val answers = List(8) { pool.complete("system", "user") }
+        val answers = List(4) { pool.complete("system", "user") }
 
-        assertEquals(
-            listOf("groq", "cerebras", "mistral", "openrouter", "groq", "cerebras", "mistral", "openrouter"),
-            answers,
+        assertEquals(listOf("gemini", "gemini", "gemini", "gemini"), answers)
+    }
+
+    @Test
+    fun fallbackOnlyProviderDoesNotServeConcurrentOverflow() = runTest {
+        val primary = poolMember("primary", ChatCompletion { _, _ -> "primary answer" })
+        val fallbackCalls = AtomicInteger()
+        val fallback = LlmProviderPool.Member(
+            provider = "openrouter",
+            model = "model",
+            completion = ChatCompletion { _, _ ->
+                fallbackCalls.incrementAndGet()
+                "fallback answer"
+            },
+            fallbackOnly = true,
         )
+        val pool = LlmProviderPool(listOf(primary, fallback))
+        primary.slot.acquire()
+
+        val answer = async { pool.complete("system", "user") }
+        yield()
+
+        assertEquals(0, fallbackCalls.get())
+        primary.slot.release()
+        assertEquals("primary answer", answer.await())
     }
 
     @Test
