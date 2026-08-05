@@ -60,7 +60,7 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
             .padding(horizontal = 16.dp),
     ) {
         IconButton(
-            modifier = Modifier.align(Alignment.TopEnd),
+            modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp),
             onClick = {
                 coroutineScope.launch {
                     if (scaffoldState.currentDetent == HalfExpanded) {
@@ -82,7 +82,8 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Column(
                 modifier = Modifier.height(collapsedSheetContentHeight),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -99,7 +100,7 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                         duration = 4000
                     )
                     Column(modifier = Modifier.padding(start = 16.dp)) {
-                        player.lastTotals.forEach { totalDiff ->
+                        player.lastTotals.asReversed().forEach { totalDiff ->
                             val total = if (totalDiff > 0) {
                                 "+${totalDiff}"
                             } else {
@@ -132,7 +133,7 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                             Text("${player.cashFlow()}")
                         }
                         Column(modifier = Modifier.padding(start = 16.dp)) {
-                            player.lastCashFlows.forEach { diffs ->
+                            player.lastCashFlows.asReversed().forEach { diffs ->
                                 val total = if (diffs > 0) {
                                     "+${diffs}"
                                 } else {
@@ -174,6 +175,14 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(stringResource(Res.string.loan), color = MaterialTheme.colorScheme.tertiary)
                                 Text("${player.loan} $")
+                                player.lastLoans.asReversed().forEach { change ->
+                                    Text(
+                                        text = if (change > 0) "+$change" else change.toString(),
+                                        style = LocalTextStyle.current.copy(fontSize = 10.sp),
+                                        color = if (change > 0) AppTheme.colors.cash else MaterialTheme.colorScheme.error,
+                                        lineHeight = 10.sp,
+                                    )
+                                }
                             }
                             IconButton(
                                 onClick = { bottomSheetNavigator.show(RepayCreditScreen(vm)) },

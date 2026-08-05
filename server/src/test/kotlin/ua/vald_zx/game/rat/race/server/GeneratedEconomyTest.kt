@@ -113,6 +113,27 @@ class GeneratedEconomyTest {
     }
 
     @Test
+    fun corruptionMarketAlwaysPaysMoreThanTheAssetCost() {
+        val events = deck(BoardCardType.EventStore)
+        val businessSales = events.filterIsInstance<BoardCard.EventStore.CorruptBusiness>()
+        val landSales = events.filterIsInstance<BoardCard.EventStore.CorruptLand>()
+
+        assertTrue(businessSales.isNotEmpty())
+        assertTrue(landSales.isNotEmpty())
+        assertTrue(businessSales.all { it.salePercentage > 100 })
+        assertTrue(landSales.all { it.price >= balance.corruptLandPricePerUnit.max() * 2 })
+    }
+
+    @Test
+    fun corruptionDealsAreMateriallyStrongerThanRegularAssets() {
+        assertTrue(
+            balance.corruptBusinessReturnPercentages.min() >= balance.bigBusinessReturnPercentages.max() * 2,
+        )
+        assertTrue(balance.corruptOneTimeReturnPercentages.min() >= 300)
+        assertTrue(balance.corruptBusinessSalePercentages.min() >= 200)
+    }
+
+    @Test
     fun everyPurchaseCostsWhatItsKindCosts() {
         val purchases = deck(BoardCardType.Shopping).filterIsInstance<BoardCard.Shopping>()
 

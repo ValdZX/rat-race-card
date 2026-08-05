@@ -19,14 +19,19 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.EButton
 import ua.vald_zx.game.rat.race.card.design.DesignButtonKind
 import ua.vald_zx.game.rat.race.card.formatAmount
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resources.*
+import ua.vald_zx.game.rat.race.card.screen.board.SellCorruptBusinessScreen
+import ua.vald_zx.game.rat.race.card.screen.board.SellCorruptLandScreen
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
+import ua.vald_zx.game.rat.race.card.shared.BusinessType
 import ua.vald_zx.game.rat.race.card.shared.CardLink
+import ua.vald_zx.game.rat.race.card.shared.isCorruptLand
 
 @Composable
 fun BoxWithConstraintsScope.CorruptBusinessCardFront(
@@ -52,6 +57,27 @@ fun BoxWithConstraintsScope.CorruptBusinessCardFront(
 }
 
 @Composable
+fun BoxWithConstraintsScope.CorruptBusinessSaleCardFront(
+    cardLink: CardLink,
+    card: BoardCard.EventStore.CorruptBusiness,
+    vm: BoardViewModel,
+) {
+    val state by vm.uiState.collectAsState()
+    val bottomSheetNavigator = LocalBottomSheetNavigator.current
+    CorruptSaleCard(
+        cardLink = cardLink,
+        vm = vm,
+        title = card.name.ifBlank { stringResource(Res.string.corrupt_business_sale) },
+        description = card.description,
+        offerLabel = stringResource(Res.string.sale_amount),
+        offer = "${card.salePercentage}%",
+        hasAsset = state.player.businesses.any { it.type == BusinessType.CORRUPTION },
+        onPass = vm::passCorruptBusiness,
+        onSell = { bottomSheetNavigator.show(SellCorruptBusinessScreen(vm, card.salePercentage)) },
+    )
+}
+
+@Composable
 fun BoxWithConstraintsScope.CorruptLandCardFront(
     cardLink: CardLink,
     card: BoardCard.Chance.CorruptLand,
@@ -69,6 +95,106 @@ fun BoxWithConstraintsScope.CorruptLandCardFront(
         gainIsMoney = false,
         onBuy = { vm.buyCorrupt(card) },
     )
+}
+
+@Composable
+fun BoxWithConstraintsScope.CorruptLandSaleCardFront(
+    cardLink: CardLink,
+    card: BoardCard.EventStore.CorruptLand,
+    vm: BoardViewModel,
+) {
+    val state by vm.uiState.collectAsState()
+    val bottomSheetNavigator = LocalBottomSheetNavigator.current
+    CorruptSaleCard(
+        cardLink = cardLink,
+        vm = vm,
+        title = card.name.ifBlank { stringResource(Res.string.corrupt_land_sale) },
+        description = card.description,
+        offerLabel = stringResource(Res.string.priceOfUnit),
+        offer = card.price.formatAmount(),
+        hasAsset = state.player.landList.any(state.board::isCorruptLand),
+        onPass = vm::passCorruptLand,
+        onSell = { bottomSheetNavigator.show(SellCorruptLandScreen(vm, card.price)) },
+    )
+}
+
+@Composable
+private fun BoxWithConstraintsScope.CorruptSaleCard(
+    cardLink: CardLink,
+    vm: BoardViewModel,
+    title: String,
+    description: String,
+    offerLabel: String,
+    offer: String,
+    hasAsset: Boolean,
+    onPass: () -> Unit,
+    onSell: () -> Unit,
+) {
+    val state by vm.uiState.collectAsState()
+    val density = LocalDensity.current
+    val cardWidth = max(maxWidth, 100.dp)
+    val unitTS = with(density) { (cardWidth.toPx() / 300).toSp() }
+    val unitDp = cardWidth / 300
+    val padding = unitDp * 10
+    val smallPadding = unitDp * 6
+    val playerNotProcessed = state.player.id !in state.board.processedPlayerIds
+
+    Column(modifier = Modifier.padding(padding)) {
+        Row {
+            Text(
+                text = title,
+                modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
+                fontSize = unitTS * 14,
+                lineHeight = unitTS * 19,
+                fontWeight = FontWeight.Bold,
+            )
+            CardStamp(
+                glyph = stringResource(Res.string.deputy_short),
+                unitTS = unitTS,
+                unitDp = unitDp,
+                id = cardLink.id,
+                glyphSize = 20f,
+            )
+        }
+        Text(
+            modifier = Modifier.padding(top = smallPadding),
+            text = description,
+            fontSize = unitTS * 10,
+            lineHeight = unitTS * 14,
+        )
+        CardFigure(offerLabel, offer, unitTS, smallPadding)
+        if (hasAsset && playerNotProcessed) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                horizontalArrangement = Arrangement.SpaceAround,
+            ) {
+                EButton(
+                    enabled = !state.isProgress,
+                    onClick = onPass,
+                    title = stringResource(Res.string.close),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
+                )
+                EButton(
+                    kind = DesignButtonKind.Filled,
+                    enabled = !state.isProgress,
+                    onClick = onSell,
+                    title = stringResource(Res.string.sell),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
+                )
+            }
+        } else if (state.currentPlayerIsActive && playerNotProcessed) {
+            EButton(
+                enabled = !state.isProgress,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                onClick = onPass,
+                title = stringResource(Res.string.close),
+                unitTS = unitTS,
+                unitDp = unitDp,
+            )
+        }
+    }
 }
 
 @Composable

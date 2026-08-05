@@ -64,6 +64,7 @@ data class Player(
     val startCapitalization: StartCapitalization? = null,
     val lastTotals: List<Long> = emptyList(),
     val lastCashFlows: List<Long> = emptyList(),
+    val lastLoans: List<Long> = emptyList(),
     val speech: PlayerSpeech? = null,
     val selectedDreamId: String? = null,
     val purchasedDreamIds: Set<String> = emptySet(),
@@ -170,7 +171,18 @@ data class Land(
     val name: String,
     val area: Long,
     val price: Long,
+    val corrupt: Boolean = false,
 )
+
+fun Board.isCorruptLand(land: Land): Boolean {
+    if (land.corrupt) return true
+    val generatedCorruptLand = generatedCards[BoardCardType.Chance]
+        .orEmpty()
+        .values
+        .filterIsInstance<BoardCard.Chance.CorruptLand>()
+        .any { card -> card.area == land.area && card.price == land.price }
+    return generatedCorruptLand || generatedCards.isEmpty() && land.area >= 200
+}
 
 @Serializable
 data class Fund(
@@ -194,6 +206,7 @@ data class Config(
     val marriageCost: Long = 5000,
     val childBenefit: Long = 1000,
     val deputyCardPrice: Long = 50_000,
+    val taxInspectionBribePercentage: Long = 20,
     val mediumRiskMultiplier: Long = 2,
     val highRiskMultiplier: Long = 6,
     val salaryFundRates: List<Long> = listOf(20, 15, 10, 5),
@@ -212,6 +225,16 @@ fun Player.total(): Long {
             sharesList.sumOf { it.price } +
             businesses.sumOf { it.price } -
             loan
+}
+
+fun Player.taxInspectionBribe(board: Board): Long {
+    val ownsCorruptAsset = businesses.any { it.type == BusinessType.CORRUPTION } ||
+            landList.any(board::isCorruptLand)
+    return if (ownsCorruptAsset) {
+        total().coerceAtLeast(0) * config.taxInspectionBribePercentage / 100
+    } else {
+        0
+    }
 }
 
 fun Player.balance(): Long {

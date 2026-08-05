@@ -101,6 +101,9 @@ sealed class Event {
     data class FundsCapitalized(val profit: Long) : Event()
 
     @Serializable
+    data class TaxInspectionPaid(val amount: Long) : Event()
+
+    @Serializable
     data object CheckState : Event()
 
     @Serializable
@@ -177,9 +180,13 @@ interface RaceRatService {
     suspend fun debugMoveToAndSelectCard(cardId: Int, cardType: BoardCardType)
     suspend fun extendBusiness(business: Business, card: BoardCard.EventStore.BusinessExtending)
     suspend fun sellLands(area: Long, priceOfUnit: Long)
+    suspend fun sellCorruptBusiness(business: Business, salePercentage: Long)
+    suspend fun sellCorruptLands(area: Long, priceOfUnit: Long)
     suspend fun sellShares(card: BoardCard.EventStore.Shares, count: Long)
     suspend fun sellEstate(card: List<Estate>, price: Long)
     suspend fun passLand()
+    suspend fun passCorruptBusiness()
+    suspend fun passCorruptLand()
     suspend fun passShares(sharesType: String)
     suspend fun passEstate()
     suspend fun playHighRiskInvestment(stake: Long, guess: Int)

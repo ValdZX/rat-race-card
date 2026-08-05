@@ -91,10 +91,22 @@ internal fun GeneratedBalance.validate() {
     }
     corruptBusinessPrices.requireAmounts("corruptBusinessPrices")
     corruptBusinessReturnPercentages.requireRange("corruptBusinessReturnPercentages", 1L..500L)
-    corruptOneTimeReturnPercentages.requireRange("corruptOneTimeReturnPercentages", 100L..5_000L)
+    check(corruptBusinessReturnPercentages.min() >= bigBusinessReturnPercentages.max() * 2) {
+        "Corrupt recurring business must return at least twice the best regular big business rate"
+    }
+    corruptOneTimeReturnPercentages.requireRange("corruptOneTimeReturnPercentages", 300L..5_000L)
+    corruptBusinessSalePercentages.requireRange("corruptBusinessSalePercentages", 200L..1_000L)
     corruptBusinessDeputies.requireRange("corruptBusinessDeputies", 1..20)
     corruptLandPricePerUnit.requireAmounts("corruptLandPricePerUnit")
     corruptLandAreas.requireAmounts("corruptLandAreas")
+    check(landAreas.max() < corruptLandAreas.min()) {
+        "Corrupt land areas must be larger than regular land areas"
+    }
+    corruptLandSalePercentages.requireRange("corruptLandSalePercentages", 150L..1_000L)
+    val cheapestCorruptLandSale = corruptLandPricePerUnit.min() * corruptLandSalePercentages.min() / 100
+    check(cheapestCorruptLandSale >= corruptLandPricePerUnit.max() * 2) {
+        "Corrupt land sale must pay at least twice the highest corrupt land purchase price"
+    }
     corruptLandDeputies.requireRange("corruptLandDeputies", 1..20)
     check(corruptDeputyPercentage in 1..99) { "corruptDeputyPercentage is invalid" }
     check(corruptOneTimePercentage in 1..99) { "corruptOneTimePercentage is invalid" }
@@ -114,6 +126,7 @@ internal fun GeneratedBalance.validate() {
         childBenefit,
         deputyCardPrice,
     ).all { it in 1..MAX_GENERATED_AMOUNT }) { "player economy values are invalid" }
+    check(taxInspectionBribePercentage == 20L) { "taxInspectionBribePercentage must be 20" }
     check(mediumRiskMultiplier in 2..20) { "mediumRiskMultiplier is invalid" }
     check(highRiskMultiplier in 2..20 && highRiskMultiplier > mediumRiskMultiplier) {
         "highRiskMultiplier is invalid"
@@ -168,6 +181,8 @@ internal fun GeneratedBalance.validate() {
         eventWeights.businessExtending,
         eventWeights.reelection,
         eventWeights.announcement,
+        eventWeights.corruptBusiness,
+        eventWeights.corruptLand,
     ).requireRange("card weights", 1..10_000)
 }
 
@@ -200,6 +215,7 @@ internal fun GeneratedBalance.playerConfig() = Config(
     marriageCost = marriageCost,
     childBenefit = childBenefit,
     deputyCardPrice = deputyCardPrice,
+    taxInspectionBribePercentage = taxInspectionBribePercentage,
     mediumRiskMultiplier = mediumRiskMultiplier,
     highRiskMultiplier = highRiskMultiplier,
     salaryFundRates = salaryFundRates,
@@ -239,8 +255,10 @@ internal fun GeneratedBalance.withoutDuplicateOptions(): GeneratedBalance = copy
     corruptBusinessPrices = corruptBusinessPrices.distinct(),
     corruptBusinessReturnPercentages = corruptBusinessReturnPercentages.distinct(),
     corruptOneTimeReturnPercentages = corruptOneTimeReturnPercentages.distinct(),
+    corruptBusinessSalePercentages = corruptBusinessSalePercentages.distinct(),
     corruptLandPricePerUnit = corruptLandPricePerUnit.distinct(),
     corruptLandAreas = corruptLandAreas.distinct(),
+    corruptLandSalePercentages = corruptLandSalePercentages.distinct(),
 )
 
 internal fun GeneratedBalance.withBoundedAssetPrices(): GeneratedBalance = copy(

@@ -114,6 +114,8 @@ class BoardGeneratorTest {
                 is BoardCard.EventStore.BusinessExtending -> card.description
                 is BoardCard.EventStore.Reelection -> card.description
                 is BoardCard.EventStore.Announcement -> card.description
+                is BoardCard.EventStore.CorruptBusiness -> card.description
+                is BoardCard.EventStore.CorruptLand -> card.description
                 is BoardCard.Chance.RandomJob -> card.description
                 is BoardCard.Chance.Land -> card.name + card.description
                 is BoardCard.Chance.Estate -> card.name + card.description
@@ -163,12 +165,23 @@ class BoardGeneratorTest {
     @Test
     fun corruptionSurvivesGeneration() {
         val bigDecks = BoardCardType.entries.associateWith { 200 }
-        val chance = BoardGenerator(world(), testBalance()).generate(bigDecks).getValue(BoardCardType.Chance).values
+        val generated = BoardGenerator(world(), testBalance()).generate(bigDecks)
+        val chance = generated.getValue(BoardCardType.Chance).values
+        val events = generated.getValue(BoardCardType.EventStore).values
         val corruptBusiness = chance.filterIsInstance<BoardCard.Chance.CorruptBusiness>()
         val corruptLand = chance.filterIsInstance<BoardCard.Chance.CorruptLand>()
+        val eventCorruptBusiness = events.filterIsInstance<BoardCard.EventStore.CorruptBusiness>()
+        val eventCorruptLand = events.filterIsInstance<BoardCard.EventStore.CorruptLand>()
 
         assertTrue(corruptBusiness.isNotEmpty(), "у згенерованій колоді немає корупційного бізнесу")
         assertTrue(corruptLand.isNotEmpty(), "у згенерованій колоді немає корупційної землі")
+        assertTrue(eventCorruptBusiness.isNotEmpty(), "у подіях на ринку немає корупційного бізнесу")
+        assertTrue(eventCorruptLand.isNotEmpty(), "у подіях на ринку немає корупційної землі")
+        assertTrue(
+            eventCorruptBusiness.all { it.salePercentage in testBalance().corruptBusinessSalePercentages },
+            "ринок купує корупційний бізнес поза балансом",
+        )
+        assertTrue(eventCorruptLand.all { it.price >= testBalance().corruptLandPricePerUnit.max() * 2 })
         corruptBusiness.forEach { card ->
             assertTrue(card.deputies > 0, "корупційний бізнес без депутатів: $card")
             assertTrue(card.profit > 0 || card.oneTimeProfit > 0, "корупційний бізнес без вигоди: $card")

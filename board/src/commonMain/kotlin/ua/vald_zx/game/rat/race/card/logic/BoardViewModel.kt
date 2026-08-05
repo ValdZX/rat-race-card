@@ -140,6 +140,7 @@ sealed class BoardUiAction {
     data class HighRiskPlayed(val outcome: InvestmentOutcome, val guess: Int) : BoardUiAction()
     data class MediumRiskPlayed(val outcome: InvestmentOutcome, val even: Boolean) : BoardUiAction()
     data class FundsCapitalized(val profit: Long) : BoardUiAction()
+    data class TaxInspectionPaid(val amount: Long) : BoardUiAction()
     data class Resignation(val business: Business) : BoardUiAction()
     data object DreamOffered : BoardUiAction()
     data object ServerRequestFailed : BoardUiAction()
@@ -318,6 +319,10 @@ class BoardViewModel(
                     is Event.FundsCapitalized -> {
                         play(GameSound.Coin)
                         _actions.send(FundsCapitalized(event.profit))
+                    }
+
+                    is Event.TaxInspectionPaid -> {
+                        _actions.send(TaxInspectionPaid(event.amount))
                     }
 
                     is Event.PlayerHadBaby -> {
@@ -513,6 +518,18 @@ class BoardViewModel(
         }
     }
 
+    fun passCorruptBusiness() {
+        safeLaunch {
+            passCorruptBusiness()
+        }
+    }
+
+    fun passCorruptLand() {
+        safeLaunch {
+            passCorruptLand()
+        }
+    }
+
     fun passEstate() {
         safeLaunch {
             passEstate()
@@ -682,6 +699,18 @@ class BoardViewModel(
     fun sellLands(area: Long, price: Long) {
         safeLaunch {
             sellLands(area, price)
+        }
+    }
+
+    fun sellCorruptBusiness(business: Business, salePercentage: Long) {
+        safeLaunch {
+            sellCorruptBusiness(business, salePercentage)
+        }
+    }
+
+    fun sellCorruptLands(area: Long, price: Long) {
+        safeLaunch {
+            sellCorruptLands(area, price)
         }
     }
 

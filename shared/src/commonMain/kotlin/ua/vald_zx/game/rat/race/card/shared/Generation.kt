@@ -109,6 +109,8 @@ data class GeneratedEventWeights(
     val businessExtending: Int,
     val reelection: Int,
     val announcement: Int,
+    val corruptBusiness: Int = 13,
+    val corruptLand: Int = 5,
 )
 
 @Serializable
@@ -149,9 +151,11 @@ data class GeneratedBalance(
     val corruptBusinessPrices: List<Long>,
     val corruptBusinessReturnPercentages: List<Long>,
     val corruptOneTimeReturnPercentages: List<Long>,
+    val corruptBusinessSalePercentages: List<Long> = listOf(200, 300, 400),
     val corruptBusinessDeputies: List<Int>,
     val corruptLandPricePerUnit: List<Long>,
     val corruptLandAreas: List<Long>,
+    val corruptLandSalePercentages: List<Long> = listOf(500, 600, 700),
     val corruptLandDeputies: List<Int>,
     val corruptDeputyPercentage: Int,
     val corruptOneTimePercentage: Int,
@@ -169,6 +173,7 @@ data class GeneratedBalance(
     val marriageCost: Long = 5_000,
     val childBenefit: Long = 1_000,
     val deputyCardPrice: Long = 50_000,
+    val taxInspectionBribePercentage: Long = 20,
     val mediumRiskMultiplier: Long = 2,
     val highRiskMultiplier: Long = 6,
     val salaryFundRates: List<Long> = listOf(20, 15, 10, 5),

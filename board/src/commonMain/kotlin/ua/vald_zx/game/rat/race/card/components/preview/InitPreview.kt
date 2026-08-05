@@ -181,6 +181,12 @@ fun InitPreview(
                         override suspend fun sellLands(area: Long, priceOfUnit: Long) {
                         }
 
+                        override suspend fun sellCorruptBusiness(business: Business, salePercentage: Long) {
+                        }
+
+                        override suspend fun sellCorruptLands(area: Long, priceOfUnit: Long) {
+                        }
+
                         override suspend fun sellShares(
                             card: BoardCard.EventStore.Shares,
                             count: Long
@@ -194,6 +200,12 @@ fun InitPreview(
                         }
 
                         override suspend fun passLand() {
+                        }
+
+                        override suspend fun passCorruptBusiness() {
+                        }
+
+                        override suspend fun passCorruptLand() {
                         }
 
                         override suspend fun passShares(sharesType: String) {

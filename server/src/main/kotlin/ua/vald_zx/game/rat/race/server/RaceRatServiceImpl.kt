@@ -30,6 +30,10 @@ internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
 private const val CORRUPT_NAME_LENGTH = 48
 private const val SPEECH_LIFETIME_MS = 8_000
+private val LEGACY_CORRUPT_CARD_IDS = mapOf(
+    BoardCardType.Chance to 121..138,
+    BoardCardType.EventStore to 111..124,
+)
 
 private val boardMutexes = ConcurrentHashMap<String, Mutex>()
 private val playerMutexes = ConcurrentHashMap<String, Mutex>()
@@ -338,7 +342,13 @@ class RaceRatServiceImpl(
             buyDeputy()
             return
         }
-        val card = board().cards[cardType]?.randomOrNull() ?: return
+        val layer = player().location.level.toLayer()
+        val currentBoard = board()
+        val preparedBoard = currentBoard.prepareCardDeck(cardType, layer)
+        if (preparedBoard != currentBoard) {
+            updateBoard { prepareCardDeck(cardType, layer) }
+        }
+        val card = preparedBoard.availableCardIds(cardType, layer).randomOrNull() ?: return
         selectCard(card, cardType)
     }
 
@@ -371,6 +381,7 @@ class RaceRatServiceImpl(
                     name = card.description.take(CORRUPT_NAME_LENGTH),
                     area = card.area,
                     price = card.price,
+                    corrupt = true,
                 ),
             ).minusCash(card.price)
         }
@@ -672,9 +683,17 @@ class RaceRatServiceImpl(
                 }
             }
 
+            PlaceType.TaxInspection -> {
+                val bribe = player.taxInspectionBribe(board())
+                if (bribe > 0) {
+                    updatePlayer { minusCash(bribe) }
+                    eventBus.emit(Event.TaxInspectionPaid(bribe))
+                }
+                nextPlayer()
+            }
+
             PlaceType.Salary,
-            PlaceType.Start,
-            PlaceType.TaxInspection -> nextPlayer()
+            PlaceType.Start -> nextPlayer()
         }
     }
 
@@ -718,17 +737,7 @@ class RaceRatServiceImpl(
         playerMutex(id).withLock {
             val previousPlayer = player()
             val changed = previousPlayer.change()
-            val newTotal = changed.total()
-            val previousTotal = previousPlayer.total()
-            val totals = if (newTotal != previousTotal) {
-                (changed.lastTotals + (newTotal - previousTotal)).takeLast(3)
-            } else changed.lastTotals
-            val newCashFlow = changed.cashFlow()
-            val previousCashFlow = previousPlayer.cashFlow()
-            val cashFlows = if (newCashFlow != previousCashFlow) {
-                (changed.lastCashFlows + (newCashFlow - previousCashFlow)).takeLast(3)
-            } else changed.lastCashFlows
-            val newPlayer = changed.copy(lastTotals = totals, lastCashFlows = cashFlows)
+            val newPlayer = changed.withRecentChanges(previousPlayer)
             Storage.updatePlayer(newPlayer)
             globalEventBus.emit(GlobalEvent.PlayerChanged(newPlayer))
             updatedPlayer = newPlayer
@@ -890,25 +899,23 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun sellLands(area: Long, priceOfUnit: Long) {
+        if (area <= 0 || priceOfUnit <= 0) return
+        val currentBoard = board()
         updatePlayer {
-            val totalArea = landList.sumOf { it.area }
+            val regularLands = landList.filterNot(currentBoard::isCorruptLand)
+            val totalArea = regularLands.sumOf { it.area }
             if (totalArea >= area) {
-                val updatedLands = if (totalArea == area) {
-                    emptyList()
-                } else {
-                    var remainder = area
-                    val newLands = landList.toMutableList()
-                    landList.forEach { land ->
-                        if (remainder == 0L) return@forEach
-                        newLands -= land
-                        if (land.area <= remainder) {
-                            remainder -= land.area
-                        } else {
-                            newLands += land.copy(area = land.area - remainder)
-                            remainder = 0
-                        }
+                var remainder = area
+                val updatedLands = landList.toMutableList()
+                regularLands.forEach { land ->
+                    if (remainder == 0L) return@forEach
+                    updatedLands.remove(land)
+                    if (land.area <= remainder) {
+                        remainder -= land.area
+                    } else {
+                        updatedLands += land.copy(area = land.area - remainder)
+                        remainder = 0
                     }
-                    newLands
                 }
                 copy(landList = updatedLands).plusCash(area * priceOfUnit)
             } else {
@@ -919,6 +926,47 @@ class RaceRatServiceImpl(
             copy(processedPlayerIds = processedPlayerIds + playerId)
         }
         passLand()
+    }
+
+    override suspend fun sellCorruptBusiness(business: Business, salePercentage: Long) {
+        if (salePercentage !in 200..1_000) return
+        val currentBoard = board()
+        if (currentBoard.takenCard?.type != BoardCardType.EventStore || playerId in currentBoard.processedPlayerIds) return
+        val ownedBusiness = player().businesses.firstOrNull { it == business && it.type == BusinessType.CORRUPTION }
+            ?: return
+        updatePlayer {
+            val updatedBusinesses = businesses.toMutableList().apply { remove(ownedBusiness) }
+            copy(businesses = updatedBusinesses)
+                .plusCash(ownedBusiness.price * salePercentage / 100)
+        }
+        updateBoard { copy(processedPlayerIds = processedPlayerIds + playerId) }
+        passCorruptBusiness()
+    }
+
+    override suspend fun sellCorruptLands(area: Long, priceOfUnit: Long) {
+        if (area <= 0 || priceOfUnit <= 0) return
+        val currentBoard = board()
+        if (currentBoard.takenCard?.type != BoardCardType.EventStore || playerId in currentBoard.processedPlayerIds) return
+        val corruptLands = player().landList.filter(currentBoard::isCorruptLand)
+        val corruptArea = corruptLands.sumOf { it.area }
+        if (area > corruptArea) return
+        updatePlayer {
+            var remainder = area
+            val updatedLands = landList.toMutableList()
+            corruptLands.forEach { land ->
+                if (remainder == 0L) return@forEach
+                updatedLands.remove(land)
+                if (land.area <= remainder) {
+                    remainder -= land.area
+                } else {
+                    updatedLands += land.copy(area = land.area - remainder, corrupt = true)
+                    remainder = 0
+                }
+            }
+            copy(landList = updatedLands).plusCash(area * priceOfUnit)
+        }
+        updateBoard { copy(processedPlayerIds = processedPlayerIds + playerId) }
+        passCorruptLand()
     }
 
     override suspend fun sellShares(
@@ -978,12 +1026,39 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun passLand() {
-        if (player().landList.isNotEmpty()) {
+        val initialBoard = board()
+        if (player().landList.any { !initialBoard.isCorruptLand(it) }) {
             updateBoard { copy(processedPlayerIds = processedPlayerIds + playerId) }
         }
         val currentBoard = board()
         val owners = currentBoard.activePlayers(currentBoard.players())
-            .filter { it.landList.isNotEmpty() }
+            .filter { current -> current.landList.any { !currentBoard.isCorruptLand(it) } }
+            .map { it.id }
+            .toSet()
+        val participants = owners + currentBoard.processedPlayerIds
+        if (participants.isEmpty() || currentBoard.processedPlayerIds.containsAll(participants)) {
+            nextPlayer()
+        }
+    }
+
+    override suspend fun passCorruptBusiness() {
+        completeOptionalMarketEvent { current ->
+            current.businesses.any { it.type == BusinessType.CORRUPTION }
+        }
+    }
+
+    override suspend fun passCorruptLand() {
+        val currentBoard = board()
+        completeOptionalMarketEvent { current -> current.landList.any(currentBoard::isCorruptLand) }
+    }
+
+    private suspend fun completeOptionalMarketEvent(ownsRelevantAsset: (Player) -> Boolean) {
+        if (ownsRelevantAsset(player())) {
+            updateBoard { copy(processedPlayerIds = processedPlayerIds + playerId) }
+        }
+        val currentBoard = board()
+        val owners = currentBoard.activePlayers(currentBoard.players())
+            .filter(ownsRelevantAsset)
             .map { it.id }
             .toSet()
         val participants = owners + currentBoard.processedPlayerIds
@@ -1319,6 +1394,37 @@ internal fun Board.takeFromDeck(cardId: Int, cardType: BoardCardType): Board {
     )
 }
 
+internal fun Board.availableCardIds(cardType: BoardCardType, layer: BoardLayer): List<Int> {
+    return cards[cardType].orEmpty().filter { cardId -> cardIsAvailable(cardType, cardId, layer) }
+}
+
+internal fun Board.prepareCardDeck(cardType: BoardCardType, layer: BoardLayer): Board {
+    if (availableCardIds(cardType, layer).isNotEmpty()) return this
+    val recyclable = discard[cardType].orEmpty().filter { cardId ->
+        cardIsAvailable(cardType, cardId, layer)
+    }
+    if (recyclable.isEmpty()) return this
+    val recyclableIds = recyclable.toSet()
+    return copy(
+        cards = cards + (cardType to (cards[cardType].orEmpty() + recyclable)),
+        discard = discard + (cardType to discard[cardType].orEmpty().filterNot(recyclableIds::contains)),
+    )
+}
+
+private fun Board.cardIsAvailable(cardType: BoardCardType, cardId: Int, layer: BoardLayer): Boolean {
+    if (layer != BoardLayer.INNER || cardType !in LEGACY_CORRUPT_CARD_IDS) return true
+    val generatedDeck = generatedCards[cardType]
+    return when (generatedDeck?.get(cardId)) {
+        is BoardCard.Chance.CorruptBusiness,
+        is BoardCard.Chance.CorruptLand,
+        is BoardCard.EventStore.CorruptBusiness,
+        is BoardCard.EventStore.CorruptLand -> false
+
+        null -> generatedDeck != null || cardId !in LEGACY_CORRUPT_CARD_IDS.getValue(cardType)
+        else -> true
+    }
+}
+
 internal fun Board.discardPileB(): Board {
     val card = takenCard ?: return this
     val newDiscard = discard.toMutableMap()
@@ -1343,6 +1449,18 @@ private fun Board.invalidateDecks(): Board {
         }
     }
     return copy(cards = newCards, discard = newDiscard)
+}
+
+internal fun Player.withRecentChanges(previous: Player): Player {
+    return copy(
+        lastTotals = lastTotals.withChange(previous.total(), total()),
+        lastCashFlows = lastCashFlows.withChange(previous.cashFlow(), cashFlow()),
+        lastLoans = lastLoans.withChange(previous.loan, loan),
+    )
+}
+
+private fun List<Long>.withChange(previous: Long, current: Long): List<Long> {
+    return if (current == previous) this else (this + (current - previous)).takeLast(3)
 }
 
 private const val MAX_WORLD_FIELD_LENGTH = 60

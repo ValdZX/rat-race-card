@@ -169,7 +169,7 @@ internal object BoardGenerationCoordinator {
             progress(boardId, BoardGenerationStage.PROFESSIONS, 2, totalUnits)
 
             val generatedCards = initial.generatedCards.filter { (type, deck) ->
-                cachedBalance != null && deck.keys == (1..(deckSizes[type] ?: 0)).toSet()
+                cachedBalance != null && generatedDeckIsCurrent(type, deck, deckSizes[type] ?: 0)
             }.toMutableMap()
             BoardCardType.entries.forEachIndexed { index, type ->
                 progress(boardId, BoardGenerationStage.CARDS, 2 + index, totalUnits, type.name)
@@ -382,4 +382,16 @@ internal object BoardGenerationCoordinator {
             )
         }
     }
+}
+
+private fun generatedDeckIsCurrent(
+    type: BoardCardType,
+    deck: Map<Int, BoardCard>,
+    size: Int,
+): Boolean {
+    if (deck.keys != (1..size).toSet()) return false
+    if (type != BoardCardType.EventStore) return true
+    val hasCorruptBusiness = size < 7 || deck.values.any { it is BoardCard.EventStore.CorruptBusiness }
+    val hasCorruptLand = size < 8 || deck.values.any { it is BoardCard.EventStore.CorruptLand }
+    return hasCorruptBusiness && hasCorruptLand
 }

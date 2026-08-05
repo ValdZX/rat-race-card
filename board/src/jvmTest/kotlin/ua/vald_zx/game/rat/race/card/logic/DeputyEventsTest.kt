@@ -63,9 +63,10 @@ class DeputyEventsTest {
 
     @Test
     fun eventDeckCarriesTheLandOffersAndTheReelection() {
+        assertEquals((1..eventStoreCards.size).toSet(), eventStoreCards.keys)
         val land = eventStoreCards.values.filterIsInstance<BoardCard.EventStore.Land>()
-        val corruptPrices = listOf(20_000L, 30_000L, 40_000L, 50_000L, 60_000L, 75_000L)
-        corruptPrices.forEach { price ->
+        val landPrices = listOf(20_000L, 30_000L, 40_000L, 50_000L, 60_000L, 75_000L)
+        landPrices.forEach { price ->
             assertTrue(
                 land.any { it.price == price },
                 "у колоді немає скупки землі по $price",
@@ -81,5 +82,11 @@ class DeputyEventsTest {
             eventStoreCards.values.count { it is BoardCard.EventStore.Announcement },
             "новинних карток має бути три",
         )
+        val corruptBusinessSales = eventStoreCards.values.filterIsInstance<BoardCard.EventStore.CorruptBusiness>()
+        val corruptLandSales = eventStoreCards.values.filterIsInstance<BoardCard.EventStore.CorruptLand>()
+        assertEquals(9, corruptBusinessSales.size)
+        assertEquals(5, corruptLandSales.size)
+        assertTrue(corruptBusinessSales.all { it.salePercentage > 100 })
+        assertTrue(corruptLandSales.all { it.price >= 12_000 })
     }
 }

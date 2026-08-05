@@ -328,6 +328,7 @@
     <string name="fill_all_fields">Fill in every field</string>
     <string name="connecting_to_server">Connecting to the server</string>
     <string name="tax_inspection">Tax audit</string>
+    <string name="tax_inspection_bribe">The inspectors found corrupt assets. The payoff is 20%% of your total wealth: %1$s.</string>
     <string name="child">Child</string>
     <string name="love">Love</string>
     <string name="player_turn_now">Now moving</string>
@@ -337,6 +338,10 @@
     <string name="deputy_buy_more">Buy for %1$s</string>
     <string name="corrupt_business">Corruption deal</string>
     <string name="corrupt_land">Corrupt land</string>
+    <string name="corrupt_business_sale">Corrupt business sale</string>
+    <string name="corrupt_land_sale">Corrupt land sale</string>
+    <string name="market_pays_percentage">Market offer: %1$d%% of purchase price</string>
+    <string name="sale_amount">Sale amount</string>
     <string name="one_time_profit">One-time profit</string>
     <string name="deputies_required">Deputies needed</string>
     <string name="deputies_of">%1$d of %2$d</string>

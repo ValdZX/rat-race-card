@@ -108,6 +108,8 @@ private val generatedBalanceFields = setOf(
     "shares",
     "forcedShareSalePrices",
     "forcedShareSalePercentage",
+    "corruptBusinessSalePercentages",
+    "corruptLandSalePercentages",
     "strayAnimalPercentage",
     "depositRate",
     "loanRate",
@@ -121,6 +123,7 @@ private val generatedBalanceFields = setOf(
     "marriageCost",
     "childBenefit",
     "deputyCardPrice",
+    "taxInspectionBribePercentage",
     "mediumRiskMultiplier",
     "highRiskMultiplier",
     "salaryFundRates",
@@ -184,13 +187,13 @@ Mechanics the balance must support:
 - A profession defines gender, salary, and recurring expenses. Gender, marriage, children, and owned assets affect events and conditional payers.
 - Chance cards sell shares in bundles. A regular market event lets owners sell any quantity or decline.
 - Some market events force every owner to sell all shares of one company. forcedShareSalePrices are always below every sharePrices purchase price: a loss, but never zero.
-- Corrupt deals require deputies. A corrupt business yields either recurring profit or one immediate payout, never both.
+- Corrupt deals from Chance require deputies and are substantially better than regular assets. A corrupt business yields either recurring profit or one immediate payout, never both. Market corruption events let owners sell previously acquired recurring corrupt businesses or corrupt land at a profit; they never sell a new asset to the player.
 - Business extension raises one small business's recurring profit. Reelection changes the deputies.
 - Deposits yield depositRate percent income; loans add loanRate percent expense. Children, cars, apartments, houses, yachts, and planes add their recurring costs.
 - Marriage marries the player; a man pays marriageCost. Child adds a child to a woman or married man, pays childBenefit, and raises recurring expenses.
 - Divorce ends marriage; a man keeps divorceAssetRetentionPercentage of his cash and deposit but loses his children. Bankruptcy removes a random business, resignation removes the job, and rest skips restTurnCount turns.
 - Passing Salary pays current cash flow. Salary spaces offer the descending salaryFundRates. Start capitalizes funds at their own rates into fundBaseRate; landing exactly uses fundStartRate.
-- Desire offers an unowned dream; purchased dreams are board-wide and may be required to win. TaxInspection currently has no direct financial effect.
+- Desire offers an unowned dream; purchased dreams are board-wide and may be required to win. TaxInspection charges exactly taxInspectionBribePercentage of total wealth when the player owns at least one corrupt business or corrupt land; otherwise it has no financial effect.
 - Risk investments pay mediumRiskMultiplier and highRiskMultiplier. Buying a deputy costs deputyCardPrice. Account for them in overall difficulty.
 - Cars and planes add carMovementBonus and planeMovementBonus steps when transport bonuses are enabled.
 - Generated financial and ownership conditions control outer-circle entry and victory. Make the path challenging but achievable.
@@ -213,19 +216,23 @@ Required constraints:
 - Real estate follows the same cap: max estatePrices × max estateSalePercentages / 100 <= min estatePrices × 3. Example: if min price is 20000 and max sale percentage is 140, max price is 42857.
 - randomJobProfits is immediate income, not an asset price. Keep it well below estatePrices so random jobs do not trivialize real estate.
 - corruptLandPricePerUnit works the same way for corrupt land.
+- Every corruptLandAreas value must be larger than every regular landAreas value, so saved corrupt land remains distinguishable from regular land.
+- corruptBusinessSalePercentages: 200..1000. A market event pays this percentage of the selected corrupt business's purchase price.
+- corruptLandSalePercentages: 150..1000. The lowest generated corrupt-land market price must be at least twice the highest corruptLandPricePerUnit, so every such sale is substantially profitable.
 - strayAnimalPercentage: 1..30, the share of expense cards where the player pays for and adopts a stray or rescued animal.
 - dreamMinPrice and dreamMaxPrice bound ${dreamSlotIds.size} dreams; the server distributes the others evenly between them.
 - dreamMinPrice <= victoryMinimumAccountBalance, otherwise a required dream may be unaffordable.
 - forcedShareSalePrices: at least 3 unique positive prices, each below min sharePrices.
 - rentPercentages: 10..30; foodPercentages: 5..20; clothPercentages: 2..10; transportPercentages: 2..15; phonePercentages: 1..5.
 - smallBusinessReturnPercentages: 1..200; mediumBusinessReturnPercentages: 1..100; bigBusinessReturnPercentages: 1..60.
-- corruptBusinessReturnPercentages: 1..500; corruptOneTimeReturnPercentages: 100..5000.
+- corruptBusinessReturnPercentages: 1..500, and its minimum must be at least twice the maximum bigBusinessReturnPercentages. corruptOneTimeReturnPercentages: 300..5000.
 - corruptBusinessDeputies and corruptLandDeputies: 1..20.
 - corruptDeputyPercentage and corruptOneTimePercentage: 1..99.
 - forcedShareSalePercentage: 5..40; forced sales should matter without dominating the deck.
 - depositRate: 1..20; loanRate: 1..50.
 - The lowest salary must cover rent+food+cloth+transport+phone, calculated as percentages and rounded to tens; tiny salaries may fail.
 - babyRecurringCost, carRecurringCost, apartmentRecurringCost, houseRecurringCost, yachtRecurringCost, planeRecurringCost, animalRecurringCost, marriageCost, childBenefit, and deputyCardPrice are positive amounts consistent with salaries and asset prices.
+- taxInspectionBribePercentage is exactly 20.
 - mediumRiskMultiplier: 2..20; highRiskMultiplier: 2..20 and greater than mediumRiskMultiplier.
 - salaryFundRates contains exactly four strictly descending rates in 1..100; fundBaseRate and fundStartRate: 1..100.
 - restTurnCount: 1..10; divorceAssetRetentionPercentage: 10..90.
@@ -255,21 +262,21 @@ private val BALANCE_SCHEMA = """
   "businessExtensionProfits":[...], "landAreas":[...],
   "landPricePerUnit":[...], "eventLandPricePercentages":[...],
   "corruptBusinessPrices":[...], "corruptBusinessReturnPercentages":[...],
-  "corruptOneTimeReturnPercentages":[...], "corruptBusinessDeputies":[...],
-  "corruptLandPricePerUnit":[...], "corruptLandAreas":[...], "corruptLandDeputies":[...],
+  "corruptOneTimeReturnPercentages":[...], "corruptBusinessSalePercentages":[...], "corruptBusinessDeputies":[...],
+  "corruptLandPricePerUnit":[...], "corruptLandAreas":[...], "corruptLandSalePercentages":[...], "corruptLandDeputies":[...],
   "corruptDeputyPercentage":49, "corruptOneTimePercentage":30, "forcedShareSalePercentage":20,
   "strayAnimalPercentage":10,
   "depositRate":2, "loanRate":10,
   "babyRecurringCost":300, "carRecurringCost":600, "apartmentRecurringCost":200,
   "houseRecurringCost":1000, "yachtRecurringCost":1500, "planeRecurringCost":5000,
   "animalRecurringCost":100, "marriageCost":5000, "childBenefit":1000,
-  "deputyCardPrice":50000, "mediumRiskMultiplier":2, "highRiskMultiplier":6,
+  "deputyCardPrice":50000, "taxInspectionBribePercentage":20, "mediumRiskMultiplier":2, "highRiskMultiplier":6,
   "salaryFundRates":[20,15,10,5], "fundBaseRate":20, "fundStartRate":30,
   "restTurnCount":2, "divorceAssetRetentionPercentage":50,
   "carMovementBonus":1, "planeMovementBonus":2,
   "dreamMinPrice":1000000, "dreamMaxPrice":20000000,
   "chanceWeights":{"randomJob":30,"estate":25,"land":30,"shares":35,"corruptBusiness":13,"corruptLand":5},
-  "eventWeights":{"land":26,"estate":15,"shares":45,"businessExtending":20,"reelection":2,"announcement":4},
+  "eventWeights":{"land":26,"estate":15,"shares":45,"businessExtending":20,"reelection":2,"announcement":4,"corruptBusiness":13,"corruptLand":5},
   "loanLimit":10000, "businessLimit":10, "transportMovementBonusEnabled":true,
   "outerCircleMinimumCashFlow":50000, "outerCircleMinimumAccountBalance":200000,
   "outerCircleApartmentRequired":true, "outerCircleCarRequired":true,

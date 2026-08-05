@@ -34,6 +34,8 @@ class CardTextApplicationTest {
             BoardCard.EventStore.BusinessExtending("", 100),
             BoardCard.EventStore.Reelection(""),
             BoardCard.EventStore.Announcement(""),
+            BoardCard.EventStore.CorruptBusiness("", 300),
+            BoardCard.EventStore.CorruptLand("", 10_000),
             BoardCard.Deputy("", false),
             BoardCard.Chance.RandomJob("", 100),
             BoardCard.Chance.Shares("", 10, 100, "shares"),
@@ -61,6 +63,8 @@ class CardTextApplicationTest {
         is BoardCard.Deputy -> name
         is BoardCard.EventStore.Announcement -> name
         is BoardCard.EventStore.BusinessExtending -> name
+        is BoardCard.EventStore.CorruptBusiness -> name
+        is BoardCard.EventStore.CorruptLand -> name
         is BoardCard.EventStore.Estate -> name
         is BoardCard.EventStore.Land -> name
         is BoardCard.EventStore.Reelection -> name
@@ -82,6 +86,8 @@ class CardTextApplicationTest {
         is BoardCard.Deputy -> description
         is BoardCard.EventStore.Announcement -> description
         is BoardCard.EventStore.BusinessExtending -> description
+        is BoardCard.EventStore.CorruptBusiness -> description
+        is BoardCard.EventStore.CorruptLand -> description
         is BoardCard.EventStore.Estate -> description
         is BoardCard.EventStore.Land -> description
         is BoardCard.EventStore.Reelection -> description

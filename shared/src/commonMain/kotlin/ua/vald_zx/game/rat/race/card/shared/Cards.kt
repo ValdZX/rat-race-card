@@ -96,6 +96,20 @@ sealed class BoardCard(@SerialName("cardType") val type: BoardCardType) {
             val description: String,
             val name: String = "",
         ) : EventStore()
+
+        @Serializable
+        data class CorruptBusiness(
+            val description: String,
+            val salePercentage: Long,
+            val name: String = "",
+        ) : EventStore()
+
+        @Serializable
+        data class CorruptLand(
+            val description: String,
+            val price: Long,
+            val name: String = "",
+        ) : EventStore()
     }
 
     @Serializable
@@ -215,6 +229,8 @@ fun BoardCard.withText(text: CardText): BoardCard {
         is BoardCard.EventStore.BusinessExtending -> copy(name = name ?: this.name, description = description ?: this.description)
         is BoardCard.EventStore.Reelection -> copy(name = name ?: this.name, description = description ?: this.description)
         is BoardCard.EventStore.Announcement -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.EventStore.CorruptBusiness -> copy(name = name ?: this.name, description = description ?: this.description)
+        is BoardCard.EventStore.CorruptLand -> copy(name = name ?: this.name, description = description ?: this.description)
         is BoardCard.Chance.RandomJob -> copy(name = name ?: this.name, description = description ?: this.description)
         is BoardCard.Chance.Land -> copy(name = name ?: this.name, description = description ?: this.description)
         is BoardCard.Chance.Estate -> copy(name = name ?: this.name, description = description ?: this.description)

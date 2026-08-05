@@ -333,6 +333,7 @@
     <string name="fill_all_fields">Заповни всі поля</string>
     <string name="connecting_to_server">Зʼєднання із сервером</string>
     <string name="tax_inspection">Податкова</string>
+    <string name="tax_inspection_bribe">Інспектори знайшли корупційні активи. Відкупне становить 20%% від загальних статків: %1$s.</string>
     <string name="child">Дитина</string>
     <string name="love">Кохання</string>
     <string name="player_turn_now">Зараз ходить</string>
@@ -342,6 +343,10 @@
     <string name="deputy_buy_more">Купити за %1$s</string>
     <string name="corrupt_business">Корупційна оборудка</string>
     <string name="corrupt_land">Корупційна земля</string>
+    <string name="corrupt_business_sale">Продаж корупційного бізнесу</string>
+    <string name="corrupt_land_sale">Продаж корупційної землі</string>
+    <string name="market_pays_percentage">Ринок пропонує %1$d%% від ціни придбання</string>
+    <string name="sale_amount">Сума продажу</string>
     <string name="one_time_profit">Разовий прибуток</string>
     <string name="deputies_required">Потрібно депутатів</string>
     <string name="deputies_of">%1$d з %2$d</string>

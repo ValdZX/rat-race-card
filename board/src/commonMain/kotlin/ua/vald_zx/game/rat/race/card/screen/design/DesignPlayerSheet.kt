@@ -92,7 +92,7 @@ fun DesignPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                 onOpenSettings = { bottomSheetNavigator.show(OnlineSettingsScreen(vm)) },
             )
             Row(
-                modifier = Modifier.height(collapsedSheetContentHeight - 40.dp),
+                modifier = Modifier.height(collapsedSheetContentHeight - collapsedSheetHandleHeight),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -126,7 +126,7 @@ private fun SheetHandle(
     onOpenSettings: () -> Unit,
 ) {
     Box(
-        modifier = Modifier.fillMaxWidth().height(40.dp),
+        modifier = Modifier.fillMaxWidth().height(collapsedSheetHandleHeight),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -258,13 +258,13 @@ internal fun BalanceRow(player: Player, onRepay: () -> Unit = {}) {
             changes = player.lastCashFlows,
         )
         if (player.loan > 0) {
-            LoanBlock(player.loan, onRepay)
+            LoanBlock(player.loan, player.lastLoans, onRepay)
         }
     }
 }
 
 @Composable
-private fun LoanBlock(amount: Long, onRepay: () -> Unit) {
+private fun LoanBlock(amount: Long, changes: List<Long>, onRepay: () -> Unit) {
     Column(horizontalAlignment = Alignment.End) {
         Text(
             text = stringResource(Res.string.loan),
@@ -288,6 +288,7 @@ private fun LoanBlock(amount: Long, onRepay: () -> Unit) {
                 onClick = onRepay,
             )
         }
+        RecentChanges(changes)
     }
 }
 
@@ -313,7 +314,7 @@ private fun AmountBlock(
 
 @Composable
 private fun RecentChanges(changes: List<Long>) {
-    val recent = changes.takeLast(RECENT_CHANGES)
+    val recent = changes.takeLast(RECENT_CHANGES).asReversed()
     if (recent.isEmpty()) return
     Column(horizontalAlignment = Alignment.End) {
         recent.forEach { change ->

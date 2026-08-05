@@ -140,6 +140,10 @@ internal fun BoardCard.brief(shareNames: Map<String, String>): String = when (th
     is BoardCard.EventStore.BusinessExtending -> "the active player adds $profit recurring income to one random small business; no effect without one"
     is BoardCard.EventStore.Reelection -> "reelection: every player loses all deputies"
     is BoardCard.EventStore.Announcement -> "market news with no direct financial effect"
+    is BoardCard.EventStore.CorruptBusiness ->
+        "owners may sell one previously acquired recurring corrupt business for $salePercentage percent of its purchase price or decline"
+    is BoardCard.EventStore.CorruptLand ->
+        "owners may sell any amount of previously acquired corrupt land at $price per area unit or decline"
     is BoardCard.Chance.RandomJob -> "the player immediately receives $profit one-time income"
     is BoardCard.Chance.Land -> "buy land of area $area for $price"
     is BoardCard.Chance.Estate -> "buy one property for $price"
@@ -172,4 +176,3 @@ internal fun PayerType.promptRule(): String = when (this) {
     PayerType.APARTMENT_OR_HOUSE_OWNER -> "only apartment or house owners pay"
     PayerType.ANIMAL_OWNER -> "only animal owners pay"
 }
-

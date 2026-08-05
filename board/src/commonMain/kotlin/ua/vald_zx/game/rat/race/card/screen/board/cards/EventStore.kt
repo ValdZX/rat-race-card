@@ -488,4 +488,18 @@ val eventStoreCards = mapOf(
     110 to BoardCard.EventStore.Announcement(
         description = "У країні призначено нового главу ГНИ. Він планує жорсткий контроль доходів і витрат. Підвищується увага до великих капіталів і земельних угод.",
     ),
-)
+) + chanceCards.mapNotNull { (id, card) ->
+    when (card) {
+        is BoardCard.Chance.CorruptBusiness -> card.takeIf { it.oneTimeProfit == 0L }?.let {
+            (id - 10) to BoardCard.EventStore.CorruptBusiness(
+                description = "На ринку з'явився покупець на корупційний бізнес. Власники можуть вигідно продати одну зі своїх оборудок.",
+                salePercentage = 200L + (id - 121) % 4 * 100L,
+            )
+        }
+        is BoardCard.Chance.CorruptLand -> (id - 14) to BoardCard.EventStore.CorruptLand(
+            description = "Забудовники терміново скуповують корупційну землю. Власники можуть продати будь-яку кількість соток за підвищеною ціною.",
+            price = card.price / card.area * (8L + (id - 134) * 2L),
+        )
+        else -> null
+    }
+}.toMap()

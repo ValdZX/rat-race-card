@@ -41,6 +41,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BusinessType
 import ua.vald_zx.game.rat.race.card.shared.CardLink
 import ua.vald_zx.game.rat.race.card.shared.shareTicker
+import ua.vald_zx.game.rat.race.card.shared.isCorruptLand
 
 @Composable
 fun BoxWithConstraintsScope.EventStoreCardFront(
@@ -75,6 +76,14 @@ fun BoxWithConstraintsScope.EventStoreCardFront(
 
             is BoardCard.EventStore.Announcement -> {
                 AnnouncementCardFront(cardLink, eventCard, vm)
+            }
+
+            is BoardCard.EventStore.CorruptBusiness -> {
+                CorruptBusinessSaleCardFront(cardLink, eventCard, vm)
+            }
+
+            is BoardCard.EventStore.CorruptLand -> {
+                CorruptLandSaleCardFront(cardLink, eventCard, vm)
             }
         }
     }
@@ -216,7 +225,7 @@ private fun BoxWithConstraintsScope.LandCardFront(
     val locale = Locale.current.language
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         val currentPlayerNotProcessed = !state.board.processedPlayerIds.contains(state.player.id)
-        if (state.player.landList.isNotEmpty() && currentPlayerNotProcessed) {
+        if (state.player.landList.any { !state.board.isCorruptLand(it) } && currentPlayerNotProcessed) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
                 horizontalArrangement = Arrangement.SpaceAround

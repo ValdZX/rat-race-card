@@ -33,7 +33,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class DesignRecentChangesTest {
 
-    private val headerHeight = 74.dp
+    private val headerHeight = 88.dp
 
     private val player = Player(
         id = "1",
@@ -41,11 +41,13 @@ class DesignRecentChangesTest {
         attrs = PlayerAttributes(0xFF3355AA, 0),
         card = PlayerCard(name = "Олена", profession = "Інженер", salary = 4900),
         cash = 15_700,
+        loan = 25_000,
         businesses = listOf(
             Business(type = BusinessType.SMALL, name = "Кафе", price = 95_000, profit = 3_800)
         ),
         lastTotals = listOf(-1_400, 9_500, 3_200),
         lastCashFlows = listOf(120, -60, 380),
+        lastLoans = listOf(700, -300, 1_500),
     )
 
     @Test
@@ -54,7 +56,7 @@ class DesignRecentChangesTest {
             AppTheme(forceDark = true) {
                 Box(
                     Modifier
-                        .size(360.dp, 140.dp)
+                        .size(480.dp, 160.dp)
                         .background(Design.scaffold.surface1)
                         .testTag("header"),
                     contentAlignment = Alignment.Center,
@@ -72,7 +74,12 @@ class DesignRecentChangesTest {
         }
         waitForIdle()
 
-        listOf("−1 400", "+9 500", "+3 200", "+120", "−60", "+380").forEach { change ->
+        val changes = listOf(
+            "−1 400", "+9 500", "+3 200",
+            "+120", "−60", "+380",
+            "+700", "−300", "+1 500",
+        )
+        changes.forEach { change ->
             onNodeWithText(change, useUnmergedTree = true).assertExists()
         }
 
@@ -83,7 +90,7 @@ class DesignRecentChangesTest {
         )
 
         val row = onNodeWithTag("row").getBoundsInRoot()
-        listOf("−1 400", "+9 500", "+3 200", "+120", "−60", "+380").forEach { change ->
+        changes.forEach { change ->
             val bounds = onNodeWithText(change, useUnmergedTree = true).getBoundsInRoot()
             assertTrue(
                 bounds.bottom <= row.bottom,
@@ -91,6 +98,11 @@ class DesignRecentChangesTest {
             )
             assertTrue(bounds.right <= row.right, "зміну $change обрізало вбік")
         }
+        assertTrue(
+            onNodeWithText("+380", useUnmergedTree = true).getBoundsInRoot().top <
+                    onNodeWithText("+120", useUnmergedTree = true).getBoundsInRoot().top,
+            "найновіша зміна Cash Flow має бути першою",
+        )
 
         val image = onNodeWithTag("header").captureToImage().toAwtImage()
         File("build").mkdirs()

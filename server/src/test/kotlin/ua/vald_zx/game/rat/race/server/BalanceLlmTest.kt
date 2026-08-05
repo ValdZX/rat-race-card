@@ -51,6 +51,10 @@ class BalanceLlmTest {
         assertTrue(prompts.single().contains("victoryMinimumAccountBalance"))
         assertTrue(prompts.single().contains("childBenefit"))
         assertTrue(prompts.single().contains("deputyCardPrice"))
+        assertTrue(prompts.single().contains("taxInspectionBribePercentage"))
+        assertTrue(prompts.single().contains("Market corruption events let owners sell"))
+        assertTrue(prompts.single().contains("corruptBusinessSalePercentages"))
+        assertTrue(prompts.single().contains("corruptLandSalePercentages"))
         assertTrue(prompts.single().contains("salaryFundRates"))
     }
 
@@ -99,6 +103,10 @@ class BalanceLlmTest {
         assertEquals(balance.marriageCost, balance.playerConfig().marriageCost)
         assertEquals(balance.childBenefit, balance.playerConfig().childBenefit)
         assertEquals(balance.deputyCardPrice, balance.playerConfig().deputyCardPrice)
+        assertEquals(
+            balance.taxInspectionBribePercentage,
+            balance.playerConfig().taxInspectionBribePercentage,
+        )
         assertEquals(balance.mediumRiskMultiplier, balance.playerConfig().mediumRiskMultiplier)
         assertEquals(balance.highRiskMultiplier, balance.playerConfig().highRiskMultiplier)
         assertEquals(balance.salaryFundRates, balance.playerConfig().salaryFundRates)
@@ -200,6 +208,27 @@ class BalanceLlmTest {
     @Test
     fun estateThatResellsForTooMuchIsRejected() {
         val invalid = testBalance().copy(estatePrices = listOf(1_000, 40_000, 90_000))
+
+        assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
+
+    @Test
+    fun corruptLandMarketMustAlwaysBeProfitable() {
+        val invalid = testBalance().copy(corruptLandSalePercentages = listOf(150, 160, 170))
+
+        assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
+
+    @Test
+    fun corruptBusinessMustBeatRegularBigBusiness() {
+        val invalid = testBalance().copy(corruptBusinessReturnPercentages = listOf(10, 15, 20))
+
+        assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
+
+    @Test
+    fun taxInspectionBribeIsFixedAtTwentyPercent() {
+        val invalid = testBalance().copy(taxInspectionBribePercentage = 25)
 
         assertFailsWith<IllegalStateException> { invalid.validate() }
     }

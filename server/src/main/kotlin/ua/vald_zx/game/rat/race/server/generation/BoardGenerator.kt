@@ -200,31 +200,25 @@ internal class BoardGenerator(
                 sharesType = balance.shares.pick(random).id,
             )
 
-            ChanceKind.CORRUPT_BUSINESS -> corruptBusiness(type, id, random)
-            ChanceKind.CORRUPT_LAND -> {
-                val area = balance.corruptLandAreas.pick(random)
-                BoardCard.Chance.CorruptLand(
-                    description = "",
-                    price = area * balance.corruptLandPricePerUnit.pick(random),
-                    area = area,
-                    deputies = balance.corruptLandDeputies.pick(random),
-                )
-            }
+            ChanceKind.CORRUPT_BUSINESS -> corruptBusiness(random)
+            ChanceKind.CORRUPT_LAND -> corruptLand(random)
         }
     }
 
-    private fun corruptBusiness(type: BoardCardType, id: Int, random: Random): BoardCard {
+    private fun corruptBusiness(random: Random): BoardCard {
         val price = balance.corruptBusinessPrices.pick(random)
         val oneTime = random.nextInt(100) < balance.corruptOneTimePercentage
         val profit = if (oneTime) 0 else price * balance.corruptBusinessReturnPercentages.pick(random) / 100
         val oneTimeProfit = if (oneTime) price * balance.corruptOneTimeReturnPercentages.pick(random) / 100 else 0
-        return BoardCard.Chance.CorruptBusiness(
-            description = "",
-            price = price,
-            profit = profit,
-            oneTimeProfit = oneTimeProfit,
-            deputies = balance.corruptBusinessDeputies.pick(random),
-        )
+        val deputies = balance.corruptBusinessDeputies.pick(random)
+        return BoardCard.Chance.CorruptBusiness("", price, profit, oneTimeProfit, deputies)
+    }
+
+    private fun corruptLand(random: Random): BoardCard {
+        val area = balance.corruptLandAreas.pick(random)
+        val price = area * balance.corruptLandPricePerUnit.pick(random)
+        val deputies = balance.corruptLandDeputies.pick(random)
+        return BoardCard.Chance.CorruptLand("", price, area, deputies)
     }
 
     private fun eventStore(type: BoardCardType, id: Int, random: Random): BoardCard {
@@ -265,6 +259,17 @@ internal class BoardGenerator(
             EventKind.REELECTION -> BoardCard.EventStore.Reelection("")
 
             EventKind.ANNOUNCEMENT -> BoardCard.EventStore.Announcement("")
+
+            EventKind.CORRUPT_BUSINESS -> BoardCard.EventStore.CorruptBusiness(
+                description = "",
+                salePercentage = balance.corruptBusinessSalePercentages.pick(random),
+            )
+
+            EventKind.CORRUPT_LAND -> BoardCard.EventStore.CorruptLand(
+                description = "",
+                price = balance.corruptLandPricePerUnit.pick(random) *
+                        balance.corruptLandSalePercentages.pick(random) / 100,
+            )
         }
     }
 
@@ -298,6 +303,8 @@ internal class BoardGenerator(
             EventKind.BUSINESS_EXTENDING to balance.eventWeights.businessExtending,
             EventKind.REELECTION to balance.eventWeights.reelection,
             EventKind.ANNOUNCEMENT to balance.eventWeights.announcement,
+            EventKind.CORRUPT_BUSINESS to balance.eventWeights.corruptBusiness,
+            EventKind.CORRUPT_LAND to balance.eventWeights.corruptLand,
         )
 
     private fun <T> weighted(random: Random, vararg values: Pair<T, Int>): T = weighted(random, values.toMap())
@@ -318,7 +325,16 @@ private const val PROFESSIONS_PER_GENDER = 30
 
 private enum class ChanceKind { RANDOM_JOB, ESTATE, LAND, SHARES, CORRUPT_BUSINESS, CORRUPT_LAND }
 
-private enum class EventKind { LAND, ESTATE, SHARES, BUSINESS_EXTENDING, REELECTION, ANNOUNCEMENT }
+private enum class EventKind {
+    LAND,
+    ESTATE,
+    SHARES,
+    BUSINESS_EXTENDING,
+    REELECTION,
+    ANNOUNCEMENT,
+    CORRUPT_BUSINESS,
+    CORRUPT_LAND,
+}
 private val PayerTypes = PayerType.entries
 
 private fun Long.generatedPriceTitle(): String = "\$" + toString()

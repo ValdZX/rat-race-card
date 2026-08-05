@@ -94,7 +94,8 @@ val navigationBarHeightState = mutableStateOf(0.dp)
 val statusBarHeightState = mutableStateOf(0.dp)
 val deckCoordinatesMap = mutableMapOf<BoardCardType, MutableState<Pair<DpOffset, DpSize>>>()
 val discardPilesCoordinatesMap = mutableMapOf<BoardCardType, MutableState<Pair<DpOffset, DpSize>>>()
-val collapsedSheetContentHeight = 100.dp
+val collapsedSheetContentHeight = 140.dp
+val collapsedSheetHandleHeight = 52.dp
 val littleDetailsHeight
     get() = collapsedSheetContentHeight + navigationBarHeightState.value
 var sheetContentSize = mutableStateOf(0.dp)
@@ -268,6 +269,7 @@ class BoardScreen(
         var depositWithdrawDialog by remember { mutableStateOf(0L) }
         var investmentResultDialog: Pair<Int, Long>? by remember { mutableStateOf(null) }
         var capitalizedDialog by remember { mutableStateOf(0L) }
+        var taxInspectionBribeDialog by remember { mutableStateOf(0L) }
         var loanAddedDialog by remember { mutableStateOf(0L) }
         var simpleDialog by remember { mutableStateOf(Res.string.app_name) }
         var loanOverlimitedDialog by remember { mutableStateOf(false) }
@@ -308,6 +310,10 @@ class BoardScreen(
 
                     is BoardUiAction.FundsCapitalized -> {
                         capitalizedDialog = event.profit
+                    }
+
+                    is BoardUiAction.TaxInspectionPaid -> {
+                        taxInspectionBribeDialog = event.amount
                     }
 
                     is BoardUiAction.DepositWithdraw -> {
@@ -399,6 +405,18 @@ class BoardScreen(
                 message = stringResource(Res.string.server_request_failed),
                 confirmLabel = stringResource(Res.string.ok),
                 onConfirm = { serverRequestFailedDialog = false },
+            )
+        }
+        if (taxInspectionBribeDialog > 0) {
+            DesignMessageDialog(
+                onDismissRequest = { taxInspectionBribeDialog = 0 },
+                title = stringResource(Res.string.tax_inspection),
+                message = stringResource(
+                    Res.string.tax_inspection_bribe,
+                    taxInspectionBribeDialog.splitDecimal(),
+                ),
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { taxInspectionBribeDialog = 0 },
             )
         }
         confirmDismissalDialog?.let { business ->
