@@ -2,6 +2,11 @@
 
 package ua.vald_zx.game.rat.race.card
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -9,6 +14,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.Navigator
 import io.github.aakira.napier.DebugAntilog
@@ -30,7 +38,6 @@ import ua.vald_zx.game.rat.race.card.screen.board.BoardScreen
 import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
 import ua.vald_zx.game.rat.race.card.screen.second.RaceRate2Screen
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
-import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
 @Composable
 internal fun App() {
@@ -48,12 +55,54 @@ internal fun App() {
                     }
                 }
             }
-            if (BuildConfig.CARD_ONLY_MODE) {
-                CardOnlyApp()
-            } else {
-                FullApp()
+            WaitForAppSettings {
+                if (BuildConfig.CARD_ONLY_MODE) {
+                    CardOnlyApp()
+                } else {
+                    FullApp()
+                }
             }
         })
+}
+
+@Composable
+private fun WaitForAppSettings(content: @Composable () -> Unit) {
+    LocalinaApp {
+        var settingsLoaded by remember { mutableStateOf(false) }
+        var forceDark by remember { mutableStateOf<Boolean?>(null) }
+
+        LaunchedEffect(Unit) {
+            Napier.base(DebugAntilog())
+            val storage = runCatching { appKStore.get() }.getOrNull()
+            forceDark = storage?.theme
+            designV2Enabled.value = storage?.designV2 ?: false
+            soundEnabled.value = storage?.sound ?: true
+            restoreAppLanguage(storage)
+            settingsLoaded = true
+        }
+
+        if (settingsLoaded) {
+            AppTheme(forceDark = forceDark, content = content)
+        } else {
+            AppWaiter()
+        }
+    }
+}
+
+@Composable
+private fun AppWaiter() {
+    val isDark = isSystemInDarkTheme()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(if (isDark) Color(0xFF101410) else Color(0xFFF7FAF2)),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(
+            color = if (isDark) Color(0xFFA2FF82) else Color(0xFF357A45),
+            trackColor = if (isDark) Color(0xFF344033) else Color(0xFFD9E5D7),
+        )
+    }
 }
 
 @Composable
@@ -69,21 +118,7 @@ private fun FullApp() {
             }
         },
     ) {
-        LocalinaApp {
-            AppTheme {
-                var isDarkTheme by LocalThemeIsDark.current
-                LaunchedEffect(Unit) {
-                    Napier.base(DebugAntilog())
-                    val storage = appKStore.get()
-                    val systemIsDark = storage?.theme ?: isDarkTheme
-                    isDarkTheme = systemIsDark
-                    designV2Enabled.value = storage?.designV2 ?: false
-                    soundEnabled.value = storage?.sound ?: true
-                    restoreAppLanguage(storage)
-                }
-                CurrentScreen()
-            }
-        }
+        CurrentScreen()
     }
 }
 
@@ -96,19 +131,7 @@ private fun CardOnlyApp() {
         val hasProfession = raceRate2State.playerCard.profession.isNotEmpty()
         val startScreen = if (hasProfession) RaceRate2Screen() else PersonCard2Screen()
         Navigator(startScreen) {
-            LocalinaApp {
-                AppTheme {
-                    var isDarkTheme by LocalThemeIsDark.current
-                    LaunchedEffect(Unit) {
-                        Napier.base(DebugAntilog())
-                        val storage = appKStore.get()
-                        isDarkTheme = storage?.theme ?: isDarkTheme
-                        soundEnabled.value = storage?.sound ?: true
-                        restoreAppLanguage(storage)
-                    }
-                    CurrentScreen()
-                }
-            }
+            CurrentScreen()
         }
     } else {
         LaunchedEffect(Unit) {
