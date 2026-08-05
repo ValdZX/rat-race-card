@@ -29,6 +29,7 @@ class RepayCreditScreen(private val vm: BoardViewModel) : Screen {
         DesignAmountSheet(
             title = stringResource(Res.string.repay_amount),
             available = repayable,
+            initial = repayable,
             confirmLabel = { amount -> "$action ${amount.splitDecimal()}" },
             errorFor = { amount -> if (amount > repayable) tooMuch else null },
             onConfirm = { amount ->

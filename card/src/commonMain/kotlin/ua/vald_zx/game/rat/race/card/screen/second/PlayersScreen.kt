@@ -74,7 +74,7 @@ class PlayersScreen : Screen {
 
                             IconButton(
                                 onClick = {
-                                    bottomSheetNavigator.replace(SendScreen(player.id, player.name) { id, money ->
+                                    bottomSheetNavigator.replace(SendScreen(player.id, player.name, state.cash) { id, money ->
                                         store.dispatch(RatRace2CardAction.SendMoney(id, money))
                                     })
                                 },

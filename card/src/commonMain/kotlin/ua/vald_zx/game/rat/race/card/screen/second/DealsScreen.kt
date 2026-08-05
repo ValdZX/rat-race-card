@@ -5,9 +5,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import cafe.adriel.voyager.core.screen.Screen
 import org.koin.compose.koinInject
+import org.jetbrains.compose.resources.stringResource
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.screen.InputScreen
+import ua.vald_zx.game.rat.race.card.resources.*
 import kotlin.math.min
 
 class ToDepositScreen : Screen {
@@ -20,7 +23,8 @@ class ToDepositScreen : Screen {
             buttonText = "Вкласти",
             validation = { amount -> amount.isNotEmpty() },
             onClick = { amount -> raceRate2store.dispatch(RatRace2CardAction.ToDeposit(amount = amount.toLong())) },
-            value = state.cash.toString()
+            value = state.cash.toString(),
+            quickOptions = proportionalAmountOptions(state.cash, stringResource(Res.string.all_in)),
         )
     }
 }
@@ -35,7 +39,8 @@ class FromDepositScreen : Screen {
             buttonText = "Зняти",
             validation = { amount -> amount.isNotEmpty() && state.deposit >= amount.toLong() },
             onClick = { amount -> raceRate2store.dispatch(RatRace2CardAction.FromDeposit(amount = amount.toLong())) },
-            value = state.deposit.toString()
+            value = state.deposit.toString(),
+            quickOptions = proportionalAmountOptions(state.deposit, stringResource(Res.string.all_in)),
         )
     }
 }
@@ -45,12 +50,14 @@ class RepayCreditScreen : Screen {
     override fun Content() {
         val raceRate2store = koinInject<RatRace2CardStore>()
         val state by raceRate2store.observeState().collectAsState()
+        val repayable = min(state.loan, state.balance())
         InputScreen(
             inputLabel = "Сума погашення",
             buttonText = "Погасити",
             validation = { amount -> amount.isNotEmpty() && state.balance() >= amount.toInt() },
             onClick = { amount -> raceRate2store.dispatch(RatRace2CardAction.RepayLoan(amount = amount.toLong())) },
-            value = min(state.loan, state.balance()).toString()
+            value = repayable.toString(),
+            quickOptions = proportionalAmountOptions(repayable, stringResource(Res.string.all_in)),
         )
     }
 }

@@ -5,11 +5,13 @@ import cafe.adriel.voyager.core.screen.Screen
 import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.resources.*
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 import ua.vald_zx.game.rat.race.card.screen.InputScreen
 
 class SendScreen(
     private val playerId: String,
     private val playerName: String,
+    private val available: Long,
     private val sendMoney: (String, Long) -> Unit,
 ) :
     Screen {
@@ -23,6 +25,7 @@ class SendScreen(
             onClick = { price ->
                 sendMoney(playerId, price.toLong())
             },
+            quickOptions = proportionalAmountOptions(available, stringResource(Res.string.all_in)),
         )
     }
 }

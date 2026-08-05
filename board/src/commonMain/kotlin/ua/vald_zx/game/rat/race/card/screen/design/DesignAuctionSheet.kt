@@ -25,6 +25,7 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.Auction
 import ua.vald_zx.game.rat.race.card.shared.Bid
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import kotlin.math.max
 
 @Composable
 fun DesignAuctionSheet(vm: BoardViewModel, fallbackAuction: Auction) {
@@ -41,11 +42,7 @@ fun DesignAuctionPanel(
 ) {
     val state by vm.uiState.collectAsState()
     val auction = state.board.auction ?: fallbackAuction
-    val minBid = if (state.board.bidList.isEmpty()) {
-        auction.getBid
-    } else {
-        state.board.bidList.maxBy { it.bid }.bid
-    }
+    val minBid = auction.minimumBid(state.board.bidList)
     var biddingOpen by remember(auction) { mutableStateOf(false) }
 
     Column(
@@ -141,6 +138,10 @@ private fun ColumnScope.BidForm(
     val tooLow = stringResource(Res.string.min_bid, minBid.splitDecimal())
     val notEnough = stringResource(Res.string.not_enough_money)
     val action = stringResource(Res.string.placeBet)
+    val quickOptions = listOf(
+        AmountQuickOption("+10%", minBid + max(1, minBid / 10)),
+        AmountQuickOption("+25%", minBid + max(1, minBid / 4)),
+    )
 
     DesignAmountForm(
         title = stringResource(Res.string.bid),
@@ -150,6 +151,7 @@ private fun ColumnScope.BidForm(
         onConfirm = { amount -> onBid(amount, count) },
         onCancel = onBack,
         cancelLabel = stringResource(Res.string.cancel),
+        quickOptions = quickOptions,
         validate = { amount -> amount >= minBid && (!isShares || count in 1..maxCount) },
         errorFor = { amount ->
             when {

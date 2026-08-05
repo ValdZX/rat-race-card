@@ -11,6 +11,8 @@ import ua.vald_zx.game.rat.race.card.beans.Fund
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.screen.InputScreen
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
+import ua.vald_zx.game.rat.race.card.resources.all_in
 
 class SellFundScreen(val fund: Fund) : Screen {
     @Composable
@@ -28,7 +30,8 @@ class SellFundScreen(val fund: Fund) : Screen {
                     )
                 )
             },
-            value = fund.amount.toString()
+            value = fund.amount.toString(),
+            quickOptions = proportionalAmountOptions(fund.amount, stringResource(Res.string.all_in)),
         )
     }
 }

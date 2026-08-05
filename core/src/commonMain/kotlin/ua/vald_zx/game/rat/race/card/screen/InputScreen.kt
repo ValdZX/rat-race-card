@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.design.AmountQuickOption
 
 @Composable
 fun InputScreen(
@@ -20,7 +21,8 @@ fun InputScreen(
     buttonText: String,
     validation: (String) -> Boolean,
     onClick: (String) -> Unit,
-    value: String = ""
+    value: String = "",
+    quickOptions: List<AmountQuickOption> = emptyList(),
 ) {
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     ClosableBottomSheetContainer {
@@ -28,6 +30,7 @@ fun InputScreen(
         NumberTextField(
             input = input,
             inputLabel = inputLabel,
+            quickOptions = quickOptions,
         )
         ElevatedButton(
             modifier = Modifier

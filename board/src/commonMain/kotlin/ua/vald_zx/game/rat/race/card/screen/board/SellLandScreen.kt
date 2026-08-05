@@ -16,8 +16,10 @@ import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.area
 import ua.vald_zx.game.rat.race.card.resources.sell
 import ua.vald_zx.game.rat.race.card.resources.total
+import ua.vald_zx.game.rat.race.card.resources.all_in
 import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 
 class SellLandScreen(private val vm: BoardViewModel, private val price: Long) : Screen {
@@ -42,6 +44,7 @@ class SellLandScreen(private val vm: BoardViewModel, private val price: Long) : 
             NumberTextField(
                 input = inputArea,
                 inputLabel = stringResource(Res.string.area),
+                quickOptions = proportionalAmountOptions(totalArea, stringResource(Res.string.all_in)),
             )
             ElevatedButton(
                 modifier = Modifier

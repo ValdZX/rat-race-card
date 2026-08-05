@@ -2,6 +2,7 @@ package ua.vald_zx.game.rat.race.card.screen.board
 
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.InputScreen
@@ -16,5 +17,6 @@ internal fun LegacyRepayCreditScreen(vm: BoardViewModel, player: Player, repayab
         validation = { amount -> amount.isNotEmpty() && player.balance() >= amount.toInt() },
         onClick = { amount -> vm.repayLoan(amount = amount.toLong()) },
         value = repayable.toString(),
+        quickOptions = proportionalAmountOptions(repayable, stringResource(Res.string.all_in)),
     )
 }

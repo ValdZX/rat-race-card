@@ -185,6 +185,7 @@ private fun ColumnScope.GameForm(
         else -> stringResource(Res.string.play)
     }
     val availableWord = stringResource(Res.string.available)
+    val quickOptions = proportionalAmountOptions(available, stringResource(Res.string.all_in))
 
     DesignAmountForm(
         title = title,
@@ -193,8 +194,8 @@ private fun ColumnScope.GameForm(
         onConfirm = { amount -> onPlay(amount, guess, even) },
         onCancel = onBack,
         cancelLabel = stringResource(Res.string.cancel),
+        quickOptions = quickOptions,
         maxAmount = available,
-        maxLabel = stringResource(Res.string.all_in),
         hint = { "$availableWord ${available.splitDecimal()}" },
         validate = { amount -> amount > 0 && ready },
         extraContent = {

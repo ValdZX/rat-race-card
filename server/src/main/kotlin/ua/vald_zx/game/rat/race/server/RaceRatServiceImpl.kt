@@ -1158,7 +1158,7 @@ class RaceRatServiceImpl(
         if (auction is Auction.SharesAuction) {
             if (count <= 0 || count > auction.shares.count) return
         }
-        val minBid = board.bidList.maxOfOrNull { it.bid } ?: auction.getBid
+        val minBid = auction.minimumBid(board.bidList)
         if (price < minBid) return
         updateBoard {
             copy(bidList = bidList.filter { it.playerId != playerId } + Bid(playerId, price, count))

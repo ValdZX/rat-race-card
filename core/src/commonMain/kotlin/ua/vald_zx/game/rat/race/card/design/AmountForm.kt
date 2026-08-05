@@ -15,9 +15,19 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ua.vald_zx.game.rat.race.card.splitDecimal
 
 private const val MAX_DIGITS = 12
+
+data class AmountQuickOption(
+    val label: String,
+    val amount: Long,
+)
+
+fun proportionalAmountOptions(maxAmount: Long, allLabel: String): List<AmountQuickOption> = listOf(
+    AmountQuickOption("25%", maxAmount / 4),
+    AmountQuickOption("50%", maxAmount / 2),
+    AmountQuickOption(allLabel, maxAmount),
+).filter { it.amount > 0 }.distinctBy { it.amount }
 
 @Composable
 fun DesignAmountForm(
@@ -27,9 +37,8 @@ fun DesignAmountForm(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     initial: Long = 0,
-    quickSteps: List<Long> = listOf(1_000, 5_000),
+    quickOptions: List<AmountQuickOption> = emptyList(),
     maxAmount: Long? = null,
-    maxLabel: String? = null,
     hint: (Long) -> String? = { null },
     validate: (Long) -> Boolean = { it > 0 },
     errorFor: (Long) -> String? = { null },
@@ -39,7 +48,7 @@ fun DesignAmountForm(
 ) {
     val colors = Design.colors
     val type = Design.type
-    var digits by remember { mutableStateOf(if (initial > 0) initial.toString() else "") }
+    var digits by remember(initial) { mutableStateOf(if (initial > 0) initial.toString() else "") }
     val amount = digits.toLongOrNull() ?: 0
     val error = errorFor(amount)
     val valid = validate(amount) && error == null
@@ -78,17 +87,18 @@ fun DesignAmountForm(
             )
         }
 
-        if (maxAmount != null || quickSteps.isNotEmpty()) {
+        val visibleQuickOptions = quickOptions
+            .filter { it.amount > 0 && (maxAmount == null || it.amount <= maxAmount) }
+            .distinctBy { it.amount }
+        if (visibleQuickOptions.isNotEmpty()) {
             Row(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                quickSteps.forEach { step ->
-                    QuickChip("+${step.splitDecimal()}") { digits = (amount + step).toString() }
-                }
-                QuickChip("×2") { if (amount > 0) digits = (amount * 2).toString() }
-                if (maxAmount != null && maxLabel != null) {
-                    QuickChip(maxLabel) { digits = maxAmount.toString() }
+                visibleQuickOptions.forEach { option ->
+                    QuickChip(option.label) {
+                        digits = option.amount.toString()
+                    }
                 }
             }
         }

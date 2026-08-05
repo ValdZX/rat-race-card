@@ -3,7 +3,9 @@ package ua.vald_zx.game.rat.race.card.screen.design
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.BottomSheetContainer
+import ua.vald_zx.game.rat.race.card.design.AmountQuickOption
 import ua.vald_zx.game.rat.race.card.design.DesignAmountForm
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
@@ -16,11 +18,16 @@ fun DesignAmountSheet(
     subtitle: String? = null,
     available: Long? = null,
     initial: Long = 0,
+    quickOptions: List<AmountQuickOption>? = null,
     validate: (Long) -> Boolean = { it > 0 },
     errorFor: (Long) -> String? = { null },
 ) {
     val availableWord = stringResource(Res.string.available)
     val remainderWord = stringResource(Res.string.remainder)
+    val allLabel = stringResource(Res.string.all_in)
+    val resolvedQuickOptions = quickOptions
+        ?: available?.let { proportionalAmountOptions(it, allLabel) }
+        ?: emptyList()
     BottomSheetContainer(
         onClose = onCancel,
     ) {
@@ -32,8 +39,8 @@ fun DesignAmountSheet(
             onCancel = onCancel,
             cancelLabel = stringResource(Res.string.cancel),
             initial = initial,
+            quickOptions = resolvedQuickOptions,
             maxAmount = available,
-            maxLabel = stringResource(Res.string.all_in),
             validate = validate,
             errorFor = errorFor,
             hint = { amount ->

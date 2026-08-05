@@ -39,11 +39,7 @@ internal fun LegacyAuctionScreen(vm: BoardViewModel, auction: Auction) {
             }
         }
         val auction = state.board.auction ?: auction
-        val minBid = if (state.board.bidList.isEmpty()) {
-            auction.getBid
-        } else {
-            state.board.bidList.maxBy { it.bid }.bid
-        }
+        val minBid = auction.minimumBid(state.board.bidList)
         ClosableBottomSheetContainer(verticalScrollState = null) {
             if (state.board.auction == null) {
                 val firstBidState = remember {

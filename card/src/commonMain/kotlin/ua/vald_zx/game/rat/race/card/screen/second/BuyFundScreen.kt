@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -18,19 +16,24 @@ import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.buy
 import ua.vald_zx.game.rat.race.card.resources.contribution
 import ua.vald_zx.game.rat.race.card.resources.percent
+import ua.vald_zx.game.rat.race.card.resources.all_in
 import ua.vald_zx.game.rat.race.card.beans.Fund
 import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 
 class BuyFundScreen() : Screen {
     @Composable
     override fun Content() {
         val raceRate2store = koinInject<RatRace2CardStore>()
+        val state by raceRate2store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         ClosableBottomSheetContainer {
-            val inputRate = remember { mutableStateOf(TextFieldValue("")) }
+            val inputRate = remember(state.config.fundBaseRate) {
+                mutableStateOf(TextFieldValue(state.config.fundBaseRate.toString()))
+            }
             val inputAmount = remember { mutableStateOf(TextFieldValue("")) }
             val amount = inputAmount.value.text
             val rate = inputRate.value.text
@@ -41,6 +44,7 @@ class BuyFundScreen() : Screen {
             NumberTextField(
                 input = inputAmount,
                 inputLabel = stringResource(Res.string.contribution),
+                quickOptions = proportionalAmountOptions(state.cash, stringResource(Res.string.all_in)),
             )
             ElevatedButton(
                 modifier = Modifier

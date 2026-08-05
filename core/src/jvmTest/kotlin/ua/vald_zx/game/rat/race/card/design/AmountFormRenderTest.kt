@@ -42,7 +42,7 @@ class AmountFormRenderTest {
                         onCancel = {},
                         cancelLabel = "Скасувати",
                         maxAmount = 15700,
-                        maxLabel = "Усе",
+                        quickOptions = proportionalAmountOptions(15700, "Усе"),
                         hint = { "доступно 15 700 · лишиться ${15700 - it}" },
                     )
                 }
@@ -72,6 +72,17 @@ class AmountFormRenderTest {
         onNodeWithText("Купити за 99").performClick()
 
         assertEquals(99L, confirmed)
+    }
+
+    @Test
+    fun contextualQuickOptionSetsTheExactAmount() = runComposeUiTest {
+        var confirmed: Long? = null
+        form(onConfirm = { confirmed = it })
+
+        onNodeWithText("50%").performClick()
+        onNodeWithText("Купити за 7850").performClick()
+
+        assertEquals(7850L, confirmed)
     }
 
     @Test

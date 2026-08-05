@@ -60,6 +60,10 @@ sealed class Auction {
             }
         }
     }
+
+    fun minimumBid(bids: List<Bid>): Long {
+        return maxOf(getBid, bids.maxOfOrNull { it.bid } ?: getBid)
+    }
 }
 
 @Serializable

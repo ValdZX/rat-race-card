@@ -17,6 +17,7 @@ import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 import ua.vald_zx.game.rat.race.card.label
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
@@ -62,6 +63,10 @@ class SellSharesScreen : Screen {
             NumberTextField(
                 input = inputCount,
                 inputLabel = stringResource(Res.string.quantity),
+                quickOptions = proportionalAmountOptions(
+                    state.sharesCount(type),
+                    stringResource(Res.string.all_in),
+                ),
             )
             NumberTextField(
                 input = inputPrice,

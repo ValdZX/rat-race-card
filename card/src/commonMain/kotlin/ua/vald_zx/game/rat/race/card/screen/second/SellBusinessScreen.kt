@@ -21,6 +21,7 @@ import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.design.AmountQuickOption
 import ua.vald_zx.game.rat.race.card.components.SDetailsField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
@@ -56,6 +57,11 @@ class SellBusinessScreen(private val businessToSell: Business) : Screen {
             NumberTextField(
                 input = inputAmount,
                 inputLabel = stringResource(Res.string.sell_amount),
+                quickOptions = listOf(
+                    AmountQuickOption("100%", businessToSell.price),
+                    AmountQuickOption("+25%", businessToSell.price + businessToSell.price / 4),
+                    AmountQuickOption("+50%", businessToSell.price + businessToSell.price / 2),
+                ),
             )
             ElevatedButton(
                 modifier = Modifier

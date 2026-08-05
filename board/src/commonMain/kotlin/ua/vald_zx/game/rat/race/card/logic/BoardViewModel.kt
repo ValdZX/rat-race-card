@@ -76,21 +76,22 @@ data class BoardState(
     fun canMakeBid(): Boolean {
         if (!currentPlayerIsConnected || connectionState != BoardConnectionState.Connected) return false
         val auction = board.auction ?: return false
+        val minimumBid = auction.minimumBid(board.bidList)
         return when (auction) {
             is Auction.BusinessAuction -> {
-                canPay(auction.firstBid) && hasBusinessSlot
+                canPay(minimumBid) && hasBusinessSlot
             }
 
             is Auction.EstateAuction -> {
-                canPay(auction.firstBid)
+                canPay(minimumBid)
             }
 
             is Auction.LandAuction -> {
-                canPay(auction.firstBid)
+                canPay(minimumBid)
             }
 
             is Auction.SharesAuction -> {
-                canPay(auction.firstBid)
+                canPay(minimumBid)
             }
         }
     }

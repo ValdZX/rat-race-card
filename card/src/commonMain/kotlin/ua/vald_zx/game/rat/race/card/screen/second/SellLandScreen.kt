@@ -16,6 +16,7 @@ import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.splitDecimal
@@ -45,6 +46,7 @@ class SellLandScreen : Screen {
             NumberTextField(
                 input = inputArea,
                 inputLabel = stringResource(Res.string.area),
+                quickOptions = proportionalAmountOptions(totalArea, stringResource(Res.string.all_in)),
             )
             NumberTextField(
                 input = inputPrice,

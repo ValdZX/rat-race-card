@@ -5,6 +5,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.InputScreen
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 import ua.vald_zx.game.rat.race.card.shared.Fund
 
 class SellFundScreen(val fund: Fund) : Screen {
@@ -17,7 +18,8 @@ class SellFundScreen(val fund: Fund) : Screen {
             onClick = { amount ->
                 TODO()
             },
-            value = fund.amount.toString()
+            value = fund.amount.toString(),
+            quickOptions = proportionalAmountOptions(fund.amount, stringResource(Res.string.all_in)),
         )
     }
 }

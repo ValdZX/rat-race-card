@@ -19,11 +19,11 @@ class SendMoneyScreen(
 ) : Screen {
     @Composable
     override fun Content() {
+        val state by vm.uiState.collectAsState()
         if (!designV2Enabled.value) {
-            LegacySendMoneyScreen(vm, playerId, playerName)
+            LegacySendMoneyScreen(vm, playerId, playerName, state.player.cash)
             return
         }
-        val state by vm.uiState.collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         val action = stringResource(Res.string.send)
         val notEnough = stringResource(Res.string.not_enough_money)

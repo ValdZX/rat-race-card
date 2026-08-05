@@ -11,6 +11,7 @@ import cafe.adriel.voyager.navigator.bottomSheet.LocalBottomSheetNavigator
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.cashFlow
@@ -55,13 +56,13 @@ internal fun LegacySalaryScreen(vm: BoardViewModel) {
                     text = stringResource(Res.string.investments),
                     style = MaterialTheme.typography.titleMedium,
                 )
-                HighRiskCard(player.config.highRiskMultiplier) { stake, guess ->
+                HighRiskCard(player.config.highRiskMultiplier, player.cash) { stake, guess ->
                     vm.playHighRiskInvestment(stake, guess)
                 }
-                MediumRiskCard(player.config.mediumRiskMultiplier) { stake, even ->
+                MediumRiskCard(player.config.mediumRiskMultiplier, player.cash) { stake, even ->
                     vm.playMediumRiskInvestment(stake, even)
                 }
-                LowRiskCard(rate = fundRate) { amount -> vm.investInFund(amount) }
+                LowRiskCard(rate = fundRate, available = player.cash) { amount -> vm.investInFund(amount) }
             }
         }
 }
@@ -89,14 +90,24 @@ private fun InvestmentCard(
 }
 
 @Composable
-internal fun HighRiskCard(multiplier: Long, onPlay: (stake: Long, guess: Int) -> Unit) {
+internal fun HighRiskCard(
+    multiplier: Long,
+    available: Long? = null,
+    onPlay: (stake: Long, guess: Int) -> Unit,
+) {
     val stake = remember { mutableStateOf(TextFieldValue("")) }
     var guess by remember { mutableStateOf<Int?>(null) }
     InvestmentCard(
         title = stringResource(Res.string.high_risk),
         hint = stringResource(Res.string.high_risk_hint, multiplier.toString()),
     ) {
-        NumberTextField(input = stake, inputLabel = stringResource(Res.string.stake))
+        NumberTextField(
+            input = stake,
+            inputLabel = stringResource(Res.string.stake),
+            quickOptions = available?.let {
+                proportionalAmountOptions(it, stringResource(Res.string.all_in))
+            }.orEmpty(),
+        )
         Row(
             modifier = Modifier.padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -123,14 +134,24 @@ internal fun HighRiskCard(multiplier: Long, onPlay: (stake: Long, guess: Int) ->
 }
 
 @Composable
-internal fun MediumRiskCard(multiplier: Long, onPlay: (stake: Long, even: Boolean) -> Unit) {
+internal fun MediumRiskCard(
+    multiplier: Long,
+    available: Long? = null,
+    onPlay: (stake: Long, even: Boolean) -> Unit,
+) {
     val stake = remember { mutableStateOf(TextFieldValue("")) }
     var even by remember { mutableStateOf<Boolean?>(null) }
     InvestmentCard(
         title = stringResource(Res.string.medium_risk),
         hint = stringResource(Res.string.medium_risk_hint, multiplier.toString()),
     ) {
-        NumberTextField(input = stake, inputLabel = stringResource(Res.string.stake))
+        NumberTextField(
+            input = stake,
+            inputLabel = stringResource(Res.string.stake),
+            quickOptions = available?.let {
+                proportionalAmountOptions(it, stringResource(Res.string.all_in))
+            }.orEmpty(),
+        )
         Row(
             modifier = Modifier.padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -160,13 +181,23 @@ internal fun MediumRiskCard(multiplier: Long, onPlay: (stake: Long, even: Boolea
 }
 
 @Composable
-internal fun LowRiskCard(rate: Long, onInvest: (amount: Long) -> Unit) {
+internal fun LowRiskCard(
+    rate: Long,
+    available: Long? = null,
+    onInvest: (amount: Long) -> Unit,
+) {
     val amountInput = remember { mutableStateOf(TextFieldValue("")) }
     InvestmentCard(
         title = stringResource(Res.string.low_risk),
         hint = stringResource(Res.string.low_risk_hint, rate.toString()),
     ) {
-        NumberTextField(input = amountInput, inputLabel = stringResource(Res.string.amount))
+        NumberTextField(
+            input = amountInput,
+            inputLabel = stringResource(Res.string.amount),
+            quickOptions = available?.let {
+                proportionalAmountOptions(it, stringResource(Res.string.all_in))
+            }.orEmpty(),
+        )
         val amount = amountInput.value.text.toLongOrNull()
         ElevatedButton(
             modifier = Modifier.padding(top = 8.dp),

@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -17,15 +15,18 @@ import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.resources.Res
 import ua.vald_zx.game.rat.race.card.resources.expense_amount
 import ua.vald_zx.game.rat.race.card.resources.give
+import ua.vald_zx.game.rat.race.card.resources.all_in
 import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
+import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 
 class SideExpensesScreen : Screen {
     @Composable
     override fun Content() {
         val raceRate2store = koinInject<RatRace2CardStore>()
+        val state by raceRate2store.observeState().collectAsState()
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         ClosableBottomSheetContainer {
             val inputAmount = remember { mutableStateOf(TextFieldValue("")) }
@@ -33,6 +34,7 @@ class SideExpensesScreen : Screen {
             NumberTextField(
                 input = inputAmount,
                 inputLabel = stringResource(Res.string.expense_amount),
+                quickOptions = proportionalAmountOptions(state.cash, stringResource(Res.string.all_in)),
             )
             ElevatedButton(
                 modifier = Modifier

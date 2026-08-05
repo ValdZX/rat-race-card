@@ -9,9 +9,11 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.indication
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.*
 import androidx.compose.material.ripple
@@ -45,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.design.DesignShapes
+import ua.vald_zx.game.rat.race.card.design.AmountQuickOption
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -382,23 +385,46 @@ fun BalanceField(
 fun NumberTextField(
     modifier: Modifier = Modifier,
     input: MutableState<TextFieldValue>,
-    inputLabel: String
+    inputLabel: String,
+    quickOptions: List<AmountQuickOption> = emptyList(),
 ) {
     val focusManager = LocalFocusManager.current
-    OutlinedTextField(
-        modifier = modifier.fillMaxWidth().onFocusSelectAll(input),
-        label = { Text(inputLabel) },
-        keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Next,
-            keyboardType = KeyboardType.Number
-        ),
-        keyboardActions = KeyboardActions(
-            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-        ),
-        value = input.value,
-        onValueChange = { input.value = it.copy(text = it.text.getDigits()) },
-        visualTransformation = AmountTransformation
-    )
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().onFocusSelectAll(input),
+            label = { Text(inputLabel) },
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Next,
+                keyboardType = KeyboardType.Number
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            ),
+            value = input.value,
+            onValueChange = { input.value = it.copy(text = it.text.getDigits()) },
+            visualTransformation = AmountTransformation
+        )
+        val visibleOptions = quickOptions.filter { it.amount > 0 }.distinctBy { it.amount }
+        if (visibleOptions.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                visibleOptions.forEach { option ->
+                    OutlinedButton(
+                        onClick = {
+                            input.value = input.value.copy(text = option.amount.toString())
+                        },
+                    ) {
+                        Text(option.label, maxLines = 1)
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
