@@ -96,6 +96,8 @@ data class BoardState(
     }
 }
 
+private class PlayerSessionLost : IllegalStateException("Player session was not restored")
+
 sealed interface BoardConnectionState {
     data object Connected : BoardConnectionState
     data class Reconnecting(val attempt: Int) : BoardConnectionState
@@ -433,7 +435,7 @@ class BoardViewModel(
                                 helloUuid = clientUuidProvider(),
                                 boardId = _uiState.value.board.id,
                             )
-                            val recoveredPlayer = instance.player ?: error("Player session was not restored")
+                            val recoveredPlayer = instance.player ?: throw PlayerSessionLost()
                             Triple(recoveredPlayer, service.getBoard(), service.getPlayers())
                         }
                         players.value = actualPlayers
@@ -452,6 +454,12 @@ class BoardViewModel(
                         return@reconnect
                     } catch (cancellation: CancellationException) {
                         throw cancellation
+                    } catch (sessionLost: PlayerSessionLost) {
+                        Napier.w("The server has no player session for this board, reconnect stopped")
+                        _uiState.update { it.copy(isProgress = false) }
+                        _actions.send(ServerRequestFailed)
+                        reconnectJob = null
+                        return@reconnect
                     } catch (error: Throwable) {
                         Napier.e("Reconnect attempt $attempt failed", error)
                         attempt += 1

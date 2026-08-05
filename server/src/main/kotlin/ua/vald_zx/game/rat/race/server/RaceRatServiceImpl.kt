@@ -233,6 +233,9 @@ class RaceRatServiceImpl(
         )
         Storage.newBoard(board)
         boardSelected(board)
+        if (world.enabled) {
+            BoardGenerationCoordinator.continueGeneration(board.id)
+        }
         return board
     }
 
