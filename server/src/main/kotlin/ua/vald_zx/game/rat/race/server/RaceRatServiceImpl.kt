@@ -766,26 +766,16 @@ class RaceRatServiceImpl(
             eventBus.emit(Event.DepositWithdraw(value - cash))
             copy(cash = 0, deposit = (deposit + cash) - value)
         } else if (!isFundBuy && config.hasFunds && funds.isNotEmpty()) {
-            var stub = cash + deposit
-            var newFunds = funds.toList()
-            funds.sortedBy { it.rate }.firstOrNull { fund ->
-                if (stub + fund.amount >= value) {
-                    newFunds = newFunds.replace(fund, fund.copy(amount = stub + fund.amount - value))
-                    true
-                } else {
-                    stub += fund.amount
-                    newFunds = newFunds.remove(fund)
-                    false
-                }
-            }
-            if (stub < value) {
-                val newLoan = loan + (value - stub)
+            val amountFromFunds = value - cash - deposit
+            val updatedFunds = funds.withdrawFunds(amountFromFunds)
+            if (updatedFunds == null) {
+                val newLoan = loan + amountFromFunds - funds.sumOf { it.amount }
                 if (newLoan > board.loanLimit) {
                     eventBus.emit(Event.LoanOverlimited)
                 }
                 copy(cash = 0, deposit = 0, funds = emptyList(), loan = newLoan)
             } else {
-                copy(cash = 0, deposit = 0, funds = newFunds)
+                copy(cash = 0, deposit = 0, funds = updatedFunds)
             }
         } else {
             eventBus.emit(Event.LoanAdded(value - (cash + deposit)))
@@ -860,27 +850,27 @@ class RaceRatServiceImpl(
         nextPlayer()
     }
 
-    private suspend fun buyShares(totalCount: Long, shares: Shares) {
+    private suspend fun purchaseShares(shares: Shares) {
         updatePlayer {
             copy(sharesList = sharesList + shares).minusCash(shares.price)
-        }
-        val auction = board().auction
-        if (auction is Auction.SharesAuction) {
-            updateBoard {
-                copy(
-                    sharesCount = null,
-                    auction = auction.copy(shares = auction.shares.copy(count = auction.shares.count - shares.count))
-                )
-            }
-        } else {
-            updateBoard {
-                copy(sharesCount = totalCount - shares.count)
-            }
         }
     }
 
     override suspend fun buyShares(shares: Shares, totalCount: Long) {
-        buyShares(totalCount, shares)
+        val currentBoard = board()
+        require(currentBoard.activePlayerId == playerId) { "Only the active player can buy shares" }
+        require(currentBoard.auction == null) { "Shares are currently being auctioned" }
+        val availableCount = currentBoard.sharesCount ?: totalCount
+        require(shares.count in 1..availableCount) { "Invalid shares count" }
+        purchaseShares(shares)
+        val remainingCount = availableCount - shares.count
+        if (remainingCount == 0L) {
+            nextPlayer()
+            return
+        }
+        updateBoard {
+            copy(sharesCount = remainingCount)
+        }
     }
 
     override suspend fun extendBusiness(
@@ -1108,7 +1098,9 @@ class RaceRatServiceImpl(
             require(amount > 0) { "Repayment must be positive" }
             require(amount <= loan) { "Repayment exceeds the loan" }
             require(amount <= balance()) { "Not enough money for repayment" }
-            copy(loan = loan - amount).minusCash(amount)
+            val paid = minusCash(amount)
+            require(paid.loan == loan) { "Repayment cannot be financed with a new loan" }
+            paid.copy(loan = loan - amount)
         }
     }
 
@@ -1133,15 +1125,18 @@ class RaceRatServiceImpl(
             }
             nextPlayer()
         } else {
-            updateBoard {
-                copy(
-                    auction = auction.copy(
-                        shares = auction.shares.copy(
-                            count = auction.shares.count - bid.count
-                        )
-                    ),
-                    bidList = bidList.filter { it.playerId != bid.playerId }
-                )
+            val remainingCount = auction.shares.count - bid.count
+            if (remainingCount == 0L) {
+                nextPlayer()
+            } else {
+                updateBoard {
+                    copy(
+                        auction = auction.copy(
+                            shares = auction.shares.copy(count = remainingCount)
+                        ),
+                        bidList = bidList.filter { it.playerId != bid.playerId }
+                    )
+                }
             }
         }
         globalEventBus.emit(GlobalEvent.BidSelled(bid, auction))
@@ -1244,7 +1239,7 @@ class RaceRatServiceImpl(
             }
 
             is Auction.SharesAuction -> {
-                buyShares(bid.count, auction.shares.copy(count = bid.count, buyPrice = bid.bid))
+                purchaseShares(auction.shares.copy(count = bid.count, buyPrice = bid.bid))
                 eventBus.emit(Event.BidSharesAuctionSuccessBuy)
             }
         }
@@ -1256,6 +1251,23 @@ class RaceRatServiceImpl(
 }
 
 private val BOARD_DELETION_INACTIVITY = 7.days
+
+internal fun List<Fund>.withdrawFunds(amount: Long): List<Fund>? {
+    require(amount >= 0) { "Withdrawal must not be negative" }
+    var remaining = amount
+    var updatedFunds = this
+    for (fund in sortedBy { it.rate }) {
+        if (remaining == 0L) break
+        if (fund.amount <= remaining) {
+            remaining -= fund.amount
+            updatedFunds = updatedFunds.remove(fund)
+        } else {
+            updatedFunds = updatedFunds.replace(fund, fund.copy(amount = fund.amount - remaining))
+            remaining = 0
+        }
+    }
+    return updatedFunds.takeIf { remaining == 0L }
+}
 
 suspend fun nextPlayer(board: Board) {
     val activePlayers = board.activePlayers(Storage.players(board.id))

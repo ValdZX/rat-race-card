@@ -362,6 +362,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
     val unitDp = cardWidth / 300
     val padding = unitDp * 10
     val smallPadding = unitDp * 6
+    val availableCount = state.board.sharesCount ?: card.maxCount
     Column(modifier = Modifier.padding(padding)) {
         Row {
             Text(
@@ -438,14 +439,14 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )
-                var count by remember { mutableStateOf(0L) }
+                var count by remember(availableCount) { mutableStateOf(0L) }
                 val value = if (count <= 0) "" else count.toString()
                 if (designV2Enabled.value) {
                     DesignTextField(
                         value = value,
                         onValueChange = { input ->
                             val enteredCount = input.filter(Char::isDigit).toLongOrNull() ?: 0
-                            if (enteredCount <= card.maxCount) count = enteredCount
+                            if (enteredCount <= availableCount) count = enteredCount
                         },
                         modifier = Modifier.weight(1f),
                         label = stringResource(Res.string.quantity),
@@ -460,7 +461,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                         value = value,
                         onValueChange = {
                             val enteredCount = it.toLongOrNull() ?: 0
-                            if (enteredCount <= card.maxCount) count = enteredCount
+                            if (enteredCount <= availableCount) count = enteredCount
                         },
                         label = {
                             Text(
@@ -477,7 +478,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                 EButton(
                     kind = DesignButtonKind.Filled,
                     onClick = { vm.buyShares(card, count) },
-                    enabled = count > 0 && state.canBuy(card.price * count),
+                    enabled = count in 1..availableCount && state.canBuy(card.price * count),
                     title = stringResource(Res.string.buy),
                     unitTS = unitTS,
                     unitDp = unitDp,
@@ -490,7 +491,7 @@ private fun BoxWithConstraintsScope.SharesCardFront(
                         val auction = Auction.SharesAuction(
                             Shares(
                                 type = card.sharesType,
-                                count = state.board.sharesCount ?: card.maxCount,
+                                count = availableCount,
                                 buyPrice = card.price,
                             ),
                             card.price,
