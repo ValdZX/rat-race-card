@@ -17,9 +17,6 @@ Pods/
 *.jks
 *yarn.lock
 
-# generated web bundle, deployed by .github/workflows/deploy-pages.yml
-docs
-
 # кандидати іконок: 7 МБ чернеток, у репозиторій не йдуть
 icon-candidates/
 sound-candidates/

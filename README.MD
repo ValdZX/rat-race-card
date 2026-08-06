@@ -1,12 +1,14 @@
 # Compose Multiplatform Application
 
+Game rules, mechanics, card and cell reference, current architecture, and the refactoring roadmap are available in [docs](docs/README.md).
+
 ## Before running!
  - check your system with [KDoctor](https://github.com/Kotlin/kdoctor)
  - install JDK 17 or higher on your machine
  - add `local.properties` file to the project root and set a path to Android SDK there
 
 ### Android
-To run the application on android device/emulator:  
+To run the application on android device/emulator:
  - open project in Android Studio and run imported android run configuration
 
 To build the application bundle:
@@ -27,4 +29,3 @@ Run iOS simulator UI tests: `./gradlew :composeApp:iosSimulatorArm64Test`
 ### Experimental Browser (Wasm)
 Run the browser application: `./gradlew :composeApp:wasmJsBrowserDevelopmentRun --continue`
 Run browser UI tests: `./gradlew :composeApp:wasmJsBrowserTest`
-
