@@ -54,6 +54,11 @@ class RaceRatServiceImpl(
         get() = getGlobalEventBus(boardIdState.value)
     private var boardStateSubJob: Job? = null
     private var globalEventStateSubJob: Job? = null
+    private val gameApplicationService = GameApplicationService(
+        repository = StorageGameRepository,
+        engine = GameEngine(random),
+        transactionMutex = ::boardMutex,
+    )
 
     private val playerId: String
         get() = generateStableDbId(boardIdState.value, uuidStateProvider.value)
@@ -304,6 +309,41 @@ class RaceRatServiceImpl(
 
     override suspend fun getPlayer(): Player = player()
 
+    override suspend fun executeCommand(envelope: GameCommandEnvelope): GameCommandResponse {
+        val currentSnapshot = StorageGameRepository.load(boardIdState.value)
+            ?: error("Board not found: ${boardIdState.value}")
+        if (envelope.boardId != currentSnapshot.board.id ||
+            envelope.playerId != playerId ||
+            envelope.command == GameCommand.CompleteRoll ||
+            envelope.command == GameCommand.AdvanceTurn
+        ) {
+            return GameCommandResponse(
+                status = GameCommandStatus.REJECTED,
+                snapshot = currentSnapshot,
+                rejection = GameCommandRejection.COMMAND_NOT_AVAILABLE,
+            )
+        }
+
+        val execution = gameApplicationService.execute(envelope)
+            ?: error("Board not found: ${envelope.boardId}")
+        publish(execution)
+        if (envelope.command !is GameCommand.RollDice || execution is GameExecution.Rejected) {
+            return execution.toResponse()
+        }
+
+        if (!execution.snapshot.board.diceRolling) return execution.toResponse()
+        delay(4.seconds)
+        val completed = gameApplicationService.execute(
+            envelope.copy(
+                commandId = "${envelope.commandId}:complete",
+                expectedRevision = execution.snapshot.board.revision,
+                command = GameCommand.CompleteRoll,
+            ),
+        ) ?: error("Board not found: ${envelope.boardId}")
+        publish(completed)
+        return completed.toResponse()
+    }
+
     override suspend fun updateAttributes(attrs: PlayerAttributes) {
         updatePlayer { copy(attrs = attrs) }
     }
@@ -328,15 +368,11 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun rollDice() {
-        updateBoard {
-            val dice = random.nextInt(1, 7)
-            copy(dice = dice, canRoll = false, diceRolling = true)
-        }
-        delay(4.seconds)
-        updateBoard {
-            copy(diceRolling = false)
-        }
-        move()
+        executeCommand(
+            compatibilityEnvelope(
+                GameCommand.RollDice(Uuid.random().toString()),
+            ),
+        )
     }
 
     override suspend fun takeCard(cardType: BoardCardType) {
@@ -462,7 +498,66 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun next() {
-        nextPlayer()
+        executeCommand(compatibilityEnvelope(GameCommand.EndTurn("legacy.next")))
+    }
+
+    private suspend fun compatibilityEnvelope(command: GameCommand): GameCommandEnvelope {
+        val currentBoard = board()
+        return GameCommandEnvelope(
+            commandId = Uuid.random().toString(),
+            boardId = currentBoard.id,
+            playerId = playerId,
+            expectedRevision = currentBoard.revision,
+            command = command,
+        )
+    }
+
+    private suspend fun publish(execution: GameExecution) {
+        if (execution is GameExecution.Applied) publish(execution.result)
+    }
+
+    private suspend fun publish(result: RuleResult) {
+        result.events.forEach { domainEvent ->
+            when (domainEvent) {
+                is DomainEvent.PlayerChanged -> {
+                    globalEventBus.emit(GlobalEvent.PlayerChanged(domainEvent.player))
+                    checkVictory(domainEvent.player)
+                }
+
+                is DomainEvent.CardOptionsOpened,
+                is DomainEvent.DiceRolled,
+                is DomainEvent.PaymentApplied,
+                is DomainEvent.PlayerMoved,
+                is DomainEvent.TurnAdvanced -> Unit
+            }
+        }
+        result.notices.forEach { notice ->
+            when (notice) {
+                is PresentationNotice.BankruptBusiness -> eventBus.emit(Event.BankruptBusiness(notice.business))
+                is PresentationNotice.PlayerHadBaby ->
+                    globalEventBus.emit(GlobalEvent.PlayerHadBaby(notice.playerId, notice.babies))
+
+                is PresentationNotice.PlayerDivorced ->
+                    globalEventBus.emit(GlobalEvent.PlayerDivorced(notice.playerId))
+
+                is PresentationNotice.PlayerMarried ->
+                    globalEventBus.emit(GlobalEvent.PlayerMarried(notice.playerId))
+
+                is PresentationNotice.Resignation -> eventBus.emit(Event.Resignation(notice.business))
+                PresentationNotice.DreamOffered -> eventBus.emit(Event.DreamOffered)
+                is PresentationNotice.TaxInspectionPaid -> eventBus.emit(Event.TaxInspectionPaid(notice.amount))
+                is PresentationNotice.CashSubtracted -> eventBus.emit(Event.SubCash(notice.amount))
+                is PresentationNotice.DepositWithdrawn -> eventBus.emit(Event.DepositWithdraw(notice.amount))
+                is PresentationNotice.LoanAdded -> eventBus.emit(Event.LoanAdded(notice.amount))
+                PresentationNotice.LoanLimitExceeded -> eventBus.emit(Event.LoanOverlimited)
+            }
+        }
+    }
+
+    private fun GameExecution.toResponse(): GameCommandResponse = when (this) {
+        is GameExecution.Applied -> GameCommandResponse(GameCommandStatus.APPLIED, snapshot)
+        is GameExecution.Duplicate -> GameCommandResponse(GameCommandStatus.DUPLICATE, snapshot)
+        is GameExecution.Rejected -> GameCommandResponse(GameCommandStatus.REJECTED, snapshot, reason)
     }
 
     private suspend fun invalidateNextPlayer(activePlayerId: String) {
@@ -474,7 +569,10 @@ class RaceRatServiceImpl(
     }
 
     private suspend fun nextPlayer() {
-        nextPlayer(board())
+        val execution = gameApplicationService.execute(
+            compatibilityEnvelope(GameCommand.AdvanceTurn),
+        ) ?: return
+        publish(execution)
     }
 
     override suspend fun takeSalary() {

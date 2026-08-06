@@ -54,6 +54,9 @@ data class Board(
     val generatedBalance: GeneratedBalance? = null,
     @EncodeDefault
     val rulesVersion: Int = CURRENT_RULES_VERSION,
+    @EncodeDefault
+    val revision: Long = 0,
+    val processedCommandIds: List<String> = emptyList(),
 )
 
 const val CURRENT_RULES_VERSION = 1

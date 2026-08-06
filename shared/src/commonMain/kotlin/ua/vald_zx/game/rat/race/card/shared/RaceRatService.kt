@@ -137,6 +137,7 @@ interface RaceRatService {
 
     suspend fun updateAttributes(attrs: PlayerAttributes)
     suspend fun getPlayer(): Player
+    suspend fun executeCommand(envelope: GameCommandEnvelope): GameCommandResponse
     fun observeGeneration(): Flow<BoardGenerationProgress>
     suspend fun continueGeneration()
     suspend fun restartGeneration()

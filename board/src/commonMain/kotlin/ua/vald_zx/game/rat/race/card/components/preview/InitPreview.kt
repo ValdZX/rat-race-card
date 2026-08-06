@@ -67,6 +67,10 @@ fun InitPreview(
                             error("Not for preview")
                         }
 
+                        override suspend fun executeCommand(envelope: GameCommandEnvelope): GameCommandResponse {
+                            error("Not for preview")
+                        }
+
                         override fun observeGeneration(): Flow<BoardGenerationProgress> = MutableSharedFlow()
 
                         override suspend fun continueGeneration() {
