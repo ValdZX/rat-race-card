@@ -11,6 +11,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.CardLink
 import ua.vald_zx.game.rat.race.card.shared.CardText
+import ua.vald_zx.game.rat.race.card.shared.CURRENT_RULES_VERSION
 import ua.vald_zx.game.rat.race.card.shared.GeneratedText
 import ua.vald_zx.game.rat.race.card.shared.Shares
 import ua.vald_zx.game.rat.race.card.shared.SharesType
@@ -132,5 +133,7 @@ class BoardSerializationTest {
         val encoded = json.encodeToString(Board.serializer(), board(emptyMap()))
         val decoded = json.decodeFromString(Board.serializer(), encoded)
         assertTrue(decoded.generatedCards.isEmpty())
+        assertTrue("\"rulesVersion\":$CURRENT_RULES_VERSION" in encoded)
+        assertEquals(CURRENT_RULES_VERSION, decoded.rulesVersion)
     }
 }

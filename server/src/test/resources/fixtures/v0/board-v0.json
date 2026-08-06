@@ -1,0 +1,10 @@
+{
+  "_id": "fixture-board",
+  "name": "Legacy board",
+  "loanLimit": 5000,
+  "businessLimit": 3,
+  "createDateTime": "2026-01-02T03:04:05",
+  "cards": {
+    "Chance": [1, 2]
+  }
+}

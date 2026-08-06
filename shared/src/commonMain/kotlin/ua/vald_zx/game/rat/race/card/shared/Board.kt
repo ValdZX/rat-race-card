@@ -1,6 +1,7 @@
 package ua.vald_zx.game.rat.race.card.shared
 
 import kotlinx.datetime.LocalDateTime
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -51,7 +52,11 @@ data class Board(
     val generatedTexts: Map<String, GeneratedText> = emptyMap(),
     val generationProgress: BoardGenerationProgress = BoardGenerationProgress(),
     val generatedBalance: GeneratedBalance? = null,
+    @EncodeDefault
+    val rulesVersion: Int = CURRENT_RULES_VERSION,
 )
+
+const val CURRENT_RULES_VERSION = 1
 
 fun Board.cardOrNull(link: CardLink, locale: String = DEFAULT_LOCALE): BoardCard? {
     val card = generatedCards[link.type]?.get(link.id) ?: return null

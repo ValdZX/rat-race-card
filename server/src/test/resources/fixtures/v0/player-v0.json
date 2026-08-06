@@ -1,0 +1,16 @@
+{
+  "_id": "fixture-player",
+  "boardId": "fixture-board",
+  "attrs": {
+    "color": 42
+  },
+  "cash": 12000,
+  "businesses": [
+    {
+      "type": "WORK",
+      "name": "Engineer",
+      "price": 0,
+      "profit": 4000
+    }
+  ]
+}

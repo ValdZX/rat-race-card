@@ -1,0 +1,7 @@
+{
+  "type": "ua.vald_zx.game.rat.race.card.shared.BoardCard.Chance.Estate",
+  "cardType": "Chance",
+  "name": "Estate",
+  "description": "Legacy estate card",
+  "price": 75000
+}

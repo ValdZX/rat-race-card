@@ -44,6 +44,7 @@ class RaceRatServiceImpl(
     private val uuidStateProvider: MutableStateFlow<String>,
     private val scope: CoroutineScope,
     private val connectionIdentified: (String) -> Unit = {},
+    private val random: GameRandom = DefaultGameRandom,
 ) : RaceRatService, CoroutineScope by scope {
 
     private var boardIdState = MutableStateFlow("")
@@ -327,7 +328,7 @@ class RaceRatServiceImpl(
 
     override suspend fun rollDice() {
         updateBoard {
-            val dice = (1..6).random()
+            val dice = random.nextInt(1, 7)
             copy(dice = dice, canRoll = false, diceRolling = true)
         }
         delay(4.seconds)
@@ -348,12 +349,22 @@ class RaceRatServiceImpl(
         if (preparedBoard != currentBoard) {
             updateBoard { prepareCardDeck(cardType, layer) }
         }
-        val card = preparedBoard.availableCardIds(cardType, layer).randomOrNull() ?: return
+        val card = random.choose(preparedBoard.availableCardIds(cardType, layer)) ?: return
         selectCard(card, cardType)
     }
 
     override suspend fun buyCorruptBusiness(card: BoardCard.Chance.CorruptBusiness) {
-        if (player().deputies < card.deputies) return
+        val player = player()
+        val board = board()
+        val canAfford = if (card.oneTimeProfit > 0) {
+            board.canMakeVoluntaryPurchase(player, card.price)
+        } else {
+            board.canBuyBusiness(player, card.price)
+        }
+        if (!board.isResolvingCard(BoardCardType.Chance) ||
+            player.deputies < card.deputies ||
+            !canAfford
+        ) return
         updatePlayer {
             val hired = copy(deputies = deputies - card.deputies)
             if (card.oneTimeProfit > 0) {
@@ -373,7 +384,12 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun buyCorruptLand(card: BoardCard.Chance.CorruptLand) {
-        if (player().deputies < card.deputies) return
+        val player = player()
+        val board = board()
+        if (!board.isResolvingCard(BoardCardType.Chance) ||
+            player.deputies < card.deputies ||
+            !board.canMakeVoluntaryPurchase(player, card.price)
+        ) return
         updatePlayer {
             copy(
                 deputies = deputies - card.deputies,
@@ -404,12 +420,17 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun buyDeputy() {
-        if (board().activePlayerId != playerId) return
-        updateBoard { discardPileB() }
         val board = board()
-        val cardId = board.cards[BoardCardType.Deputy]?.randomOrNull() ?: return
+        if (!board.isResolvingCard(BoardCardType.Deputy) &&
+            BoardCardType.Deputy !in board.canTakeCard
+        ) return
+        val player = player()
+        if (!board.canMakeVoluntaryPurchase(player, player.config.deputyCardPrice)) return
+        updateBoard { discardPileB() }
+        val preparedBoard = board()
+        val cardId = random.choose(preparedBoard.cards[BoardCardType.Deputy].orEmpty()) ?: return
         updatePlayer {
-            val hired = if (board.deputyIsCorrupt(cardId)) deputies + 1 else deputies
+            val hired = if (preparedBoard.deputyIsCorrupt(cardId)) deputies + 1 else deputies
             copy(deputies = hired).minusCash(config.deputyCardPrice)
         }
         selectCard(cardId, BoardCardType.Deputy)
@@ -499,10 +520,24 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun buyBusiness(business: Business) {
+        val board = board()
+        if (!board.isResolvingCard(
+                BoardCardType.SmallBusiness,
+                BoardCardType.MediumBusiness,
+                BoardCardType.BigBusiness,
+            ) || !board.canBuyBusiness(player(), business.price)
+        ) return
         buyBusiness(business) { nextPlayer() }
     }
 
     override suspend fun dismissalConfirmed(business: Business) {
+        val board = board()
+        if (!board.isResolvingCard(
+                BoardCardType.SmallBusiness,
+                BoardCardType.MediumBusiness,
+                BoardCardType.BigBusiness,
+            ) || !board.canBuyBusiness(player(), business.price)
+        ) return
         updatePlayer {
             val newBusinesses = businesses.filter { it.type != BusinessType.WORK } + business
             copy(businesses = newBusinesses).minusCash(business.price)
@@ -511,6 +546,13 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun sellingAllBusinessConfirmed(business: Business) {
+        val board = board()
+        if (!board.isResolvingCard(
+                BoardCardType.SmallBusiness,
+                BoardCardType.MediumBusiness,
+                BoardCardType.BigBusiness,
+            ) || !board.canBuyBusiness(player(), business.price)
+        ) return
         updatePlayer {
             val refund = businesses.sumOf { it.price }
             copy(businesses = listOf(business))
@@ -582,27 +624,26 @@ class RaceRatServiceImpl(
 
         when (val place = places[safeNewPosition]) {
             PlaceType.BigBusiness -> updateBoard {
-                copy(canTakeCard = listOf(BoardCardType.BigBusiness))
+                copy(canTakeCard = legacyCardOptions(PlaceType.BigBusiness, player))
             }
 
             PlaceType.Business -> updateBoard {
-                copy(canTakeCard = businessCardOptions(player))
+                copy(canTakeCard = legacyCardOptions(PlaceType.Business, player))
             }
 
-            PlaceType.Chance -> updateBoard { copy(canTakeCard = listOf(BoardCardType.Chance)) }
-            PlaceType.Deputy -> updateBoard { copy(canTakeCard = listOf(BoardCardType.Deputy)) }
-            PlaceType.Expenses -> updateBoard { copy(canTakeCard = listOf(BoardCardType.Expenses)) }
-            PlaceType.Shopping -> updateBoard { copy(canTakeCard = listOf(BoardCardType.Shopping)) }
-            PlaceType.Store -> updateBoard { copy(canTakeCard = listOf(BoardCardType.EventStore)) }
+            PlaceType.Chance,
+            PlaceType.Deputy,
+            PlaceType.Expenses,
+            PlaceType.Shopping,
+            PlaceType.Store -> updateBoard { copy(canTakeCard = legacyCardOptions(place, player)) }
 
             PlaceType.Bankruptcy -> {
                 updatePlayer {
-                    val sellable = businesses.filter { it.type != BusinessType.WORK }
-                    if (sellable.isNotEmpty()) {
-                        val random = sellable.random()
-                        eventBus.emit(Event.BankruptBusiness(random))
-                        copy(businesses = businesses - random)
-                    } else this
+                    val (updated, bankruptBusiness) = afterBankruptcyCell(random)
+                    if (bankruptBusiness != null) {
+                        eventBus.emit(Event.BankruptBusiness(bankruptBusiness))
+                    }
+                    updated
                 }
                 nextPlayer()
             }
@@ -610,11 +651,8 @@ class RaceRatServiceImpl(
             PlaceType.Child -> {
                 if (player.card.gender == Gender.FEMALE || (player.card.gender == Gender.MALE && player.isMarried)) {
                     updatePlayer {
-                        val totalBabies = babies + 1
-                        copy(babies = totalBabies)
-                            .plusCash(config.childBenefit)
-                            .also {
-                            globalEventBus.emit(GlobalEvent.PlayerHadBaby(playerId, totalBabies))
+                        afterChildCell().also { updated ->
+                            globalEventBus.emit(GlobalEvent.PlayerHadBaby(playerId, updated.babies))
                         }
                     }
                 }
@@ -624,17 +662,7 @@ class RaceRatServiceImpl(
             PlaceType.Divorce -> {
                 if (player.isMarried) {
                     updatePlayer {
-                        (if (card.gender == Gender.MALE) {
-                            val retained = config.divorceAssetRetentionPercentage
-                            copy(
-                                isMarried = false,
-                                babies = 0,
-                                cash = cash * retained / 100,
-                                deposit = deposit * retained / 100,
-                            )
-                        } else {
-                            copy(isMarried = false)
-                        }).also {
+                        afterDivorceCell().also {
                             globalEventBus.emit(GlobalEvent.PlayerDivorced(playerId))
                         }
                     }
@@ -646,7 +674,7 @@ class RaceRatServiceImpl(
                 val business = player.businesses.find { it.type == BusinessType.WORK }
                 if (business != null) {
                     updatePlayer {
-                        copy(businesses = businesses - business).also {
+                        afterResignationCell().also {
                             eventBus.emit(Event.Resignation(business))
                         }
                     }
@@ -657,7 +685,7 @@ class RaceRatServiceImpl(
             PlaceType.Love -> {
                 if (!player.isMarried) {
                     updatePlayer {
-                        copy(isMarried = true).also {
+                        afterLoveCell().also {
                             globalEventBus.emit(GlobalEvent.PlayerMarried(playerId))
                         }
                     }
@@ -669,7 +697,7 @@ class RaceRatServiceImpl(
             }
 
             PlaceType.Rest -> {
-                updatePlayer { copy(inRest = config.restTurnCount) }
+                updatePlayer { afterRestCell() }
                 nextPlayer()
             }
 
@@ -697,26 +725,18 @@ class RaceRatServiceImpl(
         }
     }
 
-    private fun businessCardOptions(player: Player): List<BoardCardType> {
-        return when {
-            player.businesses.any { it.type == BusinessType.LARGE } ->
-                listOf(BoardCardType.BigBusiness)
-
-            player.businesses.any { it.type == BusinessType.MEDIUM } ->
-                listOf(BoardCardType.BigBusiness, BoardCardType.MediumBusiness)
-
-            player.businesses.any { it.type == BusinessType.SMALL } ->
-                listOf(BoardCardType.SmallBusiness, BoardCardType.MediumBusiness)
-
-            else -> listOf(BoardCardType.SmallBusiness)
-        }
-    }
-
     override suspend fun minusCash(price: Long) {
         updatePlayer { minusCash(price) }
     }
 
     override suspend fun payExpenses(card: BoardCard.Expenses) {
+        val currentBoard = board()
+        val currentPlayer = player()
+        if (!currentBoard.isActivePlayer(currentPlayer) || !currentBoard.isResolvingCard(BoardCardType.Expenses)) return
+        if (!currentPlayer.mustPay(card)) {
+            nextPlayer()
+            return
+        }
         updatePlayer {
             val paid = minusCash(card.price)
             if (card.grantsAnimal) paid.copy(animal = paid.animal + 1) else paid
@@ -802,6 +822,10 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun buyThing(card: BoardCard.Shopping) {
+        val board = board()
+        if (!board.isResolvingCard(BoardCardType.Shopping) ||
+            !board.canMakeVoluntaryPurchase(player(), card.price)
+        ) return
         updatePlayer {
             val updated = when (card.shopType) {
                 ShopType.AUTO -> copy(cars = cars + 1)
@@ -845,6 +869,10 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun buyEstate(estate: Estate) {
+        val board = board()
+        if (!board.isResolvingCard(BoardCardType.Chance) ||
+            !board.canMakeVoluntaryPurchase(player(), estate.price)
+        ) return
         buyEstate(estate) { nextPlayer() }
     }
 
@@ -856,6 +884,10 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun buyLand(land: Land) {
+        val board = board()
+        if (!board.isResolvingCard(BoardCardType.Chance) ||
+            !board.canMakeVoluntaryPurchase(player(), land.price)
+        ) return
         buyLand(land) { nextPlayer() }
     }
 
@@ -872,10 +904,13 @@ class RaceRatServiceImpl(
 
     override suspend fun buyShares(shares: Shares, totalCount: Long) {
         val currentBoard = board()
+        val currentPlayer = player()
         require(currentBoard.activePlayerId == playerId) { "Only the active player can buy shares" }
         require(currentBoard.auction == null) { "Shares are currently being auctioned" }
+        require(currentBoard.isResolvingCard(BoardCardType.Chance)) { "No share purchase is active" }
         val availableCount = currentBoard.sharesCount ?: totalCount
         require(shares.count in 1..availableCount) { "Invalid shares count" }
+        require(currentBoard.canMakeVoluntaryPurchase(currentPlayer, shares.price)) { "Not enough available credit" }
         purchaseShares(shares)
         val remainingCount = availableCount - shares.count
         if (remainingCount == 0L) {
@@ -1035,8 +1070,7 @@ class RaceRatServiceImpl(
             .filter { current -> current.landList.any { !currentBoard.isCorruptLand(it) } }
             .map { it.id }
             .toSet()
-        val participants = owners + currentBoard.processedPlayerIds
-        if (participants.isEmpty() || currentBoard.processedPlayerIds.containsAll(participants)) {
+        if (marketEventIsComplete(currentBoard.processedPlayerIds, owners)) {
             nextPlayer()
         }
     }
@@ -1061,8 +1095,7 @@ class RaceRatServiceImpl(
             .filter(ownsRelevantAsset)
             .map { it.id }
             .toSet()
-        val participants = owners + currentBoard.processedPlayerIds
-        if (participants.isEmpty() || currentBoard.processedPlayerIds.containsAll(participants)) {
+        if (marketEventIsComplete(currentBoard.processedPlayerIds, owners)) {
             nextPlayer()
         }
     }
@@ -1084,8 +1117,7 @@ class RaceRatServiceImpl(
             .filter { current -> current.sharesList.any { it.type == sharesType } }
             .map { it.id }
             .toSet()
-        val participants = owners + currentBoard.processedPlayerIds
-        if (participants.isEmpty() || currentBoard.processedPlayerIds.containsAll(participants)) {
+        if (marketEventIsComplete(currentBoard.processedPlayerIds, owners)) {
             nextPlayer()
         }
     }
@@ -1097,8 +1129,7 @@ class RaceRatServiceImpl(
         val currentBoard = board()
         val owners = currentBoard.activePlayers(currentBoard.players()).filter { it.estateList.isNotEmpty() }
             .map { it.id }.toSet()
-        val participants = owners + currentBoard.processedPlayerIds
-        if (participants.isEmpty() || currentBoard.processedPlayerIds.containsAll(participants)) {
+        if (marketEventIsComplete(currentBoard.processedPlayerIds, owners)) {
             nextPlayer()
         }
     }
@@ -1123,8 +1154,8 @@ class RaceRatServiceImpl(
         event: (InvestmentOutcome) -> Event,
     ) {
         val player = player()
-        if (stake <= 0 || player.investmentPosition == null) return
-        val dice = (1..6).random()
+        if (player.investmentPosition == null || !board().canMakeVoluntaryPurchase(player, stake)) return
+        val dice = random.nextInt(1, 7)
         val payout = if (isWin(dice)) stake * multiplier else 0L
         updatePlayer {
             val afterStake = minusCash(stake)
@@ -1142,7 +1173,7 @@ class RaceRatServiceImpl(
     override suspend fun investInFund(amount: Long) {
         val player = player()
         val salaryPosition = player.investmentPosition ?: return
-        if (amount <= 0) return
+        if (!board().canBuyWithCashAndDeposit(player, amount)) return
         val rate = board().placesOf(player.location).fundRateAtSalary(
             salaryPosition,
             player.config.salaryFundRates,
@@ -1235,6 +1266,10 @@ class RaceRatServiceImpl(
         }
         val minBid = auction.minimumBid(board.bidList)
         if (price < minBid) return
+        val player = player()
+        if (auction is Auction.SharesAuction && count > Long.MAX_VALUE / price) return
+        val totalPrice = if (auction is Auction.SharesAuction) price * count else price
+        if (!player.isActiveOn(board) || !board.hasAvailableCredit(player, totalPrice)) return
         updateBoard {
             copy(bidList = bidList.filter { it.playerId != playerId } + Bid(playerId, price, count))
         }
@@ -1261,9 +1296,8 @@ class RaceRatServiceImpl(
         val dreamPlace = currentBoard.placesOf(currentPlayer.location)
             .getOrNull(currentPlayer.location.position) as? PlaceType.Desire ?: return
         val dream = currentBoard.dreamById(dreamPlace.dreamId) ?: return
-        val canBuy = currentBoard.activePlayerId == playerId &&
-                dream.id !in currentBoard.purchasedDreamIds &&
-                (currentBoard.loanLimit + currentPlayer.balance() - currentPlayer.loan - dream.price) > 0
+        val canBuy = dream.id !in currentBoard.purchasedDreamIds &&
+                currentBoard.canMakeVoluntaryPurchase(currentPlayer, dream.price)
         if (!canBuy) return
         var dreamClaimed = false
         updateBoard {
@@ -1355,13 +1389,7 @@ internal fun List<Fund>.withdrawFunds(amount: Long): List<Fund>? {
 suspend fun nextPlayer(board: Board) {
     val activePlayers = board.activePlayers(Storage.players(board.id))
     if (activePlayers.isEmpty()) return
-    val playerIds = activePlayers.map { it.id }
-    val activePlayerIndex = playerIds.indexOf(board.activePlayerId)
-    val nextPlayerId = if (activePlayerIndex < 0 || activePlayerIndex + 1 == playerIds.size) {
-        playerIds.first()
-    } else {
-        playerIds[activePlayerIndex + 1]
-    }
+    val nextPlayerId = board.nextActivePlayer(activePlayers)?.id ?: return
     val updatedBoard = board.discardPileB().copy(
         activePlayerId = nextPlayerId,
         moveCount = board.moveCount + 1,
