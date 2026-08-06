@@ -43,6 +43,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.dreamById
 import ua.vald_zx.game.rat.race.card.shared.moveTo
+import ua.vald_zx.game.rat.race.card.shared.trackId
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import androidx.compose.ui.text.intl.Locale
 
@@ -111,10 +112,10 @@ fun BoxScope.PlaceContent(
             val investmentPosition = state.player.investmentPosition
             fun isHere(position: Int?): Boolean {
                 return position != null &&
-                        layer.level == state.layer.level &&
+                        layer.trackId == state.trackId &&
                         index == moveTo(
                     position = position,
-                    cellCount = layer.cellCount,
+                    cellCount = route.places.size,
                     toMove = route.offset
                 )
             }
@@ -349,10 +350,10 @@ fun BoxScope.PlaceContent(
             val capitalization = state.player.startCapitalization
             val canCapitalize = remember(capitalization) {
                 capitalization != null &&
-                        layer.level == state.layer.level &&
+                        layer.trackId == state.trackId &&
                         index == moveTo(
                     position = capitalization.position,
-                    cellCount = layer.cellCount,
+                            cellCount = route.places.size,
                     toMove = route.offset
                 )
             }
@@ -425,7 +426,7 @@ fun BoxScope.Places(
     layout: RouteLayout,
 ) {
     val state by vm.uiState.collectAsState()
-    val alpha by animateFloatAsState(if (state.layer == layout.layer) 1f else 0.7f)
+    val alpha by animateFloatAsState(if (state.trackId == layout.trackId) 1f else 0.7f)
     Box(
         modifier = Modifier.align(Alignment.Center).size(layout.size).alpha(alpha)
     ) {
@@ -515,11 +516,11 @@ internal fun forEachPlayerPoint(
         state.board.playerIds,
         state.player.id,
     ) {
-        players.filter { !it.isInactive && layout.layer.level == it.location.level }.map {
+        players.filter { !it.isInactive && layout.trackId == it.location.trackId }.map {
             PlayerPointState(
-                position = moveTo(it.location.position, layout.layer.cellCount, layout.route.offset),
+                position = moveTo(it.location.position, layout.route.places.size, layout.route.offset),
                 color = it.attrs.color,
-                level = it.location.level,
+                trackId = it.location.trackId,
                 name = it.card.profession,
                 player = it,
                 isCurrentPlayer = it.id == state.player.id,

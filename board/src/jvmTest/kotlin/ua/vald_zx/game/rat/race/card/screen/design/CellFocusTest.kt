@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.screen.board.calculateBoardLayout
+import ua.vald_zx.game.rat.race.card.shared.TrackId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -19,7 +20,7 @@ class CellFocusTest {
     private val layout = calculateBoardLayout(board, isVertical = false)!!
     private val routes = listOf(layout.innerRoute, layout.outerRoute)
 
-    private fun focusAt(point: Offset, held: Pair<Int, Int>?) = with(density) {
+    private fun focusAt(point: Offset, held: Pair<TrackId, Int>?) = with(density) {
         routes.firstNotNullOfOrNull { heldCell(it, point, boardPx, held) }
             ?: routes.firstNotNullOfOrNull { cellUnder(it, point, boardPx) }
     }
@@ -35,7 +36,7 @@ class CellFocusTest {
 
     @Test
     fun pointerOverACellFocusesIt() {
-        val target = layout.outerRoute.layer.level to 5
+        val target = layout.outerRoute.trackId to 5
         assertEquals(target, focusAt(centerOf(5), held = null))
     }
 
@@ -64,7 +65,7 @@ class CellFocusTest {
         val route = layout.outerRoute
         val index = route.places.first { it.place.type.name == "Bankruptcy" }.index
         val place = route.places.first { it.index == index }.place
-        val held = route.layer.level to index
+        val held = route.trackId to index
         val float = tokenFloat(route, place, expandedCellBox(route))
         val parked = centerOf(index) + Offset(float.x.value, float.y.value)
 
@@ -81,7 +82,7 @@ class CellFocusTest {
     @Test
     fun tapHoldsFocusUntilItsOwnRelease() {
         val focus = CellFocus()
-        val cell = 1 to 7
+        val cell = TrackId("test") to 7
 
         focus.tap(cell)
         assertEquals(cell, focus.key)
@@ -96,8 +97,8 @@ class CellFocusTest {
     @Test
     fun hoverWinsOverAHeldTap() {
         val focus = CellFocus()
-        focus.tap(1 to 7)
-        focus.hover(1 to 9)
-        assertEquals(1 to 9, focus.key)
+        focus.tap(TrackId("test") to 7)
+        focus.hover(TrackId("test") to 9)
+        assertEquals(TrackId("test") to 9, focus.key)
     }
 }

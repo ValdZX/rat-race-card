@@ -17,7 +17,7 @@ fun BoxScope.DesignBoardRoutes(
     focus: CellFocus,
     bubble: TokenBubbleState,
 ) {
-    val routes = remember(layout) { listOf(layout.innerRoute, layout.outerRoute) }
+    val routes = remember(layout) { layout.routes }
     Box(Modifier.matchParentSize().cellFocusTracking(routes, focus)) {
         DesignBoardTracks(vm = vm, layout = layout, focus = focus, bubble = bubble)
         DesignCardDecks(layout = layout.cardDecks, vm = vm)
@@ -32,10 +32,12 @@ fun BoxScope.DesignBoardOverlay(
     bubble: TokenBubbleState,
 ) {
     Box(Modifier.matchParentSize()) {
-        DesignPlayerMessages(vm = vm, layout = layout.outerRoute, focus = focus)
-        DesignPlayerMessages(vm = vm, layout = layout.innerRoute, focus = focus)
+        layout.routes.forEach { route ->
+            DesignPlayerMessages(vm = vm, layout = route, focus = focus)
+        }
         TokenBubbleScrim(bubble)
-        DesignTokenBubbles(vm = vm, layout = layout.outerRoute, focus = focus, bubble = bubble)
-        DesignTokenBubbles(vm = vm, layout = layout.innerRoute, focus = focus, bubble = bubble)
+        layout.routes.forEach { route ->
+            DesignTokenBubbles(vm = vm, layout = route, focus = focus, bubble = bubble)
+        }
     }
 }

@@ -117,7 +117,7 @@ fun StatePage(
                 price = player.animal * player.config.animalCost
             )
         }
-        when (player.location.level.toLayer()) {
+        when (player.location.trackId.legacyLayerOrNull()) {
             BoardLayer.INNER -> {
                 Text(
                     text = stringResource(Res.string.outer_circle_conditions),
@@ -188,6 +188,8 @@ fun StatePage(
                     ),
                 )
             }
+
+            null -> Unit
         }
         DetailsField(
             stringResource(Res.string.active_profit),

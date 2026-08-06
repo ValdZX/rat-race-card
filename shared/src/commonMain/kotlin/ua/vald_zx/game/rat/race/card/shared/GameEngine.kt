@@ -27,6 +27,11 @@ class GameEngine(
             is GameCommand.EndTurn -> endTurn(snapshot, envelope.playerId)
             GameCommand.AdvanceTurn -> advanceTurn(snapshot)
             is GameCommand.MoveTo -> moveTo(snapshot, envelope.playerId, envelope.command.position)
+            is GameCommand.EnterTransition -> enterTransition(
+                snapshot,
+                envelope.playerId,
+                envelope.command.transitionId,
+            )
             is GameCommand.StartCard -> startCard(snapshot, envelope.playerId, envelope.command.definition)
             is GameCommand.ChooseInteraction -> chooseInteraction(
                 snapshot,
@@ -56,7 +61,10 @@ class GameEngine(
     private fun validate(snapshot: GameSnapshot, envelope: GameCommandEnvelope): GameCommandRejection? {
         if (snapshot.players.none { it.id == envelope.playerId }) return GameCommandRejection.PLAYER_NOT_FOUND
         if (snapshot.board.revision != envelope.expectedRevision) return GameCommandRejection.REVISION_CONFLICT
-        val cells = BoardLayer.entries.flatMap(snapshot.board::cellsOf)
+        if (snapshot.board.validateTracks(snapshot.players) is ValidationResult.Invalid) {
+            return GameCommandRejection.INVALID_BOARD_DEFINITION
+        }
+        val cells = snapshot.board.resolvedTracks().flatMap(TrackDefinition::cells)
         if (cellRules.validate(cells) is ValidationResult.Invalid) {
             return GameCommandRejection.INVALID_BOARD_DEFINITION
         }
@@ -102,6 +110,28 @@ class GameEngine(
         val player = snapshot.player(playerId)
         if (!snapshot.board.isActivePlayer(player)) return Transition.Rejected(GameCommandRejection.PLAYER_NOT_ACTIVE)
         return Transition.Applied(moveAndResolve(snapshot, player, position))
+    }
+
+    private fun enterTransition(snapshot: GameSnapshot, playerId: String, transitionId: String): Transition {
+        val player = snapshot.player(playerId)
+        if (!snapshot.board.isActivePlayer(player)) return Transition.Rejected(GameCommandRejection.PLAYER_NOT_ACTIVE)
+        val transition = snapshot.board.availableTransition(player, snapshot.board.canRoll)
+            ?.takeIf { it.id == transitionId }
+            ?: return Transition.Rejected(GameCommandRejection.TRANSITION_NOT_AVAILABLE)
+        val target = snapshot.board.track(transition.to)
+        if (transition.entryCellIndex !in target.cells.indices) {
+            return Transition.Rejected(GameCommandRejection.INVALID_BOARD_DEFINITION)
+        }
+        val updated = player.copy(
+            location = PlayerLocation(transition.entryCellIndex, transition.to),
+            salaryPosition = null,
+        ).withTrackedFinancialChanges(player)
+        return Transition.Applied(
+            RuleResult(
+                snapshot.copy(players = snapshot.players.map { if (it.id == playerId) updated else it }),
+                events = listOf(DomainEvent.PlayerChanged(updated)),
+            ),
+        )
     }
 
     private fun endTurn(snapshot: GameSnapshot, playerId: String): Transition {

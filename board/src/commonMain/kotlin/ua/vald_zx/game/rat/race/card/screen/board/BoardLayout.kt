@@ -10,21 +10,36 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
+import ua.vald_zx.game.rat.race.card.shared.CoreTrackIds
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
+import ua.vald_zx.game.rat.race.card.shared.TrackId
+import ua.vald_zx.game.rat.race.card.shared.TrackDefinition
+import ua.vald_zx.game.rat.race.card.shared.TrackVisualHint
+import ua.vald_zx.game.rat.race.card.shared.legacyLayerOrNull
+import ua.vald_zx.game.rat.race.card.shared.toCellInstance
 
 data class BoardLayout(
-    val outerRoute: RouteLayout,
-    val innerRoute: RouteLayout,
+    val routes: List<RouteLayout>,
     val cardDecks: CardDeckLayout,
-)
+) {
+    val outerRoute: RouteLayout
+        get() = routes.first { it.trackId == CoreTrackIds.Outer }
+    val innerRoute: RouteLayout
+        get() = routes.first { it.trackId == CoreTrackIds.Inner }
+}
 
 data class RouteLayout(
-    val layer: BoardLayer,
+    val trackId: TrackId,
+    val order: Int,
+    val isOutermost: Boolean,
     val route: BoardRoute,
     val size: DpSize,
     val cellSize: DpSize,
     val places: List<BoardPlace>,
-)
+) {
+    val layer: BoardLayer
+        get() = trackId.legacyLayerOrNull() ?: error("Track $trackId has no legacy layer")
+}
 
 data class BoardPlace(
     val index: Int,
@@ -74,28 +89,41 @@ fun calculateBoardLayout(
     isVertical: Boolean,
     layers: BoardLayers = boardLayers,
 ): BoardLayout? {
-    val outRoute = layers.layers[BoardLayer.OUTER] ?: return null
-    val inRoute = layers.layers[BoardLayer.INNER] ?: return null
-    val actualOutRoute = if (isVertical) outRoute.rotate() else outRoute
-    val actualInRoute = if (isVertical) inRoute.rotate() else inRoute
-    val outerCell = boardSize.cellSize(actualOutRoute)
-    val innerBoardSize = innerBoardSize(boardSize, outerCell.width)
-    val innerCell = innerBoardSize.cellSize(actualInRoute)
-    val cardAreaSize = cardAreaSize(innerBoardSize, innerCell.width)
+    val ordered = layers.layers.entries.sortedByDescending { layers.order[it.key] ?: 0 }
+    if (ordered.isEmpty()) return null
+    val definitions = ordered.map { (trackId, route) ->
+        TrackDefinition(
+            id = trackId,
+            order = layers.order[trackId] ?: 0,
+            cells = route.places.mapIndexed { index, place -> place.toCellInstance("${trackId.value}-$index") },
+            visual = TrackVisualHint(route.horizontalCells, route.verticalCells),
+        )
+    }
+    val frames = TrackLayoutEngine().layout(
+        tracks = definitions,
+        viewport = TrackViewport(boardSize.width.value, boardSize.height.value),
+        portrait = isVertical,
+    )
+    val routes = frames.mapIndexed { index, frame ->
+        val trackId = frame.trackId
+        val route = layers.layers.getValue(trackId)
+        val actualRoute = if (isVertical) route.rotate() else route
+        val size = DpSize(frame.width.dp, frame.height.dp)
+        val cell = size.cellSize(actualRoute)
+        routeLayout(
+            trackId = trackId,
+            order = layers.order[trackId] ?: 0,
+            isOutermost = index == 0,
+            route = actualRoute,
+            size = size,
+            cellSize = cell,
+        )
+    }
+    val innermost = routes.last()
+    val cardAreaSize = cardAreaSize(innermost.size, innermost.cellSize.width)
 
     return BoardLayout(
-        outerRoute = routeLayout(
-            layer = BoardLayer.OUTER,
-            route = actualOutRoute,
-            size = boardSize,
-            cellSize = outerCell,
-        ),
-        innerRoute = routeLayout(
-            layer = BoardLayer.INNER,
-            route = actualInRoute,
-            size = innerBoardSize,
-            cellSize = innerCell,
-        ),
+        routes = routes,
         cardDecks = CardDeckLayout(
             size = cardAreaSize,
             slots = cardDeckSlots(cardAreaSize),
@@ -107,8 +135,10 @@ fun Modifier.fitBoardFrame(
     maxWidth: Dp,
     maxHeight: Dp,
     isVertical: Boolean,
+    layers: BoardLayers = boardLayers,
 ): Modifier {
-    val outRoute = boardLayers.layers[BoardLayer.OUTER] ?: return this
+    val outerTrack = layers.order.maxByOrNull { it.value }?.key
+    val outRoute = outerTrack?.let(layers.layers::get) ?: return this
     val horizontalRatio = outRoute.horizontalCells.toFloat() / outRoute.verticalCells.toFloat()
     val verticalRatio = outRoute.verticalCells.toFloat() / outRoute.horizontalCells.toFloat()
     val availableRatio = maxWidth / maxHeight
@@ -159,7 +189,9 @@ private fun cardAreaSize(
 }
 
 private fun routeLayout(
-    layer: BoardLayer,
+    trackId: TrackId,
+    order: Int,
+    isOutermost: Boolean,
     route: BoardRoute,
     size: DpSize,
     cellSize: DpSize,
@@ -180,7 +212,9 @@ private fun routeLayout(
     }.sortedBy { it.place.type.isSalary }
 
     return RouteLayout(
-        layer = layer,
+        trackId = trackId,
+        order = order,
+        isOutermost = isOutermost,
         route = route,
         size = size,
         cellSize = cellSize,

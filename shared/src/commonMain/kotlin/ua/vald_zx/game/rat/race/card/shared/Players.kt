@@ -2,6 +2,9 @@ package ua.vald_zx.game.rat.race.card.shared
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
 @Serializable
 enum class Gender { MALE, FEMALE }
@@ -127,10 +130,39 @@ data class Business(
     val fromAuction: Boolean = false,
 )
 
-@Serializable
+@Serializable(with = PlayerLocationSerializer::class)
 data class PlayerLocation(
     val position: Int = 1,
-    val level: Int = 0,
+    val trackId: TrackId = CoreTrackIds.Inner,
+) {
+    constructor(position: Int = 1, level: Int) : this(position, level.toTrackId())
+
+    val level: Int
+        get() = trackId.requireLegacyLayer().level
+}
+
+object PlayerLocationSerializer : KSerializer<PlayerLocation> {
+    override val descriptor = PersistedPlayerLocation.serializer().descriptor
+
+    override fun deserialize(decoder: Decoder): PlayerLocation {
+        val persisted = decoder.decodeSerializableValue(PersistedPlayerLocation.serializer())
+        val trackId = persisted.trackId ?: persisted.level?.toTrackId() ?: CoreTrackIds.Inner
+        return PlayerLocation(persisted.position, trackId)
+    }
+
+    override fun serialize(encoder: Encoder, value: PlayerLocation) {
+        encoder.encodeSerializableValue(
+            PersistedPlayerLocation.serializer(),
+            PersistedPlayerLocation(position = value.position, trackId = value.trackId),
+        )
+    }
+}
+
+@Serializable
+private data class PersistedPlayerLocation(
+    val position: Int = 1,
+    val trackId: TrackId? = null,
+    val level: Int? = null,
 )
 
 enum class BusinessType(val klass: Int) {
@@ -294,7 +326,7 @@ fun Player.financialSnapshot(): FinancialSnapshot = FinancialSnapshot(
 
 fun Player.canEnterOuterCircle(canRoll: Boolean, conditions: OuterCircleConditions): Boolean {
     return canRoll
-            && location.level == BoardLayer.INNER.level &&
+            && location.trackId == CoreTrackIds.Inner &&
             cashFlow() >= conditions.minimumCashFlow &&
             (!conditions.apartmentRequired || apartment > 0) &&
             (!conditions.carRequired || cars > 0) &&

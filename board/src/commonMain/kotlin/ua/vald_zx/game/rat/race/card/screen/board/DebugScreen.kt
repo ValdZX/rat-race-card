@@ -73,13 +73,14 @@ import ua.vald_zx.game.rat.race.card.screen.board.cards.decks
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
-import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.DebugPlayerValues
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
+import ua.vald_zx.game.rat.race.card.shared.TrackId
 import ua.vald_zx.game.rat.race.card.shared.dreamById
 import ua.vald_zx.game.rat.race.card.shared.hasPlaceFor
 import ua.vald_zx.game.rat.race.card.shared.placesOf
 import ua.vald_zx.game.rat.race.card.shared.nextPositionOf
+import ua.vald_zx.game.rat.race.card.shared.resolvedTracks
 import kotlin.math.roundToInt
 import androidx.compose.ui.text.intl.Locale
 
@@ -103,9 +104,9 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
         var yachts by remember(player.id) { mutableStateOf(player.yacht) }
         var planes by remember(player.id) { mutableStateOf(player.flight) }
         var animals by remember(player.id) { mutableStateOf(player.animal) }
-        var selectedLayer by remember(player.id) { mutableStateOf(state.layer) }
+        var selectedTrackId by remember(player.id) { mutableStateOf(state.trackId) }
         var selectedPosition by remember(player.id) {
-            mutableStateOf(player.location.position.coerceIn(0, state.layer.places.lastIndex))
+            mutableStateOf(player.location.position.coerceIn(0, state.places.lastIndex))
         }
         var selectedCardType by remember {
             mutableStateOf(state.board.canTakeCard.firstOrNull() ?: BoardCardType.Chance)
@@ -163,35 +164,27 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(BoardLayer.entries) { layer ->
+                items(state.board.resolvedTracks()) { track ->
                     FilterChip(
-                        selected = selectedLayer == layer,
+                        selected = selectedTrackId == track.id,
                         colors = debugChipColors(),
                         onClick = {
-                            selectedLayer = layer
-                            selectedPosition = if (layer == state.layer) {
-                                player.location.position.coerceIn(0, layer.places.lastIndex)
+                            selectedTrackId = track.id
+                            selectedPosition = if (track.id == state.trackId) {
+                                player.location.position.coerceIn(0, track.cells.lastIndex)
                             } else {
                                 0
                             }
                         },
                         label = {
-                            Text(
-                                stringResource(
-                                    if (layer == BoardLayer.INNER) {
-                                        Res.string.debug_inner_circle
-                                    } else {
-                                        Res.string.debug_outer_circle
-                                    }
-                                )
-                            )
+                            Text(track.id.value)
                         },
                     )
                 }
             }
             PositionSelector(
                 board = state.board,
-                layer = selectedLayer,
+                trackId = selectedTrackId,
                 position = selectedPosition,
                 onPositionChanged = { selectedPosition = it },
             )
@@ -200,7 +193,7 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
                 modifier = Modifier.fillMaxWidth(),
                 enabled = state.canRoll,
             ) {
-                vm.debugChangePosition(selectedLayer, selectedPosition)
+                vm.debugChangePosition(selectedTrackId, selectedPosition)
             }
             DesignButton(
                 text = stringResource(Res.string.debug_go_to_salary),
@@ -208,10 +201,10 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
                 kind = DesignButtonKind.Tonal,
                 enabled = state.canRoll,
             ) {
-                val from = if (selectedLayer == state.layer) player.location.position else 0
-                val salaryPosition = state.board.placesOf(selectedLayer).nextPositionOf(PlaceType.Salary, from)
+                val from = if (selectedTrackId == state.trackId) player.location.position else 0
+                val salaryPosition = state.board.placesOf(selectedTrackId).nextPositionOf(PlaceType.Salary, from)
                 selectedPosition = salaryPosition
-                vm.debugChangePosition(selectedLayer, salaryPosition)
+                vm.debugChangePosition(selectedTrackId, salaryPosition)
             }
 
             DebugSectionTitle(stringResource(Res.string.debug_cards))
@@ -380,12 +373,13 @@ private fun StepperButton(glyph: String, enabled: Boolean, onClick: () -> Unit) 
 @Composable
 private fun PositionSelector(
     board: Board,
-    layer: BoardLayer,
+    trackId: TrackId,
     position: Int,
     onPositionChanged: (Int) -> Unit,
 ) {
-    val lastPosition = layer.places.lastIndex
-    val place = layer.places[position.coerceIn(0, lastPosition)]
+    val places = board.placesOf(trackId)
+    val lastPosition = places.lastIndex
+    val place = places[position.coerceIn(0, lastPosition)]
     val placeName = when (place) {
         is PlaceType.Desire -> board.dreamById(place.dreamId, Locale.current.language)?.name ?: place.name
         else -> place.name

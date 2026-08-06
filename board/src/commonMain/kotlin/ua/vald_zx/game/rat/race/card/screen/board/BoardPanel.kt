@@ -35,7 +35,7 @@ fun BoxWithConstraintsScope.rememberBoardLayout(vm: BoardViewModel, isVertical: 
     val maxWidth = maxWidth
     val maxHeight = maxHeight
     val board = vm.uiState.collectAsState().value.board
-    val layers = remember(board.generatedPlaces) { boardLayersOf(board) }
+    val layers = remember(board.tracks, board.trackDefinitions, board.generatedPlaces) { boardLayersOf(board) }
     return remember(isVertical, maxWidth, maxHeight, layers) {
         val contentSize = DpSize(maxWidth, maxHeight).boardContentSize()
         calculateBoardLayout(
@@ -87,7 +87,7 @@ fun BoxWithConstraintsScope.BoardPanel(
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .size(layout.outerRoute.size)
+                    .size(layout.routes.first().size)
                     .background(boardBrush)
             )
         }

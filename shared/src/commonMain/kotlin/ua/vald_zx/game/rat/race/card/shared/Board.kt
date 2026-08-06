@@ -52,6 +52,9 @@ data class Board(
     val generatedProfessions: List<ProfessionCard> = emptyList(),
     val generatedPlaces: Map<BoardLayer, List<String>> = emptyMap(),
     val trackDefinitions: Map<BoardLayer, TrackDefinition> = emptyMap(),
+    val tracks: List<TrackDefinition> = emptyList(),
+    val transitions: List<TrackTransition> = emptyList(),
+    val objectives: List<ObjectiveDefinition> = emptyList(),
     val generatedTexts: Map<String, GeneratedText> = emptyMap(),
     val generationProgress: BoardGenerationProgress = BoardGenerationProgress(),
     val generatedBalance: GeneratedBalance? = null,
@@ -103,6 +106,8 @@ internal fun Board.textsFor(locale: String): GeneratedText =
         ?: GeneratedText()
 
 fun Board.placesOf(layer: BoardLayer): List<PlaceType> {
+    val dynamic = tracks.firstOrNull { it.id == layer.trackId }
+    if (dynamic != null) return dynamic.cells.map(CellInstance::toPlaceType)
     val track = trackDefinitions[layer]
     if (track != null && track.cells.size == layer.places.size) return track.cells.map(CellInstance::toPlaceType)
     val codes = generatedPlaces[layer] ?: return layer.places
@@ -112,9 +117,13 @@ fun Board.placesOf(layer: BoardLayer): List<PlaceType> {
 
 fun Board.placesAt(level: Int): List<PlaceType> = placesOf(level.toLayer())
 
-fun Board.placesOf(location: PlayerLocation): List<PlaceType> = placesAt(location.level)
+fun Board.placesOf(trackId: TrackId): List<PlaceType> = track(trackId).cells.map(CellInstance::toPlaceType)
+
+fun Board.placesOf(location: PlayerLocation): List<PlaceType> = placesOf(location.trackId)
 
 fun Board.cellsOf(layer: BoardLayer): List<CellInstance> {
+    val dynamic = tracks.firstOrNull { it.id == layer.trackId }
+    if (dynamic != null) return dynamic.cells
     val track = trackDefinitions[layer]
     if (track != null && track.cells.size == layer.places.size) return track.cells
     return placesOf(layer).mapIndexed { index, place ->
@@ -124,7 +133,114 @@ fun Board.cellsOf(layer: BoardLayer): List<CellInstance> {
 
 fun Board.cellsAt(level: Int): List<CellInstance> = cellsOf(level.toLayer())
 
-fun Board.cellsOf(location: PlayerLocation): List<CellInstance> = cellsAt(location.level)
+fun Board.cellsOf(trackId: TrackId): List<CellInstance> = track(trackId).cells
+
+fun Board.cellsOf(location: PlayerLocation): List<CellInstance> = cellsOf(location.trackId)
+
+fun Board.resolvedTracks(): List<TrackDefinition> {
+    if (tracks.isNotEmpty()) return tracks.sortedBy(TrackDefinition::order)
+    return BoardLayer.entries.map { layer ->
+        trackDefinitions[layer]?.takeIf { it.cells.size == layer.places.size }
+            ?: layer.defaultTrackDefinition().copy(
+                cells = placesOf(layer).mapIndexed { index, place ->
+                    place.toCellInstance("${layer.name.lowercase()}-$index")
+                },
+            )
+    }
+}
+
+fun Board.track(trackId: TrackId): TrackDefinition = resolvedTracks().firstOrNull { it.id == trackId }
+    ?: error("Unknown track id: ${trackId.value}")
+
+fun Board.resolvedTransitions(): List<TrackTransition> = transitions.ifEmpty {
+    listOf(
+        TrackTransition(
+            id = "inner-to-outer",
+            from = CoreTrackIds.Inner,
+            to = CoreTrackIds.Outer,
+            conditions = buildList {
+                add(ProgressCondition.MinimumCashFlow(outerCircleConditions.minimumCashFlow))
+                add(ProgressCondition.MinimumBalance(outerCircleConditions.minimumAccountBalance))
+                if (outerCircleConditions.apartmentRequired) add(ProgressCondition.RequiresApartment)
+                if (outerCircleConditions.carRequired) add(ProgressCondition.RequiresCar)
+            },
+        ),
+    ).filter { transition ->
+        resolvedTracks().any { it.id == transition.from } && resolvedTracks().any { it.id == transition.to }
+    }
+}
+
+fun Board.resolvedObjectives(): List<ObjectiveDefinition> = objectives.ifEmpty {
+    listOf(
+        ObjectiveDefinition(
+            id = "outer-victory",
+            trackId = CoreTrackIds.Outer,
+            conditions = buildList {
+                add(ProgressCondition.MinimumBalance(victoryConditions.minimumAccountBalance))
+                if (victoryConditions.dreamRequired) add(ProgressCondition.RequiresSelectedDream)
+                if (victoryConditions.planeRequired) add(ProgressCondition.RequiresPlane)
+                if (victoryConditions.estateRequired) add(ProgressCondition.RequiresEstate)
+            },
+        ),
+    ).filter { objective -> resolvedTracks().any { it.id == objective.trackId } }
+}
+
+fun Board.availableTransition(player: Player, canRoll: Boolean): TrackTransition? {
+    if (!canRoll) return null
+    return resolvedTransitions().firstOrNull { transition ->
+        transition.from == player.location.trackId && transition.conditions.all { it.matches(player) }
+    }
+}
+
+fun Board.hasCompletedObjective(player: Player): Boolean = resolvedObjectives().any { objective ->
+    objective.trackId == player.location.trackId && objective.conditions.all { it.matches(player) }
+}
+
+fun Board.validateTracks(players: List<Player>): ValidationResult {
+    val definitions = resolvedTracks()
+    val ids = definitions.map(TrackDefinition::id)
+    val errors = buildList {
+        if (ids.distinct().size != ids.size) add("Track ids must be unique")
+        definitions.forEach { track ->
+            if (track.cells.isEmpty()) add("${track.id}: cells must not be empty")
+            if (track.visual.horizontalCells <= 0 || track.visual.verticalCells <= 0) {
+                add("${track.id}: visual dimensions must be positive")
+            }
+        }
+        resolvedTransitions().forEach { transition ->
+            if (transition.from !in ids) add("${transition.id}: source track is missing")
+            val target = definitions.firstOrNull { it.id == transition.to }
+            if (target == null) {
+                add("${transition.id}: target track is missing")
+            } else if (transition.entryCellIndex !in target.cells.indices) {
+                add("${transition.id}: entry cell is outside target track")
+            }
+        }
+        resolvedObjectives().forEach { objective ->
+            if (objective.trackId !in ids) add("${objective.id}: objective track is missing")
+        }
+        players.forEach { player ->
+            val track = definitions.firstOrNull { it.id == player.location.trackId }
+            if (track == null) {
+                add("${player.id}: unknown track ${player.location.trackId}")
+            } else if (player.location.position !in track.cells.indices) {
+                add("${player.id}: position is outside track ${track.id}")
+            }
+        }
+    }
+    return if (errors.isEmpty()) ValidationResult.Valid else ValidationResult.Invalid(errors)
+}
+
+private fun ProgressCondition.matches(player: Player): Boolean = when (this) {
+    is ProgressCondition.MinimumCashFlow -> player.cashFlow() >= amount
+    is ProgressCondition.MinimumBalance -> player.balance() >= amount
+    ProgressCondition.RequiresApartment -> player.apartment > 0
+    ProgressCondition.RequiresCar -> player.cars > 0
+    ProgressCondition.RequiresPlane -> player.flight > 0
+    ProgressCondition.RequiresEstate -> player.cottage > 0
+    ProgressCondition.RequiresSelectedDream -> player.selectedDreamId != null &&
+            player.selectedDreamId in player.purchasedDreamIds
+}
 
 @Serializable
 data class OuterCircleConditions(
@@ -151,12 +267,6 @@ fun Board.toBoardId(): BoardId {
 }
 
 fun moveTo(position: Int, cellCount: Int, toMove: Int): Int {
-    val nextPosition = position + toMove
-    return if (nextPosition < 0) {
-        cellCount + nextPosition
-    } else if (cellCount <= nextPosition) {
-        nextPosition - cellCount
-    } else {
-        nextPosition
-    }
+    require(cellCount > 0) { "Track must contain at least one cell" }
+    return ((position + toMove) % cellCount + cellCount) % cellCount
 }

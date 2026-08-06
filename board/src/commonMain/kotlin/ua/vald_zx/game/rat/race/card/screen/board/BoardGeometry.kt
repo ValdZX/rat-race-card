@@ -11,6 +11,10 @@ import ua.vald_zx.game.rat.race.card.shared.inPlaces
 import ua.vald_zx.game.rat.race.card.shared.outPlaces
 import ua.vald_zx.game.rat.race.card.shared.defaultTrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.placesOf
+import ua.vald_zx.game.rat.race.card.shared.CoreTrackIds
+import ua.vald_zx.game.rat.race.card.shared.TrackId
+import ua.vald_zx.game.rat.race.card.shared.resolvedTracks
+import ua.vald_zx.game.rat.race.card.shared.toPlaceType
 
 enum class Side(val isHorizontal: Boolean) {
     TOP(true), LEFT(false), BOTTOM(true), RIGHT(false)
@@ -32,7 +36,8 @@ data class Place(
 }
 
 data class BoardLayers(
-    val layers: Map<BoardLayer, BoardRoute>
+    val layers: Map<TrackId, BoardRoute>,
+    val order: Map<TrackId, Int>,
 )
 
 data class BoardRoute(
@@ -58,21 +63,26 @@ const val INNER_LAYER_SCALE = 1.2f
 
 val boardLayers = BoardLayers(
     layers = mapOf(
-        BoardLayer.OUTER to BoardRoute(26, 18, outPlaces),
-        BoardLayer.INNER to BoardRoute(28, 18, inPlaces),
-    )
+        CoreTrackIds.Outer to BoardRoute(26, 18, outPlaces),
+        CoreTrackIds.Inner to BoardRoute(28, 18, inPlaces),
+    ),
+    order = mapOf(CoreTrackIds.Inner to 0, CoreTrackIds.Outer to 1),
 )
 
-fun boardLayersOf(board: Board): BoardLayers = BoardLayers(
-    layers = BoardLayer.entries.associateWith { layer ->
-        val visual = board.trackDefinitions[layer]?.visual ?: layer.defaultTrackDefinition().visual
-        BoardRoute(
-            horizontalCells = visual.horizontalCells,
-            verticalCells = visual.verticalCells,
-            places = board.placesOf(layer),
-        )
-    },
-)
+fun boardLayersOf(board: Board): BoardLayers {
+    val tracks = board.resolvedTracks()
+    return BoardLayers(
+        layers = tracks.associate { track ->
+            val visual = track.visual
+            track.id to BoardRoute(
+                horizontalCells = visual.horizontalCells,
+                verticalCells = visual.verticalCells,
+                places = track.cells.map { it.toPlaceType() },
+            )
+        },
+        order = tracks.associate { it.id to it.order },
+    )
+}
 
 fun PlaceType.getDpSize(
     location: Location,

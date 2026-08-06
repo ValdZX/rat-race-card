@@ -188,9 +188,9 @@ internal fun tokenTarget(
     val state by vm.uiState.collectAsState()
     val place = places.getValue(position)
     val focused = focus.key
-    val live = state.player.location.level == layout.layer.level
+    val live = state.player.location.trackId == layout.trackId
     val stepsAside = live && focused != null &&
-            focused.first == layout.layer.level &&
+            focused.first == layout.trackId &&
             abs(focused.second - position) <= COVERED_NEIGHBOURS
     val offset = if (stepsAside) {
         expandedTokenOffset(layout, place, index, count, focus.expandedBox ?: expandedCellBox(layout))

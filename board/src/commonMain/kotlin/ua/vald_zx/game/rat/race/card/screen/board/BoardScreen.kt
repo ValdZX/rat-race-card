@@ -713,12 +713,16 @@ fun BoardFragment(vm: BoardViewModel) {
     ) {
         val state by vm.uiState.collectAsState()
         val isVertical = maxHeight > maxWidth
-        val scale by animateFloatAsState(if (state.layer == BoardLayer.INNER) INNER_LAYER_SCALE else 1.0f)
+        val layers = remember(state.board) { boardLayersOf(state.board) }
+        val trackOrder = layers.order[state.trackId] ?: error("Unknown track id: ${state.trackId}")
+        val outerOrder = layers.order.values.maxOrNull() ?: trackOrder
+        val targetScale = (1f + (outerOrder - trackOrder).coerceAtLeast(0) * 0.1f).coerceAtMost(1.5f)
+        val scale by animateFloatAsState(targetScale)
         BoxWithConstraints(
             modifier = Modifier
                 .padding(32.dp)
                 .align(Alignment.Center)
-                .fitBoardFrame(maxWidth, maxHeight, isVertical)
+                .fitBoardFrame(maxWidth, maxHeight, isVertical, layers)
                 .graphicsLayer {
                     rotationX = (-rotX.value).coerceIn(-180f, 180f)
                     rotationY = rotY.value.coerceIn(-180f, 180f)

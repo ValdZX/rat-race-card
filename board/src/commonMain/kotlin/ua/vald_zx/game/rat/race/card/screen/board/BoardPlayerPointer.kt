@@ -54,6 +54,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.Send
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.Gender
 import ua.vald_zx.game.rat.race.card.shared.Player
+import ua.vald_zx.game.rat.race.card.shared.TrackId
 import ua.vald_zx.game.rat.race.card.shared.cashFlow
 import ua.vald_zx.game.rat.race.card.shared.total
 import ua.vald_zx.game.rat.race.card.splitDecimal
@@ -61,7 +62,7 @@ import ua.vald_zx.game.rat.race.card.splitDecimal
 data class PlayerPointState(
     val position: Int,
     val color: Long,
-    val level: Int,
+    val trackId: TrackId,
     val name: String,
     val isCurrentPlayer: Boolean,
     val isActivePlayer: Boolean,

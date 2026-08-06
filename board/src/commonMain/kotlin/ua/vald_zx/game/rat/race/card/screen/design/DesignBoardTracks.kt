@@ -51,7 +51,7 @@ import ua.vald_zx.game.rat.race.card.screen.board.BoardLayout
 import ua.vald_zx.game.rat.race.card.screen.board.Place
 import ua.vald_zx.game.rat.race.card.screen.board.RouteLayout
 import ua.vald_zx.game.rat.race.card.screen.board.SalaryScreen
-import ua.vald_zx.game.rat.race.card.shared.BoardLayer
+import ua.vald_zx.game.rat.race.card.shared.TrackId
 import ua.vald_zx.game.rat.race.card.shared.Dream
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.Player
@@ -84,7 +84,7 @@ internal class DreamCellContext(
 )
 
 private fun Int.onTrack(layout: RouteLayout): Int =
-    moveTo(this, layout.layer.cellCount, layout.route.offset)
+    moveTo(this, layout.route.places.size, layout.route.offset)
 
 @Composable
 fun BoxScope.DesignBoardTracks(
@@ -94,7 +94,7 @@ fun BoxScope.DesignBoardTracks(
     bubble: TokenBubbleState,
 ) {
     val state by vm.uiState.collectAsState()
-    val playerLevel = state.player.location.level
+    val playerTrackId = state.player.location.trackId
 
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     val onSalary = {
@@ -116,30 +116,23 @@ fun BoxScope.DesignBoardTracks(
         onSelect = vm::selectDream,
     )
 
-    DesignTrack(
-        layout = layout.outerRoute,
-        surface = if (playerLevel == layout.outerRoute.layer.level) CellSurface.Tile else CellSurface.Engraved,
-        player = state.player,
-        focus = focus,
-        onSalaryClick = onSalary,
-        onStartClick = onStart,
-        dreams = dreams,
-    ) { DesignPlayerTokens(vm = vm, layout = layout.outerRoute, focus = focus, bubble = bubble) }
-    DesignTrack(
-        layout = layout.innerRoute,
-        surface = if (playerLevel == layout.innerRoute.layer.level) CellSurface.Tile else CellSurface.Engraved,
-        player = state.player,
-        focus = focus,
-        onSalaryClick = onSalary,
-        onStartClick = onStart,
-        dreams = dreams,
-    ) { DesignPlayerTokens(vm = vm, layout = layout.innerRoute, focus = focus, bubble = bubble) }
+    layout.routes.forEach { route ->
+        DesignTrack(
+            layout = route,
+            surface = if (playerTrackId == route.trackId) CellSurface.Tile else CellSurface.Engraved,
+            player = state.player,
+            focus = focus,
+            onSalaryClick = onSalary,
+            onStartClick = onStart,
+            dreams = dreams,
+        ) { DesignPlayerTokens(vm = vm, layout = route, focus = focus, bubble = bubble) }
+    }
 }
 
 @Stable
 class CellFocus {
-    private var hovered by mutableStateOf<Pair<Int, Int>?>(null)
-    private var tapped by mutableStateOf<Pair<Int, Int>?>(null)
+    private var hovered by mutableStateOf<Pair<TrackId, Int>?>(null)
+    private var tapped by mutableStateOf<Pair<TrackId, Int>?>(null)
 
     internal var tapCount by mutableStateOf(0)
         private set
@@ -147,28 +140,28 @@ class CellFocus {
     var expandedBox by mutableStateOf<DpSize?>(null)
         private set
 
-    private var tokenCountKey: Pair<Int, Int>? = null
+    private var tokenCountKey: Pair<TrackId, Int>? = null
     private var reportedTokenCount = 1
 
-    val key: Pair<Int, Int>? get() = hovered ?: tapped
+    val key: Pair<TrackId, Int>? get() = hovered ?: tapped
 
     internal fun reportExpandedBox(size: DpSize) {
         expandedBox = size
     }
 
-    internal fun reportTokenCount(cell: Pair<Int, Int>, count: Int) {
+    internal fun reportTokenCount(cell: Pair<TrackId, Int>, count: Int) {
         tokenCountKey = cell
         reportedTokenCount = count
     }
 
-    internal fun tokenCountFor(cell: Pair<Int, Int>?) =
+    internal fun tokenCountFor(cell: Pair<TrackId, Int>?) =
         reportedTokenCount.takeIf { cell != null && tokenCountKey == cell } ?: 1
 
-    internal fun hover(cell: Pair<Int, Int>?) {
+    internal fun hover(cell: Pair<TrackId, Int>?) {
         hovered = cell
     }
 
-    fun tap(cell: Pair<Int, Int>) {
+    fun tap(cell: Pair<TrackId, Int>) {
         tapped = cell
         tapCount++
     }
@@ -223,11 +216,11 @@ internal fun Density.heldCell(
     route: RouteLayout,
     point: Offset,
     boardSize: IntSize,
-    held: Pair<Int, Int>?,
+    held: Pair<TrackId, Int>?,
     openBox: DpSize = expandedCellBox(route),
     tokenCount: Int = 1,
-): Pair<Int, Int>? {
-    if (held?.first != route.layer.level) return null
+): Pair<TrackId, Int>? {
+    if (held?.first != route.trackId) return null
     val place = route.places.firstOrNull { it.index == held.second }?.place ?: return null
     val local = toLocal(route, point, boardSize)
     return held.takeIf {
@@ -239,11 +232,11 @@ internal fun Density.cellUnder(
     route: RouteLayout,
     point: Offset,
     boardSize: IntSize,
-): Pair<Int, Int>? {
+): Pair<TrackId, Int>? {
     val local = toLocal(route, point, boardSize)
     return route.places
         .firstOrNull { cellBounds(route, it.place, it.place.size).holds(local.first, local.second) }
-        ?.let { route.layer.level to it.index }
+        ?.let { route.trackId to it.index }
 }
 
 private fun Density.toLocal(route: RouteLayout, point: Offset, boardSize: IntSize) = Pair(
@@ -272,20 +265,20 @@ internal fun tokenFloat(layout: RouteLayout, place: Place, openBox: DpSize): DpO
             expanded.bottom + tokenCellGap
         } else {
             expanded.top - layout.cellSize.height - tokenCellGap
-        }.visibleOnOuterRoute(layout.size.height - layout.cellSize.height, layout.layer)
+        }.visibleOnOuterRoute(layout.size.height - layout.cellSize.height, layout.isOutermost)
         DpOffset(0.dp, targetY - centeredY)
     } else {
         val targetX = if (fromCenterX > 0.dp) {
             expanded.right + tokenCellGap
         } else {
             expanded.left - layout.cellSize.width - tokenCellGap
-        }.visibleOnOuterRoute(layout.size.width - layout.cellSize.width, layout.layer)
+        }.visibleOnOuterRoute(layout.size.width - layout.cellSize.width, layout.isOutermost)
         DpOffset(targetX - centeredX, 0.dp)
     }
 }
 
-private fun Dp.visibleOnOuterRoute(max: Dp, layer: BoardLayer) =
-    if (layer == BoardLayer.OUTER) coerceIn(0.dp, max.coerceAtLeast(0.dp)) else this
+private fun Dp.visibleOnOuterRoute(max: Dp, outermost: Boolean) =
+    if (outermost) coerceIn(0.dp, max.coerceAtLeast(0.dp)) else this
 
 internal fun expandedTokenOffset(
     layout: RouteLayout,
@@ -373,10 +366,10 @@ private fun BoxScope.DesignTrack(
     tokenContent: @Composable BoxScope.() -> Unit,
 ) {
     val colors = Design.colors
-    val blendBedEdges = layout.layer != BoardLayer.OUTER
+    val blendBedEdges = !layout.isOutermost
     val live = surface == CellSurface.Tile
     val bedAlpha by animateFloatAsState(if (live) 1f else 0.55f, label = "TrackBed")
-    val level = layout.layer.level
+    val trackId = layout.trackId
     val expandedBox = expandedCellBox(layout)
     val expandedIcon = remember(layout, expandedBox) {
         val widest = layout.places.maxOf { minOf(it.place.size.width, it.place.size.height) }
@@ -384,7 +377,7 @@ private fun BoxScope.DesignTrack(
             .coerceAtLeast(expandedIconSize)
             .coerceAtMost(expandedBox.height - 10.dp)
     }
-    val focusedIndex = if (live && focus.key?.first == level) focus.key?.second else null
+    val focusedIndex = if (live && focus.key?.first == trackId) focus.key?.second else null
 
     Box(
         modifier = Modifier
@@ -437,7 +430,7 @@ private fun BoxScope.TrackCell(
     val measurer = rememberTextMeasurer()
     val labelStyle = expandedLabelStyle()
     val amountStyle = Design.type.monoMeta
-    val level = layout.layer.level
+    val trackId = layout.trackId
     val onThisLayer = live && player != null
     val salaryHere = onThisLayer && place.type == PlaceType.Salary &&
             listOfNotNull(player.salaryPosition, player.investmentPosition)
@@ -500,7 +493,7 @@ private fun BoxScope.TrackCell(
         expanded = expanded,
         expandedIcon = expandedIcon,
         onTap = if (canExpand) {
-            { focus.tap(level to index) }
+            { focus.tap(trackId to index) }
         } else {
             null
         },

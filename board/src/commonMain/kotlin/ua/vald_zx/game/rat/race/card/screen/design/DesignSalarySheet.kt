@@ -31,7 +31,7 @@ fun DesignSalarySheet(vm: BoardViewModel) {
     var openGame by remember { mutableStateOf<Game?>(null) }
     val fundRate = remember(
         player.investmentPosition,
-        player.location.level,
+        player.location.trackId,
         player.config.salaryFundRates,
         state.places,
     ) {

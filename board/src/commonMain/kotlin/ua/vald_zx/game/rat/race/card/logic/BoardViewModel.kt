@@ -26,8 +26,10 @@ data class BoardState(
     val player: Player,
     val connectionState: BoardConnectionState = BoardConnectionState.Connected,
 ) {
-    val layer: BoardLayer = player.location.level.toLayer()
-    val places: List<PlaceType> = board.placesOf(layer)
+    val trackId: TrackId = player.location.trackId
+    val layer: BoardLayer
+        get() = trackId.requireLegacyLayer()
+    val places: List<PlaceType> = board.placesOf(trackId)
     val color: Long = player.attrs.color
     val currentPlayerIsConnected: Boolean by lazy { player.isActiveOn(board) }
     val currentPlayerIsActive: Boolean by lazy {
@@ -37,7 +39,7 @@ data class BoardState(
         board.canRoll && currentPlayerIsActive && connectionState == BoardConnectionState.Connected
     }
     val canEnterOuterCircle: Boolean by lazy {
-        player.canEnterOuterCircle(canRoll,board.outerCircleConditions)
+        board.availableTransition(player, canRoll) != null
     }
     val currentDream: Dream? by lazy {
         val place = places.getOrNull(player.location.position) as? PlaceType.Desire
@@ -651,9 +653,13 @@ class BoardViewModel(
     }
 
     fun debugChangePosition(layer: BoardLayer, position: Int) {
+        debugChangePosition(layer.trackId, position)
+    }
+
+    fun debugChangePosition(trackId: TrackId, position: Int) {
         if (uiState.value.currentPlayerIsActive) {
             safeLaunch {
-                debugChangePosition(PlayerLocation(position = position, level = layer.level))
+                debugChangePosition(PlayerLocation(position = position, trackId = trackId))
             }
         }
     }

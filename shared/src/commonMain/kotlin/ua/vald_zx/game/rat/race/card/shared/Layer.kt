@@ -6,8 +6,11 @@ enum class BoardLayer(val cellCount: Int, val level: Int, val places: List<Place
 }
 
 fun Int.toLayer(): BoardLayer {
-    return BoardLayer.entries.find { it.level == this } ?: BoardLayer.INNER
+    return BoardLayer.entries.find { it.level == this }
+        ?: error("Unknown legacy board level: $this")
 }
+
+fun Int.toTrackId(): TrackId = toLayer().trackId
 
 fun List<PlaceType>.nextPositionOf(type: PlaceType, from: Int): Int {
     for (step in 1..size) {

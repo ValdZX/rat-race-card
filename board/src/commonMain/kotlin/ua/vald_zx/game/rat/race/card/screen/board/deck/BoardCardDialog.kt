@@ -24,7 +24,7 @@ import ua.vald_zx.game.rat.race.card.screen.board.INNER_LAYER_SCALE
 import ua.vald_zx.game.rat.race.card.screen.board.deck.front.BoardCardFront
 import ua.vald_zx.game.rat.race.card.screen.board.deckCoordinatesMap
 import ua.vald_zx.game.rat.race.card.screen.board.discardPilesCoordinatesMap
-import ua.vald_zx.game.rat.race.card.shared.BoardLayer
+import ua.vald_zx.game.rat.race.card.shared.CoreTrackIds
 
 const val cardMoveAnimationDuration = 2000
 
@@ -65,11 +65,11 @@ private fun BoxWithConstraintsScope.LegacyCardDialog(vm: BoardViewModel) {
             val dialogWidth = min(max(min(maxWidth, maxHeight) * 2.7f / 3f, 300.dp), 600.dp)
             val dialogSize = DpSize(dialogWidth, dialogWidth * 2f / 3f)
             val deckCoordinates by deckCoordinatesState
-            val scale = if (state.layer == BoardLayer.INNER) INNER_LAYER_SCALE else 1.0f
+            val scale = if (state.trackId == CoreTrackIds.Inner) INNER_LAYER_SCALE else 1.0f
             val onBoardSize = deckCoordinates.second
             val onBoardSizeScaled = onBoardSize * scale
             val onBoardScaleToLow = onBoardSizeScaled.max / dialogSize.max
-            val motionScene = remember(onBoardSize, state.layer) {
+            val motionScene = remember(onBoardSize, state.trackId) {
                 val deckOffset = deckCoordinates.first
                 val discardOffset = discardPilesCoordinatesMap[card.type]?.value?.first!!
                 MotionScene {

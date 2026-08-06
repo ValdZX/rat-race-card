@@ -12,6 +12,7 @@ import ua.vald_zx.game.rat.race.card.shared.code
 import ua.vald_zx.game.rat.race.card.shared.defaultTrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.placesOf
 import ua.vald_zx.game.rat.race.card.shared.toCellInstance
+import ua.vald_zx.game.rat.race.card.shared.trackId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -73,7 +74,7 @@ class GeneratedBoardLayoutTest {
         )
         val route = boardLayersOf(
             board(generated = false).copy(trackDefinitions = mapOf(BoardLayer.INNER to definition)),
-        ).layers.getValue(BoardLayer.INNER)
+        ).layers.getValue(BoardLayer.INNER.trackId)
 
         assertEquals(30, route.horizontalCells)
         assertEquals(20, route.verticalCells)

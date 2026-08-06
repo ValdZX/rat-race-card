@@ -1,6 +1,7 @@
 package ua.vald_zx.game.rat.race.card.shared
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.jvm.JvmInline
@@ -21,7 +22,22 @@ value class CellTypeId(val value: String) {
 
 @JvmInline
 @Serializable
-value class TrackId(val value: String)
+value class TrackId(val value: String) {
+    init {
+        require(value.matches(TRACK_ID_PATTERN)) { "Invalid track id: $value" }
+    }
+
+    override fun toString(): String = value
+
+    private companion object {
+        val TRACK_ID_PATTERN = Regex("[a-z][a-z0-9_-]*")
+    }
+}
+
+object CoreTrackIds {
+    val Inner = TrackId("inner")
+    val Outer = TrackId("outer")
+}
 
 @Serializable
 data class CellInstance(
@@ -49,6 +65,53 @@ data class TrackDefinition(
     val topology: TrackTopology = TrackTopology.LOOP,
     val cells: List<CellInstance>,
     val visual: TrackVisualHint,
+)
+
+@Serializable
+data class TrackTransition(
+    val id: String,
+    val from: TrackId,
+    val to: TrackId,
+    val entryCellIndex: Int = 1,
+    val conditions: List<ProgressCondition> = emptyList(),
+)
+
+@Serializable
+sealed interface ProgressCondition {
+    @Serializable
+    @SerialName("minimumCashFlow")
+    data class MinimumCashFlow(val amount: Long) : ProgressCondition
+
+    @Serializable
+    @SerialName("minimumBalance")
+    data class MinimumBalance(val amount: Long) : ProgressCondition
+
+    @Serializable
+    @SerialName("requiresApartment")
+    data object RequiresApartment : ProgressCondition
+
+    @Serializable
+    @SerialName("requiresCar")
+    data object RequiresCar : ProgressCondition
+
+    @Serializable
+    @SerialName("requiresPlane")
+    data object RequiresPlane : ProgressCondition
+
+    @Serializable
+    @SerialName("requiresEstate")
+    data object RequiresEstate : ProgressCondition
+
+    @Serializable
+    @SerialName("requiresSelectedDream")
+    data object RequiresSelectedDream : ProgressCondition
+}
+
+@Serializable
+data class ObjectiveDefinition(
+    val id: String,
+    val trackId: TrackId,
+    val conditions: List<ProgressCondition>,
 )
 
 @Serializable
@@ -151,11 +214,26 @@ fun BoardLayer.defaultTrackDefinition(): TrackDefinition {
         BoardLayer.OUTER -> TrackVisualHint(horizontalCells = 26, verticalCells = 18)
     }
     return TrackDefinition(
-        id = TrackId(name.lowercase()),
+        id = trackId,
         order = level,
         cells = places.mapIndexed { index, place -> place.toCellInstance("${name.lowercase()}-$index") },
         visual = visual,
     )
 }
+
+val BoardLayer.trackId: TrackId
+    get() = when (this) {
+        BoardLayer.INNER -> CoreTrackIds.Inner
+        BoardLayer.OUTER -> CoreTrackIds.Outer
+    }
+
+fun TrackId.legacyLayerOrNull(): BoardLayer? = when (this) {
+    CoreTrackIds.Inner -> BoardLayer.INNER
+    CoreTrackIds.Outer -> BoardLayer.OUTER
+    else -> null
+}
+
+fun TrackId.requireLegacyLayer(): BoardLayer = legacyLayerOrNull()
+    ?: error("Track $value has no legacy BoardLayer mapping")
 
 const val DREAM_ID_PARAMETER = "dreamId"

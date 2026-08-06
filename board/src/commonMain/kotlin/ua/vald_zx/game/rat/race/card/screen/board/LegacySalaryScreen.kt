@@ -26,7 +26,7 @@ internal fun LegacySalaryScreen(vm: BoardViewModel) {
         val bottomSheetNavigator = LocalBottomSheetNavigator.current
         val fundRate = remember(
             player.investmentPosition,
-            player.location.level,
+            player.location.trackId,
             player.config.salaryFundRates,
             state.places,
         ) {

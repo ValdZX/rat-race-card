@@ -42,6 +42,10 @@ sealed interface GameCommand {
     data class MoveTo(val position: Int) : GameCommand
 
     @Serializable
+    @SerialName("enterTransition")
+    data class EnterTransition(val transitionId: String) : GameCommand
+
+    @Serializable
     @SerialName("startCard")
     data class StartCard(val definition: CardDefinition) : GameCommand
 
@@ -124,6 +128,7 @@ enum class GameCommandRejection {
     INTERACTION_NOT_FOUND,
     INTERACTION_NOT_OWNED,
     INVALID_INTERACTION_INPUT,
+    TRANSITION_NOT_AVAILABLE,
 }
 
 @Serializable

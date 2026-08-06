@@ -602,7 +602,7 @@ private val POSSESSION_TILE_HEIGHT = 84.dp
 
 @Composable
 private fun ConditionsBlock(player: Player, board: Board) {
-    when (player.location.level.toLayer()) {
+    when (player.location.trackId.legacyLayerOrNull()) {
         BoardLayer.INNER -> {
             val conditions = board.outerCircleConditions
             SectionCard(stringResource(Res.string.outer_circle_conditions)) {
@@ -657,6 +657,8 @@ private fun ConditionsBlock(player: Player, board: Board) {
                 )
             }
         }
+
+        null -> Unit
     }
 }
 

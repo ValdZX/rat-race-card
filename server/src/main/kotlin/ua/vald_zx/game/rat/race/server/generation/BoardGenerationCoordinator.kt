@@ -14,6 +14,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGenerationProgress
 import ua.vald_zx.game.rat.race.card.shared.BoardGenerationStage
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
+import ua.vald_zx.game.rat.race.card.shared.TrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.dreamSlotIds
 import ua.vald_zx.game.rat.race.card.shared.code
 import ua.vald_zx.game.rat.race.card.shared.defaultTrackDefinition
@@ -92,6 +93,7 @@ internal object BoardGenerationCoordinator {
                     generatedProfessions = emptyList(),
                     generatedPlaces = emptyMap(),
                     trackDefinitions = emptyMap(),
+                    tracks = emptyList(),
                     generatedTexts = emptyMap(),
                     dreams = ratRaceDreams,
                     generationProgress = BoardGenerationProgress(
@@ -152,6 +154,7 @@ internal object BoardGenerationCoordinator {
                     generatedProfessions = if (cachedBalance == null) emptyList() else generatedProfessions,
                     generatedPlaces = if (cachedBalance == null) emptyMap() else generatedPlaces,
                     trackDefinitions = if (cachedBalance == null) emptyMap() else trackDefinitions,
+                    tracks = if (cachedBalance == null) emptyList() else tracks,
                     generatedTexts = if (cachedBalance == null) emptyMap() else generatedTexts,
                 )
             }
@@ -213,7 +216,10 @@ internal object BoardGenerationCoordinator {
                     tracks[layer]?.cells?.size == layer.places.size
                 }
             }
-            val tracks = cachedTracks ?: cachedPlaces?.mapValues { (layer, codes) ->
+            val cachedDynamicTracks = initial.tracks.takeIf { tracks ->
+                cachedBalance != null && tracks.isNotEmpty() && tracks.all { it.cells.isNotEmpty() }
+            }
+            val legacyTracks = cachedTracks ?: cachedPlaces?.mapValues { (layer, codes) ->
                 layer.defaultTrackDefinition().copy(
                     cells = codes.mapIndexedNotNull { index, code ->
                         ua.vald_zx.game.rat.race.card.shared.placeTypeOfCode(code)
@@ -223,11 +229,17 @@ internal object BoardGenerationCoordinator {
             }?.takeIf { definitions ->
                 BoardLayer.entries.all { layer -> definitions[layer]?.cells?.size == layer.places.size }
             } ?: generator.generateTracks()
-            check(legacyCellRuleRegistry().validate(tracks.values.flatMap { it.cells }) == ValidationResult.Valid)
-            val places = tracks.mapValues { (_, track) -> track.cells.map { it.toPlaceType().code() } }
-            if (cachedTracks == null) {
+            val dynamicTracks = cachedDynamicTracks ?: legacyTracks.values.sortedBy(TrackDefinition::order)
+            check(legacyCellRuleRegistry().validate(dynamicTracks.flatMap { it.cells }) == ValidationResult.Valid)
+            val places = legacyTracks.mapValues { (_, track) -> track.cells.map { it.toPlaceType().code() } }
+            if (cachedTracks == null && cachedDynamicTracks == null) {
                 checkpoint(boardId, BoardGenerationStage.PLACES, textOffset + 1, totalUnits) {
-                    copy(generatedPlaces = places, trackDefinitions = tracks, dreams = dreams)
+                    copy(
+                        generatedPlaces = places,
+                        trackDefinitions = legacyTracks,
+                        tracks = dynamicTracks,
+                        dreams = dreams,
+                    )
                 }
             }
             progress(boardId, BoardGenerationStage.PLACES, textOffset + 1, totalUnits)
@@ -261,7 +273,8 @@ internal object BoardGenerationCoordinator {
                     generatedCards = generatedCards,
                     generatedProfessions = professions,
                     generatedPlaces = places,
-                    trackDefinitions = tracks,
+                    trackDefinitions = legacyTracks,
+                    tracks = dynamicTracks,
                     generatedTexts = texts,
                     generatedBalance = balance,
                     dreams = dreams,

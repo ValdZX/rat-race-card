@@ -382,13 +382,13 @@ class RaceRatServiceImpl(
             buyDeputy()
             return
         }
-        val layer = player().location.level.toLayer()
+        val trackId = player().location.trackId
         val currentBoard = board()
-        val preparedBoard = currentBoard.prepareCardDeck(cardType, layer)
+        val preparedBoard = currentBoard.prepareCardDeck(cardType, trackId)
         if (preparedBoard != currentBoard) {
-            updateBoard { prepareCardDeck(cardType, layer) }
+            updateBoard { prepareCardDeck(cardType, trackId) }
         }
-        val card = random.choose(preparedBoard.availableCardIds(cardType, layer)) ?: return
+        val card = random.choose(preparedBoard.availableCardIds(cardType, trackId)) ?: return
         selectCard(card, cardType)
     }
 
@@ -718,7 +718,7 @@ class RaceRatServiceImpl(
 
     private suspend fun checkVictory(player: Player) {
         val board = board()
-        if (!player.hasMetVictoryConditions(board.victoryConditions)) return
+        if (!board.hasCompletedObjective(player)) return
         if (board.winnerId != null) return
         var becameWinner = false
         updateBoard {
@@ -795,11 +795,10 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun debugChangePosition(location: PlayerLocation) {
-        val layer = location.level.toLayer()
-        val position = location.position.coerceIn(0, board().placesOf(layer).lastIndex)
-        if (layer.level != player().location.level) {
+        val position = location.position.coerceIn(0, board().placesOf(location.trackId).lastIndex)
+        if (location.trackId != player().location.trackId) {
             updatePlayer {
-                copy(location = PlayerLocation(position = position, level = layer.level))
+                copy(location = PlayerLocation(position = position, trackId = location.trackId))
             }
         }
         processNewPosition(position)
@@ -1227,17 +1226,9 @@ class RaceRatServiceImpl(
 
     override suspend fun enterOuterCircle() {
         val currentPlayer = player()
-        val conditions = board().outerCircleConditions
-        if (!currentPlayer.canEnterOuterCircle(true, conditions)) return
-        updatePlayer {
-            copy(
-                location = PlayerLocation(
-                    position = 1,
-                    level = BoardLayer.OUTER.level,
-                ),
-                salaryPosition = null,
-            )
-        }
+        val currentBoard = board()
+        val transition = currentBoard.availableTransition(currentPlayer, currentBoard.canRoll) ?: return
+        executeCommand(compatibilityEnvelope(GameCommand.EnterTransition(transition.id)))
     }
 
     override suspend fun buyDream() {
@@ -1358,13 +1349,21 @@ internal fun Board.takeFromDeck(cardId: Int, cardType: BoardCardType): Board {
 }
 
 internal fun Board.availableCardIds(cardType: BoardCardType, layer: BoardLayer): List<Int> {
-    return cards[cardType].orEmpty().filter { cardId -> cardIsAvailable(cardType, cardId, layer) }
+    return availableCardIds(cardType, layer.trackId)
 }
 
 internal fun Board.prepareCardDeck(cardType: BoardCardType, layer: BoardLayer): Board {
-    if (availableCardIds(cardType, layer).isNotEmpty()) return this
+    return prepareCardDeck(cardType, layer.trackId)
+}
+
+internal fun Board.availableCardIds(cardType: BoardCardType, trackId: TrackId): List<Int> {
+    return cards[cardType].orEmpty().filter { cardId -> cardIsAvailable(cardType, cardId, trackId) }
+}
+
+internal fun Board.prepareCardDeck(cardType: BoardCardType, trackId: TrackId): Board {
+    if (availableCardIds(cardType, trackId).isNotEmpty()) return this
     val recyclable = discard[cardType].orEmpty().filter { cardId ->
-        cardIsAvailable(cardType, cardId, layer)
+        cardIsAvailable(cardType, cardId, trackId)
     }
     if (recyclable.isEmpty()) return this
     val recyclableIds = recyclable.toSet()
@@ -1374,8 +1373,8 @@ internal fun Board.prepareCardDeck(cardType: BoardCardType, layer: BoardLayer): 
     )
 }
 
-private fun Board.cardIsAvailable(cardType: BoardCardType, cardId: Int, layer: BoardLayer): Boolean {
-    if (layer != BoardLayer.INNER || cardType !in LEGACY_OUTER_ONLY_CARD_IDS) return true
+private fun Board.cardIsAvailable(cardType: BoardCardType, cardId: Int, trackId: TrackId): Boolean {
+    if (trackId != CoreTrackIds.Inner || cardType !in LEGACY_OUTER_ONLY_CARD_IDS) return true
     val generatedDeck = generatedCards[cardType]
     return when (generatedDeck?.get(cardId)) {
         is BoardCard.Chance.CorruptBusiness,
