@@ -6,7 +6,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.Gender
 import ua.vald_zx.game.rat.race.card.shared.PayerType
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
-import ua.vald_zx.game.rat.race.card.shared.balance
+import ua.vald_zx.game.rat.race.card.shared.financialAccount
 import ua.vald_zx.game.rat.race.card.shared.isActivePlayer
 
 internal fun Board.canMakeVoluntaryPurchase(player: Player, price: Long): Boolean {
@@ -14,9 +14,7 @@ internal fun Board.canMakeVoluntaryPurchase(player: Player, price: Long): Boolea
 }
 
 internal fun Board.hasAvailableCredit(player: Player, price: Long): Boolean {
-    if (price <= 0) return false
-    val unusedCredit = (loanLimit - player.loan).coerceAtLeast(0)
-    return unusedCredit > price || player.balance() > price - unusedCredit
+    return player.financialAccount().canAffordVoluntaryPurchase(price, loanLimit)
 }
 
 internal fun Board.canBuyBusiness(player: Player, price: Long): Boolean {
@@ -24,9 +22,11 @@ internal fun Board.canBuyBusiness(player: Player, price: Long): Boolean {
 }
 
 internal fun Board.canBuyWithCashAndDeposit(player: Player, price: Long): Boolean {
-    if (!isActivePlayer(player) || price <= 0) return false
-    val unusedCredit = (loanLimit - player.loan).coerceAtLeast(0)
-    return unusedCredit > price || player.cash + player.deposit > price - unusedCredit
+    return isActivePlayer(player) && player.financialAccount().canAffordVoluntaryPurchase(
+        price = price,
+        loanLimit = loanLimit,
+        useFunds = false,
+    )
 }
 
 internal fun Player.mustPay(expenses: BoardCard.Expenses): Boolean = when (expenses.payer) {

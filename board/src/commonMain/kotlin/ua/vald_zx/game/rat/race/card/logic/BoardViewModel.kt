@@ -49,7 +49,7 @@ data class BoardState(
     }
 
     fun canPay(price: Long): Boolean {
-        return (board.loanLimit + player.balance() - player.loan - price) > 0
+        return player.financialAccount().canAffordVoluntaryPurchase(price, board.loanLimit)
     }
 
     val hasBusinessSlot: Boolean

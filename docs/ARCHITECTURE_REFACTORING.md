@@ -281,6 +281,8 @@ data class RuleResult(
 
 ### Фаза 1. Чисті фінанси й спільний домен
 
+Статус: виконано. Межі спільного фінансового ядра та перевірки сумісності описані в [PHASE_1_SHARED_FINANCE.md](PHASE_1_SHARED_FINANCE.md).
+
 - Винести `MoneyService`/`PaymentPolicy`, cash flow, total, активи та recent changes у KMP `game-engine`.
 - Прибрати залежність доменних операцій від `eventBus` і `board()`; повертати domain events у результаті.
 - Перевести локальний `card` на спільні value objects і формули через adapter, зберігши міграцію старого KStore JSON.

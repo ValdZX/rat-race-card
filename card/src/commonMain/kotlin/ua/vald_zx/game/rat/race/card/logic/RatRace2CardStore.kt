@@ -54,44 +54,31 @@ data class RatRace2CardState(
 ) : State {
 
     fun balance(): Long {
-        return cash + deposit + funds.sumOf { it.amount }
+        return financialSnapshot().balance()
     }
 
     fun activeProfit(): Long {
-        return business.sumOf { it.profit + it.extentions.sum() }
+        return financialSnapshot().activeProfit()
     }
 
     fun passiveProfit(): Long {
-        return ((deposit / 100.0) * config.depositRate).toLong()
+        return financialSnapshot().passiveProfit()
     }
 
     fun totalProfit(): Long {
-        return activeProfit() + passiveProfit()
+        return financialSnapshot().totalProfit()
     }
 
     fun creditExpenses(): Long {
-        return ((loan / 100.0) * config.loadRate).toLong()
+        return financialSnapshot().creditExpenses()
     }
 
     fun totalExpenses(): Long {
-        var totalExpenses = 0L
-        totalExpenses += playerCard.food
-        totalExpenses += playerCard.rent
-        totalExpenses += playerCard.cloth
-        totalExpenses += playerCard.phone
-        totalExpenses += playerCard.transport
-        totalExpenses += babies * config.babyCost
-        totalExpenses += cars * config.carCost
-        totalExpenses += apartment * config.apartmentCost
-        totalExpenses += cottage * config.cottageCost
-        totalExpenses += yacht * config.yachtCost
-        totalExpenses += flight * config.flightCost
-        totalExpenses += creditExpenses()
-        return totalExpenses
+        return financialSnapshot().totalExpenses()
     }
 
     fun cashFlow(): Long {
-        return totalProfit() - totalExpenses()
+        return financialSnapshot().cashFlow()
     }
 
     fun status(): String {
@@ -112,11 +99,19 @@ data class RatRace2CardState(
     }
 
     fun capitalization(): Long {
-        return funds.sumOf { (it.rate / 100.0) * it.amount }.toLong()
+        return sharedMoneyService.capitalize(
+            funds = financialAccount().funds,
+            rateOverride = null,
+            baseRate = config.fundBaseRate,
+        ).profit
     }
 
     fun capitalizationStart(): Long {
-        return funds.sumOf { (config.fundStartRate / 100.0) * it.amount }.toLong()
+        return sharedMoneyService.capitalize(
+            funds = financialAccount().funds,
+            rateOverride = config.fundStartRate,
+            baseRate = config.fundBaseRate,
+        ).profit
     }
 
     fun fundAmount(): Long {
@@ -193,7 +188,10 @@ sealed class RatRace2CardSideEffect : Effect {
     data object ShowSalaryApprove : RatRace2CardSideEffect()
 }
 
-class RatRace2CardStore(private val koin: Koin) :
+class RatRace2CardStore(
+    private val koin: Koin,
+    private val random: GameRandom = DefaultGameRandom,
+) :
     Store<RatRace2CardState, RatRace2CardAction, RatRace2CardSideEffect>,
     CoroutineScope by CoroutineScope(Dispatchers.Main) {
 
@@ -303,10 +301,13 @@ class RatRace2CardStore(private val koin: Koin) :
             }
 
             RandomBusiness -> {
-                val random = (0..<oldState.business.size).random()
-                val business = oldState.business[random]
-                val businessList = oldState.business.map { it.copy(alarmed = business == it) }
-                oldState.copy(business = businessList)
+                val business = random.choose(oldState.business)
+                if (business == null) {
+                    oldState
+                } else {
+                    val businessList = oldState.business.map { it.copy(alarmed = business == it) }
+                    oldState.copy(business = businessList)
+                }
             }
 
             is BuyBusiness -> {
@@ -614,15 +615,9 @@ class RatRace2CardStore(private val koin: Koin) :
         val previousTotal = previous.total()
         val currentCashFlow = cashFlow()
         val previousCashFlow = previous.cashFlow()
-        val newLastTotals = if (currentTotal != previousTotal) {
-            lastTotals + (currentTotal - previousTotal)
-        } else lastTotals
-        val newLastCashFlows = if (currentCashFlow != previousCashFlow) {
-            lastCashFlows + (currentCashFlow - previousCashFlow)
-        } else lastCashFlows
         return copy(
-            lastTotals = newLastTotals.takeLast(3),
-            lastCashFlows = newLastCashFlows.takeLast(3)
+            lastTotals = appendRecentChange(lastTotals, previousTotal, currentTotal),
+            lastCashFlows = appendRecentChange(lastCashFlows, previousCashFlow, currentCashFlow),
         )
     }
 
@@ -649,7 +644,7 @@ class RatRace2CardStore(private val koin: Koin) :
 
     private fun RatRace2CardState.plusCash(value: Long): RatRace2CardState {
         launch { sideEffect.emit(RatRace2CardSideEffect.AddCash(value)) }
-        return copy(cash = cash + value)
+        return withFinancialAccount(sharedMoneyService.addCash(financialAccount(), value))
     }
 
     private fun RatRace2CardState.minusCash(
@@ -658,42 +653,30 @@ class RatRace2CardStore(private val koin: Koin) :
     ): RatRace2CardState {
         if (value == 0L) return this
         launch { sideEffect.emit(RatRace2CardSideEffect.SubCash(value)) }
-        return if (cash > value) {
-            copy(cash = cash - value)
-        } else if ((cash + deposit) > value) {
-            launch { sideEffect.emit(RatRace2CardSideEffect.DepositWithdraw(value - cash)) }
-            copy(cash = 0, deposit = (deposit + cash) - value)
-        } else if (!isFundBuy && config.hasFunds && funds.isNotEmpty()) {
-            var stub = cash + deposit
-            var newFunds = funds.toList()
-            funds.sortedBy { it.rate }.firstOrNull { fund ->
-                if (stub + fund.amount > value) {
-                    newFunds = funds.replace(fund, fund.copy(amount = stub + fund.amount - value))
-                    true
-                } else {
-                    stub += fund.amount
-                    newFunds = newFunds.remove(fund)
-                    false
+        val result = sharedMoneyService.pay(
+            account = financialAccount(),
+            amount = value,
+            policy = PaymentPolicy(useFunds = !isFundBuy && config.hasFunds),
+        )
+        val usedFunds = result.events.any { it is PaymentEvent.FundsWithdrawn }
+        result.events.forEach { paymentEvent ->
+            when (paymentEvent) {
+                is PaymentEvent.DepositWithdrawn -> if (!usedFunds && result.account.loan == loan) {
+                    launch { sideEffect.emit(RatRace2CardSideEffect.DepositWithdraw(paymentEvent.amount)) }
                 }
+
+                is PaymentEvent.LoanAdded -> if (!usedFunds) {
+                    launch { sideEffect.emit(RatRace2CardSideEffect.LoanAdded(paymentEvent.amount)) }
+                }
+
+                is PaymentEvent.FundsWithdrawn,
+                PaymentEvent.LoanLimitExceeded -> Unit
             }
-            if (newFunds.isEmpty() && stub < value) {
-                copy(cash = 0, deposit = 0, funds = emptyList(), loan = loan + (value - stub))
-            } else {
-                copy(cash = 0, deposit = 0, funds = newFunds)
-            }
-        } else {
-            launch { sideEffect.emit(RatRace2CardSideEffect.LoanAdded(value - (cash + deposit))) }
-            copy(cash = 0, deposit = 0, loan = loan + (value - (deposit + cash)))
         }
+        return withFinancialAccount(result.account)
     }
 }
 
 fun RatRace2CardState.total(): Long {
-    return cash +
-            deposit +
-            funds.sumOf { it.amount } +
-            sharesList.sumOf { it.price } +
-            lands.sumOf { it.price } +
-            business.sumOf { it.price } -
-            loan
+    return financialSnapshot().total()
 }

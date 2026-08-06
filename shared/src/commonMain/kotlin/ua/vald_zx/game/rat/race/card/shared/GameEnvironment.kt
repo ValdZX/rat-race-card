@@ -1,6 +1,9 @@
-package ua.vald_zx.game.rat.race.server
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
+package ua.vald_zx.game.rat.race.card.shared
 
 import kotlin.random.Random
+import kotlin.time.Clock
 
 interface GameRandom {
     fun nextInt(from: Int, until: Int): Int
@@ -11,4 +14,12 @@ interface GameRandom {
 
 object DefaultGameRandom : GameRandom {
     override fun nextInt(from: Int, until: Int): Int = Random.nextInt(from, until)
+}
+
+interface GameClock {
+    fun nowEpochMilliseconds(): Long
+}
+
+object SystemGameClock : GameClock {
+    override fun nowEpochMilliseconds(): Long = Clock.System.now().toEpochMilliseconds()
 }

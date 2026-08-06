@@ -34,10 +34,10 @@ fun BoardLayer.fundRateAtSalary(position: Int, salaryFundRates: List<Long>): Lon
 private fun Int.stepsTo(target: Int, cellCount: Int): Int = ((target - this) + cellCount) % cellCount
 
 fun List<Fund>.capitalize(rateOverride: Long?, baseRate: Long): Pair<List<Fund>, Long> {
-    if (isEmpty()) return this to 0L
-    val profit = sumOf { fund ->
-        ((rateOverride ?: fund.rate) / 100.0 * fund.amount).toLong()
-    }
-    val total = sumOf { it.amount } + profit
-    return listOf(Fund(rate = baseRate, amount = total)) to profit
+    val result = sharedMoneyService.capitalize(
+        funds = map { FinancialFund(it.rate, it.amount) },
+        rateOverride = rateOverride,
+        baseRate = baseRate,
+    )
+    return result.funds.map { Fund(it.rate, it.amount) } to result.profit
 }

@@ -19,7 +19,6 @@ import ua.vald_zx.game.rat.race.server.generation.BoardGenerationCoordinator
 import ua.vald_zx.game.rat.race.server.generation.playerConfig
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.absoluteValue
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
@@ -45,6 +44,7 @@ class RaceRatServiceImpl(
     private val scope: CoroutineScope,
     private val connectionIdentified: (String) -> Unit = {},
     private val random: GameRandom = DefaultGameRandom,
+    private val clock: GameClock = SystemGameClock,
 ) : RaceRatService, CoroutineScope by scope {
 
     private var boardIdState = MutableStateFlow("")
@@ -153,7 +153,7 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun getBoards(): List<BoardId> {
-        val now = Clock.System.now().toEpochMilliseconds()
+        val now = clock.nowEpochMilliseconds()
         return Storage.boards().map { board ->
             val players = Storage.players(board.id)
             val active = players.count { !it.isInactive }
@@ -189,7 +189,7 @@ class RaceRatServiceImpl(
             val players = Storage.players(boardId)
             check(players.none { !it.isInactive }) { "Board has active players" }
             val inactiveSince = board.allInactiveSinceEpochMs ?: error("Board is still active")
-            val inactiveFor = Clock.System.now().toEpochMilliseconds() - inactiveSince
+            val inactiveFor = clock.nowEpochMilliseconds() - inactiveSince
             check(inactiveFor >= BOARD_DELETION_INACTIVITY.inWholeMilliseconds) {
                 "Board has not been inactive long enough"
             }
@@ -214,13 +214,14 @@ class RaceRatServiceImpl(
             theme = generation.theme.sanitizedWorldField(),
             locality = generation.locality.sanitizedWorldField(),
             epoch = generation.epoch.sanitizedWorldField(),
-            seed = if (generation.seed != 0L) generation.seed else Clock.System.now().toEpochMilliseconds()
+            seed = if (generation.seed != 0L) generation.seed else clock.nowEpochMilliseconds()
         )
         val board = Board(
             name = name,
             loanLimit = loanLimit,
             businessLimit = businessLimit,
-            createDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
+            createDateTime = kotlin.time.Instant.fromEpochMilliseconds(clock.nowEpochMilliseconds())
+                .toLocalDateTime(TimeZone.currentSystemDefault()),
             id = Uuid.random().toString(),
             cards = decks.mapValues { (_, size) -> (1..size).toList() },
             outerCircleConditions = outerCircleConditions,
@@ -321,7 +322,7 @@ class RaceRatServiceImpl(
     override suspend fun sendMessage(text: String) {
         val message = text.trim().take(160)
         if (message.isNotEmpty()) {
-            val speech = PlayerSpeech(message, Clock.System.now().toEpochMilliseconds() + SPEECH_LIFETIME_MS)
+            val speech = PlayerSpeech(message, clock.nowEpochMilliseconds() + SPEECH_LIFETIME_MS)
             updatePlayer { copy(speech = speech) }
         }
     }
@@ -784,7 +785,7 @@ class RaceRatServiceImpl(
     }
 
     private fun Player.plusCash(value: Long): Player {
-        return copy(cash = cash + value)
+        return withFinancialAccount(sharedMoneyService.addCash(financialAccount(), value))
     }
 
     private suspend fun Player.minusCash(
@@ -794,31 +795,30 @@ class RaceRatServiceImpl(
         val board = board()
         if (value == 0L) return this
         eventBus.emit(Event.SubCash(value))
-        return if (cash >= value) {
-            copy(cash = cash - value)
-        } else if ((cash + deposit) >= value) {
-            eventBus.emit(Event.DepositWithdraw(value - cash))
-            copy(cash = 0, deposit = (deposit + cash) - value)
-        } else if (!isFundBuy && config.hasFunds && funds.isNotEmpty()) {
-            val amountFromFunds = value - cash - deposit
-            val updatedFunds = funds.withdrawFunds(amountFromFunds)
-            if (updatedFunds == null) {
-                val newLoan = loan + amountFromFunds - funds.sumOf { it.amount }
-                if (newLoan > board.loanLimit) {
-                    eventBus.emit(Event.LoanOverlimited)
+        val result = sharedMoneyService.pay(
+            account = financialAccount(),
+            amount = value,
+            policy = PaymentPolicy(
+                useFunds = !isFundBuy && config.hasFunds,
+                loanLimit = board.loanLimit,
+            ),
+        )
+        val usedFunds = result.events.any { it is PaymentEvent.FundsWithdrawn }
+        result.events.forEach { paymentEvent ->
+            when (paymentEvent) {
+                is PaymentEvent.DepositWithdrawn -> if (!usedFunds && result.account.loan == loan) {
+                    eventBus.emit(Event.DepositWithdraw(paymentEvent.amount))
                 }
-                copy(cash = 0, deposit = 0, funds = emptyList(), loan = newLoan)
-            } else {
-                copy(cash = 0, deposit = 0, funds = updatedFunds)
+
+                is PaymentEvent.LoanAdded -> if (!usedFunds) {
+                    eventBus.emit(Event.LoanAdded(paymentEvent.amount))
+                }
+
+                PaymentEvent.LoanLimitExceeded -> eventBus.emit(Event.LoanOverlimited)
+                is PaymentEvent.FundsWithdrawn -> Unit
             }
-        } else {
-            eventBus.emit(Event.LoanAdded(value - (cash + deposit)))
-            val newLoan = loan + (value - (deposit + cash))
-            if (newLoan > board.loanLimit) {
-                eventBus.emit(Event.LoanOverlimited)
-            }
-            copy(cash = 0, deposit = 0, loan = newLoan)
         }
+        return withFinancialAccount(result.account)
     }
 
     override suspend fun buyThing(card: BoardCard.Shopping) {
@@ -1369,23 +1369,6 @@ class RaceRatServiceImpl(
 
 private val BOARD_DELETION_INACTIVITY = 7.days
 
-internal fun List<Fund>.withdrawFunds(amount: Long): List<Fund>? {
-    require(amount >= 0) { "Withdrawal must not be negative" }
-    var remaining = amount
-    var updatedFunds = this
-    for (fund in sortedBy { it.rate }) {
-        if (remaining == 0L) break
-        if (fund.amount <= remaining) {
-            remaining -= fund.amount
-            updatedFunds = updatedFunds.remove(fund)
-        } else {
-            updatedFunds = updatedFunds.replace(fund, fund.copy(amount = fund.amount - remaining))
-            remaining = 0
-        }
-    }
-    return updatedFunds.takeIf { remaining == 0L }
-}
-
 suspend fun nextPlayer(board: Board) {
     val activePlayers = board.activePlayers(Storage.players(board.id))
     if (activePlayers.isEmpty()) return
@@ -1482,14 +1465,10 @@ private fun Board.invalidateDecks(): Board {
 
 internal fun Player.withRecentChanges(previous: Player): Player {
     return copy(
-        lastTotals = lastTotals.withChange(previous.total(), total()),
-        lastCashFlows = lastCashFlows.withChange(previous.cashFlow(), cashFlow()),
-        lastLoans = lastLoans.withChange(previous.loan, loan),
+        lastTotals = appendRecentChange(lastTotals, previous.total(), total()),
+        lastCashFlows = appendRecentChange(lastCashFlows, previous.cashFlow(), cashFlow()),
+        lastLoans = appendRecentChange(lastLoans, previous.loan, loan),
     )
-}
-
-private fun List<Long>.withChange(previous: Long, current: Long): List<Long> {
-    return if (current == previous) this else (this + (current - previous)).takeLast(3)
 }
 
 private const val MAX_WORLD_FIELD_LENGTH = 60

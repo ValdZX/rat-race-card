@@ -219,12 +219,7 @@ data class Config(
 )
 
 fun Player.total(): Long {
-    return cash +
-            deposit +
-            funds.sumOf { it.amount } +
-            sharesList.sumOf { it.price } +
-            businesses.sumOf { it.price } -
-            loan
+    return financialSnapshot().total()
 }
 
 fun Player.taxInspectionBribe(board: Board): Long {
@@ -238,46 +233,64 @@ fun Player.taxInspectionBribe(board: Board): Long {
 }
 
 fun Player.balance(): Long {
-    return cash + deposit + funds.sumOf { it.amount }
+    return financialSnapshot().balance()
 }
 
 fun Player.activeProfit(): Long {
-    return businesses.sumOf { it.profit + it.extentions.sum() }
+    return financialSnapshot().activeProfit()
 }
 
 fun Player.passiveProfit(): Long {
-    return ((deposit / 100.0) * config.depositRate).toLong()
+    return financialSnapshot().passiveProfit()
 }
 
 fun Player.totalProfit(): Long {
-    return activeProfit() + passiveProfit()
+    return financialSnapshot().totalProfit()
 }
 
 fun Player.creditExpenses(): Long {
-    return ((loan / 100.0) * config.loadRate).toLong()
+    return financialSnapshot().creditExpenses()
 }
 
 fun Player.totalExpenses(): Long {
-    var totalExpenses = 0L
-    totalExpenses += card.food
-    totalExpenses += card.rent
-    totalExpenses += card.cloth
-    totalExpenses += card.phone
-    totalExpenses += card.transport
-    totalExpenses += babies * config.babyCost
-    totalExpenses += cars * config.carCost
-    totalExpenses += apartment * config.apartmentCost
-    totalExpenses += cottage * config.cottageCost
-    totalExpenses += yacht * config.yachtCost
-    totalExpenses += flight * config.flightCost
-    totalExpenses += animal * config.animalCost
-    totalExpenses += creditExpenses()
-    return totalExpenses
+    return financialSnapshot().totalExpenses()
 }
 
 fun Player.cashFlow(): Long {
-    return totalProfit() - totalExpenses()
+    return financialSnapshot().cashFlow()
 }
+
+fun Player.financialAccount(): FinancialAccount = FinancialAccount(
+    cash = cash,
+    deposit = deposit,
+    loan = loan,
+    funds = funds.map { FinancialFund(it.rate, it.amount) },
+)
+
+fun Player.withFinancialAccount(account: FinancialAccount): Player = copy(
+    cash = account.cash,
+    deposit = account.deposit,
+    loan = account.loan,
+    funds = account.funds.map { Fund(it.rate, it.amount) },
+)
+
+fun Player.financialSnapshot(): FinancialSnapshot = FinancialSnapshot(
+    account = financialAccount(),
+    activeIncome = businesses.map { it.profit + it.extentions.sum() },
+    assetValues = sharesList.map { it.price } + businesses.map { it.price },
+    baseExpenses = listOf(card.food, card.rent, card.cloth, card.phone, card.transport),
+    recurringExpenses = listOf(
+        babies * config.babyCost,
+        cars * config.carCost,
+        apartment * config.apartmentCost,
+        cottage * config.cottageCost,
+        yacht * config.yachtCost,
+        flight * config.flightCost,
+        animal * config.animalCost,
+    ),
+    depositRate = config.depositRate,
+    loanRate = config.loadRate,
+)
 
 fun Player.canEnterOuterCircle(canRoll: Boolean, conditions: OuterCircleConditions): Boolean {
     return canRoll
