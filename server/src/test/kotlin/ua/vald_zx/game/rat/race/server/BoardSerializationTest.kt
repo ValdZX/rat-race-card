@@ -78,6 +78,7 @@ class BoardSerializationTest {
         val generated = board(generator.generate(BoardCardType.entries.associateWith { 5 })).copy(
             generatedProfessions = generator.generateProfessions(),
             generatedPlaces = generator.generatePlaces(),
+            trackDefinitions = generator.generateTracks(),
             generatedBalance = testBalance(),
             generatedTexts = mapOf(
                 "uk" to GeneratedText(
@@ -91,6 +92,7 @@ class BoardSerializationTest {
 
         assertEquals(generated.generatedProfessions, decoded.generatedProfessions)
         assertEquals(generated.generatedPlaces, decoded.generatedPlaces)
+        assertEquals(generated.trackDefinitions, decoded.trackDefinitions)
         assertEquals(generated.generatedTexts, decoded.generatedTexts)
         assertEquals(generated.generatedBalance, decoded.generatedBalance)
         assertEquals("Аероліт", decoded.shareName("aerolith", "uk-UA"))

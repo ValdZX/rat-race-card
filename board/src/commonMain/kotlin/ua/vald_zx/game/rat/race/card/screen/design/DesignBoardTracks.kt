@@ -737,4 +737,5 @@ private fun PlaceType.shortLabel(): String = when (this) {
     PlaceType.Child -> stringResource(Res.string.child)
     PlaceType.Love -> stringResource(Res.string.love)
     is PlaceType.Desire -> stringResource(Res.string.desire)
+    is PlaceType.Custom -> type.value
 }

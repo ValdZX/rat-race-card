@@ -35,6 +35,10 @@ sealed interface GameCommand {
     @Serializable
     @SerialName("advanceTurn")
     data object AdvanceTurn : GameCommand
+
+    @Serializable
+    @SerialName("moveTo")
+    data class MoveTo(val position: Int) : GameCommand
 }
 
 sealed interface DomainEvent {
@@ -68,7 +72,13 @@ data class RuleResult(
     val snapshot: GameSnapshot,
     val events: List<DomainEvent> = emptyList(),
     val notices: List<PresentationNotice> = emptyList(),
+    val turnDirective: TurnDirective = TurnDirective.KEEP_TURN,
 )
+
+enum class TurnDirective {
+    KEEP_TURN,
+    END_TURN,
+}
 
 sealed interface GameExecution {
     val snapshot: GameSnapshot
@@ -96,6 +106,7 @@ enum class GameCommandRejection {
     ROLL_NOT_IN_PROGRESS,
     NO_ACTIVE_PLAYERS,
     COMMAND_NOT_AVAILABLE,
+    INVALID_BOARD_DEFINITION,
 }
 
 @Serializable

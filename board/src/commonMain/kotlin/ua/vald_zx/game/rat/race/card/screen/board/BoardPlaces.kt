@@ -87,6 +87,7 @@ private fun PlaceType.color(): Color {
         PlaceType.Deputy -> AppTheme.colors.deputy
         PlaceType.TaxInspection -> AppTheme.colors.inspection
         PlaceType.Resignation -> AppTheme.colors.exaltation
+        is PlaceType.Custom -> MaterialTheme.colorScheme.primary
     }
 }
 

@@ -48,6 +48,7 @@ class DatabaseSerializationTest {
             generatedCards = generator.generate(BoardCardType.entries.associateWith { 12 }),
             generatedProfessions = generator.generateProfessions(),
             generatedPlaces = generator.generatePlaces(),
+            trackDefinitions = generator.generateTracks(),
             generatedBalance = balance,
             generationProgress = BoardGenerationProgress(
                 stage = BoardGenerationStage.READY,

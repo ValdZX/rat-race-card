@@ -9,7 +9,9 @@ import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.code
+import ua.vald_zx.game.rat.race.card.shared.defaultTrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.placesOf
+import ua.vald_zx.game.rat.race.card.shared.toCellInstance
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -61,5 +63,20 @@ class GeneratedBoardLayoutTest {
             generatedPlaces = mapOf(BoardLayer.INNER to listOf("Chance", "тут-такого-немає")),
         )
         assertEquals(BoardLayer.INNER.places, broken.placesOf(BoardLayer.INNER))
+    }
+
+    @Test
+    fun routeGeometryComesFromTrackDefinition() {
+        val definition = BoardLayer.INNER.defaultTrackDefinition().copy(
+            cells = swapped.mapIndexed { index, place -> place.toCellInstance("inner-$index") },
+            visual = ua.vald_zx.game.rat.race.card.shared.TrackVisualHint(30, 20),
+        )
+        val route = boardLayersOf(
+            board(generated = false).copy(trackDefinitions = mapOf(BoardLayer.INNER to definition)),
+        ).layers.getValue(BoardLayer.INNER)
+
+        assertEquals(30, route.horizontalCells)
+        assertEquals(20, route.verticalCells)
+        assertEquals(swapped, route.places)
     }
 }

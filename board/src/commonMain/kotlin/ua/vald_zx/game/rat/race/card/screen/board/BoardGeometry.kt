@@ -9,6 +9,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.inPlaces
 import ua.vald_zx.game.rat.race.card.shared.outPlaces
+import ua.vald_zx.game.rat.race.card.shared.defaultTrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.placesOf
 
 enum class Side(val isHorizontal: Boolean) {
@@ -63,10 +64,14 @@ val boardLayers = BoardLayers(
 )
 
 fun boardLayersOf(board: Board): BoardLayers = BoardLayers(
-    layers = mapOf(
-        BoardLayer.OUTER to BoardRoute(26, 18, board.placesOf(BoardLayer.OUTER)),
-        BoardLayer.INNER to BoardRoute(28, 18, board.placesOf(BoardLayer.INNER)),
-    )
+    layers = BoardLayer.entries.associateWith { layer ->
+        val visual = board.trackDefinitions[layer]?.visual ?: layer.defaultTrackDefinition().visual
+        BoardRoute(
+            horizontalCells = visual.horizontalCells,
+            verticalCells = visual.verticalCells,
+            places = board.placesOf(layer),
+        )
+    },
 )
 
 fun PlaceType.getDpSize(

@@ -1,6 +1,7 @@
 package ua.vald_zx.game.rat.race.card.shared
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 sealed class PlaceType(val name: String, val isBig: Boolean = false) {
@@ -24,6 +25,10 @@ sealed class PlaceType(val name: String, val isBig: Boolean = false) {
     data object Deputy : PlaceType("Deputy")
     data object TaxInspection : PlaceType("TaxInspection", isBig = true)
     data object Resignation : PlaceType("Exaltation")
+    data class Custom(
+        val type: CellTypeId,
+        val parameters: JsonObject = JsonObject(emptyMap()),
+    ) : PlaceType(type.value)
 }
 
 private const val DESIRE_CODE_PREFIX = "Desire:"

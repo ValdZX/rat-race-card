@@ -49,6 +49,7 @@ data class Board(
     val generatedCards: Map<BoardCardType, Map<Int, BoardCard>> = emptyMap(),
     val generatedProfessions: List<ProfessionCard> = emptyList(),
     val generatedPlaces: Map<BoardLayer, List<String>> = emptyMap(),
+    val trackDefinitions: Map<BoardLayer, TrackDefinition> = emptyMap(),
     val generatedTexts: Map<String, GeneratedText> = emptyMap(),
     val generationProgress: BoardGenerationProgress = BoardGenerationProgress(),
     val generatedBalance: GeneratedBalance? = null,
@@ -100,6 +101,8 @@ internal fun Board.textsFor(locale: String): GeneratedText =
         ?: GeneratedText()
 
 fun Board.placesOf(layer: BoardLayer): List<PlaceType> {
+    val track = trackDefinitions[layer]
+    if (track != null && track.cells.size == layer.places.size) return track.cells.map(CellInstance::toPlaceType)
     val codes = generatedPlaces[layer] ?: return layer.places
     val decoded = codes.mapNotNull(::placeTypeOfCode)
     return if (decoded.size == layer.places.size) decoded else layer.places
@@ -108,6 +111,18 @@ fun Board.placesOf(layer: BoardLayer): List<PlaceType> {
 fun Board.placesAt(level: Int): List<PlaceType> = placesOf(level.toLayer())
 
 fun Board.placesOf(location: PlayerLocation): List<PlaceType> = placesAt(location.level)
+
+fun Board.cellsOf(layer: BoardLayer): List<CellInstance> {
+    val track = trackDefinitions[layer]
+    if (track != null && track.cells.size == layer.places.size) return track.cells
+    return placesOf(layer).mapIndexed { index, place ->
+        place.toCellInstance("${layer.name.lowercase()}-$index")
+    }
+}
+
+fun Board.cellsAt(level: Int): List<CellInstance> = cellsOf(level.toLayer())
+
+fun Board.cellsOf(location: PlayerLocation): List<CellInstance> = cellsAt(location.level)
 
 @Serializable
 data class OuterCircleConditions(

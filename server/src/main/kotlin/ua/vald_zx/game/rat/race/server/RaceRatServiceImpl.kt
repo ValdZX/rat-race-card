@@ -315,7 +315,8 @@ class RaceRatServiceImpl(
         if (envelope.boardId != currentSnapshot.board.id ||
             envelope.playerId != playerId ||
             envelope.command == GameCommand.CompleteRoll ||
-            envelope.command == GameCommand.AdvanceTurn
+            envelope.command == GameCommand.AdvanceTurn ||
+            envelope.command is GameCommand.MoveTo
         ) {
             return GameCommandResponse(
                 status = GameCommandStatus.REJECTED,
@@ -661,167 +662,11 @@ class RaceRatServiceImpl(
         nextPlayer()
     }
 
-    private suspend fun move() {
-        val player = player()
-        val board = board()
-        val cellCount = board.placesOf(player.location).size
-        val currentPosition = player.location.position
-        val movementSteps = player.movementSteps(
-            dice = board.dice,
-            transportMovementBonusEnabled = board.transportMovementBonusEnabled,
-        )
-        val newPosition = moveTo(currentPosition, cellCount, movementSteps)
-        processNewPosition(newPosition)
-    }
-
     private suspend fun processNewPosition(newPosition: Int) {
-        val player = player()
-        val currentBoard = board()
-        val places = currentBoard.placesOf(player.location)
-        val placeCount = places.size
-        val currentPosition = player.location.position
-        val safeNewPosition = newPosition.coerceIn(0, placeCount - 1)
-        val safeCurrent = currentPosition.coerceIn(0, placeCount - 1)
-
-        val passedPlaces = if (safeCurrent > safeNewPosition) {
-            places.subList(safeCurrent + 1, placeCount) + places.subList(0, safeNewPosition + 1)
-        } else {
-            places.subList(safeCurrent + 1, safeNewPosition + 1)
-        }
-        val passedSalaryPosition = if (passedPlaces.contains(PlaceType.Salary)) {
-            var pos = safeCurrent + passedPlaces.indexOfLast { it == PlaceType.Salary } + 1
-            if (pos >= placeCount) pos -= placeCount
-            pos
-        } else null
-
-        val salaryPosition = if (passedSalaryPosition != null) {
-            if (player.cashFlow() > 0) {
-                passedSalaryPosition
-            } else {
-                takeSalary()
-                null
-            }
-        } else null
-
-        val startCapitalization = if (passedPlaces.contains(PlaceType.Start) && player.funds.isNotEmpty()) {
-            var pos = safeCurrent + passedPlaces.indexOfLast { it == PlaceType.Start } + 1
-            if (pos >= placeCount) pos -= placeCount
-            StartCapitalization(position = pos, landed = pos == safeNewPosition)
-        } else null
-
-        updateBoard {
-            copy(moveCount = moveCount + 1, canRoll = false)
-        }
-        updatePlayer {
-            copy(
-                location = location.copy(position = safeNewPosition),
-                salaryPosition = salaryPosition,
-                investmentPosition = safeNewPosition.takeIf { places[it] == PlaceType.Salary },
-                startCapitalization = startCapitalization,
-            )
-        }
-
-        when (val place = places[safeNewPosition]) {
-            PlaceType.BigBusiness -> updateBoard {
-                copy(canTakeCard = legacyCardOptions(PlaceType.BigBusiness, player))
-            }
-
-            PlaceType.Business -> updateBoard {
-                copy(canTakeCard = legacyCardOptions(PlaceType.Business, player))
-            }
-
-            PlaceType.Chance,
-            PlaceType.Deputy,
-            PlaceType.Expenses,
-            PlaceType.Shopping,
-            PlaceType.Store -> updateBoard { copy(canTakeCard = legacyCardOptions(place, player)) }
-
-            PlaceType.Bankruptcy -> {
-                updatePlayer {
-                    val (updated, bankruptBusiness) = afterBankruptcyCell(random)
-                    if (bankruptBusiness != null) {
-                        eventBus.emit(Event.BankruptBusiness(bankruptBusiness))
-                    }
-                    updated
-                }
-                nextPlayer()
-            }
-
-            PlaceType.Child -> {
-                if (player.card.gender == Gender.FEMALE || (player.card.gender == Gender.MALE && player.isMarried)) {
-                    updatePlayer {
-                        afterChildCell().also { updated ->
-                            globalEventBus.emit(GlobalEvent.PlayerHadBaby(playerId, updated.babies))
-                        }
-                    }
-                }
-                nextPlayer()
-            }
-
-            PlaceType.Divorce -> {
-                if (player.isMarried) {
-                    updatePlayer {
-                        afterDivorceCell().also {
-                            globalEventBus.emit(GlobalEvent.PlayerDivorced(playerId))
-                        }
-                    }
-                }
-                nextPlayer()
-            }
-
-            PlaceType.Resignation -> {
-                val business = player.businesses.find { it.type == BusinessType.WORK }
-                if (business != null) {
-                    updatePlayer {
-                        afterResignationCell().also {
-                            eventBus.emit(Event.Resignation(business))
-                        }
-                    }
-                }
-                nextPlayer()
-            }
-
-            PlaceType.Love -> {
-                if (!player.isMarried) {
-                    updatePlayer {
-                        afterLoveCell().also {
-                            globalEventBus.emit(GlobalEvent.PlayerMarried(playerId))
-                        }
-                    }
-                    if (player.card.gender == Gender.MALE) {
-                        updatePlayer { minusCash(config.marriageCost) }
-                    }
-                }
-                nextPlayer()
-            }
-
-            PlaceType.Rest -> {
-                updatePlayer { afterRestCell() }
-                nextPlayer()
-            }
-
-            is PlaceType.Desire -> {
-                val currentBoard = board()
-                val dream = currentBoard.dreamById(place.dreamId)
-                if (dream != null && dream.id !in currentBoard.purchasedDreamIds) {
-                    eventBus.emit(Event.DreamOffered)
-                } else {
-                    nextPlayer()
-                }
-            }
-
-            PlaceType.TaxInspection -> {
-                val bribe = player.taxInspectionBribe(board())
-                if (bribe > 0) {
-                    updatePlayer { minusCash(bribe) }
-                    eventBus.emit(Event.TaxInspectionPaid(bribe))
-                }
-                nextPlayer()
-            }
-
-            PlaceType.Salary,
-            PlaceType.Start -> nextPlayer()
-        }
+        val execution = gameApplicationService.execute(
+            compatibilityEnvelope(GameCommand.MoveTo(newPosition)),
+        ) ?: return
+        publish(execution)
     }
 
     override suspend fun minusCash(price: Long) {

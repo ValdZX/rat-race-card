@@ -15,7 +15,13 @@ import ua.vald_zx.game.rat.race.card.shared.BoardGenerationProgress
 import ua.vald_zx.game.rat.race.card.shared.BoardGenerationStage
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.dreamSlotIds
+import ua.vald_zx.game.rat.race.card.shared.code
+import ua.vald_zx.game.rat.race.card.shared.defaultTrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.ratRaceDreams
+import ua.vald_zx.game.rat.race.card.shared.ValidationResult
+import ua.vald_zx.game.rat.race.card.shared.legacyCellRuleRegistry
+import ua.vald_zx.game.rat.race.card.shared.toCellInstance
+import ua.vald_zx.game.rat.race.card.shared.toPlaceType
 import ua.vald_zx.game.rat.race.server.LOGGER
 import ua.vald_zx.game.rat.race.server.boardMutex
 import ua.vald_zx.game.rat.race.server.data.Storage
@@ -85,6 +91,7 @@ internal object BoardGenerationCoordinator {
                     generatedCards = emptyMap(),
                     generatedProfessions = emptyList(),
                     generatedPlaces = emptyMap(),
+                    trackDefinitions = emptyMap(),
                     generatedTexts = emptyMap(),
                     dreams = ratRaceDreams,
                     generationProgress = BoardGenerationProgress(
@@ -144,6 +151,7 @@ internal object BoardGenerationCoordinator {
                     generatedCards = if (cachedBalance == null) emptyMap() else generatedCards,
                     generatedProfessions = if (cachedBalance == null) emptyList() else generatedProfessions,
                     generatedPlaces = if (cachedBalance == null) emptyMap() else generatedPlaces,
+                    trackDefinitions = if (cachedBalance == null) emptyMap() else trackDefinitions,
                     generatedTexts = if (cachedBalance == null) emptyMap() else generatedTexts,
                 )
             }
@@ -200,9 +208,26 @@ internal object BoardGenerationCoordinator {
                     places[layer]?.size == layer.places.size
                 }
             }
-            val places = cachedPlaces ?: generator.generatePlaces().also { generated ->
+            val cachedTracks = initial.trackDefinitions.takeIf { tracks ->
+                cachedBalance != null && BoardLayer.entries.all { layer ->
+                    tracks[layer]?.cells?.size == layer.places.size
+                }
+            }
+            val tracks = cachedTracks ?: cachedPlaces?.mapValues { (layer, codes) ->
+                layer.defaultTrackDefinition().copy(
+                    cells = codes.mapIndexedNotNull { index, code ->
+                        ua.vald_zx.game.rat.race.card.shared.placeTypeOfCode(code)
+                            ?.toCellInstance("${layer.name.lowercase()}-$index")
+                    },
+                )
+            }?.takeIf { definitions ->
+                BoardLayer.entries.all { layer -> definitions[layer]?.cells?.size == layer.places.size }
+            } ?: generator.generateTracks()
+            check(legacyCellRuleRegistry().validate(tracks.values.flatMap { it.cells }) == ValidationResult.Valid)
+            val places = tracks.mapValues { (_, track) -> track.cells.map { it.toPlaceType().code() } }
+            if (cachedTracks == null) {
                 checkpoint(boardId, BoardGenerationStage.PLACES, textOffset + 1, totalUnits) {
-                    copy(generatedPlaces = generated, dreams = dreams)
+                    copy(generatedPlaces = places, trackDefinitions = tracks, dreams = dreams)
                 }
             }
             progress(boardId, BoardGenerationStage.PLACES, textOffset + 1, totalUnits)
@@ -236,6 +261,7 @@ internal object BoardGenerationCoordinator {
                     generatedCards = generatedCards,
                     generatedProfessions = professions,
                     generatedPlaces = places,
+                    trackDefinitions = tracks,
                     generatedTexts = texts,
                     generatedBalance = balance,
                     dreams = dreams,

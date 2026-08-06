@@ -1,10 +1,9 @@
 package ua.vald_zx.game.rat.race.card.shared
 
-import kotlin.math.absoluteValue
-
 class GameEngine(
     private val random: GameRandom = DefaultGameRandom,
     private val moneyService: MoneyService = sharedMoneyService,
+    private val cellRules: CellRuleRegistry = legacyCellRuleRegistry(),
 ) {
     fun execute(snapshot: GameSnapshot, envelope: GameCommandEnvelope): GameExecution {
         if (envelope.commandId.isBlank()) {
@@ -24,6 +23,7 @@ class GameEngine(
             GameCommand.CompleteRoll -> completeRoll(snapshot, envelope.playerId)
             is GameCommand.EndTurn -> endTurn(snapshot, envelope.playerId)
             GameCommand.AdvanceTurn -> advanceTurn(snapshot)
+            is GameCommand.MoveTo -> moveTo(snapshot, envelope.playerId, envelope.command.position)
         }
         if (transition is Transition.Rejected) {
             return GameExecution.Rejected(snapshot, transition.reason)
@@ -46,6 +46,10 @@ class GameEngine(
     private fun validate(snapshot: GameSnapshot, envelope: GameCommandEnvelope): GameCommandRejection? {
         if (snapshot.players.none { it.id == envelope.playerId }) return GameCommandRejection.PLAYER_NOT_FOUND
         if (snapshot.board.revision != envelope.expectedRevision) return GameCommandRejection.REVISION_CONFLICT
+        val cells = BoardLayer.entries.flatMap(snapshot.board::cellsOf)
+        if (cellRules.validate(cells) is ValidationResult.Invalid) {
+            return GameCommandRejection.INVALID_BOARD_DEFINITION
+        }
         return null
     }
 
@@ -75,13 +79,19 @@ class GameEngine(
         if (!snapshot.board.isActivePlayer(player)) return Transition.Rejected(GameCommandRejection.PLAYER_NOT_ACTIVE)
         if (!snapshot.board.diceRolling) return Transition.Rejected(GameCommandRejection.ROLL_NOT_IN_PROGRESS)
 
-        val places = snapshot.board.placesOf(player.location)
+        val cells = snapshot.board.cellsOf(player.location)
         val movementSteps = player.movementSteps(
             dice = snapshot.board.dice,
             transportMovementBonusEnabled = snapshot.board.transportMovementBonusEnabled,
         )
-        val newPosition = moveTo(player.location.position, places.size, movementSteps)
+        val newPosition = moveTo(player.location.position, cells.size, movementSteps)
         return Transition.Applied(moveAndResolve(snapshot, player, newPosition))
+    }
+
+    private fun moveTo(snapshot: GameSnapshot, playerId: String, position: Int): Transition {
+        val player = snapshot.player(playerId)
+        if (!snapshot.board.isActivePlayer(player)) return Transition.Rejected(GameCommandRejection.PLAYER_NOT_ACTIVE)
+        return Transition.Applied(moveAndResolve(snapshot, player, position))
     }
 
     private fun endTurn(snapshot: GameSnapshot, playerId: String): Transition {
@@ -97,29 +107,17 @@ class GameEngine(
 
     private fun moveAndResolve(snapshot: GameSnapshot, player: Player, newPosition: Int): RuleResult {
         val board = snapshot.board
-        val places = board.placesOf(player.location)
-        val placeCount = places.size
-        val currentPosition = player.location.position.coerceIn(0, placeCount - 1)
-        val safeNewPosition = newPosition.coerceIn(0, placeCount - 1)
-        val passedPlaces = if (currentPosition > safeNewPosition) {
-            places.subList(currentPosition + 1, placeCount) + places.subList(0, safeNewPosition + 1)
+        val cells = board.cellsOf(player.location)
+        val cellCount = cells.size
+        val currentPosition = player.location.position.coerceIn(0, cellCount - 1)
+        val safeNewPosition = newPosition.coerceIn(0, cellCount - 1)
+        val passedIndices = if (currentPosition > safeNewPosition) {
+            (currentPosition + 1 until cellCount).toList() + (0..safeNewPosition).toList()
         } else {
-            places.subList(currentPosition + 1, safeNewPosition + 1)
+            (currentPosition + 1..safeNewPosition).toList()
         }
-        val salaryPosition = passedPosition(
-            places = passedPlaces,
-            place = PlaceType.Salary,
-            currentPosition = currentPosition,
-            placeCount = placeCount,
-        )
-        val startPosition = passedPosition(
-            places = passedPlaces,
-            place = PlaceType.Start,
-            currentPosition = currentPosition,
-            placeCount = placeCount,
-        )
 
-        var result = RuleResult(
+        val initial = RuleResult(
             snapshot = snapshot.copy(
                 board = board.copy(
                     moveCount = board.moveCount + 1,
@@ -129,171 +127,45 @@ class GameEngine(
             ),
             events = listOf(DomainEvent.PlayerMoved(player.id, currentPosition, safeNewPosition)),
         )
-        var movedPlayer = player.copy(
-            location = player.location.copy(position = safeNewPosition),
-            salaryPosition = salaryPosition.takeIf { player.cashFlow() > 0 },
-            investmentPosition = safeNewPosition.takeIf { places[it] == PlaceType.Salary },
-            startCapitalization = startPosition
-                ?.takeIf { player.funds.isNotEmpty() }
-                ?.let { StartCapitalization(position = it, landed = it == safeNewPosition) },
-        )
-        if (salaryPosition != null && player.cashFlow() <= 0) {
-            result = result.withPayment(
-                player = movedPlayer,
-                amount = player.cashFlow().absoluteValue,
+        var result = TurnContext(
+            result = initial,
+            playerId = player.id,
+            cellIndex = safeNewPosition,
+            isLanding = true,
+            random = random,
+            moneyService = moneyService,
+        ).updatePlayer { it.copy(location = it.location.copy(position = safeNewPosition)) }.result
+
+        passedIndices.forEach { index ->
+            val cell = cells[index]
+            val context = TurnContext(
+                result = result,
+                playerId = player.id,
+                cellIndex = index,
+                isLanding = index == safeNewPosition,
+                random = random,
+                moneyService = moneyService,
             )
-            movedPlayer = result.snapshot.player(player.id).copy(salaryPosition = null)
+            result = cellRules.rule(cell.type).onPass(context, cell)
         }
-        result = result.withPlayer(movedPlayer)
 
-        return when (val place = places[safeNewPosition]) {
-            PlaceType.BigBusiness,
-            PlaceType.Business,
-            PlaceType.Chance,
-            PlaceType.Deputy,
-            PlaceType.Expenses,
-            PlaceType.Shopping,
-            PlaceType.Store -> {
-                val options = cardOptions(place, movedPlayer)
-                result.copy(
-                    snapshot = result.snapshot.copy(
-                        board = result.snapshot.board.copy(canTakeCard = options),
-                    ),
-                    events = result.events + DomainEvent.CardOptionsOpened(options),
-                )
-            }
-
-            PlaceType.Bankruptcy -> {
-                val business = random.choose(movedPlayer.businesses.filter { it.type != BusinessType.WORK })
-                val updated = business?.let { movedPlayer.copy(businesses = movedPlayer.businesses - it) } ?: movedPlayer
-                result.withPlayer(updated)
-                    .withNotice(business?.let(PresentationNotice::BankruptBusiness))
-                    .thenAdvance()
-            }
-
-            PlaceType.Child -> {
-                val eligible = movedPlayer.card.gender == Gender.FEMALE ||
-                        movedPlayer.card.gender == Gender.MALE && movedPlayer.isMarried
-                val updated = if (eligible) {
-                    movedPlayer.copy(
-                        babies = movedPlayer.babies + 1,
-                        cash = movedPlayer.cash + movedPlayer.config.childBenefit,
-                    )
-                } else movedPlayer
-                result.withPlayer(updated)
-                    .withNotice(
-                        if (eligible) PresentationNotice.PlayerHadBaby(updated.id, updated.babies) else null,
-                    )
-                    .thenAdvance()
-            }
-
-            PlaceType.Divorce -> {
-                val updated = movedPlayer.afterDivorce()
-                result.withPlayer(updated)
-                    .withNotice(
-                        if (updated != movedPlayer) PresentationNotice.PlayerDivorced(updated.id) else null,
-                    )
-                    .thenAdvance()
-            }
-
-            PlaceType.Resignation -> {
-                val work = movedPlayer.businesses.firstOrNull { it.type == BusinessType.WORK }
-                val updated = work?.let { movedPlayer.copy(businesses = movedPlayer.businesses - it) } ?: movedPlayer
-                result.withPlayer(updated)
-                    .withNotice(work?.let(PresentationNotice::Resignation))
-                    .thenAdvance()
-            }
-
-            PlaceType.Love -> {
-                val married = !movedPlayer.isMarried
-                val updated = if (married) movedPlayer.copy(isMarried = true) else movedPlayer
-                val marriedResult = result.withPlayer(updated)
-                    .withNotice(if (married) PresentationNotice.PlayerMarried(updated.id) else null)
-                val paidResult = if (married && updated.card.gender == Gender.MALE) {
-                    marriedResult.withPayment(updated, updated.config.marriageCost)
-                } else marriedResult
-                paidResult.thenAdvance()
-            }
-
-            PlaceType.Rest -> result
-                .withPlayer(movedPlayer.copy(inRest = movedPlayer.config.restTurnCount))
-                .thenAdvance()
-
-            is PlaceType.Desire -> {
-                val dream = board.dreamById(place.dreamId)
-                if (dream != null && dream.id !in board.purchasedDreamIds) {
-                    result.withNotice(PresentationNotice.DreamOffered)
-                } else result.thenAdvance()
-            }
-
-            PlaceType.TaxInspection -> {
-                val bribe = movedPlayer.taxInspectionBribe(board)
-                val paid = if (bribe > 0) result.withPayment(movedPlayer, bribe) else result
-                paid.withNotice(bribe.takeIf { it > 0 }?.let(PresentationNotice::TaxInspectionPaid))
-                    .thenAdvance()
-            }
-
-            PlaceType.Salary,
-            PlaceType.Start -> result.thenAdvance()
-        }
-    }
-
-    private fun RuleResult.withPayment(player: Player, amount: Long): RuleResult {
-        if (amount == 0L) return this
-        val payment = moneyService.pay(
-            account = player.financialAccount(),
-            amount = amount,
-            policy = PaymentPolicy(
-                useFunds = player.config.hasFunds,
-                loanLimit = snapshot.board.loanLimit,
+        val landedCell = cells[safeNewPosition]
+        result = cellRules.rule(landedCell.type).onLand(
+            TurnContext(
+                result = result,
+                playerId = player.id,
+                cellIndex = safeNewPosition,
+                isLanding = true,
+                random = random,
+                moneyService = moneyService,
             ),
+            landedCell,
         )
-        val updated = player.withFinancialAccount(payment.account)
-        val usedFunds = payment.events.any { it is PaymentEvent.FundsWithdrawn }
-        val paymentNotices = buildList {
-            add(PresentationNotice.CashSubtracted(amount))
-            payment.events.forEach { event ->
-                when (event) {
-                    is PaymentEvent.DepositWithdrawn -> if (!usedFunds && payment.account.loan == player.loan) {
-                        add(PresentationNotice.DepositWithdrawn(event.amount))
-                    }
-
-                    is PaymentEvent.LoanAdded -> if (!usedFunds) {
-                        add(PresentationNotice.LoanAdded(event.amount))
-                    }
-
-                    PaymentEvent.LoanLimitExceeded -> add(PresentationNotice.LoanLimitExceeded)
-                    is PaymentEvent.FundsWithdrawn -> Unit
-                }
-            }
-        }
-        return withPlayer(updated).copy(
-            events = events + DomainEvent.PaymentApplied(player.id, amount, payment.events),
-            notices = notices + paymentNotices,
-        )
-    }
-
-    private fun RuleResult.withPlayer(player: Player): RuleResult {
-        val previous = snapshot.players.firstOrNull { it.id == player.id } ?: return this
-        if (previous == player) return this
-        val updated = player.withRecentChanges(previous)
-        return copy(
-            snapshot = snapshot.copy(
-                players = snapshot.players.map { if (it.id == updated.id) updated else it },
-            ),
-            events = events + DomainEvent.PlayerChanged(updated),
-        )
-    }
-
-    private fun RuleResult.withNotice(notice: PresentationNotice?): RuleResult {
-        return if (notice == null) this else copy(notices = notices + notice)
-    }
-
-    private fun RuleResult.thenAdvance(): RuleResult {
-        val advanced = advance(snapshot)?.result ?: return this
+        if (result.turnDirective != TurnDirective.END_TURN) return result
+        val advanced = advance(result.snapshot)?.result ?: return result
         return advanced.copy(
-            events = events + advanced.events,
-            notices = notices + advanced.notices,
+            events = result.events + advanced.events,
+            notices = result.notices + advanced.notices,
         )
     }
 
@@ -319,63 +191,12 @@ class GameEngine(
             current = current.copy(board = updatedBoard)
             events += DomainEvent.TurnAdvanced(previousId, next.id)
             if (next.inRest <= 0) break
-            val rested = next.copy(inRest = next.inRest - 1).withRecentChanges(next)
+            val rested = next.copy(inRest = next.inRest - 1).withTrackedFinancialChanges(next)
             current = current.copy(players = current.players.map { if (it.id == rested.id) rested else it })
             events += DomainEvent.PlayerChanged(rested)
         }
         return Transition.Applied(RuleResult(current, events))
     }
-
-    private fun passedPosition(
-        places: List<PlaceType>,
-        place: PlaceType,
-        currentPosition: Int,
-        placeCount: Int,
-    ): Int? {
-        val index = places.indexOfLast { it == place }
-        if (index < 0) return null
-        val position = currentPosition + index + 1
-        return if (position >= placeCount) position - placeCount else position
-    }
-
-    private fun cardOptions(place: PlaceType, player: Player): List<BoardCardType> = when (place) {
-        PlaceType.BigBusiness -> listOf(BoardCardType.BigBusiness)
-        PlaceType.Business -> when {
-            player.businesses.any { it.type == BusinessType.LARGE } -> listOf(BoardCardType.BigBusiness)
-            player.businesses.any { it.type == BusinessType.MEDIUM } ->
-                listOf(BoardCardType.BigBusiness, BoardCardType.MediumBusiness)
-
-            player.businesses.any { it.type == BusinessType.SMALL } ->
-                listOf(BoardCardType.SmallBusiness, BoardCardType.MediumBusiness)
-
-            else -> listOf(BoardCardType.SmallBusiness)
-        }
-
-        PlaceType.Chance -> listOf(BoardCardType.Chance)
-        PlaceType.Deputy -> listOf(BoardCardType.Deputy)
-        PlaceType.Expenses -> listOf(BoardCardType.Expenses)
-        PlaceType.Shopping -> listOf(BoardCardType.Shopping)
-        PlaceType.Store -> listOf(BoardCardType.EventStore)
-        else -> emptyList()
-    }
-
-    private fun Player.afterDivorce(): Player {
-        if (!isMarried) return this
-        if (card.gender == Gender.FEMALE) return copy(isMarried = false)
-        val retained = config.divorceAssetRetentionPercentage
-        return copy(
-            isMarried = false,
-            babies = 0,
-            cash = cash * retained / 100,
-            deposit = deposit * retained / 100,
-        )
-    }
-
-    private fun Player.withRecentChanges(previous: Player): Player = copy(
-        lastTotals = appendRecentChange(lastTotals, previous.total(), total()),
-        lastCashFlows = appendRecentChange(lastCashFlows, previous.cashFlow(), cashFlow()),
-        lastLoans = appendRecentChange(lastLoans, previous.loan, loan),
-    )
 
     private fun Board.nextActivePlayer(players: List<Player>): Player? {
         val active = activePlayers(players)

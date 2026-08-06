@@ -70,6 +70,7 @@ val PlaceType.family: CellFamily
         PlaceType.Business, PlaceType.BigBusiness -> CellFamily.Asset
         PlaceType.Child, PlaceType.Love, PlaceType.Resignation -> CellFamily.Life
         is PlaceType.Desire -> CellFamily.Life
+        is PlaceType.Custom -> CellFamily.Life
     }
 
 @Composable
@@ -91,6 +92,7 @@ fun PlaceType.tone(): SemanticTone = when (this) {
     PlaceType.Love -> Design.semantic.love
     PlaceType.Resignation -> Design.semantic.exaltation
     is PlaceType.Desire -> Design.semantic.dream
+    is PlaceType.Custom -> Design.semantic.dream
 }
 
 @Composable

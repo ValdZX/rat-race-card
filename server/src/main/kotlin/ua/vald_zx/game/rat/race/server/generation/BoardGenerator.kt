@@ -10,10 +10,14 @@ import ua.vald_zx.game.rat.race.card.shared.GeneratedBalance
 import ua.vald_zx.game.rat.race.card.shared.PayerType
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
+import ua.vald_zx.game.rat.race.card.shared.TrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.code
+import ua.vald_zx.game.rat.race.card.shared.defaultTrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.dreamSlotIds
 import ua.vald_zx.game.rat.race.card.shared.seedFor
 import ua.vald_zx.game.rat.race.card.shared.shopTiers
+import ua.vald_zx.game.rat.race.card.shared.toCellInstance
+import ua.vald_zx.game.rat.race.card.shared.toPlaceType
 import kotlin.random.Random
 
 internal class BoardGenerator(
@@ -42,8 +46,18 @@ internal class BoardGenerator(
     }
 
     fun generatePlaces(): Map<BoardLayer, List<String>> {
+        return generateTracks().mapValues { (_, track) -> track.cells.map { it.toPlaceType().code() } }
+    }
+
+    fun generateTracks(): Map<BoardLayer, TrackDefinition> {
         if (!world.enabled) return emptyMap()
-        return BoardLayer.entries.associateWith { layer -> shuffledPlaces(layer).map { it.code() } }
+        return BoardLayer.entries.associateWith { layer ->
+            layer.defaultTrackDefinition().copy(
+                cells = shuffledPlaces(layer).mapIndexed { index, place ->
+                    place.toCellInstance("${layer.name.lowercase()}-$index")
+                },
+            )
+        }
     }
 
     fun generateDreams(): List<Dream> {

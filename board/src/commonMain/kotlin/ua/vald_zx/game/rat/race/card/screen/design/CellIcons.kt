@@ -27,6 +27,7 @@ fun PlaceType.icon(): Painter = painterResource(
         PlaceType.Love -> Res.drawable.cell_love
         PlaceType.TaxInspection -> Res.drawable.cell_tax
         is PlaceType.Desire -> Res.drawable.cell_dream
+        is PlaceType.Custom -> Res.drawable.cell_dream
     }
 )
 
