@@ -84,6 +84,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.IcDarkMode
 import ua.vald_zx.game.rat.race.card.resource.images.IcLightMode
 import ua.vald_zx.game.rat.race.card.screen.BoardListScreen
 import ua.vald_zx.game.rat.race.card.screen.board.deck.CardDialog
+import ua.vald_zx.game.rat.race.card.screen.board.deck.GenericInteractionDialog
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
@@ -695,6 +696,7 @@ fun BoardScreenContent(vm: BoardViewModel) {
             Controls(vm)
         }
         CardDialog(vm)
+        GenericInteractionDialog(vm)
     }
 }
 

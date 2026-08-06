@@ -2,6 +2,7 @@ package ua.vald_zx.game.rat.race.card.shared
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class GameSnapshot(
@@ -39,6 +40,17 @@ sealed interface GameCommand {
     @Serializable
     @SerialName("moveTo")
     data class MoveTo(val position: Int) : GameCommand
+
+    @Serializable
+    @SerialName("startCard")
+    data class StartCard(val definition: CardDefinition) : GameCommand
+
+    @Serializable
+    @SerialName("chooseInteraction")
+    data class ChooseInteraction(
+        val interactionId: String,
+        val input: JsonObject,
+    ) : GameCommand
 }
 
 sealed interface DomainEvent {
@@ -107,6 +119,11 @@ enum class GameCommandRejection {
     NO_ACTIVE_PLAYERS,
     COMMAND_NOT_AVAILABLE,
     INVALID_BOARD_DEFINITION,
+    CARD_NOT_AVAILABLE,
+    INVALID_CARD_DEFINITION,
+    INTERACTION_NOT_FOUND,
+    INTERACTION_NOT_OWNED,
+    INVALID_INTERACTION_INPUT,
 }
 
 @Serializable

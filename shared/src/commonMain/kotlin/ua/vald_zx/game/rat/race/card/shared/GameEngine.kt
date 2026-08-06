@@ -4,7 +4,10 @@ class GameEngine(
     private val random: GameRandom = DefaultGameRandom,
     private val moneyService: MoneyService = sharedMoneyService,
     private val cellRules: CellRuleRegistry = legacyCellRuleRegistry(),
+    effectHandlers: EffectHandlerRegistry = standardEffectHandlerRegistry(),
 ) {
+    private val cardDefinitions = CardDefinitionEngine(effectHandlers)
+
     fun execute(snapshot: GameSnapshot, envelope: GameCommandEnvelope): GameExecution {
         if (envelope.commandId.isBlank()) {
             return GameExecution.Rejected(snapshot, GameCommandRejection.EMPTY_COMMAND_ID)
@@ -24,6 +27,13 @@ class GameEngine(
             is GameCommand.EndTurn -> endTurn(snapshot, envelope.playerId)
             GameCommand.AdvanceTurn -> advanceTurn(snapshot)
             is GameCommand.MoveTo -> moveTo(snapshot, envelope.playerId, envelope.command.position)
+            is GameCommand.StartCard -> startCard(snapshot, envelope.playerId, envelope.command.definition)
+            is GameCommand.ChooseInteraction -> chooseInteraction(
+                snapshot,
+                envelope.playerId,
+                envelope.command.interactionId,
+                envelope.command.input,
+            )
         }
         if (transition is Transition.Rejected) {
             return GameExecution.Rejected(snapshot, transition.reason)
@@ -103,6 +113,49 @@ class GameEngine(
     private fun advanceTurn(snapshot: GameSnapshot): Transition {
         val advanced = advance(snapshot) ?: return Transition.Rejected(GameCommandRejection.NO_ACTIVE_PLAYERS)
         return advanced
+    }
+
+    private fun startCard(snapshot: GameSnapshot, playerId: String, definition: CardDefinition): Transition {
+        val player = snapshot.player(playerId)
+        if (!snapshot.board.isActivePlayer(player)) return Transition.Rejected(GameCommandRejection.PLAYER_NOT_ACTIVE)
+        return cardTransition(cardDefinitions.start(snapshot, playerId, definition, random, moneyService))
+    }
+
+    private fun chooseInteraction(
+        snapshot: GameSnapshot,
+        playerId: String,
+        interactionId: String,
+        input: kotlinx.serialization.json.JsonObject,
+    ): Transition {
+        val player = snapshot.player(playerId)
+        if (!snapshot.board.isActivePlayer(player)) return Transition.Rejected(GameCommandRejection.PLAYER_NOT_ACTIVE)
+        return cardTransition(
+            cardDefinitions.choose(snapshot, playerId, interactionId, input, random, moneyService),
+        )
+    }
+
+    private fun cardTransition(resolution: CardResolution): Transition = when (resolution) {
+        is CardResolution.Applied -> {
+            val result = resolution.result
+            if (result.turnDirective != TurnDirective.END_TURN) {
+                Transition.Applied(result)
+            } else {
+                val advanced = advance(result.snapshot)?.result
+                    ?: return Transition.Rejected(GameCommandRejection.NO_ACTIVE_PLAYERS)
+                Transition.Applied(
+                    advanced.copy(
+                        events = result.events + advanced.events,
+                        notices = result.notices + advanced.notices,
+                    ),
+                )
+            }
+        }
+
+        CardResolution.NotAvailable -> Transition.Rejected(GameCommandRejection.CARD_NOT_AVAILABLE)
+        CardResolution.InvalidDefinition -> Transition.Rejected(GameCommandRejection.INVALID_CARD_DEFINITION)
+        CardResolution.InteractionNotFound -> Transition.Rejected(GameCommandRejection.INTERACTION_NOT_FOUND)
+        CardResolution.InteractionNotOwned -> Transition.Rejected(GameCommandRejection.INTERACTION_NOT_OWNED)
+        CardResolution.InvalidInput -> Transition.Rejected(GameCommandRejection.INVALID_INTERACTION_INPUT)
     }
 
     private fun moveAndResolve(snapshot: GameSnapshot, player: Player, newPosition: Int): RuleResult {
@@ -187,6 +240,8 @@ class GameEngine(
                 canTakeCard = emptyList(),
                 auction = null,
                 bidList = emptyList(),
+                activeCardDefinitionId = null,
+                pendingInteractions = emptyList(),
             )
             current = current.copy(board = updatedBoard)
             events += DomainEvent.TurnAdvanced(previousId, next.id)

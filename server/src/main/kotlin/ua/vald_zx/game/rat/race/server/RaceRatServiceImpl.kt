@@ -316,7 +316,8 @@ class RaceRatServiceImpl(
             envelope.playerId != playerId ||
             envelope.command == GameCommand.CompleteRoll ||
             envelope.command == GameCommand.AdvanceTurn ||
-            envelope.command is GameCommand.MoveTo
+            envelope.command is GameCommand.MoveTo ||
+            envelope.command is GameCommand.StartCard
         ) {
             return GameCommandResponse(
                 status = GameCommandStatus.REJECTED,
@@ -476,6 +477,12 @@ class RaceRatServiceImpl(
 
     private suspend fun selectCard(cardId: Int, cardType: BoardCardType) {
         updateBoard { takeFromDeck(cardId, cardType) }
+        val link = CardLink(cardType, cardId)
+        val definition = board().cardOrNull(link)?.toCardDefinition(link) ?: return
+        val execution = gameApplicationService.execute(
+            compatibilityEnvelope(GameCommand.StartCard(definition)),
+        ) ?: return
+        publish(execution)
     }
 
     override suspend fun selectCardByNo(cardId: Int, cardType: BoardCardType) {
@@ -1322,6 +1329,8 @@ suspend fun nextPlayer(board: Board) {
         canRoll = true,
         diceRolling = false,
         takenCard = null,
+        activeCardDefinitionId = null,
+        pendingInteractions = emptyList(),
         sharesCount = null,
         canTakeCard = emptyList(),
         auction = null,

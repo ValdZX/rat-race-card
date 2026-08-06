@@ -6,6 +6,7 @@ import io.github.aakira.napier.Napier
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.json.JsonObject
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
 import ua.vald_zx.game.rat.race.card.GameSound
 import ua.vald_zx.game.rat.race.card.play
@@ -171,6 +172,7 @@ class BoardViewModel(
     private var observationJob: Job? = null
     private var pingJob: Job? = null
     private var reconnectJob: Job? = null
+    private var commandSequence = 0L
 
     private fun safeLaunch(
         needProgress: Boolean = true,
@@ -617,6 +619,28 @@ class BoardViewModel(
     fun selectCard(cardType: BoardCardType) {
         safeLaunch {
             takeCard(cardType)
+        }
+    }
+
+    fun chooseInteraction(interactionId: String, input: JsonObject) {
+        val state = uiState.value
+        val commandId = buildString {
+            append(state.player.id)
+            append(':')
+            append(Clock.System.now().toEpochMilliseconds())
+            append(':')
+            append(commandSequence++)
+        }
+        safeLaunch {
+            executeCommand(
+                GameCommandEnvelope(
+                    commandId = commandId,
+                    boardId = state.board.id,
+                    playerId = state.player.id,
+                    expectedRevision = state.board.revision,
+                    command = GameCommand.ChooseInteraction(interactionId, input),
+                ),
+            )
         }
     }
 

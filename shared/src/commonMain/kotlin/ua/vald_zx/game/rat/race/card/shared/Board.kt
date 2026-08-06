@@ -27,6 +27,8 @@ data class Board(
     val cards: Map<BoardCardType, List<Int>>,
     val canTakeCard: List<BoardCardType> = emptyList(),
     val takenCard: CardLink? = null,
+    val activeCardDefinitionId: String? = null,
+    val pendingInteractions: List<PendingInteraction> = emptyList(),
     val sharesCount: Long? = null,
     val discard: Map<BoardCardType, List<Int>> = emptyMap(),
     val playerIds: Set<String> = emptySet(),
