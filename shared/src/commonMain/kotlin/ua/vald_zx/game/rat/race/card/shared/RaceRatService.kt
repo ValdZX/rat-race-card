@@ -27,6 +27,12 @@ sealed class GlobalEvent {
 
     @Serializable
     data class PlayerWon(val playerId: String, val playerName: String) : GlobalEvent()
+
+    @Serializable
+    data class EconomyPeriodAdvanced(val index: EconomyIndex) : GlobalEvent()
+
+    @Serializable
+    data class MarketCrashed(val playerId: String, val sector: String, val lostValue: Long) : GlobalEvent()
 }
 
 @Serializable
@@ -111,6 +117,15 @@ sealed class Event {
 
     @Serializable
     data class PlayerWon(val playerId: String, val playerName: String) : Event()
+
+    @Serializable
+    data class EconomyPeriodAdvanced(val index: EconomyIndex) : Event()
+
+    @Serializable
+    data class MarketCrashed(val sector: String, val lostValue: Long) : Event()
+
+    @Serializable
+    data class ScamResolved(val paid: Long, val received: Long) : Event()
 }
 
 @Serializable
@@ -134,11 +149,13 @@ interface RaceRatService {
         transportMovementBonusEnabled: Boolean = true,
         generation: BoardGeneration = BoardGeneration(),
         contentPackVersions: Map<FeatureId, Int> = standardContentPackVersions(),
+        inflation: InflationSettings = InflationSettings(),
     ): Board
 
     suspend fun updateAttributes(attrs: PlayerAttributes)
     suspend fun getPlayer(): Player
     suspend fun executeCommand(envelope: GameCommandEnvelope): GameCommandResponse
+    suspend fun getLedger(): List<LedgerEntry>
     fun observeGeneration(): Flow<BoardGenerationProgress>
     suspend fun continueGeneration()
     suspend fun restartGeneration()
@@ -177,6 +194,9 @@ interface RaceRatService {
     suspend fun buyEstate(estate: Estate)
     suspend fun buyLand(land: Land)
     suspend fun randomJob(card: BoardCard.Chance.RandomJob)
+    suspend fun investInScam(card: BoardCard.Chance.Scam)
+    suspend fun declineScam()
+    suspend fun applyMarketCrash(card: BoardCard.EventStore.MarketCrash)
     suspend fun buyShares(shares: Shares, totalCount: Long)
     suspend fun selectCardByNo(cardId: Int, cardType: BoardCardType)
     suspend fun debugMoveToAndSelectCard(cardId: Int, cardType: BoardCardType)

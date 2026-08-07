@@ -111,6 +111,11 @@ private val generatedBalanceFields = setOf(
     "corruptBusinessSalePercentages",
     "corruptLandSalePercentages",
     "strayAnimalPercentage",
+    "scamPrices",
+    "scamPromisedReturnPercentages",
+    "scamSuccessPercentage",
+    "crashSectorDropPercentages",
+    "crashMarketDropPercentages",
     "depositRate",
     "loanRate",
     "babyRecurringCost",
@@ -189,6 +194,8 @@ Mechanics the balance must support:
 - Some market events force every owner to sell all shares of one company. forcedShareSalePrices are always below every sharePrices purchase price: a loss, but never zero.
 - Corrupt deals from Chance require deputies and are substantially better than regular assets. A corrupt business yields either recurring profit or one immediate payout, never both. Market corruption events let owners sell previously acquired recurring corrupt businesses or corrupt land at a profit; they never sell a new asset to the player.
 - Business extension raises one small business's recurring profit. Reelection changes the deputies.
+- Every company belongs to one sector. A market crash event marks down every holding at once: companies in the struck sector lose crashSectorDropPercentages, all other companies lose the smaller crashMarketDropPercentages. Nobody may opt out, so a concentrated portfolio is punished and a spread one survives.
+- A Chance scam promises an implausible immediate return for an upfront payment, but pays out only scamSuccessPercentage of the time. It must be a losing bet on average; players are meant to learn to refuse it.
 - Deposits yield depositRate percent income; loans add loanRate percent expense. Children, cars, apartments, houses, yachts, and planes add their recurring costs.
 - Marriage marries the player; a man pays marriageCost. Child adds a child to a woman or married man, pays childBenefit, and raises recurring expenses.
 - Divorce ends marriage; a man keeps divorceAssetRetentionPercentage of his cash and deposit but loses his children. Bankruptcy removes a random business, resignation removes the job, and rest skips restTurnCount turns.
@@ -203,6 +210,11 @@ private val BALANCE_REQUIREMENTS = """
 Required constraints:
 - salaries: at least 10 unique amounts.
 - shares: at least 6 unique companies; every id, ticker, uk name, and en name is unique.
+- Every share carries a sector from exactly this list: core.energy, core.industry, core.consumer, core.realty, core.agro, core.tech. Use at least 3 different sectors, and never put all but one company in the same sector.
+- scamPromisedReturnPercentages: 150..900, the promised payout as a percentage of the amount staked. scamSuccessPercentage: 1..20.
+- The best case max(scamPromisedReturnPercentages) × scamSuccessPercentage must stay below 10000, so fraud loses money on average.
+- min(scamPrices) must be below max(sharePrices), so the offer looks affordable next to honest instruments.
+- crashSectorDropPercentages: 30..80. crashMarketDropPercentages: 1..30 and strictly below every crashSectorDropPercentages value.
 - Each share id matches [a-z][a-z0-9_-]{1,31}: lowercase ASCII letters, digits, _ or - only.
 - Each ticker has 2..8 non-whitespace characters.
 - Every other numeric array has at least 3 unique values.
@@ -257,7 +269,7 @@ private val BALANCE_SCHEMA = """
   "shopWeights":{"ANIMAL":10,"AUTO":30,"APARTMENT":25,"HOUSE":20,"YACHT":10,"FLY":5},
   "expensePrices":[...], "randomJobProfits":[...],
   "estatePrices":[...], "estateSalePercentages":[...],
-  "shares":[{"id":"ascii_id","ticker":"CODE","names":{"uk":"...","en":"..."}}],
+  "shares":[{"id":"ascii_id","ticker":"CODE","names":{"uk":"...","en":"..."},"sector":"core.energy"}],
   "sharePrices":[...], "forcedShareSalePrices":[...], "shareCounts":[...],
   "businessExtensionProfits":[...], "landAreas":[...],
   "landPricePerUnit":[...], "eventLandPricePercentages":[...],
@@ -266,6 +278,8 @@ private val BALANCE_SCHEMA = """
   "corruptLandPricePerUnit":[...], "corruptLandAreas":[...], "corruptLandSalePercentages":[...], "corruptLandDeputies":[...],
   "corruptDeputyPercentage":49, "corruptOneTimePercentage":30, "forcedShareSalePercentage":20,
   "strayAnimalPercentage":10,
+  "scamPrices":[...], "scamPromisedReturnPercentages":[...], "scamSuccessPercentage":10,
+  "crashSectorDropPercentages":[...], "crashMarketDropPercentages":[...],
   "depositRate":2, "loanRate":10,
   "babyRecurringCost":300, "carRecurringCost":600, "apartmentRecurringCost":200,
   "houseRecurringCost":1000, "yachtRecurringCost":1500, "planeRecurringCost":5000,
@@ -275,8 +289,8 @@ private val BALANCE_SCHEMA = """
   "restTurnCount":2, "divorceAssetRetentionPercentage":50,
   "carMovementBonus":1, "planeMovementBonus":2,
   "dreamMinPrice":1000000, "dreamMaxPrice":20000000,
-  "chanceWeights":{"randomJob":30,"estate":25,"land":30,"shares":35,"corruptBusiness":13,"corruptLand":5},
-  "eventWeights":{"land":26,"estate":15,"shares":45,"businessExtending":20,"reelection":2,"announcement":4,"corruptBusiness":13,"corruptLand":5},
+  "chanceWeights":{"randomJob":30,"estate":25,"land":30,"shares":35,"corruptBusiness":13,"corruptLand":5,"scam":8},
+  "eventWeights":{"land":26,"estate":15,"shares":45,"businessExtending":20,"reelection":2,"announcement":4,"corruptBusiness":13,"corruptLand":5,"marketCrash":6},
   "loanLimit":10000, "businessLimit":10, "transportMovementBonusEnabled":true,
   "outerCircleMinimumCashFlow":50000, "outerCircleMinimumAccountBalance":200000,
   "outerCircleApartmentRequired":true, "outerCircleCarRequired":true,

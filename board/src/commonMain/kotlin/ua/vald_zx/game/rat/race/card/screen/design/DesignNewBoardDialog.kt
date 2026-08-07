@@ -15,6 +15,7 @@ import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.getDigits
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
+import ua.vald_zx.game.rat.race.card.shared.InflationSettings
 import ua.vald_zx.game.rat.race.card.shared.OuterCircleConditions
 import ua.vald_zx.game.rat.race.card.shared.VictoryConditions
 
@@ -29,6 +30,7 @@ fun DesignNewBoardDialog(
         outerCircleConditions: OuterCircleConditions,
         victoryConditions: VictoryConditions,
         generation: BoardGeneration,
+        inflation: InflationSettings,
     ) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
@@ -43,6 +45,9 @@ fun DesignNewBoardDialog(
     var dreamRequired by remember { mutableStateOf(true) }
     var planeRequired by remember { mutableStateOf(true) }
     var estateRequired by remember { mutableStateOf(true) }
+    var inflationEnabled by remember { mutableStateOf(false) }
+    var inflationRate by remember { mutableStateOf("5") }
+    var salaryIndexation by remember { mutableStateOf("50") }
     var generateCards by remember { mutableStateOf(false) }
     var theme by remember { mutableStateOf("") }
     var locality by remember { mutableStateOf("") }
@@ -85,6 +90,15 @@ fun DesignNewBoardDialog(
                     locality = locality.trim(),
                     epoch = epoch.trim(),
                 ),
+                if (inflationEnabled) {
+                    InflationSettings(
+                        enabled = true,
+                        periodRatePercent = inflationRate.toLongOrNull() ?: 0,
+                        salaryIndexationPercent = salaryIndexation.toLongOrNull() ?: 0,
+                    )
+                } else {
+                    InflationSettings()
+                },
             )
         },
         dismissLabel = stringResource(Res.string.cancel),
@@ -101,6 +115,23 @@ fun DesignNewBoardDialog(
                 onValueChange = { name = it },
                 label = stringResource(Res.string.table_name),
             )
+            DesignSectionTitle(stringResource(Res.string.inflation))
+            DesignToggleRow(
+                label = stringResource(Res.string.inflation_enabled),
+                checked = inflationEnabled,
+                onCheckedChange = { inflationEnabled = it },
+            )
+            Text(
+                text = stringResource(Res.string.inflation_hint),
+                style = Design.type.label,
+                color = Design.scaffold.onSurfaceMuted,
+            )
+            if (inflationEnabled) {
+                PercentField(stringResource(Res.string.inflation_rate), inflationRate) { inflationRate = it }
+                PercentField(stringResource(Res.string.salary_indexation_rate), salaryIndexation) {
+                    salaryIndexation = it
+                }
+            }
             DesignSectionTitle(stringResource(Res.string.generated_deck))
             DesignToggleRow(
                 label = stringResource(Res.string.generate_cards),
@@ -188,5 +219,15 @@ private fun AmountField(label: String, value: String, onValueChange: (String) ->
         label = label,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         visualTransformation = AmountTransformation,
+    )
+}
+
+@Composable
+private fun PercentField(label: String, value: String, onValueChange: (String) -> Unit) {
+    DesignTextField(
+        value = value,
+        onValueChange = { onValueChange(it.getDigits().take(3)) },
+        label = label,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
     )
 }

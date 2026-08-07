@@ -23,6 +23,7 @@ import ua.vald_zx.game.rat.race.card.screen.board.InitPlayerScreen
 import ua.vald_zx.game.rat.race.card.screen.board.cards.decks
 import ua.vald_zx.game.rat.race.card.shared.BoardId
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
+import ua.vald_zx.game.rat.race.card.shared.InflationSettings
 import ua.vald_zx.game.rat.race.card.shared.OuterCircleConditions
 import ua.vald_zx.game.rat.race.card.shared.VictoryConditions
 
@@ -76,8 +77,8 @@ class BoardListScreen : Screen {
                 }
             }
         }
-        val createBoard: (String, Long, Long, Boolean, OuterCircleConditions, VictoryConditions, BoardGeneration) -> Unit =
-            { name, loanLimit, businessLimit, transportBonus, outerCircle, victory, generation ->
+        val createBoard: (String, Long, Long, Boolean, OuterCircleConditions, VictoryConditions, BoardGeneration, InflationSettings) -> Unit =
+            { name, loanLimit, businessLimit, transportBonus, outerCircle, victory, generation, inflation ->
                 coroutineScope.launch {
                     isProgressVisible = true
                     try {
@@ -91,6 +92,7 @@ class BoardListScreen : Screen {
                                 victoryConditions = victory,
                                 transportMovementBonusEnabled = transportBonus,
                                 generation = generation,
+                                inflation = inflation,
                             )
                         }
                         navigator.push(InitPlayerScreen(board))

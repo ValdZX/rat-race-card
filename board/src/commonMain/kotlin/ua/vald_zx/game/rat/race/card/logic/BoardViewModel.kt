@@ -148,6 +148,9 @@ sealed class BoardUiAction {
     data object DreamOffered : BoardUiAction()
     data object ServerRequestFailed : BoardUiAction()
     data class PlayerWon(val playerName: String, val isCurrentPlayer: Boolean) : BoardUiAction()
+    data class InflationRaised(val index: EconomyIndex) : BoardUiAction()
+    data class ScamResolved(val paid: Long, val received: Long) : BoardUiAction()
+    data class MarketCrashed(val sector: String, val lostValue: Long) : BoardUiAction()
 }
 
 class BoardViewModel(
@@ -396,6 +399,18 @@ class BoardViewModel(
                             )
                         )
                     }
+
+                    is Event.EconomyPeriodAdvanced -> {
+                        _actions.send(InflationRaised(event.index))
+                    }
+
+                    is Event.ScamResolved -> {
+                        _actions.send(ScamResolved(event.paid, event.received))
+                    }
+
+                    is Event.MarketCrashed -> {
+                        _actions.send(MarketCrashed(event.sector, event.lostValue))
+                    }
                 }
             }
             error("Server event stream completed")
@@ -537,6 +552,31 @@ class BoardViewModel(
     fun passEstate() {
         safeLaunch {
             passEstate()
+        }
+    }
+
+    suspend fun loadDebrief(): GameDebrief = runCatching {
+        GameDebrief(
+            playerId = uiState.value.player.id,
+            entries = serviceProvider().getLedger().filter { it.playerId == uiState.value.player.id },
+        )
+    }.getOrElse { GameDebrief(uiState.value.player.id, emptyList()) }
+
+    fun investInScam(card: BoardCard.Chance.Scam) {
+        safeLaunch {
+            investInScam(card)
+        }
+    }
+
+    fun declineScam() {
+        safeLaunch {
+            declineScam()
+        }
+    }
+
+    fun applyMarketCrash(card: BoardCard.EventStore.MarketCrash) {
+        safeLaunch {
+            applyMarketCrash(card)
         }
     }
 

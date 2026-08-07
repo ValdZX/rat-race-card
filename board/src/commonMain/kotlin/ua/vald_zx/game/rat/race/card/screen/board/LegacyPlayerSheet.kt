@@ -243,6 +243,8 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                         outerCircleConditions = state.board.outerCircleConditions,
                         victoryConditions = state.board.victoryConditions,
                         loanLimit = state.board.loanLimit,
+                        inflation = state.board.inflation,
+                        economy = state.board.economy,
                     )
                     1 -> BusinessListPage(player)
                     2 -> SharesPage(player, state.board)

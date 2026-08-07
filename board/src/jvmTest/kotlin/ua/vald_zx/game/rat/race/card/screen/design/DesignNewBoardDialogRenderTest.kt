@@ -22,6 +22,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.shared.InflationSettings
 import ua.vald_zx.game.rat.race.card.shared.OuterCircleConditions
 import ua.vald_zx.game.rat.race.card.shared.VictoryConditions
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -42,6 +43,7 @@ class DesignNewBoardDialogRenderTest {
         val transportBonus: Boolean,
         val outerCircle: OuterCircleConditions,
         val victory: VictoryConditions,
+        val inflation: InflationSettings,
     )
 
     @Test
@@ -58,8 +60,8 @@ class DesignNewBoardDialogRenderTest {
                 ) {
                     DesignNewBoardDialog(
                         onDismiss = {},
-                        onCreate = { name, loan, business, bonus, outer, victory, _ ->
-                            created = Created(name, loan, business, bonus, outer, victory)
+                        onCreate = { name, loan, business, bonus, outer, victory, _, inflation ->
+                            created = Created(name, loan, business, bonus, outer, victory, inflation)
                         },
                     )
                 }
@@ -85,6 +87,34 @@ class DesignNewBoardDialogRenderTest {
         assertEquals(10_000_000L, result.victory.minimumAccountBalance)
         assertTrue(result.victory.dreamRequired)
         assertEquals(false, result.victory.planeRequired)
+        assertEquals(InflationSettings(), result.inflation)
+    }
+
+    @Test
+    fun inflationSettingsTravelToTheServerCall() = runComposeUiTest {
+        var created: Created? = null
+        setContent {
+            AppTheme(forceDark = true) {
+                Box(Modifier.width(420.dp).background(Design.scaffold.background).padding(12.dp)) {
+                    DesignNewBoardDialog(
+                        onDismiss = {},
+                        onCreate = { name, loan, business, bonus, outer, victory, _, inflation ->
+                            created = Created(name, loan, business, bonus, outer, victory, inflation)
+                        },
+                    )
+                }
+            }
+        }
+        waitForIdle()
+
+        onAllNodes(hasSetTextAction()).onFirst().performTextInput("Інфляційна партія")
+        onNodeWithText("Enable inflation").performScrollTo().performClick()
+        onNodeWithText("Create Table").performClick()
+
+        val inflation = requireNotNull(created).inflation
+        assertTrue(inflation.enabled)
+        assertEquals(5L, inflation.periodRatePercent)
+        assertEquals(50L, inflation.salaryIndexationPercent)
     }
 
     @Test
@@ -99,7 +129,7 @@ class DesignNewBoardDialogRenderTest {
                         .testTag("dialog")
                         .padding(12.dp)
                 ) {
-                    DesignNewBoardDialog(onDismiss = {}, onCreate = { _, _, _, _, _, _, _ -> })
+                    DesignNewBoardDialog(onDismiss = {}, onCreate = { _, _, _, _, _, _, _, _ -> })
                 }
             }
         }

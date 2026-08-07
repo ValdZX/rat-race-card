@@ -5,6 +5,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.CardText
 import ua.vald_zx.game.rat.race.card.shared.PayerType
+import ua.vald_zx.game.rat.race.card.shared.ShareSectors
 import ua.vald_zx.game.rat.race.card.shared.ShopType
 import ua.vald_zx.game.rat.race.card.shared.seedFor
 import kotlin.math.absoluteValue
@@ -138,6 +139,9 @@ internal fun BoardCard.brief(shareNames: Map<String, String>): String = when (th
     is BoardCard.EventStore.Land -> "landowners may sell any area at $price per unit or decline"
     is BoardCard.EventStore.Estate -> "property owners may sell selected properties at $price each or decline"
     is BoardCard.EventStore.BusinessExtending -> "the active player adds $profit recurring income to one random small business; no effect without one"
+    is BoardCard.EventStore.MarketCrash ->
+        "a crash in the ${sector.promptSector()} sector: those holdings lose $sectorDropPercentage percent of their " +
+                "value while every other sector loses $marketDropPercentage percent; nobody can opt out"
     is BoardCard.EventStore.Reelection -> "reelection: every player loses all deputies"
     is BoardCard.EventStore.Announcement -> "market news with no direct financial effect"
     is BoardCard.EventStore.CorruptBusiness ->
@@ -145,6 +149,10 @@ internal fun BoardCard.brief(shareNames: Map<String, String>): String = when (th
     is BoardCard.EventStore.CorruptLand ->
         "owners may sell any amount of previously acquired corrupt land at $price per area unit or decline"
     is BoardCard.Chance.RandomJob -> "the player immediately receives $profit one-time income"
+    is BoardCard.Chance.Scam ->
+        "a too-good-to-be-true offer: pay $price now and it promises $promisedProfit back almost immediately, " +
+                "which is a $promisedReturnPercentage percent return; it is a fraud and only pays out " +
+                "$successPercentage percent of the time"
     is BoardCard.Chance.Land -> "buy land of area $area for $price"
     is BoardCard.Chance.Estate -> "buy one property for $price"
     is BoardCard.Chance.Shares -> "buy up to $maxCount ${shareNames[sharesType] ?: sharesType} shares at $price each"
@@ -154,6 +162,16 @@ internal fun BoardCard.brief(shareNames: Map<String, String>): String = when (th
         "spend $deputies deputies and $price for a corrupt business with $profit recurring income"
     }
     is BoardCard.Chance.CorruptLand -> "spend $deputies deputies and $price for corrupt land of area $area"
+}
+
+internal fun String.promptSector(): String = when (this) {
+    ShareSectors.ENERGY -> "energy"
+    ShareSectors.INDUSTRY -> "heavy industry"
+    ShareSectors.CONSUMER -> "consumer goods and retail"
+    ShareSectors.REALTY -> "construction and real estate"
+    ShareSectors.AGRO -> "agriculture"
+    ShareSectors.TECH -> "technology"
+    else -> this
 }
 
 internal fun ShopType.promptAsset(): String = when (this) {

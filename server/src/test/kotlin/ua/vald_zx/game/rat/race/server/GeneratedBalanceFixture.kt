@@ -4,6 +4,7 @@ import ua.vald_zx.game.rat.race.card.shared.GeneratedBalance
 import ua.vald_zx.game.rat.race.card.shared.GeneratedChanceWeights
 import ua.vald_zx.game.rat.race.card.shared.GeneratedEventWeights
 import ua.vald_zx.game.rat.race.card.shared.GeneratedShare
+import ua.vald_zx.game.rat.race.card.shared.ShareSectors
 import ua.vald_zx.game.rat.race.card.shared.ShopType
 
 internal fun testBalance() = GeneratedBalance(
@@ -40,12 +41,12 @@ internal fun testBalance() = GeneratedBalance(
     estatePrices = listOf(50_000, 60_000, 75_000, 90_000),
     estateSalePercentages = listOf(60, 90, 110, 150),
     shares = listOf(
-        GeneratedShare("aerolith", "AERO", mapOf("uk" to "Аероліт", "en" to "Aerolith")),
-        GeneratedShare("mars_water", "H2OM", mapOf("uk" to "Вода Марса", "en" to "Mars Water")),
-        GeneratedShare("red_harvest", "RHAR", mapOf("uk" to "Червоні жнива", "en" to "Red Harvest")),
-        GeneratedShare("orbital_forge", "ORBF", mapOf("uk" to "Орбітальна кузня", "en" to "Orbital Forge")),
-        GeneratedShare("dust_transit", "DUST", mapOf("uk" to "Пиловий транзит", "en" to "Dust Transit")),
-        GeneratedShare("ares_signal", "ASIG", mapOf("uk" to "Сигнал Ареса", "en" to "Ares Signal")),
+        GeneratedShare("aerolith", "AERO", mapOf("uk" to "Аероліт", "en" to "Aerolith"), ShareSectors.INDUSTRY),
+        GeneratedShare("mars_water", "H2OM", mapOf("uk" to "Вода Марса", "en" to "Mars Water"), ShareSectors.ENERGY),
+        GeneratedShare("red_harvest", "RHAR", mapOf("uk" to "Червоні жнива", "en" to "Red Harvest"), ShareSectors.AGRO),
+        GeneratedShare("orbital_forge", "ORBF", mapOf("uk" to "Орбітальна кузня", "en" to "Orbital Forge"), ShareSectors.INDUSTRY),
+        GeneratedShare("dust_transit", "DUST", mapOf("uk" to "Пиловий транзит", "en" to "Dust Transit"), ShareSectors.CONSUMER),
+        GeneratedShare("ares_signal", "ASIG", mapOf("uk" to "Сигнал Ареса", "en" to "Ares Signal"), ShareSectors.TECH),
     ),
     sharePrices = listOf(5, 10, 20, 50, 100, 300, 500),
     forcedShareSalePrices = listOf(1, 2, 3, 4),
@@ -66,6 +67,11 @@ internal fun testBalance() = GeneratedBalance(
     corruptDeputyPercentage = 49,
     corruptOneTimePercentage = 30,
     forcedShareSalePercentage = 20,
+    scamPrices = listOf(100L, 250L, 400L),
+    scamPromisedReturnPercentages = listOf(300L, 500L, 800L),
+    scamSuccessPercentage = 10,
+    crashSectorDropPercentages = listOf(40L, 55L, 70L),
+    crashMarketDropPercentages = listOf(5L, 10L, 20L),
     strayAnimalPercentage = 10,
     depositRate = 2,
     loanRate = 10,
@@ -91,8 +97,8 @@ internal fun testBalance() = GeneratedBalance(
     planeMovementBonus = 4,
     dreamMinPrice = 1_000_000,
     dreamMaxPrice = 20_000_000,
-    chanceWeights = GeneratedChanceWeights(30, 25, 30, 35, 13, 5),
-    eventWeights = GeneratedEventWeights(26, 15, 45, 20, 2, 4),
+    chanceWeights = GeneratedChanceWeights(30, 25, 30, 35, 13, 5, 8),
+    eventWeights = GeneratedEventWeights(26, 15, 45, 20, 2, 4, marketCrash = 6),
     loanLimit = 10_000,
     businessLimit = 10,
     transportMovementBonusEnabled = true,

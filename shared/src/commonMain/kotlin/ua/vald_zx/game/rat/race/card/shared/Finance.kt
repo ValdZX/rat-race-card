@@ -23,6 +23,8 @@ data class FinancialAccount(
     }
 }
 
+const val NEUTRAL_INDEX_PERCENT = 100L
+
 data class FinancialSnapshot(
     val account: FinancialAccount,
     val activeIncome: List<Long>,
@@ -31,10 +33,17 @@ data class FinancialSnapshot(
     val recurringExpenses: List<Long>,
     val depositRate: Long,
     val loanRate: Long,
+    val salaryIncome: List<Long> = emptyList(),
+    val priceIndexPercent: Long = NEUTRAL_INDEX_PERCENT,
+    val salaryIndexPercent: Long = NEUTRAL_INDEX_PERCENT,
 ) {
     fun balance(): Long = account.cash + account.deposit + account.funds.sumOf { it.amount }
 
-    fun activeProfit(): Long = activeIncome.sum()
+    fun salaryProfit(): Long = applyIndex(salaryIncome.sum(), salaryIndexPercent)
+
+    fun businessProfit(): Long = applyIndex(activeIncome.sum(), priceIndexPercent)
+
+    fun activeProfit(): Long = salaryProfit() + businessProfit()
 
     fun passiveProfit(): Long = ((account.deposit / 100.0) * depositRate).toLong()
 
@@ -42,11 +51,18 @@ data class FinancialSnapshot(
 
     fun creditExpenses(): Long = ((account.loan / 100.0) * loanRate).toLong()
 
-    fun totalExpenses(): Long = baseExpenses.sum() + recurringExpenses.sum() + creditExpenses()
+    fun livingExpenses(): Long = applyIndex(baseExpenses.sum() + recurringExpenses.sum(), priceIndexPercent)
+
+    fun totalExpenses(): Long = livingExpenses() + creditExpenses()
 
     fun cashFlow(): Long = totalProfit() - totalExpenses()
 
     fun total(): Long = balance() + assetValues.sum() - account.loan
+}
+
+internal fun applyIndex(amount: Long, indexPercent: Long): Long {
+    if (indexPercent == NEUTRAL_INDEX_PERCENT) return amount
+    return ((amount / 100.0) * indexPercent).toLong()
 }
 
 data class PaymentPolicy(

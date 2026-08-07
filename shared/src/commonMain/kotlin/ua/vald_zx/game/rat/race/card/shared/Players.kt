@@ -179,6 +179,26 @@ object SharesType {
     const val IT = "IT"
 }
 
+object ShareSectors {
+    const val ENERGY = "core.energy"
+    const val INDUSTRY = "core.industry"
+    const val CONSUMER = "core.consumer"
+    const val REALTY = "core.realty"
+    const val AGRO = "core.agro"
+    const val TECH = "core.tech"
+
+    val all: List<String> = listOf(ENERGY, INDUSTRY, CONSUMER, REALTY, AGRO, TECH)
+}
+
+internal val legacyShareSectors: Map<String, String> = mapOf(
+    SharesType.GC to ShareSectors.ENERGY,
+    SharesType.ShchHP to ShareSectors.INDUSTRY,
+    SharesType.TO to ShareSectors.CONSUMER,
+    SharesType.CST to ShareSectors.REALTY,
+    SharesType.AGRO to ShareSectors.AGRO,
+    SharesType.IT to ShareSectors.TECH,
+)
+
 @Serializable
 data class Shares(
     val type: String,
@@ -245,6 +265,8 @@ data class Config(
     val planeMovementBonus: Int = 2,
     val hasFunds: Boolean = true,
     val tts: Boolean = false,
+    val priceIndexPercent: Long = NEUTRAL_INDEX_PERCENT,
+    val salaryIndexPercent: Long = NEUTRAL_INDEX_PERCENT,
 )
 
 fun Player.total(): Long {
@@ -305,7 +327,10 @@ fun Player.withFinancialAccount(account: FinancialAccount): Player = copy(
 
 fun Player.financialSnapshot(): FinancialSnapshot = FinancialSnapshot(
     account = financialAccount(),
-    activeIncome = businesses.map { it.profit + it.extentions.sum() },
+    salaryIncome = businesses.filter { it.type == BusinessType.WORK }
+        .map { it.profit + it.extentions.sum() },
+    activeIncome = businesses.filterNot { it.type == BusinessType.WORK }
+        .map { it.profit + it.extentions.sum() },
     assetValues = sharesList.map { it.price } + businesses.map { it.price },
     baseExpenses = listOf(card.food, card.rent, card.cloth, card.phone, card.transport),
     recurringExpenses = listOf(
@@ -319,6 +344,8 @@ fun Player.financialSnapshot(): FinancialSnapshot = FinancialSnapshot(
     ),
     depositRate = config.depositRate,
     loanRate = config.loadRate,
+    priceIndexPercent = config.priceIndexPercent,
+    salaryIndexPercent = config.salaryIndexPercent,
 )
 
 fun Player.canEnterOuterCircle(canRoll: Boolean, conditions: OuterCircleConditions): Boolean {

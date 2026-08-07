@@ -114,9 +114,11 @@ class BoardGeneratorTest {
                 is BoardCard.EventStore.BusinessExtending -> card.description
                 is BoardCard.EventStore.Reelection -> card.description
                 is BoardCard.EventStore.Announcement -> card.description
+                is BoardCard.EventStore.MarketCrash -> card.description
                 is BoardCard.EventStore.CorruptBusiness -> card.description
                 is BoardCard.EventStore.CorruptLand -> card.description
                 is BoardCard.Chance.RandomJob -> card.description
+                is BoardCard.Chance.Scam -> card.description
                 is BoardCard.Chance.Land -> card.name + card.description
                 is BoardCard.Chance.Estate -> card.name + card.description
                 is BoardCard.Chance.Shares -> card.description

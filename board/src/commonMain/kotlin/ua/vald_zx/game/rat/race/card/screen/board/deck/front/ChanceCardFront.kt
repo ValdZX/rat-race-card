@@ -60,6 +60,10 @@ fun BoxWithConstraintsScope.ChanceCardFront(
                 RandomJobCardFront(cardLink, chanceCard, vm)
             }
 
+            is BoardCard.Chance.Scam -> {
+                ScamCardFront(cardLink, chanceCard, vm)
+            }
+
             is BoardCard.Chance.Shares -> {
                 SharesCardFront(cardLink, chanceCard, vm)
             }
@@ -339,6 +343,76 @@ private fun BoxWithConstraintsScope.RandomJobCardFront(
                     enabled = !state.isProgress,
                     onClick = { vm.randomJob(card) },
                     title = stringResource(Res.string.ok),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BoxWithConstraintsScope.ScamCardFront(
+    cardLink: CardLink,
+    card: BoardCard.Chance.Scam,
+    vm: BoardViewModel
+) {
+    val density = LocalDensity.current
+    val cardWidth = max(maxWidth, 100.dp)
+    val unitTS = with(density) { (cardWidth.toPx() / 300).toSp() }
+    val unitDp = cardWidth / 300
+    val padding = unitDp * 10
+    val smallPadding = unitDp * 6
+    val state by vm.uiState.collectAsState()
+    Column(modifier = Modifier.padding(padding)) {
+        Row {
+            Text(
+                text = card.name.ifBlank { stringResource(Res.string.scam_offer) },
+                modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
+                fontSize = unitTS * 14,
+                lineHeight = unitTS * 19,
+                fontWeight = FontWeight.Bold,
+            )
+            CardStamp(glyph = "!", unitTS = unitTS, unitDp = unitDp, id = cardLink.id, glyphSize = 20f)
+        }
+        Text(
+            modifier = Modifier.padding(top = smallPadding),
+            text = card.description,
+            fontSize = unitTS * 12,
+            lineHeight = unitTS * 16,
+        )
+        Row(
+            modifier = Modifier.padding(top = smallPadding).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            Text(
+                stringResource(Res.string.scam_stake, card.price.formatAmount()),
+                fontSize = unitTS * 12,
+            )
+            Text(
+                stringResource(Res.string.scam_promise, card.promisedReturnPercentage.toString()),
+                fontSize = unitTS * 12,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        if (state.currentPlayerIsActive) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = smallPadding),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                EButton(
+                    kind = DesignButtonKind.Filled,
+                    enabled = !state.isProgress && state.canBuy(card.price),
+                    onClick = { vm.investInScam(card) },
+                    title = stringResource(Res.string.scam_invest),
+                    unitTS = unitTS,
+                    unitDp = unitDp,
+                )
+                EButton(
+                    kind = DesignButtonKind.Tonal,
+                    enabled = !state.isProgress,
+                    onClick = { vm.declineScam() },
+                    title = stringResource(Res.string.scam_decline),
                     unitTS = unitTS,
                     unitDp = unitDp,
                 )

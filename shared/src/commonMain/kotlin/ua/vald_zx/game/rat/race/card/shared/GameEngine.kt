@@ -260,6 +260,7 @@ class GameEngine(
             if (activePlayers.isEmpty()) return null
             val previousId = current.board.activePlayerId
             val next = current.board.nextActivePlayer(activePlayers) ?: return null
+            val completesRound = activePlayers.indexOfFirst { it.id == previousId } == activePlayers.lastIndex
             val updatedBoard = current.board.discardTakenCard().copy(
                 activePlayerId = next.id,
                 moveCount = current.board.moveCount + 1,
@@ -275,12 +276,34 @@ class GameEngine(
             )
             current = current.copy(board = updatedBoard)
             events += DomainEvent.TurnAdvanced(previousId, next.id)
-            if (next.inRest <= 0) break
-            val rested = next.copy(inRest = next.inRest - 1).withTrackedFinancialChanges(next)
+            if (completesRound) {
+                val reindexed = applyEconomyPeriod(current)
+                if (reindexed != null) {
+                    current = reindexed.snapshot
+                    events += reindexed.events
+                }
+            }
+            val upcoming = current.players.first { it.id == next.id }
+            if (upcoming.inRest <= 0) break
+            val rested = upcoming.copy(inRest = upcoming.inRest - 1).withTrackedFinancialChanges(upcoming)
             current = current.copy(players = current.players.map { if (it.id == rested.id) rested else it })
             events += DomainEvent.PlayerChanged(rested)
         }
         return Transition.Applied(RuleResult(current, events))
+    }
+
+    private fun applyEconomyPeriod(snapshot: GameSnapshot): RuleResult? {
+        val advanced = snapshot.board.advanceEconomy()
+        if (advanced.economy == snapshot.board.economy) return null
+        val players = snapshot.players.map { player ->
+            player.copy(config = player.config.withEconomyIndex(advanced.economy))
+                .withTrackedFinancialChanges(player)
+        }
+        return RuleResult(
+            snapshot = snapshot.copy(board = advanced, players = players),
+            events = listOf(DomainEvent.EconomyPeriodAdvanced(advanced.economy)) +
+                    players.map(DomainEvent::PlayerChanged),
+        )
     }
 
     private fun Board.nextActivePlayer(players: List<Player>): Player? {

@@ -473,6 +473,24 @@ private fun DesignStatePage(player: Player, board: Board, onDeposit: () -> Unit)
             tone = Design.semantic.action,
             modifier = Modifier.fillMaxWidth(),
         )
+        if (board.inflation.enabled) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ValueField(
+                    label = stringResource(Res.string.inflation),
+                    amount = board.economy.cumulativeInflationPercent,
+                    tone = Design.semantic.negative,
+                    signed = true,
+                    modifier = Modifier.weight(1f),
+                )
+                ValueField(
+                    label = stringResource(Res.string.salary_indexation),
+                    amount = board.economy.salaryIndexPercent - NEUTRAL_INDEX_PERCENT,
+                    tone = Design.semantic.negative,
+                    signed = true,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ValueField(
                 label = stringResource(Res.string.active_profit),

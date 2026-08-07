@@ -99,6 +99,7 @@ data class GeneratedChanceWeights(
     val shares: Int,
     val corruptBusiness: Int,
     val corruptLand: Int,
+    val scam: Int = 0,
 )
 
 @Serializable
@@ -111,6 +112,7 @@ data class GeneratedEventWeights(
     val announcement: Int,
     val corruptBusiness: Int = 13,
     val corruptLand: Int = 5,
+    val marketCrash: Int = 0,
 )
 
 @Serializable
@@ -118,6 +120,7 @@ data class GeneratedShare(
     val id: String,
     val ticker: String,
     val names: Map<String, String>,
+    val sector: String = "",
 )
 
 @Serializable
@@ -161,6 +164,11 @@ data class GeneratedBalance(
     val corruptOneTimePercentage: Int,
     val forcedShareSalePercentage: Int = 0,
     val strayAnimalPercentage: Int = 0,
+    val scamPrices: List<Long> = emptyList(),
+    val scamPromisedReturnPercentages: List<Long> = emptyList(),
+    val scamSuccessPercentage: Int = 0,
+    val crashSectorDropPercentages: List<Long> = emptyList(),
+    val crashMarketDropPercentages: List<Long> = emptyList(),
     val depositRate: Long = 2,
     val loanRate: Long = 10,
     val babyRecurringCost: Long = 300,

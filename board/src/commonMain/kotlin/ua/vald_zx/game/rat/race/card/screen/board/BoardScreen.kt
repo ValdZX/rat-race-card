@@ -271,6 +271,9 @@ class BoardScreen(
         var investmentResultDialog: Pair<Int, Long>? by remember { mutableStateOf(null) }
         var capitalizedDialog by remember { mutableStateOf(0L) }
         var taxInspectionBribeDialog by remember { mutableStateOf(0L) }
+        var inflationRaisedDialog by remember { mutableStateOf<EconomyIndex?>(null) }
+        var scamResolvedDialog by remember { mutableStateOf<BoardUiAction.ScamResolved?>(null) }
+        var marketCrashDialog by remember { mutableStateOf(0L) }
         var loanAddedDialog by remember { mutableStateOf(0L) }
         var simpleDialog by remember { mutableStateOf(Res.string.app_name) }
         var loanOverlimitedDialog by remember { mutableStateOf(false) }
@@ -315,6 +318,18 @@ class BoardScreen(
 
                     is BoardUiAction.TaxInspectionPaid -> {
                         taxInspectionBribeDialog = event.amount
+                    }
+
+                    is BoardUiAction.InflationRaised -> {
+                        inflationRaisedDialog = event.index
+                    }
+
+                    is BoardUiAction.ScamResolved -> {
+                        scamResolvedDialog = event
+                    }
+
+                    is BoardUiAction.MarketCrashed -> {
+                        marketCrashDialog = event.lostValue
                     }
 
                     is BoardUiAction.DepositWithdraw -> {
@@ -406,6 +421,45 @@ class BoardScreen(
                 message = stringResource(Res.string.server_request_failed),
                 confirmLabel = stringResource(Res.string.ok),
                 onConfirm = { serverRequestFailedDialog = false },
+            )
+        }
+        inflationRaisedDialog?.let { index ->
+            DesignMessageDialog(
+                onDismissRequest = { inflationRaisedDialog = null },
+                title = stringResource(Res.string.inflation_raised_title),
+                message = stringResource(
+                    Res.string.inflation_raised_message,
+                    index.cumulativeInflationPercent.toString(),
+                    (index.salaryIndexPercent - NEUTRAL_INDEX_PERCENT).toString(),
+                ),
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { inflationRaisedDialog = null },
+            )
+        }
+        scamResolvedDialog?.let { outcome ->
+            DesignMessageDialog(
+                onDismissRequest = { scamResolvedDialog = null },
+                title = stringResource(Res.string.scam_offer),
+                message = if (outcome.received > 0) {
+                    stringResource(
+                        Res.string.scam_paid,
+                        outcome.paid.splitDecimal(),
+                        outcome.received.splitDecimal(),
+                    )
+                } else {
+                    stringResource(Res.string.scam_lost, outcome.paid.splitDecimal())
+                },
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { scamResolvedDialog = null },
+            )
+        }
+        if (marketCrashDialog > 0) {
+            DesignMessageDialog(
+                onDismissRequest = { marketCrashDialog = 0 },
+                title = stringResource(Res.string.market_crash),
+                message = stringResource(Res.string.market_crash_loss, marketCrashDialog.splitDecimal()),
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { marketCrashDialog = 0 },
             )
         }
         if (taxInspectionBribeDialog > 0) {
@@ -666,6 +720,7 @@ class BoardScreen(
             )
         }
         victoryDialog?.let { victory ->
+            val bottomSheetNavigator = LocalBottomSheetNavigator.current
             DesignMessageDialog(
                 title = stringResource(Res.string.victory),
                 message = if (victory.isCurrentPlayer) {
@@ -674,8 +729,13 @@ class BoardScreen(
                     stringResource(Res.string.player_won, victory.playerName)
                 },
                 onDismissRequest = { victoryDialog = null },
-                confirmLabel = stringResource(Res.string.great),
-                onConfirm = { victoryDialog = null },
+                confirmLabel = stringResource(Res.string.debrief_open),
+                onConfirm = {
+                    victoryDialog = null
+                    bottomSheetNavigator.show(DebriefScreen(vm))
+                },
+                dismissLabel = stringResource(Res.string.great),
+                onDismissAction = { victoryDialog = null },
             )
         }
     }
@@ -755,12 +815,29 @@ fun BoxScope.Controls(vm: BoardViewModel) {
         modifier = Modifier.align(Alignment.TopEnd),
         horizontalAlignment = Alignment.End,
     ) {
+        if (state.board.inflation.enabled) {
+            InflationBadge(state.board.economy)
+        }
         if (state.currentPlayerIsActive) {
             TextButton(onClick = {
                 bottomSheetNavigator.show(DebugScreen(vm))
             }) { Text(stringResource(Res.string.debug_tools)) }
         }
     }
+}
+
+@Composable
+private fun InflationBadge(economy: EconomyIndex) {
+    Text(
+        text = stringResource(Res.string.inflation_level, economy.cumulativeInflationPercent.toString()),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.error,
+        modifier = Modifier
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
 }
 
 private const val DICE_WAVE_FRACTION = 1.15f

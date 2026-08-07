@@ -22,6 +22,8 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.CardLink
+import ua.vald_zx.game.rat.race.card.shared.sectorOf
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 fun BoxWithConstraintsScope.ReelectionCardFront(
@@ -53,6 +55,31 @@ fun BoxWithConstraintsScope.AnnouncementCardFront(
         footer = null,
         vm = vm,
         onConfirm = { vm.pass() },
+    )
+}
+
+@Composable
+fun BoxWithConstraintsScope.MarketCrashCardFront(
+    cardLink: CardLink,
+    card: BoardCard.EventStore.MarketCrash,
+    vm: BoardViewModel,
+) {
+    val state by vm.uiState.collectAsState()
+    val exposure = state.player.sharesList
+        .filter { state.board.sectorOf(it.type) == card.sector }
+        .sumOf { it.price }
+    NewsCard(
+        cardLink = cardLink,
+        title = card.name.ifBlank { stringResource(Res.string.market_crash) },
+        description = card.description,
+        footer = stringResource(
+            Res.string.market_crash_exposure,
+            card.sectorDropPercentage.toString(),
+            card.marketDropPercentage.toString(),
+            exposure.formatAmount(),
+        ),
+        vm = vm,
+        onConfirm = { vm.applyMarketCrash(card) },
     )
 }
 

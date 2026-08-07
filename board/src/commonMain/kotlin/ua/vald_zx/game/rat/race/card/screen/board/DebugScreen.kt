@@ -463,10 +463,12 @@ private fun BoardCard.debugDescription(): String {
         is BoardCard.EventStore.BusinessExtending -> description
         is BoardCard.EventStore.Reelection -> description
         is BoardCard.EventStore.Announcement -> description
+        is BoardCard.EventStore.MarketCrash -> "$sector · -$sectorDropPercentage%"
         is BoardCard.EventStore.CorruptBusiness -> description
         is BoardCard.EventStore.CorruptLand -> description
         is BoardCard.Deputy -> description
         is BoardCard.Chance.RandomJob -> description
+        is BoardCard.Chance.Scam -> "$description · +$promisedReturnPercentage%"
         is BoardCard.Chance.Land -> "$name · $description"
         is BoardCard.Chance.Shares -> description
         is BoardCard.Chance.Estate -> "$name · $description"

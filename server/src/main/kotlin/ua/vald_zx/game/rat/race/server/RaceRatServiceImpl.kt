@@ -115,6 +115,12 @@ class RaceRatServiceImpl(
             is GlobalEvent.PlayerMarried -> eventBus.emit(Event.PlayerMarried(event.playerId))
             is GlobalEvent.PlayerDivorced -> eventBus.emit(Event.PlayerDivorced(event.playerId))
             is GlobalEvent.PlayerWon -> eventBus.emit(Event.PlayerWon(event.playerId, event.playerName))
+            is GlobalEvent.EconomyPeriodAdvanced -> eventBus.emit(Event.EconomyPeriodAdvanced(event.index))
+            is GlobalEvent.MarketCrashed -> {
+                if (event.playerId == playerId) {
+                    eventBus.emit(Event.MarketCrashed(event.sector, event.lostValue))
+                }
+            }
             is GlobalEvent.BidSelled -> {
                 if (event.bid.playerId == playerId) {
                     buyLot(event.auction, event.bid)
@@ -221,8 +227,13 @@ class RaceRatServiceImpl(
         transportMovementBonusEnabled: Boolean,
         generation: BoardGeneration,
         contentPackVersions: Map<FeatureId, Int>,
+        inflation: InflationSettings,
     ): Board {
         require(StandardFeatures.Core in contentPackVersions) { "Core feature is required" }
+        val inflationValidation = inflation.validate()
+        require(inflationValidation is ValidationResult.Valid) {
+            (inflationValidation as ValidationResult.Invalid).errors.joinToString()
+        }
         val featureRuntime = standardFeatureRegistry().runtime(contentPackVersions)
         val activeDecks = featureRuntime.decks.map(DeckDefinition::type).toSet()
         require(decks.keys.containsAll(activeDecks)) { "All active feature decks are required" }
@@ -244,6 +255,7 @@ class RaceRatServiceImpl(
             outerCircleConditions = outerCircleConditions,
             victoryConditions = victoryConditions,
             transportMovementBonusEnabled = transportMovementBonusEnabled,
+            inflation = inflation,
             generation = world,
             contentPackVersions = contentPackVersions,
             generationProgress = if (world.enabled) {
@@ -360,6 +372,8 @@ class RaceRatServiceImpl(
         return completed.toResponse()
     }
 
+    override suspend fun getLedger(): List<LedgerEntry> = Storage.ledger(boardIdState.value)
+
     override suspend fun updateAttributes(attrs: PlayerAttributes) {
         updatePlayer { copy(attrs = attrs) }
     }
@@ -419,7 +433,7 @@ class RaceRatServiceImpl(
             player.deputies < card.deputies ||
             !canAfford
         ) return
-        updatePlayer {
+        updatePlayer(LedgerReason.CORRUPTION) {
             val hired = copy(deputies = deputies - card.deputies)
             if (card.oneTimeProfit > 0) {
                 hired.minusCash(card.price).plusCash(card.oneTimeProfit)
@@ -444,7 +458,7 @@ class RaceRatServiceImpl(
             player.deputies < card.deputies ||
             !board.canMakeVoluntaryPurchase(player, card.price)
         ) return
-        updatePlayer {
+        updatePlayer(LedgerReason.CORRUPTION) {
             copy(
                 deputies = deputies - card.deputies,
                 landList = landList + Land(
@@ -483,7 +497,7 @@ class RaceRatServiceImpl(
         updateBoard { discardPileB() }
         val preparedBoard = board()
         val cardId = random.choose(preparedBoard.cards[BoardCardType.Deputy].orEmpty()) ?: return
-        updatePlayer {
+        updatePlayer(LedgerReason.CORRUPTION) {
             val hired = if (preparedBoard.deputyIsCorrupt(cardId)) deputies + 1 else deputies
             copy(deputies = hired).minusCash(config.deputyCardPrice)
         }
@@ -547,6 +561,9 @@ class RaceRatServiceImpl(
                     checkVictory(domainEvent.player)
                 }
 
+                is DomainEvent.EconomyPeriodAdvanced ->
+                    globalEventBus.emit(GlobalEvent.EconomyPeriodAdvanced(domainEvent.index))
+
                 is DomainEvent.CardOptionsOpened,
                 is DomainEvent.DiceRolled,
                 is DomainEvent.PaymentApplied,
@@ -599,7 +616,7 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun takeSalary() {
-        updatePlayer {
+        updatePlayer(LedgerReason.SALARY) {
             val cashFlow = cashFlow()
             (if (cashFlow >= 0) {
                 plusCash(cashFlow)
@@ -703,7 +720,7 @@ class RaceRatServiceImpl(
             nextPlayer()
             return
         }
-        updatePlayer {
+        updatePlayer(LedgerReason.EXPENSE) {
             val paid = minusCash(card.price)
             if (card.grantsAnimal) paid.copy(animal = paid.animal + 1) else paid
         }
@@ -717,7 +734,10 @@ class RaceRatServiceImpl(
         }
     }
 
-    private suspend fun updatePlayer(change: suspend Player.() -> Player) {
+    private suspend fun updatePlayer(
+        reason: LedgerReason = LedgerReason.OTHER,
+        change: suspend Player.() -> Player,
+    ) {
         val id = playerId
         var updatedPlayer: Player? = null
         playerMutex(id).withLock {
@@ -728,7 +748,10 @@ class RaceRatServiceImpl(
             globalEventBus.emit(GlobalEvent.PlayerChanged(newPlayer))
             updatedPlayer = newPlayer
         }
-        updatedPlayer?.let { checkVictory(it) }
+        updatedPlayer?.let { player ->
+            Storage.appendLedger(player, reason, board().economy)
+            checkVictory(player)
+        }
     }
 
     private suspend fun checkVictory(player: Player) {
@@ -791,7 +814,7 @@ class RaceRatServiceImpl(
         if (!board.isResolvingCard(BoardCardType.Shopping) ||
             !board.canMakeVoluntaryPurchase(player(), card.price)
         ) return
-        updatePlayer {
+        updatePlayer(LedgerReason.CONSUMER_PURCHASE) {
             val updated = when (card.shopType) {
                 ShopType.AUTO -> copy(cars = cars + 1)
                 ShopType.HOUSE -> copy(cottage = cottage + 1)
@@ -856,7 +879,48 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun randomJob(card: BoardCard.Chance.RandomJob) {
-        updatePlayer { plusCash(card.profit) }
+        updatePlayer(LedgerReason.SALARY) { plusCash(card.profit) }
+        nextPlayer()
+    }
+
+    override suspend fun investInScam(card: BoardCard.Chance.Scam) {
+        val currentBoard = board()
+        val currentPlayer = player()
+        if (!currentBoard.isActivePlayer(currentPlayer)) return
+        if (!currentBoard.isResolvingCard(BoardCardType.Chance)) return
+        if (!currentBoard.canMakeVoluntaryPurchase(currentPlayer, card.price)) return
+
+        val paidOff = random.nextInt(0, 100) < card.successPercentage
+        minusCash(card.price)
+        if (paidOff) {
+            updatePlayer(LedgerReason.SCAM) { plusCash(card.promisedProfit) }
+        }
+        eventBus.emit(Event.ScamResolved(card.price, if (paidOff) card.promisedProfit else 0))
+        nextPlayer()
+    }
+
+    override suspend fun declineScam() {
+        val currentBoard = board()
+        if (!currentBoard.isActivePlayer(player())) return
+        if (!currentBoard.isResolvingCard(BoardCardType.Chance)) return
+        nextPlayer()
+    }
+
+    override suspend fun applyMarketCrash(card: BoardCard.EventStore.MarketCrash) {
+        val currentBoard = board()
+        if (!currentBoard.isActivePlayer(player())) return
+        if (!currentBoard.isResolvingCard(BoardCardType.EventStore)) return
+
+        currentBoard.players().forEach { holder ->
+            if (holder.sharesList.isEmpty()) return@forEach
+            val outcome = currentBoard.applyMarketCrash(holder.sharesList, card)
+            if (outcome.markdowns.isEmpty()) return@forEach
+            val marked = holder.copy(sharesList = outcome.shares).withTrackedFinancialChanges(holder)
+            Storage.updatePlayer(marked)
+            Storage.appendLedger(marked, LedgerReason.MARKET_CRASH, currentBoard.economy)
+            globalEventBus.emit(GlobalEvent.PlayerChanged(marked))
+            globalEventBus.emit(GlobalEvent.MarketCrashed(holder.id, card.sector, outcome.lostValue))
+        }
         nextPlayer()
     }
 
@@ -900,7 +964,7 @@ class RaceRatServiceImpl(
     override suspend fun sellLands(area: Long, priceOfUnit: Long) {
         if (area <= 0 || priceOfUnit <= 0) return
         val currentBoard = board()
-        updatePlayer {
+        updatePlayer(LedgerReason.MARKET_SALE) {
             val regularLands = landList.filterNot(currentBoard::isCorruptLand)
             val totalArea = regularLands.sumOf { it.area }
             if (totalArea >= area) {
@@ -933,7 +997,7 @@ class RaceRatServiceImpl(
         if (currentBoard.takenCard?.type != BoardCardType.EventStore || playerId in currentBoard.processedPlayerIds) return
         val ownedBusiness = player().businesses.firstOrNull { it == business && it.type == BusinessType.CORRUPTION }
             ?: return
-        updatePlayer {
+        updatePlayer(LedgerReason.MARKET_SALE) {
             val updatedBusinesses = businesses.toMutableList().apply { remove(ownedBusiness) }
             copy(businesses = updatedBusinesses)
                 .plusCash(ownedBusiness.price * salePercentage / 100)
@@ -949,7 +1013,7 @@ class RaceRatServiceImpl(
         val corruptLands = player().landList.filter(currentBoard::isCorruptLand)
         val corruptArea = corruptLands.sumOf { it.area }
         if (area > corruptArea) return
-        updatePlayer {
+        updatePlayer(LedgerReason.MARKET_SALE) {
             var remainder = area
             val updatedLands = landList.toMutableList()
             corruptLands.forEach { land ->
@@ -981,7 +1045,7 @@ class RaceRatServiceImpl(
             .sumOf { it.count }
         if (count <= 0 || count > ownedCount) return
         if (resolvedCard.forcedSale && count != ownedCount) return
-        updatePlayer {
+        updatePlayer(LedgerReason.MARKET_SALE) {
             var resultList = sharesList.toMutableList()
             val sharesByType = resultList.filter { it.type == resolvedCard.sharesType }
             var needToSell = count
@@ -1015,7 +1079,7 @@ class RaceRatServiceImpl(
         card: List<Estate>,
         price: Long
     ) {
-        updatePlayer {
+        updatePlayer(LedgerReason.MARKET_SALE) {
             copy(estateList = estateList - card.toSet()).plusCash(card.size * price)
         }
         updateBoard {
@@ -1142,7 +1206,7 @@ class RaceRatServiceImpl(
             salaryPosition,
             player.config.salaryFundRates,
         )
-        updatePlayer {
+        updatePlayer(LedgerReason.FUND) {
             val sameRate = funds.find { it.rate == rate }
             val newFunds = if (sameRate != null) {
                 funds.replace(sameRate, sameRate.copy(amount = sameRate.amount + amount))
@@ -1159,20 +1223,20 @@ class RaceRatServiceImpl(
         val capitalization = player.startCapitalization ?: return
         val rateOverride = if (capitalization.landed) player.config.fundStartRate else null
         val (newFunds, profit) = player.funds.capitalize(rateOverride, player.config.fundBaseRate)
-        updatePlayer {
+        updatePlayer(LedgerReason.FUND) {
             copy(funds = newFunds, startCapitalization = null)
         }
         eventBus.emit(Event.FundsCapitalized(profit))
     }
 
     override suspend fun toDeposit(amount: Long) {
-        updatePlayer {
+        updatePlayer(LedgerReason.DEPOSIT) {
             copy(deposit = deposit + amount).minusCash(amount)
         }
     }
 
     override suspend fun repayLoan(amount: Long) {
-        updatePlayer {
+        updatePlayer(LedgerReason.LOAN_REPAYMENT) {
             require(amount > 0) { "Repayment must be positive" }
             require(amount <= loan) { "Repayment exceeds the loan" }
             require(amount <= balance()) { "Not enough money for repayment" }

@@ -17,6 +17,7 @@ import kotlinx.serialization.json.Json
 import org.bson.BsonDocument
 import org.bson.BsonDocumentReader
 import org.bson.BsonInt32
+import org.bson.BsonInt64
 import org.bson.BsonString
 import org.bson.BsonDateTime
 import org.bson.types.ObjectId
@@ -24,6 +25,7 @@ import org.bson.codecs.DecoderContext
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.pojo.PojoCodecProvider
 import ua.vald_zx.game.rat.race.card.shared.Board
+import ua.vald_zx.game.rat.race.card.shared.LedgerEntry
 import ua.vald_zx.game.rat.race.card.shared.BoardSnapshotMigrator
 import ua.vald_zx.game.rat.race.card.shared.CURRENT_SCHEMA_VERSION
 import ua.vald_zx.game.rat.race.card.shared.resolvedContentPackVersions
@@ -63,6 +65,7 @@ private val persistenceJson = Json {
 fun MongoDatabase.boardCollection() = getCollection<BsonDocument>("board")
 fun MongoDatabase.boardSnapshotBackupCollection() = getCollection<BsonDocument>("board_snapshot_backup")
 fun MongoDatabase.playerCollection() = getCollection<BsonDocument>("player")
+fun MongoDatabase.ledgerCollection() = getCollection<BsonDocument>("board_ledger")
 
 suspend fun MongoDatabase.boards(): List<Board> =
     boardCollection().find().toList().map(::decodeBoardDocument)
@@ -101,6 +104,22 @@ suspend fun MongoDatabase.updatePlayer(player: Player) {
         replacement = encodePlayerDocument(player),
         options = ReplaceOptions().upsert(true),
     )
+}
+
+suspend fun MongoDatabase.appendLedger(boardId: String, entries: List<LedgerEntry>) {
+    if (entries.isEmpty()) return
+    ledgerCollection().insertMany(entries.map { encodeLedgerDocument(boardId, it) })
+}
+
+suspend fun MongoDatabase.ledger(boardId: String): List<LedgerEntry> =
+    ledgerCollection()
+        .find(Filters.eq("boardId", boardId))
+        .toList()
+        .mapNotNull { decodeLedgerDocumentOrNull(it) }
+        .sortedBy { it.sequence }
+
+suspend fun MongoDatabase.removeLedger(boardId: String) {
+    ledgerCollection().deleteMany(Filters.eq("boardId", boardId))
 }
 
 suspend fun MongoDatabase.observePlayers(boardId: String): Flow<Player> =
@@ -162,6 +181,18 @@ internal fun encodePlayerDocument(player: Player): BsonDocument = persistenceDoc
 internal fun decodePlayerDocument(document: BsonDocument): Player = document.payloadOrNull()
     ?.let { persistenceJson.decodeFromString(Player.serializer(), it) }
     ?: decodeLegacyDocument(document, Player::class.java)
+
+internal fun encodeLedgerDocument(boardId: String, entry: LedgerEntry): BsonDocument = BsonDocument().apply {
+    put("_id", org.bson.BsonObjectId(ObjectId()))
+    put("boardId", BsonString(boardId))
+    put("playerId", BsonString(entry.playerId))
+    put("sequence", BsonInt64(entry.sequence))
+    put("schemaVersion", BsonInt32(PERSISTENCE_SCHEMA_VERSION))
+    put("payload", BsonString(persistenceJson.encodeToString(LedgerEntry.serializer(), entry)))
+}
+
+internal fun decodeLedgerDocumentOrNull(document: BsonDocument): LedgerEntry? = document.payloadOrNull()
+    ?.let { runCatching { persistenceJson.decodeFromString(LedgerEntry.serializer(), it) }.getOrNull() }
 
 private fun persistenceDocument(id: String, payload: String, boardId: String? = null) = BsonDocument().apply {
     put("_id", BsonString(id))

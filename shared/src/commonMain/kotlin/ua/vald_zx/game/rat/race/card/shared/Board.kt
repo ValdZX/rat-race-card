@@ -44,6 +44,8 @@ data class Board(
     val outerCircleConditions: OuterCircleConditions = OuterCircleConditions(),
     val victoryConditions: VictoryConditions = VictoryConditions(),
     val transportMovementBonusEnabled: Boolean = true,
+    val inflation: InflationSettings = InflationSettings(),
+    val economy: EconomyIndex = EconomyIndex(),
     val winnerId: String? = null,
     val dreams: List<Dream> = ratRaceDreams,
     val purchasedDreamIds: Set<String> = emptySet(),

@@ -39,6 +39,7 @@ import ua.vald_zx.game.rat.race.card.screen.board.InitPlayerScreen
 import ua.vald_zx.game.rat.race.card.screen.board.cards.decks
 import ua.vald_zx.game.rat.race.card.shared.BoardId
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
+import ua.vald_zx.game.rat.race.card.shared.InflationSettings
 import ua.vald_zx.game.rat.race.card.shared.OuterCircleConditions
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.card.shared.VictoryConditions
@@ -116,7 +117,7 @@ internal fun LegacyBoardList(
 @Composable
 internal fun LegacyNewBoardDialog(
     onDismiss: () -> Unit,
-    onCreate: (String, Long, Long, Boolean, OuterCircleConditions, VictoryConditions, BoardGeneration) -> Unit,
+    onCreate: (String, Long, Long, Boolean, OuterCircleConditions, VictoryConditions, BoardGeneration, InflationSettings) -> Unit,
 ) {
             Dialog(onDismissRequest = { onDismiss() }) {
                 Column(
@@ -327,6 +328,7 @@ internal fun LegacyNewBoardDialog(
                                     locality = worldLocality.trim(),
                                     epoch = worldEpoch.trim(),
                                 ),
+                                InflationSettings(),
                             )
                         }
                     }

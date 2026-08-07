@@ -6,7 +6,9 @@
 
 `EffectHandler` реєструється за стабільним `EffectTypeId`. `EffectHandlerRegistry` падає на дубльованому типі й повертає `Invalid` для незареєстрованого ефекту або невалідних параметрів.
 
-Стандартний набір `StandardEffectTypes` (префікс `core.`): `change_cash`, `pay_amount`, `acquire_business`, `acquire_shopping`, `pay_expense`, `remove_asset`, `change_recurring_income`, `change_recurring_expense`, `offer_purchase`, `offer_sale`, `require_player_predicate`, `require_resource`, `spend_resource`, `draw_card`, `start_auction`, `for_each_eligible_player`, `set_counter`, `emit_notice`, `end_turn`.
+`StandardEffectTypes` резервує 19 стабільних ID (префікс `core.`), але реалізовано й зареєстровано поки **шість**: `change_cash`, `pay_amount`, `acquire_business`, `acquire_shopping`, `pay_expense`, `end_turn`.
+
+Заявлені, але без handler'ів: `remove_asset`, `change_recurring_income`, `change_recurring_expense`, `offer_purchase`, `offer_sale`, `require_player_predicate`, `require_resource`, `spend_resource`, `draw_card`, `start_auction`, `for_each_eligible_player`, `set_counter`, `emit_notice`. Визначення картки, що посилається на такий ID, не пройде `EffectHandlerRegistry.validate` — це безпечно, але означає, що критерій «нова картка з наявних ефектів» поки виконується лише для сценаріїв купівлі, оплати й разового доходу. Розширення словника ефектів — наступний крок Фази 4.
 
 ## Взаємодії
 

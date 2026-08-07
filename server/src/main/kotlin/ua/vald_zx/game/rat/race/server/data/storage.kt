@@ -17,7 +17,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import ua.vald_zx.game.rat.race.card.shared.Board
+import ua.vald_zx.game.rat.race.card.shared.EconomyIndex
+import ua.vald_zx.game.rat.race.card.shared.LedgerEntry
+import ua.vald_zx.game.rat.race.card.shared.LedgerReason
 import ua.vald_zx.game.rat.race.card.shared.Player
+import ua.vald_zx.game.rat.race.card.shared.MAX_LEDGER_ENTRIES
+import ua.vald_zx.game.rat.race.card.shared.ledgerEntry
+import ua.vald_zx.game.rat.race.card.shared.sameFinancialStateAs
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -38,6 +44,8 @@ object Storage {
 
     private val playersLock = Mutex()
     private val boardsLock = Mutex()
+    private val ledgerLock = Mutex()
+    private val ledgers: MutableMap<String, MutableList<LedgerEntry>> = mutableMapOf()
 
     private val playerWriteQueue = WriteBehindQueue<Player>(persistenceScope) { db.updatePlayer(it) }
     private val boardWriteQueue = WriteBehindQueue<Board>(persistenceScope) { db.updateBoard(it) }
@@ -74,6 +82,35 @@ object Storage {
         cachePlayer(player)
         playerWriteQueue.enqueue(player.id, player)
         recalculateBoardActivity(player.boardId)
+    }
+
+    suspend fun appendLedger(player: Player, reason: LedgerReason, economy: EconomyIndex) {
+        val entry = ledgerLock.withLock {
+            val log = ledgers.getOrPut(player.boardId) { mutableListOf() }
+            if (log.size >= MAX_LEDGER_ENTRIES) return@withLock null
+            val entry = player.ledgerEntry(
+                sequence = log.size.toLong(),
+                atEpochMs = Clock.System.now().toEpochMilliseconds(),
+                reason = reason,
+                economy = economy,
+            )
+            if (log.lastOrNull()?.sameFinancialStateAs(entry) == true) return@withLock null
+            log += entry
+            entry
+        } ?: return
+        persistenceScope.launch {
+            runCatching { db.appendLedger(player.boardId, listOf(entry)) }
+                .onFailure { log.warn("Ledger append failed: ${it.message}") }
+        }
+    }
+
+    suspend fun ledger(boardId: String): List<LedgerEntry> {
+        ledgerLock.withLock { ledgers[boardId] }?.takeIf { it.isNotEmpty() }?.let { return it.toList() }
+        val stored = runCatching { db.ledger(boardId) }.getOrDefault(emptyList())
+        if (stored.isNotEmpty()) {
+            ledgerLock.withLock { ledgers[boardId] = stored.toMutableList() }
+        }
+        return stored
     }
 
     private fun cachePlayer(player: Player) {

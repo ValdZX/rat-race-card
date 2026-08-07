@@ -10,6 +10,7 @@ import ua.vald_zx.game.rat.race.card.shared.GeneratedBalance
 import ua.vald_zx.game.rat.race.card.shared.PayerType
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.ProfessionCard
+import ua.vald_zx.game.rat.race.card.shared.ShareSectors
 import ua.vald_zx.game.rat.race.card.shared.TrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.code
 import ua.vald_zx.game.rat.race.card.shared.defaultTrackDefinition
@@ -216,6 +217,7 @@ internal class BoardGenerator(
 
             ChanceKind.CORRUPT_BUSINESS -> corruptBusiness(random)
             ChanceKind.CORRUPT_LAND -> corruptLand(random)
+            ChanceKind.SCAM -> scam(random)
         }
     }
 
@@ -227,6 +229,27 @@ internal class BoardGenerator(
         val deputies = balance.corruptBusinessDeputies.pick(random)
         return BoardCard.Chance.CorruptBusiness("", price, profit, oneTimeProfit, deputies)
     }
+
+    private fun scam(random: Random): BoardCard {
+        val price = balance.scamPrices.pick(random)
+        val promisedReturn = balance.scamPromisedReturnPercentages.pick(random)
+        return BoardCard.Chance.Scam(
+            description = "",
+            price = price,
+            promisedProfit = (price * promisedReturn / 100).coerceAtLeast(price + 1),
+            successPercentage = balance.scamSuccessPercentage,
+        )
+    }
+
+    private fun marketCrash(random: Random): BoardCard = BoardCard.EventStore.MarketCrash(
+        description = "",
+        sector = crashSectors.pick(random),
+        sectorDropPercentage = balance.crashSectorDropPercentages.pick(random),
+        marketDropPercentage = balance.crashMarketDropPercentages.pick(random),
+    )
+
+    private val crashSectors: List<String> =
+        balance.shares.map { it.sector }.filter { it.isNotBlank() }.distinct().ifEmpty { ShareSectors.all }
 
     private fun corruptLand(random: Random): BoardCard {
         val area = balance.corruptLandAreas.pick(random)
@@ -274,6 +297,8 @@ internal class BoardGenerator(
 
             EventKind.ANNOUNCEMENT -> BoardCard.EventStore.Announcement("")
 
+            EventKind.MARKET_CRASH -> marketCrash(random)
+
             EventKind.CORRUPT_BUSINESS -> BoardCard.EventStore.CorruptBusiness(
                 description = "",
                 salePercentage = balance.corruptBusinessSalePercentages.pick(random),
@@ -306,6 +331,7 @@ internal class BoardGenerator(
             ChanceKind.SHARES to balance.chanceWeights.shares,
             ChanceKind.CORRUPT_BUSINESS to balance.chanceWeights.corruptBusiness,
             ChanceKind.CORRUPT_LAND to balance.chanceWeights.corruptLand,
+            ChanceKind.SCAM to balance.chanceWeights.scam,
         )
 
     private fun eventKind(id: Int, random: Random): EventKind =
@@ -319,6 +345,7 @@ internal class BoardGenerator(
             EventKind.ANNOUNCEMENT to balance.eventWeights.announcement,
             EventKind.CORRUPT_BUSINESS to balance.eventWeights.corruptBusiness,
             EventKind.CORRUPT_LAND to balance.eventWeights.corruptLand,
+            EventKind.MARKET_CRASH to balance.eventWeights.marketCrash,
         )
 
     private fun <T> weighted(random: Random, vararg values: Pair<T, Int>): T = weighted(random, values.toMap())
@@ -337,7 +364,7 @@ internal fun Long.expenseShare(percent: Long): Long = (this * percent / 100 / 10
 
 private const val PROFESSIONS_PER_GENDER = 30
 
-private enum class ChanceKind { RANDOM_JOB, ESTATE, LAND, SHARES, CORRUPT_BUSINESS, CORRUPT_LAND }
+private enum class ChanceKind { RANDOM_JOB, ESTATE, LAND, SHARES, CORRUPT_BUSINESS, CORRUPT_LAND, SCAM }
 
 private enum class EventKind {
     LAND,
@@ -348,6 +375,7 @@ private enum class EventKind {
     ANNOUNCEMENT,
     CORRUPT_BUSINESS,
     CORRUPT_LAND,
+    MARKET_CRASH,
 }
 private val PayerTypes = PayerType.entries
 

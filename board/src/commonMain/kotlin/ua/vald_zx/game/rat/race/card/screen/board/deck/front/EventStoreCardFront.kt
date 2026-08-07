@@ -79,6 +79,10 @@ fun BoxWithConstraintsScope.EventStoreCardFront(
                 AnnouncementCardFront(cardLink, eventCard, vm)
             }
 
+            is BoardCard.EventStore.MarketCrash -> {
+                MarketCrashCardFront(cardLink, eventCard, vm)
+            }
+
             is BoardCard.EventStore.CorruptBusiness -> {
                 CorruptBusinessSaleCardFront(cardLink, eventCard, vm)
             }

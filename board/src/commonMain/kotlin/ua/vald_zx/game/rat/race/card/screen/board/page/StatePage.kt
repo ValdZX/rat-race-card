@@ -39,6 +39,8 @@ fun StatePage(
     outerCircleConditions: OuterCircleConditions,
     victoryConditions: VictoryConditions,
     loanLimit: Long,
+    inflation: InflationSettings = InflationSettings(),
+    economy: EconomyIndex = EconomyIndex(),
 ) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(state = rememberScrollState())) {
         Row(
@@ -221,6 +223,18 @@ fun StatePage(
             player.totalExpenses().toString(),
             MaterialTheme.colorScheme.tertiary
         )
+        if (inflation.enabled) {
+            DetailsField(
+                stringResource(Res.string.inflation),
+                "+${economy.cumulativeInflationPercent}%",
+                MaterialTheme.colorScheme.error
+            )
+            DetailsField(
+                stringResource(Res.string.salary_indexation),
+                "+${economy.salaryIndexPercent - NEUTRAL_INDEX_PERCENT}%",
+                MaterialTheme.colorScheme.error
+            )
+        }
     }
 }
 

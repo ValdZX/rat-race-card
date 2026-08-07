@@ -56,6 +56,7 @@ fun InitPreview(
                             transportMovementBonusEnabled: Boolean,
                             generation: BoardGeneration,
                             contentPackVersions: Map<FeatureId, Int>,
+                            inflation: InflationSettings,
                         ): Board {
                             error("Not for preview")
                         }
@@ -71,6 +72,8 @@ fun InitPreview(
                         override suspend fun executeCommand(envelope: GameCommandEnvelope): GameCommandResponse {
                             error("Not for preview")
                         }
+
+                        override suspend fun getLedger(): List<LedgerEntry> = emptyList()
 
                         override fun observeGeneration(): Flow<BoardGenerationProgress> = MutableSharedFlow()
 
@@ -211,6 +214,15 @@ fun InitPreview(
                         }
 
                         override suspend fun passCorruptLand() {
+                        }
+
+                        override suspend fun investInScam(card: BoardCard.Chance.Scam) {
+                        }
+
+                        override suspend fun declineScam() {
+                        }
+
+                        override suspend fun applyMarketCrash(card: BoardCard.EventStore.MarketCrash) {
                         }
 
                         override suspend fun passShares(sharesType: String) {

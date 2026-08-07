@@ -59,6 +59,7 @@ class CardTextApplicationTest {
         is BoardCard.Chance.Estate -> name
         is BoardCard.Chance.Land -> name
         is BoardCard.Chance.RandomJob -> name
+        is BoardCard.Chance.Scam -> name
         is BoardCard.Chance.Shares -> name
         is BoardCard.Deputy -> name
         is BoardCard.EventStore.Announcement -> name
@@ -67,6 +68,7 @@ class CardTextApplicationTest {
         is BoardCard.EventStore.CorruptLand -> name
         is BoardCard.EventStore.Estate -> name
         is BoardCard.EventStore.Land -> name
+        is BoardCard.EventStore.MarketCrash -> name
         is BoardCard.EventStore.Reelection -> name
         is BoardCard.EventStore.Shares -> name
         is BoardCard.Expenses -> name
@@ -82,6 +84,7 @@ class CardTextApplicationTest {
         is BoardCard.Chance.Estate -> description
         is BoardCard.Chance.Land -> description
         is BoardCard.Chance.RandomJob -> description
+        is BoardCard.Chance.Scam -> description
         is BoardCard.Chance.Shares -> description
         is BoardCard.Deputy -> description
         is BoardCard.EventStore.Announcement -> description
@@ -90,6 +93,7 @@ class CardTextApplicationTest {
         is BoardCard.EventStore.CorruptLand -> description
         is BoardCard.EventStore.Estate -> description
         is BoardCard.EventStore.Land -> description
+        is BoardCard.EventStore.MarketCrash -> description
         is BoardCard.EventStore.Reelection -> description
         is BoardCard.EventStore.Shares -> description
         is BoardCard.Expenses -> description

@@ -2,6 +2,7 @@ package ua.vald_zx.game.rat.race.server
 
 import ua.vald_zx.game.rat.race.card.shared.GameRepository
 import ua.vald_zx.game.rat.race.card.shared.GameSnapshot
+import ua.vald_zx.game.rat.race.card.shared.LedgerReason
 import ua.vald_zx.game.rat.race.server.data.Storage
 
 internal object StorageGameRepository : GameRepository {
@@ -14,6 +15,7 @@ internal object StorageGameRepository : GameRepository {
         updated.players.forEach { player ->
             if (previous.players.firstOrNull { it.id == player.id } != player) {
                 Storage.updatePlayer(player)
+                Storage.appendLedger(player, LedgerReason.OTHER, updated.board.economy)
             }
         }
         Storage.updateBoard(updated.board)

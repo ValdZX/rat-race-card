@@ -1,6 +1,7 @@
 package ua.vald_zx.game.rat.race.card.logic
 
 import ua.vald_zx.game.rat.race.card.beans.Fund
+import ua.vald_zx.game.rat.race.card.shared.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.Land as OfflineLand
 import ua.vald_zx.game.rat.race.card.beans.Shares as OfflineShares
 import ua.vald_zx.game.rat.race.card.shared.FinancialAccount
@@ -25,7 +26,10 @@ internal fun RatRace2CardState.withFinancialAccount(account: FinancialAccount): 
 
 internal fun RatRace2CardState.financialSnapshot(): FinancialSnapshot = FinancialSnapshot(
     account = financialAccount(),
-    activeIncome = business.map { it.profit + it.extentions.sum() },
+    salaryIncome = business.filter { it.type == BusinessType.WORK }
+        .map { it.profit + it.extentions.sum() },
+    activeIncome = business.filterNot { it.type == BusinessType.WORK }
+        .map { it.profit + it.extentions.sum() },
     assetValues = sharesList.map { it.toSharedShares().price } +
             lands.map { it.toSharedLand().price } +
             business.map { it.price },

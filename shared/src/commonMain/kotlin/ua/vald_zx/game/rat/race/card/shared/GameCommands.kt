@@ -63,6 +63,7 @@ sealed interface DomainEvent {
     data class PlayerChanged(val player: Player) : DomainEvent
     data class CardOptionsOpened(val cardTypes: List<BoardCardType>) : DomainEvent
     data class TurnAdvanced(val fromPlayerId: String, val toPlayerId: String) : DomainEvent
+    data class EconomyPeriodAdvanced(val index: EconomyIndex) : DomainEvent
     data class PaymentApplied(
         val playerId: String,
         val amount: Long,

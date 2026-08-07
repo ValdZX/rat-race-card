@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.server.generation
 
+import ua.vald_zx.game.rat.race.card.shared.ShareSectors
 import ua.vald_zx.game.rat.race.card.shared.Config
 import ua.vald_zx.game.rat.race.card.shared.GeneratedBalance
 import ua.vald_zx.game.rat.race.card.shared.OuterCircleConditions
@@ -74,6 +75,15 @@ internal fun GeneratedBalance.validate() {
         check(shares.map { it.names.getValue(locale).lowercase() }.distinct().size == shares.size) {
             "shares contains duplicate $locale names"
         }
+    }
+    check(shares.all { it.sector in ShareSectors.all }) {
+        "shares must use known sectors: ${ShareSectors.all.joinToString()}"
+    }
+    check(shares.map { it.sector }.distinct().size >= MIN_SHARE_SECTORS) {
+        "shares must span at least $MIN_SHARE_SECTORS sectors so diversification matters"
+    }
+    check(shares.groupingBy { it.sector }.eachCount().values.none { it > shares.size - 2 }) {
+        "one sector holds almost every company, so a crash cannot be correlated"
     }
     sharePrices.requireAmounts("sharePrices")
     forcedShareSalePrices.requireAmounts("forcedShareSalePrices")
@@ -168,6 +178,25 @@ internal fun GeneratedBalance.validate() {
         "The cheapest dream costs more than the victory balance"
     }
 
+    scamPrices.requireAmounts("scamPrices")
+    scamPromisedReturnPercentages.requireRange("scamPromisedReturnPercentages", MIN_SCAM_RETURN..MAX_SCAM_RETURN)
+    check(scamSuccessPercentage in 1..MAX_SCAM_SUCCESS) {
+        "scamSuccessPercentage must be between 1 and $MAX_SCAM_SUCCESS so a scam stays a losing bet"
+    }
+    val bestScamExpectation = scamPromisedReturnPercentages.max() * scamSuccessPercentage
+    check(bestScamExpectation < 100 * 100) {
+        "The best scam returns $bestScamExpectation per 10000 staked, so investing in fraud pays off on average"
+    }
+    check(scamPrices.min() < sharePrices.max()) {
+        "Scams cost more than any honest instrument, so nobody can be tempted"
+    }
+
+    crashSectorDropPercentages.requireRange("crashSectorDropPercentages", MIN_CRASH_DROP..MAX_CRASH_DROP)
+    crashMarketDropPercentages.requireRange("crashMarketDropPercentages", 1L..MIN_CRASH_DROP)
+    check(crashMarketDropPercentages.max() < crashSectorDropPercentages.min()) {
+        "A crash must hit its own sector harder than the rest of the market"
+    }
+
     listOf(
         chanceWeights.randomJob,
         chanceWeights.estate,
@@ -183,6 +212,8 @@ internal fun GeneratedBalance.validate() {
         eventWeights.announcement,
         eventWeights.corruptBusiness,
         eventWeights.corruptLand,
+        chanceWeights.scam,
+        eventWeights.marketCrash,
     ).requireRange("card weights", 1..10_000)
 }
 
@@ -296,6 +327,12 @@ internal fun List<Int>.requireRange(name: String, range: IntRange) {
     check(isNotEmpty() && all { it in range }) { "$name contains an out-of-range value" }
 }
 
+internal const val MIN_SHARE_SECTORS = 3
+internal const val MIN_SCAM_RETURN = 150L
+internal const val MAX_SCAM_RETURN = 900L
+internal const val MAX_SCAM_SUCCESS = 20
+internal const val MIN_CRASH_DROP = 30L
+internal const val MAX_CRASH_DROP = 80L
 internal const val MAX_ASSET_SPREAD = 3
 internal const val MAX_GENERATED_AMOUNT = 1_000_000_000L
 internal val SHARE_ID_PATTERN = Regex("[a-z][a-z0-9_-]{1,31}")
