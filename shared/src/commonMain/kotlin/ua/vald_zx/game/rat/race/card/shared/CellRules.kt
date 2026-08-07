@@ -146,6 +146,32 @@ data class TurnContext(
         ),
     )
 
+    fun passStart(): TurnContext {
+        val activeIds = board.activePlayers(snapshot.players).map(Player::id).toSet()
+        val lap = board.registerStartLap(playerId, activeIds)
+        if (lap.board == board) return this
+        val reindexed = if (!lap.completedPeriod) {
+            snapshot.copy(board = lap.board)
+        } else {
+            snapshot.copy(
+                board = lap.board,
+                players = snapshot.players.map { player ->
+                    player.copy(config = player.config.withEconomyIndex(lap.board.economy))
+                        .withTrackedFinancialChanges(player)
+                },
+            )
+        }
+        val extraEvents = if (!lap.completedPeriod) {
+            emptyList()
+        } else {
+            listOf(DomainEvent.EconomyPeriodAdvanced(lap.board.economy)) +
+                    reindexed.players.map(DomainEvent::PlayerChanged)
+        }
+        return copy(
+            result = result.copy(snapshot = reindexed, events = result.events + extraEvents),
+        )
+    }
+
     fun startAuction(auction: Auction): TurnContext = copy(
         result = result.copy(
             snapshot = snapshot.copy(board = board.copy(auction = auction, bidList = emptyList())),
@@ -206,7 +232,7 @@ private object StartCellRule : CellRule {
                     landed = context.isLanding,
                 ),
             )
-        }.result
+        }.passStart().result
     }
 
     override fun onLand(context: TurnContext, cell: CellInstance): RuleResult = context.endTurn().result

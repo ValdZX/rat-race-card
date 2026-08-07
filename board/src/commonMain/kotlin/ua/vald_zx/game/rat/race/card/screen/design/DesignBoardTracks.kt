@@ -53,6 +53,7 @@ import ua.vald_zx.game.rat.race.card.screen.board.RouteLayout
 import ua.vald_zx.game.rat.race.card.screen.board.SalaryScreen
 import ua.vald_zx.game.rat.race.card.shared.TrackId
 import ua.vald_zx.game.rat.race.card.shared.Dream
+import ua.vald_zx.game.rat.race.card.shared.InflationSettings
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.cashFlow
@@ -126,6 +127,7 @@ fun BoxScope.DesignBoardTracks(
             onSalaryClick = onSalary,
             onStartClick = onStart,
             dreams = dreams,
+            inflation = state.board.inflation,
         ) { DesignPlayerTokens(vm = vm, layout = route, focus = focus, bubble = bubble) }
     }
 }
@@ -373,6 +375,7 @@ private fun BoxScope.DesignTrack(
     onSalaryClick: (() -> Unit)?,
     onStartClick: (() -> Unit)?,
     dreams: DreamCellContext? = null,
+    inflation: InflationSettings = InflationSettings(),
     tokenContent: @Composable BoxScope.() -> Unit,
 ) {
     val colors = Design.colors
@@ -412,7 +415,7 @@ private fun BoxScope.DesignTrack(
             TrackCell(
                 layout, place, index, live, surface, player, focus,
                 expandedBox, expandedIcon, index == focusedIndex,
-                onSalaryClick, onStartClick, bedAlpha, dreams,
+                onSalaryClick, onStartClick, bedAlpha, dreams, inflation,
             )
         }
         tokenContent()
@@ -435,6 +438,7 @@ private fun BoxScope.TrackCell(
     onStartClick: (() -> Unit)?,
     cellAlpha: Float,
     dreams: DreamCellContext?,
+    inflation: InflationSettings,
 ) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
@@ -512,6 +516,10 @@ private fun BoxScope.TrackCell(
         },
         compact = minOf(place.size.width, place.size.height) < 30.dp,
         waitingAmount = waitingAmount,
+        inflationPercent = inflation.periodRatePercent.takeIf {
+            inflation.enabled && place.type == PlaceType.Start
+        },
+        secret = debugToolsUnlock.takeIf { place.type == PlaceType.Start },
         expandedDetail = dreamDetail,
         claimMarks = dreamClaimMarks(place.type, dreams),
         onClick = when {

@@ -65,6 +65,7 @@ import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDetailsDialog
 import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDialog
 import ua.vald_zx.game.rat.race.card.screen.design.DesignPlayerSheet
 import ua.vald_zx.game.rat.race.card.screen.design.DesignBoardOverlay
+import ua.vald_zx.game.rat.race.card.screen.design.debugToolsUnlock
 import ua.vald_zx.game.rat.race.card.screen.design.rememberCellFocus
 import ua.vald_zx.game.rat.race.card.screen.design.rememberTokenBubbleState
 import ua.vald_zx.game.rat.race.card.components.SkittlesRainbow
@@ -832,7 +833,7 @@ fun BoxScope.Controls(vm: BoardViewModel) {
         if (state.board.inflation.enabled) {
             InflationBadge(state.board.economy)
         }
-        if (state.currentPlayerIsActive) {
+        if (state.currentPlayerIsActive && debugToolsUnlock.unlocked) {
             TextButton(onClick = {
                 bottomSheetNavigator.show(DebugScreen(vm))
             }) { Text(stringResource(Res.string.debug_tools)) }

@@ -1,6 +1,8 @@
 package ua.vald_zx.game.rat.race.card.screen.design
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -106,6 +108,8 @@ fun DesignPlaceCell(
     expandedIcon: Dp = expandedIconSize,
     textScale: Float = 1f,
     waitingAmount: Long? = null,
+    inflationPercent: Long? = null,
+    secret: SecretUnlock? = null,
     expandedDetail: (@Composable ColumnScope.() -> Unit)? = null,
     claimMarks: List<Color> = emptyList(),
     onTap: (() -> Unit)? = null,
@@ -150,12 +154,23 @@ fun DesignPlaceCell(
         contentAlignment = Alignment.Center,
     ) {
         val ink = if (engraved) colors.scaffold.onSurface else colors.scaffold.onFill
+        val primaryAction = onClick ?: onTap
         val icon = @Composable { modifier: Modifier ->
             Icon(
                 painter = type.icon(),
                 contentDescription = label,
                 tint = if (engraved && !expanded) colors.scaffold.onSurfaceMuted else ink,
-                modifier = modifier,
+                modifier = modifier.optionalModifier(secret != null) {
+                    pointerInput(secret, primaryAction) {
+                        detectTapGestures(
+                            onLongPress = { secret?.longPress() },
+                            onTap = {
+                                secret?.tap()
+                                primaryAction?.invoke()
+                            },
+                        )
+                    }
+                },
             )
         }
         if (expanded && label != null && expandedDetail != null) {
@@ -196,6 +211,13 @@ fun DesignPlaceCell(
         } else {
             icon(Modifier.fillMaxSize(0.66f))
         }
+        if (inflationPercent != null) {
+            InflationToken(
+                percent = inflationPercent,
+                textScale = textScale,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp * textScale),
+            )
+        }
         if (claimMarks.isNotEmpty() && !expanded) {
             Row(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp),
@@ -221,6 +243,29 @@ fun DesignPlaceCell(
         }
     }
 }
+
+@Composable
+private fun InflationToken(percent: Long, textScale: Float, modifier: Modifier = Modifier) {
+    val colors = Design.colors
+    Box(
+        modifier = modifier
+            .clip(DesignShapes.sm)
+            .background(colors.scaffold.surface1)
+            .border(1.dp, Design.semantic.negative.edge, DesignShapes.sm)
+            .padding(horizontal = 3.dp * textScale),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = inflationCellLabel(percent),
+            style = Design.type.monoMeta.scaleForBoard(textScale),
+            color = Design.semantic.negative.edge,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
+}
+
+internal fun inflationCellLabel(percent: Long): String = "$percent% inf"
 
 @Composable
 private fun WaitingToken(amount: Long, textScale: Float, modifier: Modifier = Modifier) {

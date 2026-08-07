@@ -11,11 +11,10 @@ class InflationTest {
 
     @Test
     fun disabledInflationKeepsEveryFormulaUnchanged() {
-        val engine = GameEngine(FixedGameRandom)
         val initial = snapshot(InflationSettings())
         val cashFlowBefore = initial.player("first").cashFlow()
 
-        val advanced = fullRound(engine, initial)
+        val advanced = lap(initial, "first", "second")
 
         assertEquals(EconomyIndex(), advanced.board.economy)
         assertEquals(cashFlowBefore, advanced.player("first").cashFlow())
@@ -23,28 +22,66 @@ class InflationTest {
     }
 
     @Test
-    fun oneFullRoundRaisesPricesFullyAndSalaryPartially() {
-        val engine = GameEngine(FixedGameRandom)
+    fun everyPlayerMustPassStartBeforePricesMove() {
+        val initial = snapshot(settings)
 
-        val advanced = fullRound(engine, snapshot(settings))
+        val afterFirst = lap(initial, "first")
 
-        assertEquals(1, advanced.board.economy.period)
-        assertEquals(110, advanced.board.economy.priceIndexPercent)
-        assertEquals(105, advanced.board.economy.salaryIndexPercent)
-        advanced.players.forEach { player ->
+        assertEquals(0, afterFirst.board.economy.period, "одного гравця замало для нового періоду")
+        assertEquals(setOf("first"), afterFirst.board.economyLapPlayerIds)
+
+        val afterBoth = lap(afterFirst, "second")
+
+        assertEquals(1, afterBoth.board.economy.period)
+        assertEquals(110, afterBoth.board.economy.priceIndexPercent)
+        assertEquals(105, afterBoth.board.economy.salaryIndexPercent)
+        assertEquals(emptySet(), afterBoth.board.economyLapPlayerIds, "лічильник кола має скинутись")
+        afterBoth.players.forEach { player ->
             assertEquals(110, player.config.priceIndexPercent)
             assertEquals(105, player.config.salaryIndexPercent)
         }
     }
 
     @Test
-    fun halfARoundDoesNotTickYet() {
+    fun aFastPlayerCannotRunInflationUpAlone() {
+        var current = snapshot(settings)
+
+        repeat(5) { step -> current = lap(current, "first") }
+
+        assertEquals(0, current.board.economy.period, "п'ять кіл одного гравця не рухають ціни")
+    }
+
+    @Test
+    fun turnAdvancesNoLongerTouchTheEconomy() {
         val engine = GameEngine(FixedGameRandom)
-        val initial = snapshot(settings)
+        var current = snapshot(settings)
 
-        val afterOneTurn = advance(engine, initial, "one")
+        repeat(4) { step -> current = advance(engine, current, "turn-$step") }
 
-        assertEquals(0, afterOneTurn.board.economy.period)
+        assertEquals(0, current.board.economy.period)
+    }
+
+    @Test
+    fun restingDoesNotAmplifyInflation() {
+        val engine = GameEngine(FixedGameRandom)
+        val resting = snapshot(settings).let { snapshot ->
+            snapshot.copy(players = snapshot.players.map { it.copy(inRest = 3) })
+        }
+
+        val advanced = advance(engine, resting, "rest")
+
+        assertEquals(0, advanced.board.economy.period, "пропуски ходів більше не множать періоди")
+    }
+
+    @Test
+    fun aSoloBoardTicksOncePerOwnLap() {
+        val solo = snapshot(settings, listOf("only"))
+
+        val afterOne = lap(solo, "only")
+        val afterTwo = lap(afterOne, "only")
+
+        assertEquals(1, afterOne.board.economy.period)
+        assertEquals(2, afterTwo.board.economy.period)
     }
 
     @Test
@@ -60,12 +97,11 @@ class InflationTest {
 
     @Test
     fun goalPostsMoveWithPricesSoHoardingCashLosesGround() {
-        val engine = GameEngine(FixedGameRandom)
         val initial = snapshot(settings)
         val victoryBefore = initial.board.victoryConditions.minimumAccountBalance
         val exitBefore = initial.board.outerCircleConditions.minimumAccountBalance
 
-        val advanced = fullRound(engine, initial)
+        val advanced = lap(initial, "first", "second")
 
         assertEquals(victoryBefore * 110 / 100, advanced.board.victoryConditions.minimumAccountBalance)
         assertEquals(exitBefore * 110 / 100, advanced.board.outerCircleConditions.minimumAccountBalance)
@@ -118,10 +154,17 @@ class InflationTest {
 
     private fun Player.withEconomy(index: EconomyIndex): Player = copy(config = config.withEconomyIndex(index))
 
-    private fun fullRound(engine: GameEngine, initial: GameSnapshot): GameSnapshot {
-        var current = initial
-        repeat(initial.players.size) { step -> current = advance(engine, current, "step-$step") }
-        return current
+    private fun lap(snapshot: GameSnapshot, vararg playerIds: String): GameSnapshot {
+        return playerIds.fold(snapshot) { current, playerId ->
+            TurnContext(
+                result = RuleResult(current),
+                playerId = playerId,
+                cellIndex = 0,
+                isLanding = false,
+                random = FixedGameRandom,
+                moneyService = MoneyService(),
+            ).passStart().result.snapshot
+        }
     }
 
     private fun advance(engine: GameEngine, snapshot: GameSnapshot, commandId: String): GameSnapshot {
@@ -138,7 +181,10 @@ class InflationTest {
         return assertIs<GameExecution.Applied>(execution).snapshot
     }
 
-    private fun snapshot(inflation: InflationSettings): GameSnapshot {
+    private fun snapshot(
+        inflation: InflationSettings,
+        playerIds: List<String> = listOf("first", "second"),
+    ): GameSnapshot {
         val board = Board(
             id = "board",
             name = "Board",
@@ -146,13 +192,13 @@ class InflationTest {
             businessLimit = 3,
             createDateTime = LocalDateTime(2026, 1, 1, 0, 0),
             cards = emptyMap(),
-            playerIds = setOf("first", "second"),
-            activePlayerId = "first",
+            playerIds = playerIds.toSet(),
+            activePlayerId = playerIds.first(),
             inflation = inflation,
             outerCircleConditions = OuterCircleConditions(minimumAccountBalance = 200_000),
             victoryConditions = VictoryConditions(minimumAccountBalance = 10_000_000),
         )
-        return GameSnapshot(board = board, players = listOf(player("first"), player("second")))
+        return GameSnapshot(board = board, players = playerIds.map(::player))
     }
 
     private fun player(id: String) = Player(

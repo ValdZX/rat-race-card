@@ -46,6 +46,7 @@ data class Board(
     val transportMovementBonusEnabled: Boolean = true,
     val inflation: InflationSettings = InflationSettings(),
     val economy: EconomyIndex = EconomyIndex(),
+    val economyLapPlayerIds: Set<String> = emptySet(),
     val winnerId: String? = null,
     val dreams: List<Dream> = ratRaceDreams,
     val purchasedDreamIds: Set<String> = emptySet(),

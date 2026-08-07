@@ -14,6 +14,10 @@
 
 `Board.revision` зростає на кожній прийнятій команді. `GameCommandEnvelope.expectedRevision` відхиляє застарілу команду з `REVISION_CONFLICT`. `Board.processedCommandIds` зберігає останні 100 `commandId`; повтор після reconnect повертає `Duplicate` без другого запису.
 
+## Економічні періоди
+
+Тік інфляції живе в `StartCellRule.onPass` через `TurnContext.passStart()`, а не в черзі ходів. Рушій лише виконує правило клітинки; `advance()` економіки не торкається взагалі.
+
 ## Спостережуваність
 
 `GameApplicationService` приймає `GameCommandLog` і на кожній команді записує `GameCommandLogEntry`: `boardId`, `commandId`, `playerId`, тип команди, outcome, причину відхилення, `revisionBefore`/`revisionAfter`, `schemaVersion`, `rulesVersion`, `contentPackVersions`, імена доменних подій і тривалості load/engine/commit. `GameCommandLogEntry.format()` дає один рядок `game.command key=value`. Дефолт — `GameCommandLog.None`; сервер підключає `LOGGER` у `RaceRatServiceImpl`. Приватні тексти карток у лог не потрапляють.

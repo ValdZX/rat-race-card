@@ -63,6 +63,17 @@ fun Config.withEconomyIndex(index: EconomyIndex): Config = copy(
     salaryIndexPercent = index.salaryIndexPercent,
 )
 
+data class EconomyLap(val board: Board, val completedPeriod: Boolean)
+
+fun Board.registerStartLap(playerId: String, activePlayerIds: Set<String>): EconomyLap {
+    if (!inflation.enabled) return EconomyLap(this, completedPeriod = false)
+    val passed = economyLapPlayerIds + playerId
+    val everyoneLapped = activePlayerIds.isNotEmpty() && passed.containsAll(activePlayerIds)
+    if (!everyoneLapped) return EconomyLap(copy(economyLapPlayerIds = passed), completedPeriod = false)
+    val advanced = advanceEconomy().copy(economyLapPlayerIds = emptySet())
+    return EconomyLap(advanced, completedPeriod = advanced.economy != economy)
+}
+
 fun Board.advanceEconomy(): Board {
     val advanced = economy.advanced(inflation)
     if (advanced == economy) return this
