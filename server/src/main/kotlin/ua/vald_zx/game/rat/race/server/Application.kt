@@ -32,7 +32,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 val checkStatusFlow = MutableSharedFlow<String>()
-private val instanceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+internal val instanceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 val checkStatusJobs = ConcurrentHashMap<String, Job>()
 private val connectionIdsByUuid = ConcurrentHashMap<String, MutableSet<String>>()
 

@@ -2,6 +2,7 @@ package ua.vald_zx.game.rat.race.card.shared
 
 import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -16,6 +17,33 @@ class StuckTurnTest {
             "takenCard=${board.takenCard} pending=${board.pendingInteractions.size} auction=${board.auction}")
         assertTrue(board.diceRolling)
         assertTrue(!board.canRoll)
+    }
+
+    @Test
+    fun anInterruptedRollCanBeCompletedLaterByTheEngine() {
+        val rolled = execute(snapshot(), "roll", GameCommand.RollDice("n"))
+        assertTrue(rolled.board.diceRolling)
+        assertTrue(!rolled.board.canRoll)
+
+        val completed = execute(rolled, "complete-late", GameCommand.CompleteRoll)
+        assertTrue(!completed.board.diceRolling)
+    }
+
+    @Test
+    fun aRepeatedCompletionCannotMoveThePlayerTwice() {
+        val rolled = execute(snapshot(), "roll", GameCommand.RollDice("n"))
+        val moved = execute(rolled, "complete-1", GameCommand.CompleteRoll)
+        val playerId = moved.board.activePlayerId
+        val position = moved.players.first { it.id == playerId }.location.position
+
+        val replay = GameEngine(DefaultGameRandom).execute(
+            moved,
+            GameCommandEnvelope("complete-2", "b", playerId, moved.board.revision, GameCommand.CompleteRoll),
+        )
+
+        val rejected = assertIs<GameExecution.Rejected>(replay)
+        assertEquals(GameCommandRejection.ROLL_NOT_IN_PROGRESS, rejected.reason)
+        assertEquals(position, rejected.snapshot.players.first { it.id == playerId }.location.position)
     }
 
     private fun execute(snapshot: GameSnapshot, id: String, command: GameCommand): GameSnapshot {

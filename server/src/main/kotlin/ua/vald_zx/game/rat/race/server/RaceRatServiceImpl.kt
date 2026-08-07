@@ -29,6 +29,7 @@ internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
 private const val CORRUPT_NAME_LENGTH = 48
 private const val SPEECH_LIFETIME_MS = 8_000
+private val ROLL_COMPLETION_DELAY = 4.seconds
 private val LEGACY_OUTER_ONLY_CARD_IDS = mapOf(
     BoardCardType.Chance to (121..138).toSet(),
     BoardCardType.EventStore to setOf(107) + (111..124),
@@ -150,6 +151,9 @@ class RaceRatServiceImpl(
             checkStatusJobs[playerId]?.cancel()
             updatePlayer { copy(isInactive = false) }
             val restoredBoard = board()
+            if (restoredBoard.diceRolling && restoredBoard.activePlayerId == playerId) {
+                scheduleRollCompletion(restoredBoard.id, "reconnect:$playerId")
+            }
             invalidateNextPlayer(restoredBoard.activePlayerId)
             return Instance(board(), player())
         }
@@ -355,21 +359,52 @@ class RaceRatServiceImpl(
         val execution = gameApplicationService.execute(envelope)
             ?: error("Board not found: ${envelope.boardId}")
         publish(execution)
-        if (envelope.command !is GameCommand.RollDice || execution is GameExecution.Rejected) {
+        if (envelope.command !is GameCommand.RollDice || execution !is GameExecution.Applied) {
             return execution.toResponse()
         }
 
         if (!execution.snapshot.board.diceRolling) return execution.toResponse()
-        delay(4.seconds)
-        val completed = gameApplicationService.execute(
-            envelope.copy(
-                commandId = "${envelope.commandId}:complete",
-                expectedRevision = execution.snapshot.board.revision,
-                command = GameCommand.CompleteRoll,
-            ),
-        ) ?: error("Board not found: ${envelope.boardId}")
-        publish(completed)
-        return completed.toResponse()
+        scheduleRollCompletion(envelope.boardId, envelope.commandId)
+        return execution.toResponse()
+    }
+
+    private fun scheduleRollCompletion(boardId: String, commandId: String) {
+        instanceScope.launch {
+            delay(ROLL_COMPLETION_DELAY)
+            completePendingRoll(boardId, commandId)
+        }
+    }
+
+    private suspend fun completePendingRoll(boardId: String, commandId: String) {
+        var snapshot = StorageGameRepository.load(boardId) ?: return
+        if (!snapshot.board.diceRolling) return
+        var attempt = 0
+        while (attempt < 2) {
+            val execution = gameApplicationService.execute(
+                GameCommandEnvelope(
+                    commandId = if (attempt == 0) "$commandId:complete" else "$commandId:complete:retry",
+                    boardId = boardId,
+                    playerId = snapshot.board.activePlayerId,
+                    expectedRevision = snapshot.board.revision,
+                    command = GameCommand.CompleteRoll,
+                ),
+            ) ?: return
+            when (execution) {
+                is GameExecution.Rejected -> {
+                    if (execution.reason != GameCommandRejection.REVISION_CONFLICT) return
+                    val fresh = StorageGameRepository.load(boardId) ?: return
+                    if (!fresh.board.diceRolling) return
+                    snapshot = fresh
+                    attempt += 1
+                }
+
+                is GameExecution.Duplicate -> return
+                is GameExecution.Applied -> {
+                    publish(execution)
+                    return
+                }
+            }
+        }
     }
 
     override suspend fun getLedger(): List<LedgerEntry> = Storage.ledger(boardIdState.value)
