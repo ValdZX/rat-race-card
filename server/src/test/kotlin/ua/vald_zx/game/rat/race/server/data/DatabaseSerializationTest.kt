@@ -15,6 +15,8 @@ import ua.vald_zx.game.rat.race.card.shared.BoardGenerationStage
 import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
+import ua.vald_zx.game.rat.race.card.shared.CURRENT_SCHEMA_VERSION
+import ua.vald_zx.game.rat.race.card.shared.standardContentPackVersions
 import ua.vald_zx.game.rat.race.server.generation.BoardGenerator
 import ua.vald_zx.game.rat.race.server.testBalance
 import kotlin.test.Test
@@ -67,7 +69,10 @@ class DatabaseSerializationTest {
         val document = encodeBoardDocument(board)
         val decoded = decodeBoardDocument(document)
 
-        assertEquals(board, decoded)
+        assertEquals(
+            board.copy(contentPackVersions = standardContentPackVersions()),
+            decoded,
+        )
         assertEquals(1, document.getInt32("schemaVersion").value)
         assertTrue(document.getString("payload").value.isNotBlank())
         assertTrue(decoded.generationProgress.isReady)
@@ -110,7 +115,13 @@ class DatabaseSerializationTest {
             EncoderContext.builder().isEncodingCollectibleDocument(true).build(),
         )
 
-        assertEquals(legacy, decodeBoardDocument(document))
+        assertEquals(
+            legacy.copy(
+                schemaVersion = CURRENT_SCHEMA_VERSION,
+                contentPackVersions = standardContentPackVersions(),
+            ),
+            decodeBoardDocument(document),
+        )
     }
 
     @Test

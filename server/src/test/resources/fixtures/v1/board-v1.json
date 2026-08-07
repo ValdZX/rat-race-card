@@ -1,0 +1,20 @@
+{
+  "_id": "fixture-board",
+  "name": "Legacy board",
+  "loanLimit": 5000,
+  "businessLimit": 3,
+  "createDateTime": "2026-01-02T03:04:05",
+  "cards": {
+    "Chance": [1, 2]
+  },
+  "schemaVersion": 1,
+  "rulesVersion": 1,
+  "contentPackVersions": {
+    "game.core": 1,
+    "game.family": 1,
+    "game.investments": 1,
+    "game.corruption": 1,
+    "game.dreams": 1
+  },
+  "revision": 0
+}

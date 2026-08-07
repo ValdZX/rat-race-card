@@ -94,12 +94,14 @@ data class FeatureRuntime(
 }
 
 class FeatureRegistry(packages: Iterable<FeaturePackage>) {
-    private val packagesById: Map<FeatureId, FeaturePackage>
+    private val packagesByVersion: Map<Pair<FeatureId, Int>, FeaturePackage>
+    private val packagesById: Map<FeatureId, List<FeaturePackage>>
 
     init {
         val packageList = packages.toList()
-        packagesById = packageList.associateBy { it.manifest.featureId }
-        require(packagesById.size == packageList.size) { "Duplicate feature packages" }
+        packagesByVersion = packageList.associateBy { it.manifest.featureId to it.manifest.version }
+        packagesById = packageList.groupBy { it.manifest.featureId }
+        require(packagesByVersion.size == packageList.size) { "Duplicate feature package versions" }
         require(packageList.all { it.manifest.version > 0 }) { "Feature versions must be positive" }
         require(packageList.all { feature ->
             feature.manifest.migrations == feature.migrations.map(FeatureMigration::descriptor)
@@ -107,18 +109,17 @@ class FeatureRegistry(packages: Iterable<FeaturePackage>) {
     }
 
     val currentVersions: Map<FeatureId, Int>
-        get() = packagesById.mapValues { it.value.manifest.version }
+        get() = packagesById.mapValues { (_, versions) -> versions.maxOf { it.manifest.version } }
 
     val knownCellTypes: Set<CellTypeId>
-        get() = packagesById.values.flatMap { it.manifest.definitions.cellTypes }.toSet()
+        get() = packagesByVersion.values.flatMap { it.manifest.definitions.cellTypes }.toSet()
 
     fun runtime(versions: Map<FeatureId, Int>): FeatureRuntime {
         val selected = versions.entries.map { (id, version) ->
-            val feature = packagesById[id] ?: error("Feature is not installed: $id")
-            require(feature.manifest.version == version) {
-                "Feature $id version $version is not installed; available ${feature.manifest.version}"
-            }
-            feature
+            packagesByVersion[id to version] ?: error(
+                "Feature $id version $version is not installed; available " +
+                        packagesById[id].orEmpty().map { it.manifest.version }.sorted().joinToString(),
+            )
         }
         selected.forEach { feature ->
             feature.manifest.dependencies.forEach { dependency ->
@@ -170,7 +171,8 @@ class FeatureRegistry(packages: Iterable<FeaturePackage>) {
         }
         var migrated = board
         targetVersions.forEach { (featureId, targetVersion) ->
-            val feature = packagesById[featureId] ?: error("Feature is not installed: $featureId")
+            val feature = packagesByVersion[featureId to targetVersion]
+                ?: error("Feature is not installed: $featureId version $targetVersion")
             var currentVersion = migrated.contentPackVersions[featureId] ?: 0
             require(currentVersion <= targetVersion) { "Feature downgrades are not supported: $featureId" }
             while (currentVersion < targetVersion) {
@@ -302,6 +304,12 @@ fun Board.activeDeckTypes(): List<BoardCardType> = standardFeatureRegistry()
 fun Board.validateFeatures(): ValidationResult = standardFeatureRegistry().validate(this)
 
 fun Board.requireValidFeatures(): Board {
+    require(schemaVersion == CURRENT_SCHEMA_VERSION) {
+        "Board schema $schemaVersion is not supported; expected $CURRENT_SCHEMA_VERSION"
+    }
+    require(rulesVersion == CURRENT_RULES_VERSION) {
+        "Board rules $rulesVersion are not supported; expected $CURRENT_RULES_VERSION"
+    }
     val result = validateFeatures()
     require(result is ValidationResult.Valid) {
         (result as ValidationResult.Invalid).errors.joinToString(prefix = "Invalid feature runtime: ")

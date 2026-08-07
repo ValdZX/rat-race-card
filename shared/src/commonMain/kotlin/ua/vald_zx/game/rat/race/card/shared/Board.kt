@@ -59,6 +59,8 @@ data class Board(
     val generationProgress: BoardGenerationProgress = BoardGenerationProgress(),
     val generatedBalance: GeneratedBalance? = null,
     @EncodeDefault
+    val schemaVersion: Int = CURRENT_SCHEMA_VERSION,
+    @EncodeDefault
     val rulesVersion: Int = CURRENT_RULES_VERSION,
     @EncodeDefault
     @Serializable(with = ContentPackVersionsSerializer::class)

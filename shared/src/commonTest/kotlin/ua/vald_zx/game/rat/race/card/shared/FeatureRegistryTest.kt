@@ -79,6 +79,21 @@ class FeatureRegistryTest {
     }
 
     @Test
+    fun activeBoardsResolveTheirPinnedFeatureVersionInsteadOfLatest() {
+        val featureId = FeatureId("test.versioned")
+        val registry = FeatureRegistry(
+            listOf(
+                FeaturePackage(FeatureManifest(featureId, version = 1)),
+                FeaturePackage(FeatureManifest(featureId, version = 2)),
+            ),
+        )
+
+        assertEquals(2, registry.currentVersions[featureId])
+        assertEquals(1, registry.runtime(mapOf(featureId to 1)).manifests.single().version)
+        assertEquals(2, registry.runtime(mapOf(featureId to 2)).manifests.single().version)
+    }
+
+    @Test
     fun migrationsAreSequentialPureTransforms() {
         val descriptor = FeatureMigrationDescriptor("core-1-to-2", 1, 2)
         val registry = FeatureRegistry(
