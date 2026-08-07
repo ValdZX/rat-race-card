@@ -433,4 +433,20 @@
     <string name="debt_rate">%1$s%% per payday</string>
     <string name="debt_repay">Repay</string>
     <string name="debt_costliest_first">Costliest first</string>
+
+    <!-- Player Status -->
+    <string name="status_fired_m">Unemployed</string>
+    <string name="status_fired_f">Unemployed</string>
+    <string name="status_entrepreneur_m">Entrepreneur</string>
+    <string name="status_entrepreneur_f">Entrepreneur</string>
+    <string name="status_businessman_m">Businessman</string>
+    <string name="status_businessman_f">Businesswoman</string>
+    <string name="status_magnate_m">Tycoon</string>
+    <string name="status_magnate_f">Tycoon</string>
+    <string name="status_millionaire_m">Millionaire</string>
+    <string name="status_millionaire_f">Millionaire</string>
+    <string name="status_investor_m">Investor</string>
+    <string name="status_investor_f">Investor</string>
+    <string name="status_rentier">Rentier</string>
+    <string name="status_broke">In the red</string>
 </resources>

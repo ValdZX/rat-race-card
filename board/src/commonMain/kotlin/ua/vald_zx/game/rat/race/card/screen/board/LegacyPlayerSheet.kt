@@ -31,6 +31,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.Repay
 import ua.vald_zx.game.rat.race.card.resource.images.Settings
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.board.page.*
+import ua.vald_zx.game.rat.race.card.screen.design.statusLabel
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
@@ -87,7 +88,7 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = player.status(),
+                        text = player.statusLabel(),
                         maxLines = 2,
                         style = MaterialTheme.typography.titleLarge,
                         overflow = TextOverflow.Ellipsis,
@@ -266,11 +267,3 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
     }
 }
 
-fun Player.status(): String {
-    return when {
-        businesses.any { it.type == BusinessType.SMALL } -> "${card.name} - Підприємець"
-        businesses.any { it.type == BusinessType.MEDIUM } -> "${card.name} - Бізнесмен"
-        totalExpenses() > 1_000_000 -> "${card.name} - Мільйонер"
-        else -> card.name
-    }
-}

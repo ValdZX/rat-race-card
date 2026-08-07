@@ -111,7 +111,7 @@ private fun BubbleHeader(player: Player, isCurrentPlayer: Boolean, isActivePlaye
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = player.card.profession,
+                text = player.statusLabel(),
                 style = Design.type.micro,
                 color = colors.scaffold.onSurfaceMuted,
                 maxLines = 1,

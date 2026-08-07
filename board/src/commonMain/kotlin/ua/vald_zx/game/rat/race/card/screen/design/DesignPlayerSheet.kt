@@ -208,7 +208,7 @@ private fun PlayerHeader(player: Player, modifier: Modifier = Modifier) {
                 YouChip()
             }
             Text(
-                text = player.card.profession,
+                text = player.statusLabel(),
                 style = type.body,
                 color = colors.scaffold.onSurfaceMuted,
                 maxLines = 1,

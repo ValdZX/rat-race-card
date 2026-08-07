@@ -438,4 +438,20 @@
     <string name="debt_rate">%1$s%% за получку</string>
     <string name="debt_repay">Погасити</string>
     <string name="debt_costliest_first">Спершу найдорожчий</string>
+
+    <!-- Статуси гравця -->
+    <string name="status_fired_m">Професійний безробітний</string>
+    <string name="status_fired_f">Професійна безробітна</string>
+    <string name="status_entrepreneur_m">Підприємець</string>
+    <string name="status_entrepreneur_f">Підприємиця</string>
+    <string name="status_businessman_m">Бізнесмен</string>
+    <string name="status_businessman_f">Бізнесвумен</string>
+    <string name="status_magnate_m">Магнат</string>
+    <string name="status_magnate_f">Магнатка</string>
+    <string name="status_millionaire_m">Мільйонер</string>
+    <string name="status_millionaire_f">Мільйонерка</string>
+    <string name="status_investor_m">Інвестор</string>
+    <string name="status_investor_f">Інвесторка</string>
+    <string name="status_rentier">Рантьє</string>
+    <string name="status_broke">У мінусі</string>
 </resources>

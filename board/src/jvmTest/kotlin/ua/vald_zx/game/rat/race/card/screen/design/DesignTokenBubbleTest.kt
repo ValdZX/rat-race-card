@@ -22,6 +22,8 @@ import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.screen.board.calculateBoardLayout
+import ua.vald_zx.game.rat.race.card.shared.Business
+import ua.vald_zx.game.rat.race.card.shared.BusinessType
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
 import ua.vald_zx.game.rat.race.card.shared.PlayerCard
@@ -72,6 +74,18 @@ class DesignTokenBubbleTest {
     }
 
     @Test
+    fun firedPlayerShowsStatusInsteadOfProfession() = runComposeUiTest {
+        showBoard(ownPlayer = false, businesses = emptyList())
+        tapToken("rival")
+
+        onNodeWithText("Olena", useUnmergedTree = true).assertExists()
+        onNodeWithText("Unemployed", useUnmergedTree = true).assertExists()
+        onNodeWithText("Engineer", useUnmergedTree = true).assertDoesNotExist()
+
+        capture("build/design-token-bubble-fired.png")
+    }
+
+    @Test
     fun tappingTheTokenAgainClosesTheBubble() = runComposeUiTest {
         showBoard(ownPlayer = false)
 
@@ -106,7 +120,7 @@ class DesignTokenBubbleTest {
         waitForIdle()
     }
 
-    private fun ComposeUiTest.showBoard(ownPlayer: Boolean) {
+    private fun ComposeUiTest.showBoard(ownPlayer: Boolean, businesses: List<Business> = defaultJob()) {
         val layout = calculateBoardLayout(board, isVertical = false)!!
         val route = layout.innerRoute
         val standsOn = route.places.first { it.place.type.name == "Bankruptcy" }
@@ -116,6 +130,7 @@ class DesignTokenBubbleTest {
                 boardId = "b",
                 attrs = PlayerAttributes(0xFF3355AA, 0),
                 card = PlayerCard(name = "Olena", profession = "Engineer", salary = 4900),
+                businesses = businesses,
                 location = PlayerLocation(position = standsOn.index, trackId = route.trackId),
             )
         )
@@ -143,6 +158,9 @@ class DesignTokenBubbleTest {
         }
         waitForIdle()
     }
+
+    private fun defaultJob(): List<Business> =
+        listOf(Business(BusinessType.WORK, "Engineer", price = 0, profit = 4900))
 
     private fun ComposeUiTest.capture(target: String) {
         val image = onNodeWithTag("board").captureToImage().toAwtImage()
