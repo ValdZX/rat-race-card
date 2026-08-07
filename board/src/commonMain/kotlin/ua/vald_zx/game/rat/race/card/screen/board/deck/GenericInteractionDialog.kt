@@ -35,6 +35,7 @@ fun GenericInteractionDialog(vm: BoardViewModel) {
     val interaction = state.board.pendingInteractions.firstOrNull {
         it.playerId == state.player.id
     } ?: return
+    if (cardInteractionRendererRegistry.hasSpecializedRenderer(interaction)) return
     val values = remember(interaction.id) {
         mutableStateMapOf<String, String>().apply {
             interaction.fields.forEach { field ->

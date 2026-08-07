@@ -107,7 +107,7 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
                     EButton(
                         enabled = !state.isProgress,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
-                        onClick = { vm.pass() },
+                        onClick = { vm.skipExpenses() },
                         title = stringResource(Res.string.not_for_me),
                         unitTS = unitTS,
                         unitDp = unitDp,

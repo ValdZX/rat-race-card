@@ -7,6 +7,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
 import ua.vald_zx.game.rat.race.card.GameSound
 import ua.vald_zx.game.rat.race.card.play
@@ -553,21 +555,34 @@ class BoardViewModel(
     }
 
     fun buyBusiness(business: Business) {
+        if (chooseCurrentCardInteraction(ACCEPT_CHOICE)) return
         safeLaunch {
             buyBusiness(business)
         }
     }
 
     fun sideExpenses(card: BoardCard.Expenses) {
+        if (chooseCurrentCardInteraction(ACCEPT_CHOICE)) return
         safeLaunch {
             payExpenses(card)
         }
     }
 
+    fun skipExpenses() {
+        if (chooseCurrentCardInteraction(ACCEPT_CHOICE)) return
+        pass()
+    }
+
     fun buy(card: BoardCard.Shopping) {
+        if (chooseCurrentCardInteraction(ACCEPT_CHOICE)) return
         safeLaunch {
             buyThing(card)
         }
+    }
+
+    fun skipCardPurchase() {
+        if (chooseCurrentCardInteraction(DECLINE_CHOICE)) return
+        pass()
     }
 
     fun buy(card: BoardCard.Chance.Estate) {
@@ -646,6 +661,20 @@ class BoardViewModel(
         }
     }
 
+    private fun chooseCurrentCardInteraction(choice: String): Boolean {
+        val state = uiState.value
+        val interaction = state.board.pendingInteractions.firstOrNull { pending ->
+            pending.playerId == state.player.id && pending.fields.any { field ->
+                field.id == CHOICE_INPUT && field.options.any { it.value == choice }
+            }
+        } ?: return false
+        chooseInteraction(
+            interactionId = interaction.id,
+            input = buildJsonObject { put(CHOICE_INPUT, choice) },
+        )
+        return true
+    }
+
     fun takeSalary() {
         safeLaunch {
             takeSalary()
@@ -697,6 +726,7 @@ class BoardViewModel(
     }
 
     fun randomJob(card: BoardCard.Chance.RandomJob) {
+        if (chooseCurrentCardInteraction(ACCEPT_CHOICE)) return
         safeLaunch {
             randomJob(card)
         }

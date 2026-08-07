@@ -96,7 +96,7 @@ fun BoxWithConstraintsScope.ShoppingCardFront(
                 ) {
                     EButton(
                         enabled = !state.isProgress,
-                        onClick = { vm.pass() },
+                        onClick = { vm.skipCardPurchase() },
                         title = stringResource(Res.string.close),
                         unitTS = unitTS,
                         unitDp = unitDp,

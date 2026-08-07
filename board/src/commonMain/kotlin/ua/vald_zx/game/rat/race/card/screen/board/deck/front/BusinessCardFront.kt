@@ -117,7 +117,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
                 if (state.currentPlayerIsActive) {
                     EButton(
                         enabled = !state.isProgress,
-                        onClick = { vm.pass() },
+                        onClick = { vm.skipCardPurchase() },
                         title = stringResource(Res.string.close),
                         unitTS = unitTS,
                         unitDp = unitDp,
@@ -243,7 +243,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
                 if (state.currentPlayerIsActive) {
                     EButton(
                         enabled = !state.isProgress,
-                        onClick = { vm.pass() },
+                        onClick = { vm.skipCardPurchase() },
                         title = stringResource(Res.string.close),
                         unitTS = unitTS,
                         unitDp = unitDp,
@@ -368,7 +368,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
                 if (state.currentPlayerIsActive) {
                     EButton(
                         enabled = !state.isProgress,
-                        onClick = { vm.pass() },
+                        onClick = { vm.skipCardPurchase() },
                         title = stringResource(Res.string.close),
                         unitTS = unitTS,
                         unitDp = unitDp,

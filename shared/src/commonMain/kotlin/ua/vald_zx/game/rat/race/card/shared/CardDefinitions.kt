@@ -118,6 +118,13 @@ object StandardInteractionKinds {
     val Choice = InteractionKindId("standard.choice")
 }
 
+object CardInteractionKinds {
+    val BusinessPurchase = InteractionKindId("card.business.purchase")
+    val ShoppingPurchase = InteractionKindId("card.shopping.purchase")
+    val RandomJobConfirmation = InteractionKindId("card.random_job.confirmation")
+    val ExpenseConfirmation = InteractionKindId("card.expense.confirmation")
+}
+
 object StandardEffectTypes {
     val ChangeCash = EffectTypeId("core.change_cash")
     val PayAmount = EffectTypeId("core.pay_amount")
@@ -147,6 +154,7 @@ fun BoardCard.toCardDefinition(link: CardLink): CardDefinition? = when (this) {
     is BoardCard.Shopping -> choiceDefinition(
         link = link,
         kind = CardKindId("core.shopping"),
+        interactionKind = CardInteractionKinds.ShoppingPurchase,
         title = name,
         description = description,
         acceptEffects = listOf(
@@ -159,6 +167,7 @@ fun BoardCard.toCardDefinition(link: CardLink): CardDefinition? = when (this) {
     is BoardCard.Chance.RandomJob -> choiceDefinition(
         link = link,
         kind = CardKindId("core.random_job"),
+        interactionKind = CardInteractionKinds.RandomJobConfirmation,
         title = name,
         description = description,
         acceptEffects = listOf(
@@ -175,7 +184,7 @@ fun BoardCard.toCardDefinition(link: CardLink): CardDefinition? = when (this) {
         interactions = listOf(
             InteractionSpec(
                 id = "${link.definitionId()}:pay",
-                kind = StandardInteractionKinds.Choice,
+                kind = CardInteractionKinds.ExpenseConfirmation,
                 title = priceTitle,
                 fields = listOf(
                     InteractionField(
@@ -217,6 +226,7 @@ private fun businessDefinition(
     return choiceDefinition(
         link = link,
         kind = CardKindId("core.business"),
+        interactionKind = CardInteractionKinds.BusinessPurchase,
         title = name,
         description = description,
         acceptEffects = listOf(
@@ -233,6 +243,7 @@ private fun businessDefinition(
 private fun choiceDefinition(
     link: CardLink,
     kind: CardKindId,
+    interactionKind: InteractionKindId,
     title: String,
     description: String,
     acceptEffects: List<EffectSpec>,
@@ -244,7 +255,7 @@ private fun choiceDefinition(
     interactions = listOf(
         InteractionSpec(
             id = "${link.definitionId()}:choice",
-            kind = StandardInteractionKinds.Purchase,
+            kind = interactionKind,
             title = title,
             fields = listOf(
                 InteractionField(

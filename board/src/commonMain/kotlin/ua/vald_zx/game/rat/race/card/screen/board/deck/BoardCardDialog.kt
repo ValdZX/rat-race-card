@@ -31,7 +31,8 @@ const val cardMoveAnimationDuration = 2000
 @Composable
 fun BoxWithConstraintsScope.CardDialog(vm: BoardViewModel) {
     val state by vm.uiState.collectAsState()
-    if (state.board.pendingInteractions.any { it.playerId == state.player.id }) return
+    val interaction = state.board.pendingInteractions.firstOrNull { it.playerId == state.player.id }
+    if (interaction != null && !cardInteractionRendererRegistry.hasSpecializedRenderer(interaction)) return
     if (designV2Enabled.value) {
         DesignCardDialog(vm)
     } else {

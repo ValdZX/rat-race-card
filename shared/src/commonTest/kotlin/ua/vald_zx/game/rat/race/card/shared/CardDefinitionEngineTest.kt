@@ -123,17 +123,22 @@ class CardDefinitionEngineTest {
     @Test
     fun legacySimpleCardsAdaptToValidatedDefinitions() {
         val cards = listOf(
-            BoardCard.SmallBusiness("Cafe", "Description", 1_000, 100),
-            BoardCard.Shopping("Description", 500, ShopType.AUTO, "", "Car"),
-            BoardCard.Chance.RandomJob("Description", 300, "Job"),
-            BoardCard.Expenses("Description", "Pay", 200, PayerType.ALL),
+            BoardCard.SmallBusiness("Cafe", "Description", 1_000, 100) to
+                    CardInteractionKinds.BusinessPurchase,
+            BoardCard.Shopping("Description", 500, ShopType.AUTO, "", "Car") to
+                    CardInteractionKinds.ShoppingPurchase,
+            BoardCard.Chance.RandomJob("Description", 300, "Job") to
+                    CardInteractionKinds.RandomJobConfirmation,
+            BoardCard.Expenses("Description", "Pay", 200, PayerType.ALL) to
+                    CardInteractionKinds.ExpenseConfirmation,
         )
         val validator = CardDefinitionEngine(standardEffectHandlerRegistry())
 
-        cards.forEachIndexed { index, card ->
+        cards.forEachIndexed { index, (card, interactionKind) ->
             val definition = card.toCardDefinition(CardLink(card.type, index))
             assertNotNull(definition)
             assertEquals(ValidationResult.Valid, validator.validate(definition))
+            assertEquals(interactionKind, definition.interactions.single().kind)
         }
     }
 
