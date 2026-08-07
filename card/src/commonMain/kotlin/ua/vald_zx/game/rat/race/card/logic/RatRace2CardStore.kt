@@ -8,6 +8,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.Serializable
 import org.koin.core.Koin
+import ua.vald_zx.game.rat.race.card.clientVersion
 import ua.vald_zx.game.rat.race.card.beans.Business
 import ua.vald_zx.game.rat.race.card.beans.BusinessType
 import ua.vald_zx.game.rat.race.card.beans.Config
@@ -238,7 +239,8 @@ class RatRace2CardStore(
                     room = room,
                     lastTotals = state.value.lastTotals,
                     lastCashFlows = state.value.lastCashFlows,
-                )
+                ),
+                clientVersion.label,
             )
             offlinePlayers.value = service.getPlayers()
             dispatch(Connected(playerId, room))

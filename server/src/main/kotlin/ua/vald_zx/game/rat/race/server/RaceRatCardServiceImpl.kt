@@ -1,6 +1,7 @@
 package ua.vald_zx.game.rat.race.server
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
@@ -13,8 +14,14 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val rooms = ConcurrentHashMap<String, ConcurrentHashMap<String, OfflinePlayer>>()
-private val playerFlow = MutableSharedFlow<OfflinePlayer>()
-private val sendMoneyFlow = MutableSharedFlow<SendMoneyPack>()
+private val playerFlow = MutableSharedFlow<OfflinePlayer>(
+    extraBufferCapacity = EVENT_BUS_CAPACITY,
+    onBufferOverflow = BufferOverflow.DROP_OLDEST,
+)
+private val sendMoneyFlow = MutableSharedFlow<SendMoneyPack>(
+    extraBufferCapacity = EVENT_BUS_CAPACITY,
+    onBufferOverflow = BufferOverflow.DROP_OLDEST,
+)
 
 private fun roomPlayers(room: String) = rooms.getOrPut(room) { ConcurrentHashMap() }
 
@@ -23,8 +30,14 @@ class RaceRatCardServiceImpl(
 ) : RaceRatCardService, CoroutineScope by scope {
     private var uuid: String = ""
     private var room = ""
-    private val localPlayerFlow = MutableSharedFlow<OfflinePlayer>()
-    private val localSendMoneyFlow = MutableSharedFlow<SendMoneyPack>()
+    private val localPlayerFlow = MutableSharedFlow<OfflinePlayer>(
+        extraBufferCapacity = EVENT_BUS_CAPACITY,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+    private val localSendMoneyFlow = MutableSharedFlow<SendMoneyPack>(
+        extraBufferCapacity = EVENT_BUS_CAPACITY,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
 
     init {
         sendMoneyFlow.onEach {
@@ -40,7 +53,8 @@ class RaceRatCardServiceImpl(
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    override suspend fun hello(player: OfflinePlayer): String {
+    override suspend fun hello(player: OfflinePlayer, clientVersion: String?): String {
+        LOGGER.info("card hello room=${player.room} client=${clientVersion.orUnreported()}")
         room = player.room
         uuid = player.id.ifEmpty { Uuid.random().toString() }
         val updatedPlayer = player.copy(id = uuid)

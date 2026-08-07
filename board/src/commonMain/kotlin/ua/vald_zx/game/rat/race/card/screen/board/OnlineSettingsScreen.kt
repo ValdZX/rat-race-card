@@ -28,6 +28,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.AppDataStorageBean
 import ua.vald_zx.game.rat.race.card.appKStore
+import ua.vald_zx.game.rat.race.card.clientVersion
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.soundEnabled
 import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
@@ -156,6 +157,17 @@ class OnlineSettingsScreen(private val vm: BoardViewModel) : Screen {
                     )
                 }
             }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                color = Design.scaffold.outline,
+            )
+            Text(
+                text = clientVersion.details,
+                style = Design.type.label,
+                color = Design.scaffold.onSurfaceMuted,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

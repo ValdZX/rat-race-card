@@ -21,6 +21,7 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.AppDataStorageBean
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.applyAppLanguage
+import ua.vald_zx.game.rat.race.card.clientVersion
 import ua.vald_zx.game.rat.race.card.currentAppLanguage
 import ua.vald_zx.game.rat.race.card.design.DesignLanguagePicker
 import ua.vald_zx.game.rat.race.card.soundEnabled
@@ -252,6 +253,12 @@ class SettingsScreen : Screen {
                                 && inputYachtCost.value.text.isNotEmpty()
                                 && inputFlightCost.value.text.isNotEmpty(),
                         content = { Text(stringResource(Res.string.save)) }
+                    )
+                    Text(
+                        text = clientVersion.details,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
                     )
                 }
             }

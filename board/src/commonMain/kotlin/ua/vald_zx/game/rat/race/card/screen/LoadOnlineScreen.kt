@@ -13,6 +13,7 @@ import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.AppRoute
 import ua.vald_zx.game.rat.race.card.RoutedScreen
 import ua.vald_zx.game.rat.race.card.appKStore
+import ua.vald_zx.game.rat.race.card.clientVersion
 import ua.vald_zx.game.rat.race.card.di.RaceRatConnection
 import ua.vald_zx.game.rat.race.card.screen.board.BoardScreen
 import ua.vald_zx.game.rat.race.card.screen.board.InitPlayerScreen
@@ -36,7 +37,7 @@ class LoadOnlineScreen(private val boardId: String? = null) : Screen, RoutedScre
                     navigator.replace(BoardListScreen())
                 } else {
                     val helloUuid = appKStore.get()?.clientUuid.orEmpty()
-                    val instance = withTimeout(20.seconds) { service.hello(helloUuid, boardId) }
+                    val instance = withTimeout(20.seconds) { service.hello(helloUuid, boardId, clientVersion.label) }
                     val player = instance.player
                     navigator.replace(BoardListScreen())
                     if (player == null) {

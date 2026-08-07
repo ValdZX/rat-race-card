@@ -16,6 +16,7 @@ import kotlinx.coroutines.withTimeout
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.AppDataStorageBean
 import ua.vald_zx.game.rat.race.card.appKStore
+import ua.vald_zx.game.rat.race.card.clientVersion
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.di.RaceRatConnection
@@ -57,7 +58,7 @@ class ProfessionScreen(
                         }
                         val player = withTimeout(20.seconds) {
                             val service = if (shouldReconnect) connection.reconnect() else connection.service()
-                            val instance = service.hello(helloUuid, board.id)
+                            val instance = service.hello(helloUuid, board.id, clientVersion.label)
                             instance.player ?: service.makePlayer(
                                 uuid = helloUuid,
                                 color = color,

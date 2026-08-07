@@ -28,6 +28,8 @@ import kotlin.uuid.Uuid
 
 internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
+internal fun String?.orUnreported(): String = if (isNullOrEmpty()) "unreported" else this
+
 private val DICE_ANIMATION = 4.seconds
 private const val CORRUPT_NAME_LENGTH = 48
 private const val SPEECH_LIFETIME_MS = 8_000
@@ -144,7 +146,8 @@ class RaceRatServiceImpl(
         }
     }
 
-    override suspend fun hello(helloUuid: String, boardId: String): Instance {
+    override suspend fun hello(helloUuid: String, boardId: String, clientVersion: String?): Instance {
+        LOGGER.info("hello uuid=$helloUuid board=$boardId client=${clientVersion.orUnreported()}")
         val board = Storage.getBoard(boardId).requireValidFeatures()
         boardSelected(board)
         uuidStateProvider.value = helloUuid

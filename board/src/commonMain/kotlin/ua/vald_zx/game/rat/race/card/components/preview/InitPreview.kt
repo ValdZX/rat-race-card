@@ -27,7 +27,7 @@ fun InitPreview(
                 serviceProvider = {
                     object : RaceRatService {
 
-                        override suspend fun hello(helloUuid: String, boardId: String): Instance {
+                        override suspend fun hello(helloUuid: String, boardId: String, clientVersion: String?): Instance {
                             error("Not for preview")
                         }
 

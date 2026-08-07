@@ -14,6 +14,7 @@ import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.AppRoute
 import ua.vald_zx.game.rat.race.card.RoutedScreen
 import ua.vald_zx.game.rat.race.card.appKStore
+import ua.vald_zx.game.rat.race.card.clientVersion
 import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.di.RaceRatConnection
@@ -63,7 +64,7 @@ class BoardListScreen : Screen, RoutedScreen {
                 try {
                     val helloUuid = appKStore.get()?.clientUuid.orEmpty()
                     val instance = withTimeout(20.seconds) {
-                        connection.service().hello(helloUuid, board.id)
+                        connection.service().hello(helloUuid, board.id, clientVersion.label)
                     }
                     val instBoard = instance.board
                     val player = instance.player

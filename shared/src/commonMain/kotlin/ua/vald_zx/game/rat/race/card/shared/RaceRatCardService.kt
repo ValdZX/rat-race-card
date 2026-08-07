@@ -5,7 +5,7 @@ import kotlinx.rpc.annotations.Rpc
 
 @Rpc
 interface RaceRatCardService {
-    suspend fun hello(player: OfflinePlayer): String
+    suspend fun hello(player: OfflinePlayer, clientVersion: String? = null): String
     suspend fun getPlayers(): List<OfflinePlayer>
     fun playersObserve(): Flow<OfflinePlayer>
 

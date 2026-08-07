@@ -24,6 +24,7 @@ import io.github.aakira.napier.Napier
 import org.koin.compose.koinInject
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.appKStore
+import ua.vald_zx.game.rat.race.card.clientVersion
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.screen.design.DesignInitPlayerContent
@@ -63,7 +64,7 @@ class InitPlayerScreen(private val board: Board) : Screen, RoutedScreen {
                         currentBoard = readyBoard
                         val clientUuid = appKStore.get()?.clientUuid.orEmpty()
                         if (clientUuid.isNotBlank()) {
-                            val instance = service.hello(clientUuid, readyBoard.id)
+                            val instance = service.hello(clientUuid, readyBoard.id, clientVersion.label)
                             instance.player?.let { restoredPlayer ->
                                 navigator.replace(BoardScreen(instance.board, restoredPlayer))
                             }

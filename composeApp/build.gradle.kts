@@ -133,6 +133,16 @@ compose.desktop {
     }
 }
 
+fun gitOutput(vararg args: String): String = runCatching {
+    providers.exec {
+        commandLine("git", *args)
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim()
+}.getOrDefault("")
+
+val buildCommit = gitOutput("rev-parse", "--short", "HEAD").ifEmpty { "unknown" }
+val buildTime = gitOutput("show", "-s", "--format=%cI", "HEAD").ifEmpty { "unknown" }
+
 buildConfig {
     // https://github.com/gmazzo/gradle-buildconfig-plugin#usage-in-kts
     packageName("ua.vald_zx.game.rat.race.card")
@@ -140,6 +150,9 @@ buildConfig {
     sourceSets.maybeCreate("commonMain").apply {
         className("BuildConfig")
         buildConfigField("Boolean", "CARD_ONLY_MODE", cardOnly.toString())
+        buildConfigField("String", "APP_VERSION", "\"${project.version}\"")
+        buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
+        buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
     }
 }
 

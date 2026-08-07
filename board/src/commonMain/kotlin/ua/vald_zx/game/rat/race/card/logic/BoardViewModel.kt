@@ -17,6 +17,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import ua.vald_zx.game.rat.race.card.clientVersion
 
 val players = MutableStateFlow(emptyList<Player>())
 private val SERVER_REQUEST_TIMEOUT = 20.seconds
@@ -464,6 +465,7 @@ class BoardViewModel(
                             val instance = service.hello(
                                 helloUuid = clientUuidProvider(),
                                 boardId = _uiState.value.board.id,
+                                clientVersion = clientVersion.label,
                             )
                             val recoveredPlayer = instance.player ?: throw PlayerSessionLost()
                             Triple(recoveredPlayer, service.getBoard(), service.getPlayers())

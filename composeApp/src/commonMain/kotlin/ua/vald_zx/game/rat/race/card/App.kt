@@ -43,6 +43,11 @@ import ua.vald_zx.game.rat.race.card.theme.AppTheme
 
 @Composable
 internal fun App() {
+    clientVersion = ClientVersion(
+        version = BuildConfig.APP_VERSION,
+        commit = BuildConfig.BUILD_COMMIT,
+        buildTime = BuildConfig.BUILD_TIME,
+    )
     KoinApplication(
         configuration = koinConfiguration(declaration = { modules(coreModule, cardModule, boardModule) }),
         content = {
