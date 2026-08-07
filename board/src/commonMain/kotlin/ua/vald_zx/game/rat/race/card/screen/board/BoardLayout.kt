@@ -64,8 +64,6 @@ enum class CardDeckSlotKind {
     DRAW, DISCARD
 }
 
-private const val OUTER_RING_THICKNESS_CELLS = 4
-private const val INNER_BOARD_GAP_CELLS = 1f / 3f
 private const val INNER_CARD_AREA_MARGIN_CELLS = 4
 private const val CARD_AREA_PADDING_CELLS = 1
 private const val CARD_AREA_DIVIDER = 5
@@ -154,18 +152,6 @@ private fun DpSize.cellSize(route: BoardRoute): DpSize {
     return DpSize(
         width = width / route.horizontalCells,
         height = height / route.verticalCells,
-    )
-}
-
-private fun innerBoardSize(
-    boardSize: DpSize,
-    outerCellSize: Dp,
-): DpSize {
-    val inPadding = outerCellSize * INNER_BOARD_GAP_CELLS
-    val outerRingSize = outerCellSize * OUTER_RING_THICKNESS_CELLS
-    return DpSize(
-        width = boardSize.width - outerRingSize - inPadding * 2,
-        height = boardSize.height - outerRingSize - inPadding * 2,
     )
 }
 

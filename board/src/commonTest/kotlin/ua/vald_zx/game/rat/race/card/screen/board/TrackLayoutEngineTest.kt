@@ -53,6 +53,15 @@ class TrackLayoutEngineTest {
     }
 
     @Test
+    fun nestedTracksKeepAVisibleGapInBothOrientations() {
+        val landscape = calculateBoardLayout(DpSize(900.dp, 620.dp), false)!!
+        val portrait = calculateBoardLayout(DpSize(360.dp, 420.dp), true)!!
+
+        assertTrackGap(landscape.outerRoute, landscape.innerRoute)
+        assertTrackGap(portrait.outerRoute, portrait.innerRoute)
+    }
+
+    @Test
     fun rendererUsesDeckDefinitionsProvidedByFeatureRuntime() {
         val coreDecks = listOf(BoardCardType.Chance, BoardCardType.Expenses, BoardCardType.Shopping)
 
@@ -81,6 +90,21 @@ class TrackLayoutEngineTest {
                 assertTrue(point.y in frame.top..frame.top + frame.height)
             }
         }
+    }
+
+    private fun assertTrackGap(outside: RouteLayout, inside: RouteLayout) {
+        val horizontalGap = (outside.size.width - inside.size.width) / 2 - outside.cellSize.width * 2
+        val verticalGap = (outside.size.height - inside.size.height) / 2 - outside.cellSize.height * 2
+        val expectedHorizontalGap = outside.cellSize.width / 3 - 0.5.dp
+        val expectedVerticalGap = outside.cellSize.height / 3 - 0.5.dp
+        assertTrue(
+            horizontalGap >= expectedHorizontalGap,
+            "горизонтальний проміжок $horizontalGap менший за $expectedHorizontalGap",
+        )
+        assertTrue(
+            verticalGap >= expectedVerticalGap,
+            "вертикальний проміжок $verticalGap менший за $expectedVerticalGap",
+        )
     }
 
     private fun track(id: String, order: Int, count: Int, horizontal: Int, vertical: Int) = TrackDefinition(

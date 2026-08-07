@@ -16,22 +16,26 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.bottomSheet.BottomSheetNavigator
+import kotlinx.datetime.LocalDateTime
 import ua.vald_zx.game.rat.race.card.components.preview.InitPreviewWithVm
 import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.screen.board.calculateBoardLayout
+import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
 import ua.vald_zx.game.rat.race.card.shared.PlayerLocation
 import ua.vald_zx.game.rat.race.card.shared.moveTo
+import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.AfterTest
 import kotlin.test.Test
-import kotlin.math.hypot
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -199,7 +203,12 @@ class DesignTokenFloatTest {
                             .testTag("board")
                     ) {
                         DesignTrackForTest(route, CellSurface.Tile, focus) {
-                            DesignPlayerTokens(vm = vm, layout = route, focus = focus, bubble = rememberTokenBubbleState())
+                            DesignPlayerTokens(
+                                vm = vm,
+                                layout = route,
+                                focus = focus,
+                                bubble = rememberTokenBubbleState(),
+                            )
                         }
                     }
                 }
@@ -233,20 +242,119 @@ class DesignTokenFloatTest {
     }
 
     @Test
-    fun everyTokenStepsAwayFromTheBoardCentre() {
+    fun tokenOnTheOuterTrackMovesInsidePastTheOpenedCell() = runComposeUiTest {
+        val layout = calculateBoardLayout(board, isVertical = false)!!
+        val route = layout.outerRoute
+        val standsOn = route.places.first { it.place.type.name == "Bankruptcy" }
+        val player = Player(
+            id = "6",
+            boardId = "b",
+            attrs = PlayerAttributes(NEIGHBOUR_COLOR, 0),
+            location = PlayerLocation(position = standsOn.index, trackId = route.trackId),
+        )
+        players.value = listOf(player)
+        val vm = BoardViewModel(
+            board = Board(
+                id = "b",
+                name = "b",
+                loanLimit = 10_000,
+                businessLimit = 10,
+                createDateTime = LocalDateTime(2026, 1, 1, 0, 0),
+                cards = emptyMap(),
+                playerIds = setOf(player.id),
+                activePlayerId = player.id,
+            ),
+            player = player,
+            serviceProvider = { error("офлайн-тест") },
+        )
+        setContent {
+            AppTheme(forceDark = true) {
+                BottomSheetNavigator {
+                    val focus = rememberCellFocus()
+                    Box(
+                        Modifier.size(board)
+                            .background(Design.scaffold.background)
+                            .cellFocusTracking(layout.routes, focus)
+                            .testTag("board")
+                    ) {
+                        DesignTrackForTest(route, CellSurface.Tile, focus) {
+                            DesignPlayerTokens(
+                                vm = vm,
+                                layout = route,
+                                focus = focus,
+                                bubble = rememberTokenBubbleState(),
+                            )
+                        }
+                        DesignTrackForTest(layout.innerRoute, CellSurface.Engraved, focus)
+                    }
+                }
+            }
+        }
+        waitForIdle()
+
+        val shown = route.places.first {
+            it.index == moveTo(standsOn.index, route.layer.cellCount, route.route.offset)
+        }
+        onNodeWithTag("board").performMouseInput {
+            moveTo(
+                Offset(
+                    x = (board.width - route.size.width).value / 2 +
+                            shown.place.offset.x.value + shown.place.size.width.value / 2,
+                    y = (board.height - route.size.height).value / 2 +
+                            shown.place.offset.y.value + shown.place.size.height.value / 2,
+                )
+            )
+        }
+        mainClock.advanceTimeBy(600)
+        waitForIdle()
+        capture("build/design-token-outer-float.png")
+
+        val localCell = cellBounds(route, shown.place, expandedCellBox(route))
+        val routeLeft = (board.width - route.size.width) / 2
+        val routeTop = (board.height - route.size.height) / 2
+        val openedCell = DpRect(
+            left = routeLeft + localCell.left,
+            top = routeTop + localCell.top,
+            right = routeLeft + localCell.right,
+            bottom = routeTop + localCell.bottom,
+        )
+        val token = tokenBounds("6")
+        assertTrue(
+            token.right <= openedCell.left || token.left >= openedCell.right ||
+                    token.bottom <= openedCell.top || token.top >= openedCell.bottom,
+            "фішка $token лишилася під розгорнутою клітинкою $openedCell",
+        )
+    }
+
+    @Test
+    fun everyTokenClearsTheExpandedCell() {
         val layout = calculateBoardLayout(board, isVertical = false)!!
         listOf(layout.outerRoute, layout.innerRoute).forEach { route ->
             val centreX = route.size.width / 2
             val centreY = route.size.height / 2
             route.places.forEach { (index, place) ->
-                val float = tokenFloat(route, place, expandedCellBox(route))
-                val fromX = place.offset.x + place.size.width / 2 - centreX
-                val fromY = place.offset.y + place.size.height / 2 - centreY
-                val moved = hypot((fromX + float.x).value, (fromY + float.y).value)
+                val expanded = cellBounds(route, place, expandedCellBox(route))
+                val target = expandedTokenOffset(route, place, 0, 1, expandedCellBox(route))
+                val tokenLeft = target.first
+                val tokenTop = target.second
+                val tokenRight = tokenLeft + route.cellSize.width
+                val tokenBottom = tokenTop + route.cellSize.height
                 assertTrue(
-                    moved > hypot(fromX.value, fromY.value),
-                    "клітинка $index на ${route.layer}: фішка пішла до центру дошки, а не назовні",
+                    tokenRight <= expanded.left || tokenLeft >= expanded.right ||
+                            tokenBottom <= expanded.top || tokenTop >= expanded.bottom,
+                    "клітинка $index на ${route.layer}: фішка лишилася під розгорнутою клітинкою",
                 )
+                val tokenCenterX = tokenLeft + route.cellSize.width / 2
+                val tokenCenterY = tokenTop + route.cellSize.height / 2
+                if (route.isOutermost) {
+                    assertTrue(
+                        kotlin.math.abs((tokenCenterX - centreX).value) <
+                                kotlin.math.abs((place.offset.x + place.size.width / 2 - centreX).value) ||
+                                kotlin.math.abs((tokenCenterY - centreY).value) <
+                                kotlin.math.abs((place.offset.y + place.size.height / 2 - centreY).value),
+                        "клітинка $index на ${route.layer}: зовнішня фішка не відійшла всередину дошки",
+                    )
+                }
             }
         }
     }
@@ -347,9 +455,9 @@ class DesignTokenFloatTest {
     private fun ComposeUiTest.tokenBounds(playerId: String = "2") =
         onNodeWithTag("player-token-$playerId").getBoundsInRoot()
 
-    private fun ComposeUiTest.capture() {
+    private fun ComposeUiTest.capture(target: String = "build/design-token-float.png") {
         val image = onNodeWithTag("board").captureToImage().toAwtImage()
         File("build").mkdirs()
-        ImageIO.write(image, "png", File("build/design-token-float.png"))
+        ImageIO.write(image, "png", File(target))
     }
 }

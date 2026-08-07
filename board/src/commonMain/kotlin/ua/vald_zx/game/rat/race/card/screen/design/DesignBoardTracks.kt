@@ -261,24 +261,33 @@ internal fun tokenFloat(layout: RouteLayout, place: Place, openBox: DpSize): DpO
     val fromCenterY = place.offset.y + place.size.height / 2 - layout.size.height / 2
     val expanded = cellBounds(layout, place, openBox)
     return if (place.location.side.isHorizontal) {
-        val targetY = if (fromCenterY > 0.dp) {
+        val targetY = if (layout.isOutermost) {
+            if (fromCenterY > 0.dp) {
+                expanded.top - layout.cellSize.height - tokenCellGap
+            } else {
+                expanded.bottom + tokenCellGap
+            }
+        } else if (fromCenterY > 0.dp) {
             expanded.bottom + tokenCellGap
         } else {
             expanded.top - layout.cellSize.height - tokenCellGap
-        }.visibleOnOuterRoute(layout.size.height - layout.cellSize.height, layout.isOutermost)
+        }
         DpOffset(0.dp, targetY - centeredY)
     } else {
-        val targetX = if (fromCenterX > 0.dp) {
+        val targetX = if (layout.isOutermost) {
+            if (fromCenterX > 0.dp) {
+                expanded.left - layout.cellSize.width - tokenCellGap
+            } else {
+                expanded.right + tokenCellGap
+            }
+        } else if (fromCenterX > 0.dp) {
             expanded.right + tokenCellGap
         } else {
             expanded.left - layout.cellSize.width - tokenCellGap
-        }.visibleOnOuterRoute(layout.size.width - layout.cellSize.width, layout.isOutermost)
+        }
         DpOffset(targetX - centeredX, 0.dp)
     }
 }
-
-private fun Dp.visibleOnOuterRoute(max: Dp, outermost: Boolean) =
-    if (outermost) coerceIn(0.dp, max.coerceAtLeast(0.dp)) else this
 
 internal fun expandedTokenOffset(
     layout: RouteLayout,
