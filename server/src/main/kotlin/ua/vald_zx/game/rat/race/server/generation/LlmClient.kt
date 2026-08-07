@@ -275,7 +275,7 @@ internal class HttpChatCompletion(
         val usage = runCatching { get("usage")?.jsonObject }.getOrNull() ?: return null
         val input = usage["prompt_tokens"]?.jsonPrimitive?.longOrNull ?: 0
         val output = usage["completion_tokens"]?.jsonPrimitive?.longOrNull ?: 0
-        val total = usage["total_tokens"]?.jsonPrimitive?.longOrNull ?: input + output
+        val total = usage["total_tokens"]?.jsonPrimitive?.longOrNull ?: (input + output)
         return LlmTokenUsage(input, output, total).takeIf { it.total > 0 }
     }
 }

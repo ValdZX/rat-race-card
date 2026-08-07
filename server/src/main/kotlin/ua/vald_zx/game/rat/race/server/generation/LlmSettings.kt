@@ -225,6 +225,14 @@ private val FREE_LLM_PROVIDERS = listOf(
         textModel = "gpt-oss-120b",
     ),
     LlmProviderDefaults(
+        prefix = "NVIDIA_",
+        apiKey = "NVIDIA_API_KEY",
+        name = "nvidia",
+        url = "https://integrate.api.nvidia.com/v1/chat/completions",
+        balanceModel = "meta/llama-3.3-70b-instruct",
+        textModel = "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    ),
+    LlmProviderDefaults(
         prefix = "OPENROUTER_",
         apiKey = "OPENROUTER_API_KEY",
         name = "openrouter",

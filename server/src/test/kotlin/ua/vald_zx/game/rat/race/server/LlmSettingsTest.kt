@@ -13,30 +13,42 @@ class LlmSettingsTest {
         val keys = mapOf(
             "GROQ_API_KEY" to "groq-key",
             "CEREBRAS_API_KEY" to "cerebras-key",
+            "NVIDIA_API_KEY" to "nvidia-key",
             "MISTRAL_API_KEY" to "mistral-key",
             "OPENROUTER_API_KEY" to "openrouter-key",
         )
 
         val providers = configuredLlmProviders(keys::get)
 
-        assertEquals(listOf("groq", "cerebras", "openrouter"), providers.map { it.name })
+        assertEquals(listOf("groq", "cerebras", "nvidia", "openrouter"), providers.map { it.name })
         assertEquals(
             listOf(
                 "https://api.groq.com/openai/v1/chat/completions",
                 "https://api.cerebras.ai/v1/chat/completions",
+                "https://integrate.api.nvidia.com/v1/chat/completions",
                 "https://openrouter.ai/api/v1/chat/completions",
             ),
             providers.map { it.url },
         )
         assertEquals(
-            listOf("openai/gpt-oss-120b", "gpt-oss-120b", "nvidia/nemotron-3-super-120b-a12b:free"),
+            listOf(
+                "openai/gpt-oss-120b",
+                "gpt-oss-120b",
+                "meta/llama-3.3-70b-instruct",
+                "nvidia/nemotron-3-super-120b-a12b:free",
+            ),
             providers.map { it.balanceModel },
         )
         assertEquals(
-            listOf("qwen/qwen3.6-27b", "gpt-oss-120b", "google/gemma-4-31b-it:free"),
+            listOf(
+                "qwen/qwen3.6-27b",
+                "gpt-oss-120b",
+                "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+                "google/gemma-4-31b-it:free",
+            ),
             providers.map { it.textModel },
         )
-        assertEquals(listOf(false, false, true), providers.map { it.fallbackOnly })
+        assertEquals(listOf(false, false, false, true), providers.map { it.fallbackOnly })
     }
 
     @Test
