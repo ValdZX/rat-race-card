@@ -135,12 +135,13 @@ compose.desktop {
 }
 
 fun gitOutput(vararg args: String): Provider<String> = providers.provider {
-    runCatching {
+    val value = runCatching {
         providers.exec {
             commandLine("git", *args)
             isIgnoreExitValue = true
         }.standardOutput.asText.get().trim()
     }.getOrDefault("").ifEmpty { "unknown" }
+    "\"$value\""
 }
 
 buildConfig {
