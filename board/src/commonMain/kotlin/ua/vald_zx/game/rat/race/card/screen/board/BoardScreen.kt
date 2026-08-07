@@ -830,9 +830,6 @@ fun BoxScope.Controls(vm: BoardViewModel) {
         modifier = Modifier.align(Alignment.TopEnd),
         horizontalAlignment = Alignment.End,
     ) {
-        if (state.board.inflation.enabled) {
-            InflationBadge(state.board.economy)
-        }
         if (state.currentPlayerIsActive && debugToolsUnlock.unlocked) {
             TextButton(onClick = {
                 bottomSheetNavigator.show(DebugScreen(vm))
@@ -841,19 +838,6 @@ fun BoxScope.Controls(vm: BoardViewModel) {
     }
 }
 
-@Composable
-private fun InflationBadge(economy: EconomyIndex) {
-    Text(
-        text = stringResource(Res.string.inflation_level, economy.cumulativeInflationPercent.toString()),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.error,
-        modifier = Modifier
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-    )
-}
 
 private const val DICE_WAVE_FRACTION = 1.15f
 private const val DICE_BODY_DROP = 0.16f

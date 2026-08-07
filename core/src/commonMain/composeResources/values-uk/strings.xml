@@ -391,7 +391,6 @@
     <string name="delete">Видалити</string>
     <string name="delete_table_confirmation">Видалити «%1$s» назавжди? Гравці та прогрес партії також будуть видалені.</string>
     <string name="inflation">Інфляція</string>
-    <string name="inflation_level">Інфляція %1$s%%</string>
     <string name="inflation_raised_title">Ціни зросли</string>
     <string name="inflation_raised_message">Почався новий економічний період. Ціни й цілі вищі за стартові на %1$s%%, а зарплати — лише на %2$s%%. Готівка й депозит не зросли взагалі.</string>
     <string name="inflation_disabled">Стабільні ціни</string>

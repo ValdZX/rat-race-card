@@ -211,13 +211,6 @@ fun DesignPlaceCell(
         } else {
             icon(Modifier.fillMaxSize(0.66f))
         }
-        if (inflationPercent != null) {
-            InflationToken(
-                percent = inflationPercent,
-                textScale = textScale,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp * textScale),
-            )
-        }
         if (claimMarks.isNotEmpty() && !expanded) {
             Row(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp),
@@ -241,6 +234,15 @@ fun DesignPlaceCell(
                 modifier = Modifier.offset(x = 6.dp * textScale, y = (-8).dp * textScale),
             )
         }
+        if (inflationPercent != null) {
+            InflationToken(
+                percent = inflationPercent,
+                textScale = textScale,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = (-6).dp * textScale, y = (-8).dp * textScale),
+            )
+        }
     }
 }
 
@@ -249,18 +251,19 @@ private fun InflationToken(percent: Long, textScale: Float, modifier: Modifier =
     val colors = Design.colors
     Box(
         modifier = modifier
+            .height(18.dp * textScale)
             .clip(DesignShapes.sm)
             .background(colors.scaffold.surface1)
             .border(1.dp, Design.semantic.negative.edge, DesignShapes.sm)
-            .padding(horizontal = 3.dp * textScale),
+            .padding(horizontal = 5.dp * textScale),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
+        BasicText(
             text = inflationCellLabel(percent),
-            style = Design.type.monoMeta.scaleForBoard(textScale),
-            color = Design.semantic.negative.edge,
+            style = Design.type.monoMeta.scaleForBoard(textScale).copy(color = Design.semantic.negative.edge),
             maxLines = 1,
             softWrap = false,
+            autoSize = TextAutoSize.StepBased()
         )
     }
 }

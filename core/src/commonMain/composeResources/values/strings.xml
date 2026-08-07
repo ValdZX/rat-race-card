@@ -386,7 +386,6 @@
     <string name="delete">Delete</string>
     <string name="delete_table_confirmation">Delete “%1$s” permanently? Its players and game progress will also be deleted.</string>
     <string name="inflation">Inflation</string>
-    <string name="inflation_level">Inflation %1$s%%</string>
     <string name="inflation_raised_title">Prices went up</string>
     <string name="inflation_raised_message">A new economic period began. Prices and goals are %1$s%% above the start, while salaries are only %2$s%% above it. Cash and deposits did not grow at all.</string>
     <string name="inflation_disabled">Stable prices</string>

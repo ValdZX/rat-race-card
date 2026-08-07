@@ -53,7 +53,6 @@ import ua.vald_zx.game.rat.race.card.screen.board.RouteLayout
 import ua.vald_zx.game.rat.race.card.screen.board.SalaryScreen
 import ua.vald_zx.game.rat.race.card.shared.TrackId
 import ua.vald_zx.game.rat.race.card.shared.Dream
-import ua.vald_zx.game.rat.race.card.shared.InflationSettings
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.cashFlow
@@ -127,7 +126,8 @@ fun BoxScope.DesignBoardTracks(
             onSalaryClick = onSalary,
             onStartClick = onStart,
             dreams = dreams,
-            inflation = state.board.inflation,
+            inflationPercent = state.board.economy.cumulativeInflationPercent
+                .takeIf { state.board.inflation.enabled },
         ) { DesignPlayerTokens(vm = vm, layout = route, focus = focus, bubble = bubble) }
     }
 }
@@ -375,7 +375,7 @@ private fun BoxScope.DesignTrack(
     onSalaryClick: (() -> Unit)?,
     onStartClick: (() -> Unit)?,
     dreams: DreamCellContext? = null,
-    inflation: InflationSettings = InflationSettings(),
+    inflationPercent: Long? = null,
     tokenContent: @Composable BoxScope.() -> Unit,
 ) {
     val colors = Design.colors
@@ -415,7 +415,7 @@ private fun BoxScope.DesignTrack(
             TrackCell(
                 layout, place, index, live, surface, player, focus,
                 expandedBox, expandedIcon, index == focusedIndex,
-                onSalaryClick, onStartClick, bedAlpha, dreams, inflation,
+                onSalaryClick, onStartClick, bedAlpha, dreams, inflationPercent,
             )
         }
         tokenContent()
@@ -438,7 +438,7 @@ private fun BoxScope.TrackCell(
     onStartClick: (() -> Unit)?,
     cellAlpha: Float,
     dreams: DreamCellContext?,
-    inflation: InflationSettings,
+    inflationPercent: Long?,
 ) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
@@ -516,9 +516,7 @@ private fun BoxScope.TrackCell(
         },
         compact = minOf(place.size.width, place.size.height) < 30.dp,
         waitingAmount = waitingAmount,
-        inflationPercent = inflation.periodRatePercent.takeIf {
-            inflation.enabled && place.type == PlaceType.Start
-        },
+        inflationPercent = inflationPercent.takeIf { place.type == PlaceType.Start },
         secret = debugToolsUnlock.takeIf { place.type == PlaceType.Start },
         expandedDetail = dreamDetail,
         claimMarks = dreamClaimMarks(place.type, dreams),
