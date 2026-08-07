@@ -24,6 +24,8 @@ import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.screen.board.RouteLayout
 import ua.vald_zx.game.rat.race.card.screen.board.calculateBoardLayout
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
+import ua.vald_zx.game.rat.race.card.shared.CoreTrackIds
+import ua.vald_zx.game.rat.race.card.shared.TrackId
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 import java.io.File
@@ -60,12 +62,12 @@ class DesignBoardTracksRenderTest {
             route.places.forEach { (index, place) ->
                 assertTrue(
                     place.offset.x >= 0.dp && place.offset.y >= 0.dp,
-                    "клітинка $index виїхала за верхній/лівий край ${route.layer}",
+                    "клітинка $index виїхала за верхній/лівий край ${route.trackId.value}",
                 )
                 assertTrue(
                     place.offset.x + place.size.width <= route.size.width + 0.5.dp &&
                             place.offset.y + place.size.height <= route.size.height + 0.5.dp,
-                    "клітинка $index виїхала за правий/нижній край ${route.layer}",
+                    "клітинка $index виїхала за правий/нижній край ${route.trackId.value}",
                 )
             }
         }
@@ -89,7 +91,7 @@ class DesignBoardTracksRenderTest {
         )
     }
 
-    private fun render(name: String, dark: Boolean, playerLevel: Int) = runComposeUiTest {
+    private fun render(name: String, dark: Boolean, playerTrack: TrackId) = runComposeUiTest {
         val layout = calculateBoardLayout(DpSize(760.dp, 520.dp), isVertical = false)!!
         setContent {
             AppTheme(forceDark = dark) {
@@ -99,7 +101,7 @@ class DesignBoardTracksRenderTest {
                         .background(if (dark) Design.scaffold.background else Color(0xFFFFB370))
                         .testTag("board")
                 ) {
-                    StaticTracks(layout.outerRoute, layout.innerRoute, playerLevel)
+                    StaticTracks(layout.outerRoute, layout.innerRoute, playerTrack)
                 }
             }
         }
@@ -116,9 +118,9 @@ class DesignBoardTracksRenderTest {
     }
 
     @Composable
-    private fun BoxScope.StaticTracks(outer: RouteLayout, inner: RouteLayout, playerLevel: Int) {
-        DesignTrackForTest(outer, if (playerLevel == outer.layer.level) CellSurface.Tile else CellSurface.Engraved)
-        DesignTrackForTest(inner, if (playerLevel == inner.layer.level) CellSurface.Tile else CellSurface.Engraved)
+    private fun BoxScope.StaticTracks(outer: RouteLayout, inner: RouteLayout, playerTrack: TrackId) {
+        DesignTrackForTest(outer, if (playerTrack == outer.trackId) CellSurface.Tile else CellSurface.Engraved)
+        DesignTrackForTest(inner, if (playerTrack == inner.trackId) CellSurface.Tile else CellSurface.Engraved)
     }
 
     @Test
@@ -132,7 +134,7 @@ class DesignBoardTracksRenderTest {
         setContent {
             AppTheme(forceDark = false) {
                 Box(Modifier.size(size).testTag("phone")) {
-                    StaticTracks(layout.outerRoute, layout.innerRoute, BoardLayer.INNER.level)
+                    StaticTracks(layout.outerRoute, layout.innerRoute, CoreTrackIds.Inner)
                 }
             }
         }
@@ -146,12 +148,12 @@ class DesignBoardTracksRenderTest {
     }
 
     @Test
-    fun playerOnInnerTrack() = render("inner-live", dark = true, playerLevel = BoardLayer.INNER.level)
+    fun playerOnInnerTrack() = render("inner-live", dark = true, playerTrack = CoreTrackIds.Inner)
 
     @Test
-    fun playerOnOuterTrack() = render("outer-live", dark = true, playerLevel = BoardLayer.OUTER.level)
+    fun playerOnOuterTrack() = render("outer-live", dark = true, playerTrack = CoreTrackIds.Outer)
 
     @Test
     fun lightBoardBackgroundTransition() =
-        render("light-transition", dark = false, playerLevel = BoardLayer.INNER.level)
+        render("light-transition", dark = false, playerTrack = CoreTrackIds.Inner)
 }

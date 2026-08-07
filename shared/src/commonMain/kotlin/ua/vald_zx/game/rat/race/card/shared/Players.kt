@@ -136,9 +136,6 @@ data class PlayerLocation(
     val trackId: TrackId = CoreTrackIds.Inner,
 ) {
     constructor(position: Int = 1, level: Int) : this(position, level.toTrackId())
-
-    val level: Int
-        get() = trackId.requireLegacyLayer().level
 }
 
 object PlayerLocationSerializer : KSerializer<PlayerLocation> {

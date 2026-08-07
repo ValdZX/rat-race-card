@@ -29,8 +29,6 @@ data class BoardState(
     val connectionState: BoardConnectionState = BoardConnectionState.Connected,
 ) {
     val trackId: TrackId = player.location.trackId
-    val layer: BoardLayer
-        get() = trackId.requireLegacyLayer()
     val places: List<PlaceType> = board.placesOf(trackId)
     val color: Long = player.attrs.color
     val currentPlayerIsConnected: Boolean by lazy { player.isActiveOn(board) }
@@ -679,10 +677,6 @@ class BoardViewModel(
         safeLaunch {
             takeSalary()
         }
-    }
-
-    fun debugChangePosition(layer: BoardLayer, position: Int) {
-        debugChangePosition(layer.trackId, position)
     }
 
     fun debugChangePosition(trackId: TrackId, position: Int) {

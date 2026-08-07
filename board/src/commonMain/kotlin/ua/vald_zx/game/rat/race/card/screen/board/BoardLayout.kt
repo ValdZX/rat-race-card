@@ -9,7 +9,6 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
-import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.CoreTrackIds
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.TrackId
@@ -17,7 +16,6 @@ import ua.vald_zx.game.rat.race.card.shared.TrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.TrackVisualHint
 import ua.vald_zx.game.rat.race.card.shared.standardContentPackVersions
 import ua.vald_zx.game.rat.race.card.shared.standardFeatureRegistry
-import ua.vald_zx.game.rat.race.card.shared.legacyLayerOrNull
 import ua.vald_zx.game.rat.race.card.shared.toCellInstance
 
 data class BoardLayout(
@@ -39,8 +37,8 @@ data class RouteLayout(
     val cellSize: DpSize,
     val places: List<BoardPlace>,
 ) {
-    val layer: BoardLayer
-        get() = trackId.legacyLayerOrNull() ?: error("Track $trackId has no legacy layer")
+    val cellCount: Int
+        get() = route.places.size
 }
 
 data class BoardPlace(

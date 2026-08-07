@@ -2,7 +2,17 @@
 
 ## Статус документа
 
-Це цільова архітектура й план міграції, а не опис уже реалізованого стану. Рефакторинг має виконуватися інкрементально: кожна фаза завершується працездатною грою, підтримує старі партії та має власні критерії готовності.
+Це цільова архітектура й план міграції. Фази 0–6 виконані, але період сумісності ще триває: старі RPC-методи, sealed-моделі `BoardCard` і три поля розкладки в `Board` живуть паралельно з новим ядром. Рефакторинг виконується інкрементально: кожна фаза завершується працездатною грою, підтримує старі партії та має власні критерії готовності.
+
+| Фаза | Статус | Документ |
+|---|---|---|
+| 0. Захисна сітка | виконано | [PHASE_0_SAFETY_NET.md](PHASE_0_SAFETY_NET.md) |
+| 1. Чисті фінанси й спільний домен | виконано | [PHASE_1_SHARED_FINANCE.md](PHASE_1_SHARED_FINANCE.md) |
+| 2. Application service навколо рушія | виконано | [PHASE_2_APPLICATION_SERVICE.md](PHASE_2_APPLICATION_SERVICE.md) |
+| 3. Реєстр клітинок | виконано | [PHASE_3_CELL_REGISTRY.md](PHASE_3_CELL_REGISTRY.md) |
+| 4. Декларативні картки й generic interaction | виконано для простих колод | [PHASE_4_DECLARATIVE_CARDS.md](PHASE_4_DECLARATIVE_CARDS.md) |
+| 5. Динамічні треки | виконано | [PHASE_5_DYNAMIC_TRACKS.md](PHASE_5_DYNAMIC_TRACKS.md) |
+| 6. Feature-пакети й стабілізація API | виконано, крім видалення застарілих RPC | [PHASE_6_FEATURE_PACKS.md](PHASE_6_FEATURE_PACKS.md) |
 
 ## Мета
 
@@ -292,6 +302,8 @@ data class RuleResult(
 
 ### Фаза 2. Application service навколо рушія
 
+Статус: виконано. Межі рушія, ревізії, ідемпотентність і структурований лог описані в [PHASE_2_APPLICATION_SERVICE.md](PHASE_2_APPLICATION_SERVICE.md).
+
 - Створити `GameEngine.execute(snapshot, command)` без I/O.
 - Винести repository interface і транзакційний application service із `RaceRatServiceImpl`.
 - Додати revision, command ID та ідемпотентне виконання.
@@ -302,6 +314,8 @@ data class RuleResult(
 
 ### Фаза 3. Реєстр клітинок
 
+Статус: виконано. Контракт правила, стабільні `CellTypeId` і presentation registry описані в [PHASE_3_CELL_REGISTRY.md](PHASE_3_CELL_REGISTRY.md).
+
 - Ввести `CellTypeId`, `CellInstance`, `CellRuleRegistry` і `onPass/onLand` pipeline.
 - Обгорнути кожен поточний `PlaceType` adapter’ом до нового handler’а.
 - Перенести серверний `when` у незалежні правила клітинок.
@@ -311,6 +325,8 @@ data class RuleResult(
 Критерій готовності: тестова клітинка з окремого модуля підключається реєстрацією без зміни engine, RPC та центрального UI-dispatcher.
 
 ### Фаза 4. Декларативні картки й generic interaction
+
+Статус: виконано для простих колод. Мігровані колоди, стандартні ефекти та межа generic/спеціалізованого renderer'а описані в [PHASE_4_DECLARATIVE_CARDS.md](PHASE_4_DECLARATIVE_CARDS.md). Активи, аукціон, ринкові події, депутати й корупція ще працюють через старі RPC-методи.
 
 - Ввести `DeckId`, `CardKindId`, `CardDefinition`, availability rules, interactions та effect specs.
 - Спочатку мігрувати прості картки: бізнес, покупки, підробіток і витрати.
@@ -323,6 +339,8 @@ data class RuleResult(
 
 ### Фаза 5. Динамічні треки
 
+Статус: виконано. Модель треків, переходи, `TrackLayoutEngine` і міграція `level → trackId` описані в [PHASE_5_DYNAMIC_TRACKS.md](PHASE_5_DYNAMIC_TRACKS.md).
+
 - Замінити `BoardLayer` на `TrackId` у runtime-моделі.
 - Додати міграцію `level 0 → inner`, `level 1 → outer`.
 - Перенести умови виходу й перемоги в transitions/objectives.
@@ -333,6 +351,8 @@ data class RuleResult(
 Критерій готовності: автоматичний тест створює партію з трьома колами різної довжини, проходить два переходи, робить повний оберт на кожному й коректно рендерить усі треки у portrait, landscape та Wasm.
 
 ### Фаза 6. Feature-пакети й стабілізація API
+
+Статус: виконано, крім видалення застарілих RPC-методів і дубльованих моделей. Склад пакетів, фіксація версій у партії та міграції збережень описані в [PHASE_6_FEATURE_PACKS.md](PHASE_6_FEATURE_PACKS.md).
 
 - Рознести core content, family, investments, deputies/corruption та dreams у feature-пакети.
 - Додати manifest із `featureId`, версією, залежностями, definitions і migrations.

@@ -56,7 +56,7 @@ class DesignSpeechBubbleTest {
         id = playerId,
         boardId = "b",
         attrs = PlayerAttributes(0xFF3355AA, 0),
-        location = PlayerLocation(position = standsOn.index, level = route.layer.level),
+        location = PlayerLocation(position = standsOn.index, trackId = route.trackId),
     )
 
     @AfterTest

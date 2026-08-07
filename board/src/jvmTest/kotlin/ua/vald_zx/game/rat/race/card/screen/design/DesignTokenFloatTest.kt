@@ -92,7 +92,7 @@ class DesignTokenFloatTest {
                     id = "2",
                     boardId = "b",
                     attrs = PlayerAttributes(0xFF3355AA, 0),
-                    location = PlayerLocation(position = standsOn.index, level = layout.innerRoute.layer.level),
+                    location = PlayerLocation(position = standsOn.index, trackId = layout.innerRoute.trackId),
                 )
             )
             setContent {
@@ -119,7 +119,7 @@ class DesignTokenFloatTest {
         layout.innerRoute.places.first {
             it.index == moveTo(
                 layout.innerRoute.places.first { p -> p.place.type.name == "Bankruptcy" }.index,
-                layout.innerRoute.layer.cellCount,
+                layout.innerRoute.cellCount,
                 layout.innerRoute.route.offset,
             )
         }
@@ -134,7 +134,7 @@ class DesignTokenFloatTest {
                 id = "3",
                 boardId = "b",
                 attrs = PlayerAttributes(NEIGHBOUR_COLOR, 0),
-                location = PlayerLocation(position = position, level = layout.innerRoute.layer.level),
+                location = PlayerLocation(position = position, trackId = layout.innerRoute.trackId),
             )
         }
         setContent {
@@ -158,7 +158,7 @@ class DesignTokenFloatTest {
         val tokenHome = tokenBounds("3")
 
         val shown = layout.innerRoute.places.first {
-            it.index == moveTo(target.index, layout.innerRoute.layer.cellCount, layout.innerRoute.route.offset)
+            it.index == moveTo(target.index, layout.innerRoute.cellCount, layout.innerRoute.route.offset)
         }
         onNodeWithTag("board").performMouseInput {
             moveTo(
@@ -189,7 +189,7 @@ class DesignTokenFloatTest {
                 id = "5",
                 boardId = "b",
                 attrs = PlayerAttributes(NEIGHBOUR_COLOR, 0),
-                location = PlayerLocation(position = standsOn.index, level = route.layer.level),
+                location = PlayerLocation(position = standsOn.index, trackId = route.trackId),
             )
         )
         setContent {
@@ -217,7 +217,7 @@ class DesignTokenFloatTest {
         waitForIdle()
 
         val shown = route.places.first {
-            it.index == moveTo(standsOn.index, route.layer.cellCount, route.route.offset)
+            it.index == moveTo(standsOn.index, route.cellCount, route.route.offset)
         }
         onNodeWithTag("board").performMouseInput {
             moveTo(
@@ -293,7 +293,7 @@ class DesignTokenFloatTest {
         waitForIdle()
 
         val shown = route.places.first {
-            it.index == moveTo(standsOn.index, route.layer.cellCount, route.route.offset)
+            it.index == moveTo(standsOn.index, route.cellCount, route.route.offset)
         }
         onNodeWithTag("board").performMouseInput {
             moveTo(
@@ -342,7 +342,7 @@ class DesignTokenFloatTest {
                 assertTrue(
                     tokenRight <= expanded.left || tokenLeft >= expanded.right ||
                             tokenBottom <= expanded.top || tokenTop >= expanded.bottom,
-                    "клітинка $index на ${route.layer}: фішка лишилася під розгорнутою клітинкою",
+                    "клітинка $index на ${route.trackId.value}: фішка лишилася під розгорнутою клітинкою",
                 )
                 val tokenCenterX = tokenLeft + route.cellSize.width / 2
                 val tokenCenterY = tokenTop + route.cellSize.height / 2
@@ -352,7 +352,7 @@ class DesignTokenFloatTest {
                                 kotlin.math.abs((place.offset.x + place.size.width / 2 - centreX).value) ||
                                 kotlin.math.abs((tokenCenterY - centreY).value) <
                                 kotlin.math.abs((place.offset.y + place.size.height / 2 - centreY).value),
-                        "клітинка $index на ${route.layer}: зовнішня фішка не відійшла всередину дошки",
+                        "клітинка $index на ${route.trackId.value}: зовнішня фішка не відійшла всередину дошки",
                     )
                 }
             }
@@ -374,7 +374,7 @@ class DesignTokenFloatTest {
                     assertEquals(1, offsets.map { it.first }.distinct().size)
                     assertTrue(offsets.zipWithNext().all { (first, second) -> first.second < second.second })
                 }
-                assertEquals(5, offsets.distinct().size, "клітинка $placeIndex на ${route.layer}")
+                assertEquals(5, offsets.distinct().size, "клітинка $placeIndex на ${route.trackId.value}")
             }
         }
     }
@@ -388,7 +388,7 @@ class DesignTokenFloatTest {
                 id = "4",
                 boardId = "b",
                 attrs = PlayerAttributes(NEIGHBOUR_COLOR, 0),
-                location = PlayerLocation(position = standsOn.index, level = layout.outerRoute.layer.level),
+                location = PlayerLocation(position = standsOn.index, trackId = layout.outerRoute.trackId),
             )
         )
         setContent {
@@ -412,7 +412,7 @@ class DesignTokenFloatTest {
         val home = tokenBounds("4")
 
         val shown = layout.outerRoute.places.first {
-            it.index == moveTo(standsOn.index, layout.outerRoute.layer.cellCount, layout.outerRoute.route.offset)
+            it.index == moveTo(standsOn.index, layout.outerRoute.cellCount, layout.outerRoute.route.offset)
         }
         onNodeWithTag("board").performMouseInput {
             moveTo(

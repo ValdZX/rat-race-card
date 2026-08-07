@@ -48,6 +48,7 @@ Write self-explanatory code instead of comments. Do **not** add explanatory comm
 
 - **State management (offline):** custom minimal Redux in `logic/NanoRedux.kt` — `State` / `Action` / `Effect` interfaces and a `Store<S,A,E>` with `observeState()` / `observeSideEffect()` / `dispatch()`. `RatRace2CardStore.dispatch()` is one big `when(action)` reducer producing a new `RatRace2CardState`; one-shot UI events go through `sideEffect`.
 - **State management (online):** `BoardViewModel` (AndroidX `ViewModel`) holds `BoardState`, dispatches `BoardUiAction`, and reacts to server `Event` streams.
+- **Domain core (online):** pure, I/O-free game engine in `shared/` — `GameEngine.execute(snapshot, envelope)` → `GameExecution`, wrapped by `GameApplicationService` (board mutex, `GameRepository`, `GameCommandLog`). Behaviour is registered, not switched: `CellRuleRegistry` (`CellTypeId`), `EffectHandlerRegistry` (`EffectTypeId`), `FeatureRegistry` (`FeatureId` + version). `Board.revision` + `processedCommandIds` give optimistic concurrency and idempotency. **New online rules belong here, not in `RaceRatServiceImpl`.** See `docs/ARCHITECTURE.md`.
 - **RPC:** `kotlinx-rpc` (kRPC) over Ktor WebSockets, JSON serialization. Service interfaces are annotated `@Rpc` in `shared/`. Client stubs are built in `core/.../di/Rpc.kt` (`getRaceRatService()` / `getRaceRatCardService()`); server impls are `RaceRatServiceImpl` / `RaceRatCardServiceImpl`.
 - **DI:** Koin, one module per Gradle module — `coreModule` (`core/.../di/Rpc.kt`), `cardModule` (`card/.../di/CardModule.kt`), `boardModule` (`board/.../di/BoardModule.kt`). `App.kt` in `composeApp` wires all three into `KoinApplication`.
 - **Navigation:** Voyager (`Navigator` / `CurrentScreen`, screens are `Screen` classes). Entry screen is `SelectTypeScreen`.
@@ -78,7 +79,12 @@ All modules share the package root `ua.vald_zx.game.rat.race.card`.
 - `screen/board/` — online board-mode screens; `cards/` = card deck definitions & logic, `deck/` = card rendering, `page/` = asset tabs, `visualize/` = board drawing.
 - `screen/BoardListScreen.kt`, `screen/LoadOnlineScreen.kt`, `components/preview/`, `di/BoardModule.kt`.
 
-Shared models the server also uses live in `shared/.../shared/` (`Board.kt`, `Players.kt`, `Cards.kt`, `Auction.kt`, `Place.kt`, `ProfessionCard.kt`).
+`shared/src/commonMain/.../shared/`:
+- Domain core: `GameEngine.kt`, `GameApplicationService.kt`, `GameCommands.kt`, `GameCommandLog.kt`, `GameEnvironment.kt` (`GameRandom`/`GameClock`).
+- Registries & content: `CellRules.kt`, `CardDefinitions.kt`, `CardEffects.kt`, `Features.kt`, `Cells.kt` (tracks, transitions, `CellTypeId`).
+- Finance shared by both modes: `Finance.kt` (`FinancialAccount`, `FinancialSnapshot`, `MoneyService`, `PaymentPolicy`).
+- Versioning: `BoardSnapshotMigrations.kt` (`schemaVersion`, `vN → vN+1` steps).
+- Serialized models the server also uses: `Board.kt`, `Players.kt`, `Cards.kt`, `Auction.kt`, `Place.kt`, `ProfessionCard.kt`, `RaceRatService.kt`.
 
 ## Build & run
 
@@ -120,7 +126,9 @@ There is no CI config in-repo; verify changes by building the relevant target.
 ## Gotchas / conventions
 
 - **`core/.../di/Rpc.kt` hardcodes `apiUrl`** to a LAN address (`ws://192.168.0.159:8080/api`) with prod URLs commented out. This is the active server endpoint the client connects to — update it for your environment; don't assume it points at production.
-- Adding/changing a `@Rpc` method means editing **both** the interface in `shared/` and the impl in `server/`, and (for client) the call sites in the store/view model.
+- Adding/changing a `@Rpc` method means editing **both** the interface in `shared/` and the impl in `server/`, and (for client) the call sites in the store/view model. Prefer a `GameCommand` through `executeCommand` over a new RPC method — the legacy per-scenario methods are being removed, not extended.
+- The refactoring is mid-strangler: `BoardCard` sealed types coexist with `CardDefinition`, and `Board` carries three layout representations (`generatedPlaces`, `trackDefinitions`, `tracks`) resolved by `resolvedTracks()`. Don't add a fourth path — extend `tracks`.
+- Cell/track code must key off `CellTypeId` and `TrackId`. `BoardLayer` is a legacy two-circle constant; use `legacyLayerOrNull()` only in null-safe spots, never a throwing mapping in a render path.
 - New `Action`s go in the `RatRace2CardAction` sealed class **and** the `dispatch` `when` in `RatRace2CardStore.kt`. New one-shot UI events go in `RatRace2CardSideEffect`.
 - Persisted local state is plain JSON via KStore; changing `@Serializable` model fields can break existing saved files — keep defaults on new fields.
 - `resource/images/*.kt` are generated-style vector assets — large and noisy; the user has asked to ignore resource-heavy dirs during analysis.

@@ -116,7 +116,7 @@ class DesignTokenBubbleTest {
                 boardId = "b",
                 attrs = PlayerAttributes(0xFF3355AA, 0),
                 card = PlayerCard(name = "Olena", profession = "Engineer", salary = 4900),
-                location = PlayerLocation(position = standsOn.index, level = route.layer.level),
+                location = PlayerLocation(position = standsOn.index, trackId = route.trackId),
             )
         )
         setContent {

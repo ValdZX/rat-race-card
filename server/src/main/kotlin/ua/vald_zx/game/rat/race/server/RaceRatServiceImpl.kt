@@ -58,6 +58,14 @@ class RaceRatServiceImpl(
         repository = StorageGameRepository,
         engine = GameEngine(random),
         transactionMutex = ::boardMutex,
+        clock = clock,
+        log = { entry ->
+            if (entry.outcome == GameCommandOutcome.APPLIED) {
+                LOGGER.info(entry.format())
+            } else {
+                LOGGER.warn(entry.format())
+            }
+        },
     )
 
     private val playerId: String

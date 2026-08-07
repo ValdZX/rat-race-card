@@ -39,11 +39,10 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.logic.players
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.resource.images.Money
-import ua.vald_zx.game.rat.race.card.shared.BoardLayer
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
+import ua.vald_zx.game.rat.race.card.shared.TrackId
 import ua.vald_zx.game.rat.race.card.shared.dreamById
 import ua.vald_zx.game.rat.race.card.shared.moveTo
-import ua.vald_zx.game.rat.race.card.shared.trackId
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import androidx.compose.ui.text.intl.Locale
 
@@ -96,7 +95,7 @@ private fun PlaceType.color(): Color {
 fun BoxScope.PlaceContent(
     place: Place,
     vm: BoardViewModel,
-    layer: BoardLayer,
+    trackId: TrackId,
     index: Int,
     route: BoardRoute,
 ) {
@@ -112,7 +111,7 @@ fun BoxScope.PlaceContent(
             val investmentPosition = state.player.investmentPosition
             fun isHere(position: Int?): Boolean {
                 return position != null &&
-                        layer.trackId == state.trackId &&
+                        trackId == state.trackId &&
                         index == moveTo(
                     position = position,
                     cellCount = route.places.size,
@@ -350,7 +349,7 @@ fun BoxScope.PlaceContent(
             val capitalization = state.player.startCapitalization
             val canCapitalize = remember(capitalization) {
                 capitalization != null &&
-                        layer.trackId == state.trackId &&
+                        trackId == state.trackId &&
                         index == moveTo(
                     position = capitalization.position,
                             cellCount = route.places.size,
@@ -440,7 +439,7 @@ fun BoxScope.Places(
                     index = index,
                     place = place,
                     route = layout.route,
-                    layer = layout.layer,
+                    trackId = layout.trackId,
                     vm = vm,
                 )
             }

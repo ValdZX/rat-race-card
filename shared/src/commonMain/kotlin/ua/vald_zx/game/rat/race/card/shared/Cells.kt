@@ -233,7 +233,4 @@ fun TrackId.legacyLayerOrNull(): BoardLayer? = when (this) {
     else -> null
 }
 
-fun TrackId.requireLegacyLayer(): BoardLayer = legacyLayerOrNull()
-    ?: error("Track $value has no legacy BoardLayer mapping")
-
 const val DREAM_ID_PARAMETER = "dreamId"
