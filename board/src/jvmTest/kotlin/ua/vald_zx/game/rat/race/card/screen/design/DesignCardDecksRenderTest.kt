@@ -12,7 +12,9 @@ import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -23,6 +25,7 @@ import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class DesignCardDecksRenderTest {
@@ -77,5 +80,54 @@ class DesignCardDecksRenderTest {
         val image = onNodeWithTag("decks").captureToImage().toAwtImage()
         File("build").mkdirs()
         ImageIO.write(image, "png", File("build/design-decks.png"))
+    }
+
+    @Test
+    fun deckTextGrowsWithTheSlot() = runComposeUiTest {
+        val fullscreenSlot = slotSize * 2f
+        setContent {
+            AppTheme(forceDark = true) {
+                Row(
+                    Modifier
+                        .background(Design.scaffold.surface4)
+                        .padding(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(Modifier.size(slotSize)) {
+                        DeckSlot(
+                            type = BoardCardType.Chance,
+                            kind = CardDeckSlotKind.DRAW,
+                            size = slotSize,
+                            count = 12,
+                            canTake = false,
+                            onClick = {},
+                        )
+                    }
+                    Box(Modifier.size(fullscreenSlot)) {
+                        DeckSlot(
+                            type = BoardCardType.Chance,
+                            kind = CardDeckSlotKind.DRAW,
+                            size = fullscreenSlot,
+                            count = 34,
+                            canTake = false,
+                            onClick = {},
+                        )
+                    }
+                }
+            }
+        }
+        waitForIdle()
+
+        val baselineHeight = onNodeWithText("12", useUnmergedTree = true)
+            .getBoundsInRoot()
+            .let { it.bottom - it.top }
+        val fullscreenHeight = onNodeWithText("34", useUnmergedTree = true)
+            .getBoundsInRoot()
+            .let { it.bottom - it.top }
+
+        assertTrue(
+            fullscreenHeight >= baselineHeight * 1.8f,
+            "текст повноекранної колоди не масштабується: $baselineHeight -> $fullscreenHeight",
+        )
     }
 }

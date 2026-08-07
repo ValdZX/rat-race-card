@@ -33,6 +33,7 @@ import ua.vald_zx.game.rat.race.card.screen.board.*
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 
 internal const val DECKS_Z = 2f
+private val deckTextBaseline = 74.dp
 
 internal fun deckSlotTag(type: BoardCardType, kind: CardDeckSlotKind) = "deck-${type.name}-${kind.name}"
 
@@ -88,6 +89,7 @@ internal fun DeckSlot(
     val density = LocalDensity.current
     val isDraw = kind == CardDeckSlotKind.DRAW
     val minSize = min(size.width, size.height)
+    val textScale = responsiveBoardTextScale(minSize, deckTextBaseline)
     val shape = if (minSize >= 56.dp) DesignShapes.xl else DesignShapes.sm
 
     Box(
@@ -134,7 +136,7 @@ internal fun DeckSlot(
                 if (withLabel) {
                     Text(
                         text = type.shortLabel(),
-                        style = Design.type.cellSm,
+                        style = Design.type.cellSm.scaleForBoard(textScale),
                         color = ink,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
@@ -143,7 +145,7 @@ internal fun DeckSlot(
                 }
                 Text(
                     text = count.toString(),
-                    style = Design.type.monoMeta,
+                    style = Design.type.monoMeta.scaleForBoard(textScale),
                     color = ink,
                     maxLines = 1,
                     softWrap = false,

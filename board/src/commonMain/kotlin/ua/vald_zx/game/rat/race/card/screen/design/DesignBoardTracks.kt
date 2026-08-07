@@ -73,6 +73,7 @@ internal const val FOCUSED_CELL_Z = 10f
 
 private val minExpandedHeight = 34.dp
 private val dreamCellWidth = 220.dp
+private val cellTextBaseline = 30.dp
 
 internal class DreamCellContext(
     val dream: (String) -> Dream?,
@@ -437,8 +438,9 @@ private fun BoxScope.TrackCell(
 ) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
-    val labelStyle = expandedLabelStyle()
-    val amountStyle = Design.type.monoMeta
+    val textScale = responsiveBoardTextScale(minOf(layout.cellSize.width, layout.cellSize.height), cellTextBaseline)
+    val labelStyle = expandedLabelStyle(textScale)
+    val amountStyle = Design.type.monoMeta.scaleForBoard(textScale)
     val trackId = layout.trackId
     val onThisLayer = live && player != null
     val salaryHere = onThisLayer && place.type == PlaceType.Salary &&
@@ -472,13 +474,14 @@ private fun BoxScope.TrackCell(
         null
     }
     val dreamSelectors = dream?.let { dreams?.selectors(it.id).orEmpty() }.orEmpty()
-    val dreamDetail = dreamDetail(dream, dreamSelectors, dreams)
+    val dreamDetail = dreamDetail(dream, dreamSelectors, dreams, textScale)
     val openBox = if (dreamDetail != null && dream != null) {
         dreamCellSize(
             dream = dream,
             selectorCount = dreamSelectors.size,
             expandedBox = expandedBox,
             expandedIcon = expandedIcon,
+            textScale = textScale,
         )
     } else {
         DpSize(maxOf(expandedBox.width, expandedWidth), expandedBox.height)
@@ -501,6 +504,7 @@ private fun BoxScope.TrackCell(
         label = label,
         expanded = expanded,
         expandedIcon = expandedIcon,
+        textScale = textScale,
         onTap = if (canExpand) {
             { focus.tap(trackId to index) }
         } else {
@@ -533,6 +537,7 @@ private fun dreamDetail(
     dream: Dream?,
     selectors: List<Player>,
     dreams: DreamCellContext?,
+    textScale: Float,
 ): (@Composable ColumnScope.() -> Unit)? {
     if (dream == null || dreams == null) return null
     val isSelected = selectors.any { it.id == dreams.currentPlayerId }
@@ -545,15 +550,17 @@ private fun dreamDetail(
         else -> stringResource(Res.string.dream_taken_by_other)
     }
     val colors = Design.colors
+    val cellStyle = Design.type.cellSm.scaleForBoard(textScale)
+    val metaStyle = Design.type.monoMeta.scaleForBoard(textScale)
     return {
         Text(
             text = dream.name,
-            style = Design.type.cellSm,
+            style = cellStyle,
             color = colors.scaffold.onFill,
         )
         Text(
             text = dream.price.splitDecimal(),
-            style = Design.type.monoMeta,
+            style = metaStyle,
             color = colors.scaffold.onFill,
             maxLines = 1,
             softWrap = false,
@@ -561,7 +568,7 @@ private fun dreamDetail(
         if (dream.description.isNotBlank()) {
             Text(
                 text = dream.description,
-                style = Design.type.monoMeta,
+                style = metaStyle,
                 color = colors.scaffold.onFill,
             )
         }
@@ -571,13 +578,13 @@ private fun dreamDetail(
             ) {
                 Text(
                     text = "$chosenByLabel:",
-                    style = Design.type.monoMeta,
+                    style = metaStyle,
                     color = colors.scaffold.onFill,
                     maxLines = 1,
                     softWrap = false,
                 )
                 selectors.forEach { selector ->
-                    DreamSelectorChip(selector)
+                    DreamSelectorChip(selector, textScale)
                 }
             }
         }
@@ -585,9 +592,9 @@ private fun dreamDetail(
             text = selectLabel,
             enabled = !isSelected && dreams.canSelect(dream.id),
             disabledReason = disabledReason,
-            height = 26.dp,
-            fontSize = 11.sp,
-            padding = 10.dp,
+            height = 26.dp * textScale,
+            fontSize = 11.sp * textScale,
+            padding = 10.dp * textScale,
             modifier = Modifier.align(Alignment.CenterHorizontally),
             onClick = { dreams.onSelect(dream.id) },
         )
@@ -600,14 +607,16 @@ private fun dreamCellSize(
     selectorCount: Int,
     expandedBox: DpSize,
     expandedIcon: Dp,
+    textScale: Float,
 ): DpSize {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
-    val contentWidth = dreamCellWidth - 16.dp
+    val scaledDreamCellWidth = dreamCellWidth * textScale
+    val contentWidth = scaledDreamCellWidth - 16.dp * textScale
     val maxWidth = with(density) { contentWidth.roundToPx() }
-    val cellStyle = Design.type.cellSm
-    val metaStyle = Design.type.monoMeta
-    val headerStyle = expandedLabelStyle()
+    val cellStyle = Design.type.cellSm.scaleForBoard(textScale)
+    val metaStyle = Design.type.monoMeta.scaleForBoard(textScale)
+    val headerStyle = expandedLabelStyle(textScale)
     fun measuredHeight(text: String, maxLines: Int = Int.MAX_VALUE): Dp = with(density) {
         measurer.measure(
             text = text,
@@ -631,34 +640,34 @@ private fun dreamCellSize(
         if (dream.description.isNotBlank()) add(measuredHeight(dream.description))
         if (selectorCount > 0) {
             val lineHeight = measuredHeight("Selected by")
-            add(lineHeight * (selectorCount + 1) + 2.dp * selectorCount)
+            add(lineHeight * (selectorCount + 1) + 2.dp * textScale * selectorCount)
         }
-        add(26.dp)
+        add(26.dp * textScale)
     }
-    val contentHeight = detailHeights.fold(12.dp) { total, height -> total + height } +
-            4.dp * (detailHeights.size - 1)
+    val contentHeight = detailHeights.fold(12.dp * textScale) { total, height -> total + height } +
+            4.dp * textScale * (detailHeights.size - 1)
     return DpSize(
-        width = maxOf(expandedBox.width, dreamCellWidth),
+        width = maxOf(expandedBox.width, scaledDreamCellWidth),
         height = maxOf(expandedBox.height, contentHeight),
     )
 }
 
 @Composable
-private fun DreamSelectorChip(player: Player) {
+private fun DreamSelectorChip(player: Player, textScale: Float) {
     val colors = Design.colors
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp * textScale),
     ) {
         Box(
             modifier = Modifier
-                .size(7.dp)
+                .size(7.dp * textScale)
                 .background(Color(player.attrs.color), CircleShape)
                 .border(1.dp, colors.scaffold.onFill, CircleShape)
         )
         Text(
             text = player.card.name.ifBlank { player.card.profession },
-            style = Design.type.monoMeta,
+            style = Design.type.monoMeta.scaleForBoard(textScale),
             color = colors.scaffold.onFill,
             maxLines = 1,
             softWrap = false,

@@ -135,16 +135,23 @@ class DesignCellExpandTest {
             }
         }
         waitForIdle()
-        val reference = onNodeWithTag("reference").getBoundsInRoot().let { it.right - it.left }
+        val referenceBounds = onNodeWithTag("reference").getBoundsInRoot()
+        val referenceWidth = referenceBounds.right - referenceBounds.left
+        val referenceHeight = referenceBounds.bottom - referenceBounds.top
 
         tapCell(cellCenter(layout.outerRoute.size, place, board))
         waitForIdle()
 
-        val label = onNodeWithText("Bankruptcy", useUnmergedTree = true).getBoundsInRoot()
-        val shown = label.right - label.left
+        val labelBounds = onNodeWithText("Bankruptcy", useUnmergedTree = true).getBoundsInRoot()
+        val shownWidth = labelBounds.right - labelBounds.left
+        val shownHeight = labelBounds.bottom - labelBounds.top
         assertTrue(
-            shown >= reference,
-            "підпис обрізано: показано $shown, а повний напис $reference",
+            shownWidth >= referenceWidth,
+            "підпис обрізано: показано $shownWidth, а повний напис $referenceWidth",
+        )
+        assertTrue(
+            shownHeight > referenceHeight,
+            "текст великої дошки не масштабується: $referenceHeight -> $shownHeight",
         )
     }
 

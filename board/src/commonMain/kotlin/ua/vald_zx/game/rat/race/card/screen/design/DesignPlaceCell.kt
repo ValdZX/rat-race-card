@@ -104,6 +104,7 @@ fun DesignPlaceCell(
     compact: Boolean = false,
     expanded: Boolean = false,
     expandedIcon: Dp = expandedIconSize,
+    textScale: Float = 1f,
     waitingAmount: Long? = null,
     expandedDetail: (@Composable ColumnScope.() -> Unit)? = null,
     claimMarks: List<Color> = emptyList(),
@@ -169,7 +170,7 @@ fun DesignPlaceCell(
                     icon(Modifier.size(expandedIcon))
                     Text(
                         text = label,
-                        style = expandedLabelStyle(),
+                        style = expandedLabelStyle(textScale),
                         color = ink,
                         maxLines = 1,
                         softWrap = false,
@@ -186,7 +187,7 @@ fun DesignPlaceCell(
                 icon(Modifier.size(expandedIcon))
                 Text(
                     text = label,
-                    style = expandedLabelStyle(),
+                    style = expandedLabelStyle(textScale),
                     color = ink,
                     maxLines = 1,
                     softWrap = false,
@@ -212,26 +213,30 @@ fun DesignPlaceCell(
         }
     }
         if (waitingAmount != null && expanded) {
-            WaitingToken(waitingAmount, Modifier.offset(x = 6.dp, y = (-8).dp))
+            WaitingToken(
+                amount = waitingAmount,
+                textScale = textScale,
+                modifier = Modifier.offset(x = 6.dp * textScale, y = (-8).dp * textScale),
+            )
         }
     }
 }
 
 @Composable
-private fun WaitingToken(amount: Long, modifier: Modifier = Modifier) {
+private fun WaitingToken(amount: Long, textScale: Float, modifier: Modifier = Modifier) {
     val colors = Design.colors
     Box(
         modifier = modifier
-            .height(18.dp)
+            .height(18.dp * textScale)
             .clip(DesignShapes.sm)
             .background(colors.scaffold.brass)
             .border(1.5.dp, colors.scaffold.onFill, DesignShapes.sm)
-            .padding(horizontal = 5.dp),
+            .padding(horizontal = 5.dp * textScale),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = waitingAmountLabel(amount),
-            style = Design.type.monoMeta,
+            style = Design.type.monoMeta.scaleForBoard(textScale),
             color = colors.scaffold.brassInk,
             maxLines = 1,
             softWrap = false,
@@ -305,7 +310,7 @@ internal const val COLLAPSED_ICON_FRACTION = 0.66f
 internal fun expandedLabelChrome(iconSize: Dp): Dp = iconSize + 6.dp + 16.dp
 
 @Composable
-internal fun expandedLabelStyle() = Design.type.cellSm.copy(
+internal fun expandedLabelStyle(scale: Float = 1f) = Design.type.cellSm.scaleForBoard(scale).copy(
     fontWeight = FontWeight.ExtraBold,
     letterSpacing = 0.sp,
     textAlign = TextAlign.Center,
