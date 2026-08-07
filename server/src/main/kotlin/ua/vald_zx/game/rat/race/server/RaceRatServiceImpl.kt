@@ -402,7 +402,7 @@ class RaceRatServiceImpl(
 
                 is GameExecution.Duplicate -> return
                 is GameExecution.Applied -> {
-                    publish(execution)
+                    publish(execution, boardId)
                     return
                 }
             }
@@ -512,9 +512,7 @@ class RaceRatServiceImpl(
     override suspend fun reelection() {
         val board = board()
         board.players().filter { it.deputies > 0 }.forEach { player ->
-            val released = player.copy(deputies = 0)
-            Storage.updatePlayer(released)
-            globalEventBus.emit(GlobalEvent.PlayerChanged(released))
+            publishPlayerChange(player.copy(deputies = 0))
         }
         nextPlayer()
     }
@@ -586,20 +584,21 @@ class RaceRatServiceImpl(
         )
     }
 
-    private suspend fun publish(execution: GameExecution) {
-        if (execution is GameExecution.Applied) publish(execution.result)
+    private suspend fun publish(execution: GameExecution, boardId: String = boardIdState.value) {
+        if (execution is GameExecution.Applied) publish(execution.result, boardId)
     }
 
-    private suspend fun publish(result: RuleResult) {
+    private suspend fun publish(result: RuleResult, boardId: String = boardIdState.value) {
+        val boardBus = getGlobalEventBus(boardId)
         result.events.forEach { domainEvent ->
             when (domainEvent) {
                 is DomainEvent.PlayerChanged -> {
-                    globalEventBus.emit(GlobalEvent.PlayerChanged(domainEvent.player))
+                    boardBus.emit(GlobalEvent.PlayerChanged(domainEvent.player))
                     checkVictory(domainEvent.player)
                 }
 
                 is DomainEvent.EconomyPeriodAdvanced ->
-                    globalEventBus.emit(GlobalEvent.EconomyPeriodAdvanced(domainEvent.index))
+                    boardBus.emit(GlobalEvent.EconomyPeriodAdvanced(domainEvent.index))
 
                 is DomainEvent.CardOptionsOpened,
                 is DomainEvent.DiceRolled,
@@ -612,13 +611,13 @@ class RaceRatServiceImpl(
             when (notice) {
                 is PresentationNotice.BankruptBusiness -> eventBus.emit(Event.BankruptBusiness(notice.business))
                 is PresentationNotice.PlayerHadBaby ->
-                    globalEventBus.emit(GlobalEvent.PlayerHadBaby(notice.playerId, notice.babies))
+                    boardBus.emit(GlobalEvent.PlayerHadBaby(notice.playerId, notice.babies))
 
                 is PresentationNotice.PlayerDivorced ->
-                    globalEventBus.emit(GlobalEvent.PlayerDivorced(notice.playerId))
+                    boardBus.emit(GlobalEvent.PlayerDivorced(notice.playerId))
 
                 is PresentationNotice.PlayerMarried ->
-                    globalEventBus.emit(GlobalEvent.PlayerMarried(notice.playerId))
+                    boardBus.emit(GlobalEvent.PlayerMarried(notice.playerId))
 
                 is PresentationNotice.Resignation -> eventBus.emit(Event.Resignation(notice.business))
                 PresentationNotice.DreamOffered -> eventBus.emit(Event.DreamOffered)
@@ -809,8 +808,7 @@ class RaceRatServiceImpl(
             val previousPlayer = player()
             val changed = previousPlayer.change()
             val newPlayer = changed.withRecentChanges(previousPlayer)
-            Storage.updatePlayer(newPlayer)
-            globalEventBus.emit(GlobalEvent.PlayerChanged(newPlayer))
+            publishPlayerChange(newPlayer)
             updatedPlayer = newPlayer
         }
         updatedPlayer?.let { player ->
@@ -984,9 +982,8 @@ class RaceRatServiceImpl(
             val outcome = currentBoard.applyMarketCrash(holder.sharesList, card)
             if (outcome.markdowns.isEmpty()) return@forEach
             val marked = holder.copy(sharesList = outcome.shares).withTrackedFinancialChanges(holder)
-            Storage.updatePlayer(marked)
+            publishPlayerChange(marked)
             Storage.appendLedger(marked, LedgerReason.MARKET_CRASH, currentBoard.economy)
-            globalEventBus.emit(GlobalEvent.PlayerChanged(marked))
             globalEventBus.emit(GlobalEvent.MarketCrashed(holder.id, card.sector, outcome.lostValue))
         }
         nextPlayer()
@@ -1474,13 +1471,18 @@ class RaceRatServiceImpl(
 
 private val BOARD_DELETION_INACTIVITY = 7.days
 
+internal suspend fun publishPlayerChange(player: Player) {
+    Storage.updatePlayer(player)
+    getGlobalEventBus(player.boardId).emit(GlobalEvent.PlayerChanged(player))
+}
+
 suspend fun nextPlayer(board: Board) {
     val activePlayers = board.activePlayers(Storage.players(board.id))
     if (activePlayers.isEmpty()) return
     val nextPlayerId = board.nextActivePlayer(activePlayers)?.id ?: return
     Storage.getPlayerOrNull(board.activePlayerId)?.let { outgoing ->
         if (outgoing.salaryPosition != null || outgoing.investmentPosition != null) {
-            Storage.updatePlayer(outgoing.copy(salaryPosition = null, investmentPosition = null))
+            publishPlayerChange(outgoing.copy(salaryPosition = null, investmentPosition = null))
         }
     }
     val updatedBoard = board.discardPileB().copy(
@@ -1500,7 +1502,7 @@ suspend fun nextPlayer(board: Board) {
     val nextPlayer = activePlayers.find { it.id == nextPlayerId }
     if ((nextPlayer?.inRest ?: 0) > 0) {
         val player = Storage.getPlayer(nextPlayerId)
-        Storage.updatePlayer(player.copy(inRest = player.inRest - 1))
+        publishPlayerChange(player.copy(inRest = player.inRest - 1))
         nextPlayer(updatedBoard)
     }
 }

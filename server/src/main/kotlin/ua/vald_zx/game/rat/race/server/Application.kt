@@ -168,9 +168,7 @@ private suspend fun handleDisconnect(uuid: String) {
 private suspend fun markPlayerInactive(playerId: String) {
     val player = Storage.getPlayerOrNull(playerId) ?: return
     if (player.isInactive) return
-    val inactivePlayer = player.copy(isInactive = true)
-    Storage.updatePlayer(inactivePlayer)
-    getGlobalEventBus(player.boardId).emit(GlobalEvent.PlayerChanged(inactivePlayer))
+    publishPlayerChange(player.copy(isInactive = true))
 
     val board = Storage.getBoardOrNull(player.boardId) ?: return
     val sanitizedBoard = board.copy(
