@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -33,6 +34,7 @@ import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 @OptIn(ExperimentalTestApi::class, androidx.compose.material.ExperimentalMaterialApi::class)
 class DesignTokenBubbleTest {
@@ -54,7 +56,7 @@ class DesignTokenBubbleTest {
         tapToken("rival")
 
         onNodeWithText("Olena", useUnmergedTree = true).assertExists()
-        onNodeWithText("Engineer", useUnmergedTree = true).assertExists()
+        assertEquals(2, onAllNodesWithText("Engineer", useUnmergedTree = true).fetchSemanticsNodes().size)
         onNodeWithText("Send", useUnmergedTree = true).assertExists()
         onNodeWithText("Send message", useUnmergedTree = true).assertExists()
 
@@ -79,7 +81,7 @@ class DesignTokenBubbleTest {
         tapToken("rival")
 
         onNodeWithText("Olena", useUnmergedTree = true).assertExists()
-        onNodeWithText("Unemployed", useUnmergedTree = true).assertExists()
+        assertEquals(2, onAllNodesWithText("Unemployed", useUnmergedTree = true).fetchSemanticsNodes().size)
         onNodeWithText("Engineer", useUnmergedTree = true).assertDoesNotExist()
 
         capture("build/design-token-bubble-fired.png")

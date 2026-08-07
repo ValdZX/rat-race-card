@@ -76,16 +76,21 @@ fun BoxScope.DesignPlayerTokens(
             val x by animateDpAsState(target.offset.first, label = "TokenX")
             val y by animateDpAsState(target.offset.second, label = "TokenY")
             val playerId = pointerState.player.id
-            DesignPlayerToken(
-                player = pointerState.player,
-                isCurrentPlayer = pointerState.isCurrentPlayer,
-                isActivePlayer = pointerState.isActivePlayer,
-                spotSize = layout.cellSize,
+            Box(
                 modifier = Modifier
                     .offset(x, y)
-                    .testTag("player-token-$playerId"),
-                onClick = { bubble.toggle(playerId) },
-            )
+                    .size(layout.cellSize),
+                contentAlignment = Alignment.Center,
+            ) {
+                DesignPlayerToken(
+                    player = pointerState.player,
+                    isCurrentPlayer = pointerState.isCurrentPlayer,
+                    isActivePlayer = pointerState.isActivePlayer,
+                    spotSize = layout.cellSize,
+                    modifier = Modifier.testTag("player-token-$playerId"),
+                    onClick = { bubble.toggle(playerId) },
+                )
+            }
         }
     }
 }

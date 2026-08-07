@@ -207,13 +207,19 @@ private fun PlayerHeader(player: Player, modifier: Modifier = Modifier) {
                 )
                 YouChip()
             }
-            Text(
-                text = player.statusLabel(),
-                style = type.body,
-                color = colors.scaffold.onSurfaceMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = player.statusLabel(),
+                    style = type.body,
+                    color = player.status().tierColor(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                StatusProgress(player.status())
+            }
         }
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -29,6 +30,7 @@ import ua.vald_zx.game.rat.race.card.logic.PlayerMessage
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.cashFlow
+import ua.vald_zx.game.rat.race.card.shared.status
 import ua.vald_zx.game.rat.race.card.shared.total
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
@@ -48,8 +50,8 @@ internal fun DesignTokenBubble(
     val colors = Design.colors
     Column(
         modifier = modifier
+            .width(IntrinsicSize.Max)
             .testTag(tokenBubbleTag)
-            .width(tokenBubbleWidth)
             .levelSheet(colors, DesignShapes.md)
             .clip(DesignShapes.md)
             .background(colors.scaffold.surface1)
@@ -102,7 +104,7 @@ private fun BubbleHeader(player: Player, isCurrentPlayer: Boolean, isActivePlaye
                 .background(Color(player.attrs.color))
                 .border(1.5.dp, colors.scaffold.onSurface, DesignShapes.full)
         )
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier) {
             Text(
                 text = if (isCurrentPlayer) stringResource(Res.string.you) else player.card.name,
                 style = Design.type.label,
@@ -113,10 +115,11 @@ private fun BubbleHeader(player: Player, isCurrentPlayer: Boolean, isActivePlaye
             Text(
                 text = player.statusLabel(),
                 style = Design.type.micro,
-                color = colors.scaffold.onSurfaceMuted,
+                color = player.status().tierColor(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            StatusProgress(player.status())
         }
         if (isActivePlayer) {
             Text(

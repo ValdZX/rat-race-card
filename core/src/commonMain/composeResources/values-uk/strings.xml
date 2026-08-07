@@ -454,4 +454,15 @@
     <string name="status_investor_f">Інвесторка</string>
     <string name="status_rentier">Рантьє</string>
     <string name="status_broke">У мінусі</string>
+    <string name="status_finalist">На фінішній прямій</string>
+    <string name="status_multimillionaire_m">Мультимільйонер</string>
+    <string name="status_multimillionaire_f">Мультимільйонерка</string>
+    <string name="status_corrupt_m">Корупціонер</string>
+    <string name="status_corrupt_f">Корупціонерка</string>
+    <string name="status_deputy_m">Депутат</string>
+    <string name="status_deputy_f">Депутатка</string>
+    <string name="status_family_m">Багатодітний тато</string>
+    <string name="status_family_f">Багатодітна мама</string>
+    <string name="status_married_m">Сімейний</string>
+    <string name="status_married_f">Сімейна</string>
 </resources>

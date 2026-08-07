@@ -449,4 +449,15 @@
     <string name="status_investor_f">Investor</string>
     <string name="status_rentier">Rentier</string>
     <string name="status_broke">In the red</string>
+    <string name="status_finalist">Final lap</string>
+    <string name="status_multimillionaire_m">Multi-millionaire</string>
+    <string name="status_multimillionaire_f">Multi-millionaire</string>
+    <string name="status_corrupt_m">Grafter</string>
+    <string name="status_corrupt_f">Grafter</string>
+    <string name="status_deputy_m">Lawmaker</string>
+    <string name="status_deputy_f">Lawmaker</string>
+    <string name="status_family_m">Proud parent</string>
+    <string name="status_family_f">Proud parent</string>
+    <string name="status_married_m">Family person</string>
+    <string name="status_married_f">Family person</string>
 </resources>
