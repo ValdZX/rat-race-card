@@ -251,9 +251,9 @@ private object SalaryCellRule : CellRule {
     }
 
     override fun onLand(context: TurnContext, cell: CellInstance): RuleResult {
-        return context.updatePlayer {
-            it.copy(
-                salaryPosition = context.cellIndex,
+        return context.updatePlayer { player ->
+            player.copy(
+                salaryPosition = player.salaryPosition ?: context.cellIndex.takeIf { player.cashFlow() > 0 },
                 investmentPosition = context.cellIndex,
             )
         }.result
