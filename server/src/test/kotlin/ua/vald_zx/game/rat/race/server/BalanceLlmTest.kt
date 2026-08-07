@@ -261,4 +261,18 @@ class BalanceLlmTest {
 
         assertFailsWith<IllegalStateException> { invalid.validate() }
     }
+
+    @Test
+    fun smallBusinessesTooExpensiveForTheSalaryScaleAreRejected() {
+        val invalid = testBalance().copy(smallBusinessPrices = listOf(10_000, 20_000, 40_000))
+
+        assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
+
+    @Test
+    fun mediumBusinessesTooExpensiveForTheSalaryScaleAreRejected() {
+        val invalid = testBalance().copy(mediumBusinessPrices = listOf(500_000, 800_000, 1_200_000))
+
+        assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
 }

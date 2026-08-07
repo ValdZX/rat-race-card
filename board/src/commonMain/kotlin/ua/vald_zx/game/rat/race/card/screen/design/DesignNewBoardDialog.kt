@@ -38,10 +38,10 @@ fun DesignNewBoardDialog(
     var businessLimit by remember { mutableStateOf("10") }
     var transportBonus by remember { mutableStateOf(true) }
     var minimumCashFlow by remember { mutableStateOf("50000") }
-    var minimumAccountBalance by remember { mutableStateOf("200000") }
+    var minimumAccountBalance by remember { mutableStateOf("2000000") }
     var apartmentRequired by remember { mutableStateOf(true) }
     var carRequired by remember { mutableStateOf(true) }
-    var victoryAccountBalance by remember { mutableStateOf("10000000") }
+    var victoryAccountBalance by remember { mutableStateOf("20000000") }
     var dreamRequired by remember { mutableStateOf(true) }
     var planeRequired by remember { mutableStateOf(true) }
     var estateRequired by remember { mutableStateOf(true) }

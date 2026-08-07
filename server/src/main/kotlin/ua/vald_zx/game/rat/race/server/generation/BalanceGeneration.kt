@@ -59,6 +59,7 @@ internal class LlmBalanceGenerator(
         append("You design economic board games. Build a coherent economy for the described world. ")
         append("Return one JSON object only, without markdown. All values must be positive, diverse integers suited to a long game. ")
         append("Small, medium, and big businesses must form three distinct capital tiers. ")
+        append("Anchor every price to the salary scale: treat the median salary as one unit and express every price as a multiple of it. ")
         append("The sum of the maximum household expense percentages must be below 95. ")
         append("Weights are positive relative card frequencies. Light contextual humor is welcome in company names. ")
         append("Generate unique world-specific companies with stable ASCII ids, short tickers, and natural names in every requested language.")
@@ -96,7 +97,7 @@ internal class LlmBalanceGenerator(
     private fun String.jsonObject(): String {
         val start = indexOf('{')
         val end = lastIndexOf('}')
-        check(start >= 0 && end > start) { "LLM balance is not a JSON object" }
+        check(start in 0..<end) { "LLM balance is not a JSON object" }
         return substring(start, end + 1)
     }
 }
@@ -176,7 +177,8 @@ private fun tempoPrompt() = buildString {
         append(".\n")
     }
     append("- Players start with no cash; salary is their first income.\n")
-    append("- Entry prices must be reachable within a few salaries so early turns are meaningful.\n")
+    append("- The median salary is the economy's unit: every price should be a round multiple of it, so prices never jump scale.\n")
+    append("- The cheapest small business must be reachable within a few salary passes; early turns must be meaningful.\n")
 }
 
 private fun deckSizesPrompt(deckSizes: Map<BoardCardType, Int>) = buildString {
@@ -211,6 +213,10 @@ Mechanics the balance must support:
 private val BALANCE_REQUIREMENTS = """
 Required constraints:
 - salaries: at least 10 unique amounts.
+- Anchor every price to the salary scale. The median salary (the middle value of salaries) is one unit; every price below should be a round multiple of it, so the economy never mixes scales.
+- smallBusinessPrices: every value between 1 and 20 units, and the cheapest value at most 2 units so the first business is reachable after a few salary passes.
+- mediumBusinessPrices: every value between 20 and 1500 units, and the cheapest medium business costs more than the dearest small one.
+- bigBusinessPrices: every value between 500 and 15000 units.
 - shares: at least 6 unique companies; every id, ticker, uk name, and en name is unique.
 - Every share carries a sector from exactly this list: core.energy, core.industry, core.consumer, core.realty, core.agro, core.tech. Use at least 3 different sectors, and never put all but one company in the same sector.
 - scamPromisedReturnPercentages: 150..900, the promised payout as a percentage of the amount staked. scamSuccessPercentage: 1..20.

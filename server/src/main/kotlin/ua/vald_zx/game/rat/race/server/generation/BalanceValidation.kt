@@ -36,8 +36,29 @@ internal fun GeneratedBalance.validate() {
     smallBusinessPrices.requireAmounts("smallBusinessPrices")
     mediumBusinessPrices.requireAmounts("mediumBusinessPrices")
     bigBusinessPrices.requireAmounts("bigBusinessPrices")
-    check(smallBusinessPrices.min() < mediumBusinessPrices.min()) { "Small and medium business tiers overlap" }
+    val medianSalary = salaries.median()
+    check(smallBusinessPrices.min() <= medianSalary * 2) {
+        "The cheapest small business ${smallBusinessPrices.min()} is not affordable next to the median salary $medianSalary"
+    }
+    check(smallBusinessPrices.max() <= medianSalary * 20) {
+        "Small businesses cost up to ${smallBusinessPrices.max()} while the median salary is $medianSalary"
+    }
+    check(smallBusinessPrices.max() < mediumBusinessPrices.min()) {
+        "Small and medium business tiers overlap"
+    }
+    check(mediumBusinessPrices.min() >= medianSalary * 20) {
+        "Medium business prices must stay on the salary scale"
+    }
+    check(mediumBusinessPrices.max() <= medianSalary * 1500) {
+        "Medium businesses cost up to ${mediumBusinessPrices.max()} while the median salary is $medianSalary"
+    }
     check(mediumBusinessPrices.min() < bigBusinessPrices.min()) { "Medium and big business tiers overlap" }
+    check(bigBusinessPrices.min() >= medianSalary * 500) {
+        "Big business prices must stay on the salary scale"
+    }
+    check(bigBusinessPrices.max() <= medianSalary * 15000) {
+        "Big businesses cost up to ${bigBusinessPrices.max()} while the median salary is $medianSalary"
+    }
     smallBusinessReturnPercentages.requireRange("smallBusinessReturnPercentages", 1L..200L)
     mediumBusinessReturnPercentages.requireRange("mediumBusinessReturnPercentages", 1L..100L)
     bigBusinessReturnPercentages.requireRange("bigBusinessReturnPercentages", 1L..60L)

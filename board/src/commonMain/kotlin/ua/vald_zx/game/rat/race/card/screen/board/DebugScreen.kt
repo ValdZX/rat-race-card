@@ -69,10 +69,11 @@ import ua.vald_zx.game.rat.race.card.resources.select_action
 import ua.vald_zx.game.rat.race.card.resources.shopping
 import ua.vald_zx.game.rat.race.card.resources.small_business
 import ua.vald_zx.game.rat.race.card.resources.yacht
-import ua.vald_zx.game.rat.race.card.screen.board.cards.decks
+import ua.vald_zx.game.rat.race.card.screen.board.cards.cardOf
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
+import ua.vald_zx.game.rat.race.card.shared.CardLink
 import ua.vald_zx.game.rat.race.card.shared.DebugPlayerValues
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.TrackId
@@ -112,7 +113,7 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
             mutableStateOf(state.board.canTakeCard.firstOrNull() ?: BoardCardType.Chance)
         }
         var selectedCardId by remember {
-            mutableStateOf(decks.getValue(selectedCardType).keys.minOrNull() ?: 1)
+            mutableStateOf(state.board.cards[selectedCardType].orEmpty().minOrNull() ?: 1)
         }
         var showBoardState by remember { mutableStateOf(false) }
 
@@ -216,7 +217,7 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
             LaunchedEffect(availableCardTypes) {
                 if (selectedCardType !in availableCardTypes) {
                     selectedCardType = availableCardTypes.first()
-                    selectedCardId = decks.getValue(selectedCardType).keys.minOrNull() ?: 1
+                    selectedCardId = state.board.cards[selectedCardType].orEmpty().minOrNull() ?: 1
                 }
             }
             if (state.canRoll) {
@@ -237,15 +238,21 @@ class DebugScreen(private val vm: BoardViewModel) : Screen {
                         colors = debugChipColors(),
                         onClick = {
                             selectedCardType = cardType
-                            selectedCardId = decks.getValue(cardType).keys.minOrNull() ?: 1
+                            selectedCardId = state.board.cards[cardType].orEmpty().minOrNull() ?: 1
                         },
                         label = { Text(cardType.localizedName()) },
                     )
                 }
             }
-            val selectedDeck = decks.getValue(selectedCardType)
-            val cardIds = selectedDeck.keys.sorted()
-            val selectedCard = selectedDeck[selectedCardId]
+            val cardIds = state.board.cards[selectedCardType].orEmpty().sorted()
+            val selectedCard = selectedCardId
+                .takeIf { it in cardIds }
+                ?.let { state.board.cardOf(CardLink(selectedCardType, it), Locale.current.language) }
+            LaunchedEffect(cardIds) {
+                if (selectedCardId !in cardIds) {
+                    selectedCardId = cardIds.firstOrNull() ?: 1
+                }
+            }
             ValueSelector(
                 value = selectedCardId,
                 previousEnabled = cardIds.indexOf(selectedCardId) > 0,
