@@ -24,7 +24,7 @@ data class AppDataStorageBean(
     val language: String? = null,
 )
 
-val designV2Enabled = mutableStateOf(false)
+val designV2Enabled = mutableStateOf(true)
 
 val soundEnabled = mutableStateOf(true)
 

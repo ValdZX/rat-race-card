@@ -63,7 +63,7 @@ fun DesignSalarySheet(vm: BoardViewModel) {
                 mediumRiskMultiplier = player.config.mediumRiskMultiplier,
                 canEndTurn = player.investmentPosition != null,
                 onTakeSalary = {
-                    bottomSheetNavigator.hide()
+                    if(fundRate == null) bottomSheetNavigator.hide()
                     vm.takeSalary()
                 },
                 onEndTurn = {
