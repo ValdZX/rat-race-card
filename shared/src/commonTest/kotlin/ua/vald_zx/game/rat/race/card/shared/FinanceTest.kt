@@ -18,6 +18,7 @@ class FinanceTest {
                 FinancialFund(rate = 20, amount = 400),
                 FinancialFund(rate = 5, amount = 300),
             ),
+            ratePercent = 10,
         )
 
         val result = service.pay(account, 1_100, PaymentPolicy(loanLimit = 200))
@@ -46,6 +47,7 @@ class FinanceTest {
                 FinancialFund(rate = 20, amount = 1_000),
                 FinancialFund(rate = 5, amount = 1_000),
             ),
+            ratePercent = 10,
         )
 
         val result = service.pay(account, 1_500, PaymentPolicy())
@@ -61,6 +63,7 @@ class FinanceTest {
             deposit = 200,
             loan = 0,
             funds = listOf(FinancialFund(rate = 5, amount = 10_000)),
+            ratePercent = 10,
         )
 
         val result = service.pay(account, 500, PaymentPolicy(useFunds = false))
@@ -72,25 +75,36 @@ class FinanceTest {
 
     @Test
     fun exactPaymentDoesNotCreateZeroValueCredit() {
-        val account = FinancialAccount(cash = 100, deposit = 200, loan = 0, funds = emptyList())
+        val account = FinancialAccount(cash = 100, deposit = 200, loan = 0, funds = emptyList(), ratePercent = 10)
 
         val result = service.pay(account, 300, PaymentPolicy())
 
-        assertEquals(FinancialAccount(0, 0, 0, emptyList()), result.account)
+        assertEquals(FinancialAccount(0, 0, emptyList(), emptyList()), result.account)
         assertEquals(listOf(PaymentEvent.DepositWithdrawn(200)), result.events)
     }
 
     @Test
     fun mandatoryPaymentReportsCreditLimitWithoutRejectingThePayment() {
-        val account = FinancialAccount(cash = 0, deposit = 0, loan = 90, funds = emptyList())
+        val account = FinancialAccount(cash = 0, deposit = 0, loan = 90, funds = emptyList(), ratePercent = 10)
 
-        val result = service.pay(account, 20, PaymentPolicy(loanLimit = 100))
+        val result = service.pay(
+            account,
+            20,
+            PaymentPolicy(loanLimit = 100, creditRatePercent = 10, paydayRatePercent = 40),
+        )
 
         assertEquals(110, result.account.loan)
         assertEquals(
-            listOf(PaymentEvent.LoanAdded(20), PaymentEvent.LoanLimitExceeded),
+            listOf(
+                PaymentEvent.LoanAdded(20),
+                PaymentEvent.PaydayLoanTaken(10),
+                PaymentEvent.LoanLimitExceeded,
+            ),
             result.events,
+            "залишок понад ліміт іде в мікропозику, а не тихо збільшує кредитну лінію",
         )
+        assertEquals(100, result.account.debts.first { it.kind == DebtKind.CREDIT_LINE }.principal)
+        assertEquals(10, result.account.debts.first { it.kind == DebtKind.PAYDAY }.principal)
     }
 
     @Test
@@ -101,6 +115,7 @@ class FinanceTest {
                 deposit = 10_000,
                 loan = 2_000,
                 funds = listOf(FinancialFund(10, 3_000)),
+                ratePercent = 10,
             ),
             activeIncome = listOf(4_000, 1_000),
             assetValues = listOf(5_000, 2_000),

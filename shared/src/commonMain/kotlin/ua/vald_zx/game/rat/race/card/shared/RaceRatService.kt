@@ -126,6 +126,9 @@ sealed class Event {
 
     @Serializable
     data class ScamResolved(val paid: Long, val received: Long) : Event()
+
+    @Serializable
+    data class PaydayLoanTaken(val amount: Long) : Event()
 }
 
 @Serializable
@@ -217,6 +220,7 @@ interface RaceRatService {
     suspend fun capitalizeFunds()
     suspend fun toDeposit(amount: Long)
     suspend fun repayLoan(amount: Long)
+    suspend fun repayDebt(debtId: String, amount: Long)
     suspend fun advertiseAuction(auction: Auction)
     suspend fun sellBid(bid: Bid)
     suspend fun makeBid(price: Long, count: Long)

@@ -46,6 +46,7 @@ data class Player(
     val cash: Long = 0,
     val deposit: Long = 0,
     val loan: Long = 0,
+    val debts: List<Debt> = emptyList(),
     val businesses: List<Business> = emptyList(),
     val isMarried: Boolean = false,
     val babies: Long = 0,
@@ -267,6 +268,7 @@ data class Config(
     val tts: Boolean = false,
     val priceIndexPercent: Long = NEUTRAL_INDEX_PERCENT,
     val salaryIndexPercent: Long = NEUTRAL_INDEX_PERCENT,
+    val paydayRate: Long = 30,
 )
 
 fun Player.total(): Long {
@@ -311,17 +313,20 @@ fun Player.cashFlow(): Long {
     return financialSnapshot().cashFlow()
 }
 
+fun Player.resolvedDebts(): List<Debt> = debts.resolved(loan, config.loadRate)
+
 fun Player.financialAccount(): FinancialAccount = FinancialAccount(
     cash = cash,
     deposit = deposit,
-    loan = loan,
+    debts = resolvedDebts(),
     funds = funds.map { FinancialFund(it.rate, it.amount) },
 )
 
 fun Player.withFinancialAccount(account: FinancialAccount): Player = copy(
     cash = account.cash,
     deposit = account.deposit,
-    loan = account.loan,
+    loan = account.debts.totalPrincipal(),
+    debts = account.debts,
     funds = account.funds.map { Fund(it.rate, it.amount) },
 )
 
@@ -384,6 +389,7 @@ fun Player.withDebugValues(values: DebugPlayerValues): Player {
         cash = values.cash.coerceAtLeast(0),
         deposit = values.deposit.coerceAtLeast(0),
         loan = values.loan.coerceAtLeast(0),
+        debts = legacyCreditLine(values.loan.coerceAtLeast(0), config.loadRate),
         babies = values.babies.coerceAtLeast(0),
         cars = values.cars.coerceAtLeast(0),
         apartment = values.apartment.coerceAtLeast(0),

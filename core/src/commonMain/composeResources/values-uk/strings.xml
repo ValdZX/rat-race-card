@@ -429,4 +429,14 @@
     <string name="debrief_transfers">Перекази гравцям</string>
     <string name="debrief_other">Події дошки</string>
     <string name="debrief_open">Фінансовий підсумок</string>
+    <string name="payday_loan">Мікропозика</string>
+    <string name="payday_loan_taken">Кредитний ліміт вичерпано, тому %1$s узято в мікрофінансовій організації під каральну ставку. Гасіть цей борг першим.</string>
+    <string name="debts">Борги</string>
+    <string name="debt_credit_line">Кредитна лінія</string>
+    <string name="debt_payday">Мікропозика</string>
+    <string name="debt_mortgage">Іпотека</string>
+    <string name="debt_consumer">Споживчий кредит</string>
+    <string name="debt_rate">%1$s%% за получку</string>
+    <string name="debt_repay">Погасити</string>
+    <string name="debt_costliest_first">Спершу найдорожчий</string>
 </resources>

@@ -40,7 +40,7 @@ class FundWithdrawalTest {
 
     private fun withdraw(funds: List<FinancialFund>, amount: Long): FinancialAccount? {
         val result = sharedMoneyService.pay(
-            account = FinancialAccount(cash = 0, deposit = 0, loan = 0, funds = funds),
+            account = FinancialAccount(cash = 0, deposit = 0, debts = emptyList(), funds = funds),
             amount = amount,
             policy = PaymentPolicy(),
         )

@@ -178,6 +178,10 @@ internal fun GeneratedBalance.validate() {
         "The cheapest dream costs more than the victory balance"
     }
 
+    check(paydayRate >= loanRate * 2) {
+        "The payday rate $paydayRate must be at least twice the credit line rate $loanRate to be a real trap"
+    }
+
     scamPrices.requireAmounts("scamPrices")
     scamPromisedReturnPercentages.requireRange("scamPromisedReturnPercentages", MIN_SCAM_RETURN..MAX_SCAM_RETURN)
     check(scamSuccessPercentage in 1..MAX_SCAM_SUCCESS) {
@@ -234,6 +238,7 @@ internal fun GeneratedBalance.victoryConditions() = VictoryConditions(
 internal fun GeneratedBalance.playerConfig() = Config(
     depositRate = depositRate,
     loadRate = loanRate,
+    paydayRate = paydayRate,
     babyCost = babyRecurringCost,
     carCost = carRecurringCost,
     apartmentCost = apartmentRecurringCost,

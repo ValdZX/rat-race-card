@@ -118,6 +118,7 @@ private val generatedBalanceFields = setOf(
     "crashMarketDropPercentages",
     "depositRate",
     "loanRate",
+    "paydayRate",
     "babyRecurringCost",
     "carRecurringCost",
     "apartmentRecurringCost",
@@ -196,6 +197,7 @@ Mechanics the balance must support:
 - Business extension raises one small business's recurring profit. Reelection changes the deputies.
 - Every company belongs to one sector. A market crash event marks down every holding at once: companies in the struck sector lose crashSectorDropPercentages, all other companies lose the smaller crashMarketDropPercentages. Nobody may opt out, so a concentrated portfolio is punished and a spread one survives.
 - A Chance scam promises an implausible immediate return for an upfront payment, but pays out only scamSuccessPercentage of the time. It must be a losing bet on average; players are meant to learn to refuse it.
+- Deposits yield depositRate percent income; the credit line adds loanRate percent expense. Anything borrowed past loanLimit becomes a payday loan at paydayRate, which must be clearly punitive: at least twice loanRate.
 - Deposits yield depositRate percent income; loans add loanRate percent expense. Children, cars, apartments, houses, yachts, and planes add their recurring costs.
 - Marriage marries the player; a man pays marriageCost. Child adds a child to a woman or married man, pays childBenefit, and raises recurring expenses.
 - Divorce ends marriage; a man keeps divorceAssetRetentionPercentage of his cash and deposit but loses his children. Bankruptcy removes a random business, resignation removes the job, and rest skips restTurnCount turns.
@@ -280,7 +282,7 @@ private val BALANCE_SCHEMA = """
   "strayAnimalPercentage":10,
   "scamPrices":[...], "scamPromisedReturnPercentages":[...], "scamSuccessPercentage":10,
   "crashSectorDropPercentages":[...], "crashMarketDropPercentages":[...],
-  "depositRate":2, "loanRate":10,
+  "depositRate":2, "loanRate":10, "paydayRate":30,
   "babyRecurringCost":300, "carRecurringCost":600, "apartmentRecurringCost":200,
   "houseRecurringCost":1000, "yachtRecurringCost":1500, "planeRecurringCost":5000,
   "animalRecurringCost":100, "marriageCost":5000, "childBenefit":1000,

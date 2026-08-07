@@ -589,6 +589,7 @@ class RaceRatServiceImpl(
                 is PresentationNotice.CashSubtracted -> eventBus.emit(Event.SubCash(notice.amount))
                 is PresentationNotice.DepositWithdrawn -> eventBus.emit(Event.DepositWithdraw(notice.amount))
                 is PresentationNotice.LoanAdded -> eventBus.emit(Event.LoanAdded(notice.amount))
+                is PresentationNotice.PaydayLoanTaken -> eventBus.emit(Event.PaydayLoanTaken(notice.amount))
                 PresentationNotice.LoanLimitExceeded -> eventBus.emit(Event.LoanOverlimited)
             }
         }
@@ -789,11 +790,14 @@ class RaceRatServiceImpl(
             policy = PaymentPolicy(
                 useFunds = !isFundBuy && config.hasFunds,
                 loanLimit = board.loanLimit,
+                creditRatePercent = config.loadRate,
+                paydayRatePercent = config.paydayRate,
             ),
         )
         val usedFunds = result.events.any { it is PaymentEvent.FundsWithdrawn }
         result.events.forEach { paymentEvent ->
             when (paymentEvent) {
+                is PaymentEvent.PaydayLoanTaken -> eventBus.emit(Event.PaydayLoanTaken(paymentEvent.amount))
                 is PaymentEvent.DepositWithdrawn -> if (!usedFunds && result.account.loan == loan) {
                     eventBus.emit(Event.DepositWithdraw(paymentEvent.amount))
                 }
@@ -1236,13 +1240,20 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun repayLoan(amount: Long) {
+        val order = player().resolvedDebts().avalancheOrder().firstOrNull() ?: return
+        repayDebt(order.id, amount)
+    }
+
+    override suspend fun repayDebt(debtId: String, amount: Long) {
         updatePlayer(LedgerReason.LOAN_REPAYMENT) {
             require(amount > 0) { "Repayment must be positive" }
-            require(amount <= loan) { "Repayment exceeds the loan" }
+            val debts = resolvedDebts()
+            val debt = debts.firstOrNull { it.id == debtId } ?: error("Unknown debt: $debtId")
+            require(amount <= debt.principal) { "Repayment exceeds the debt" }
             require(amount <= balance()) { "Not enough money for repayment" }
-            val paid = minusCash(amount)
-            require(paid.loan == loan) { "Repayment cannot be financed with a new loan" }
-            paid.copy(loan = loan - amount)
+            withFinancialAccount(
+                sharedMoneyService.repay(financialAccount(), debtId, amount),
+            )
         }
     }
 

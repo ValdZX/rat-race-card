@@ -36,6 +36,7 @@ data class RatRace2CardState(
     val cash: Long = 0,
     val deposit: Long = 0,
     val loan: Long = 0,
+    val debts: List<Debt> = emptyList(),
     val business: List<Business> = emptyList(),
     val lands: List<Land> = emptyList(),
     val isMarried: Boolean = false,
@@ -146,7 +147,7 @@ sealed class RatRace2CardAction : Action {
     data class ReceivedCash(val payerId: String, val amount: Long) : RatRace2CardAction()
     data class SideExpenses(val amount: Long) : RatRace2CardAction()
     data class GetLoan(val amount: Long) : RatRace2CardAction()
-    data class RepayLoan(val amount: Long) : RatRace2CardAction()
+    data class RepayLoan(val amount: Long, val debtId: String? = null) : RatRace2CardAction()
     data class ToDeposit(val amount: Long) : RatRace2CardAction()
     data class FromDeposit(val amount: Long) : RatRace2CardAction()
     data class BuyCar(val price: Long) : RatRace2CardAction()
@@ -447,13 +448,24 @@ class RatRace2CardStore(
             }
 
             is RepayLoan -> {
-                oldState.copy(
-                    loan = oldState.loan - action.amount
-                ).minusCash(action.amount)
+                val target = action.debtId ?: oldState.resolvedDebts().avalancheOrder().firstOrNull()?.id
+                val repaid = if (target == null) {
+                    oldState.resolvedDebts()
+                } else {
+                    oldState.resolvedDebts().repay(target, action.amount)
+                }
+                oldState.withDebts(repaid).minusCash(action.amount)
             }
 
             is GetLoan -> {
-                oldState.copy(loan = oldState.loan + action.amount).plusCash(action.amount)
+                oldState.withDebts(
+                    oldState.resolvedDebts().borrow(
+                        id = CREDIT_LINE_DEBT_ID,
+                        kind = DebtKind.CREDIT_LINE,
+                        amount = action.amount,
+                        ratePercent = oldState.config.loadRate,
+                    ),
+                ).plusCash(action.amount)
             }
 
             is FromDeposit -> {
@@ -656,11 +668,16 @@ class RatRace2CardStore(
         val result = sharedMoneyService.pay(
             account = financialAccount(),
             amount = value,
-            policy = PaymentPolicy(useFunds = !isFundBuy && config.hasFunds),
+            policy = PaymentPolicy(
+                useFunds = !isFundBuy && config.hasFunds,
+                creditRatePercent = config.loadRate,
+                paydayRatePercent = config.paydayRate,
+            ),
         )
         val usedFunds = result.events.any { it is PaymentEvent.FundsWithdrawn }
         result.events.forEach { paymentEvent ->
             when (paymentEvent) {
+                is PaymentEvent.PaydayLoanTaken -> Unit
                 is PaymentEvent.DepositWithdrawn -> if (!usedFunds && result.account.loan == loan) {
                     launch { sideEffect.emit(RatRace2CardSideEffect.DepositWithdraw(paymentEvent.amount)) }
                 }

@@ -90,6 +90,8 @@ data class TurnContext(
             policy = PaymentPolicy(
                 useFunds = payer.config.hasFunds,
                 loanLimit = board.loanLimit,
+                creditRatePercent = payer.config.loadRate,
+                paydayRatePercent = payer.config.paydayRate,
             ),
         )
         val usedFunds = payment.events.any { it is PaymentEvent.FundsWithdrawn }
@@ -102,6 +104,7 @@ data class TurnContext(
                     }
 
                     is PaymentEvent.LoanAdded -> if (!usedFunds) add(PresentationNotice.LoanAdded(event.amount))
+                    is PaymentEvent.PaydayLoanTaken -> add(PresentationNotice.PaydayLoanTaken(event.amount))
                     PaymentEvent.LoanLimitExceeded -> add(PresentationNotice.LoanLimitExceeded)
                     is PaymentEvent.FundsWithdrawn -> Unit
                 }

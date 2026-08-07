@@ -171,6 +171,7 @@ data class GeneratedBalance(
     val crashMarketDropPercentages: List<Long> = emptyList(),
     val depositRate: Long = 2,
     val loanRate: Long = 10,
+    val paydayRate: Long = 30,
     val babyRecurringCost: Long = 300,
     val carRecurringCost: Long = 600,
     val apartmentRecurringCost: Long = 200,

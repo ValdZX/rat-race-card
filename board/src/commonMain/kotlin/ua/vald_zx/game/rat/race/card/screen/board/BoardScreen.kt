@@ -274,6 +274,7 @@ class BoardScreen(
         var inflationRaisedDialog by remember { mutableStateOf<EconomyIndex?>(null) }
         var scamResolvedDialog by remember { mutableStateOf<BoardUiAction.ScamResolved?>(null) }
         var marketCrashDialog by remember { mutableStateOf(0L) }
+        var paydayLoanDialog by remember { mutableStateOf(0L) }
         var loanAddedDialog by remember { mutableStateOf(0L) }
         var simpleDialog by remember { mutableStateOf(Res.string.app_name) }
         var loanOverlimitedDialog by remember { mutableStateOf(false) }
@@ -330,6 +331,10 @@ class BoardScreen(
 
                     is BoardUiAction.MarketCrashed -> {
                         marketCrashDialog = event.lostValue
+                    }
+
+                    is BoardUiAction.PaydayLoanTaken -> {
+                        paydayLoanDialog = event.amount
                     }
 
                     is BoardUiAction.DepositWithdraw -> {
@@ -451,6 +456,15 @@ class BoardScreen(
                 },
                 confirmLabel = stringResource(Res.string.ok),
                 onConfirm = { scamResolvedDialog = null },
+            )
+        }
+        if (paydayLoanDialog > 0) {
+            DesignMessageDialog(
+                onDismissRequest = { paydayLoanDialog = 0 },
+                title = stringResource(Res.string.payday_loan),
+                message = stringResource(Res.string.payday_loan_taken, paydayLoanDialog.splitDecimal()),
+                confirmLabel = stringResource(Res.string.ok),
+                onConfirm = { paydayLoanDialog = 0 },
             )
         }
         if (marketCrashDialog > 0) {

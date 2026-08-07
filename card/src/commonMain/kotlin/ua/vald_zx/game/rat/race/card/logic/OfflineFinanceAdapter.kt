@@ -2,6 +2,9 @@ package ua.vald_zx.game.rat.race.card.logic
 
 import ua.vald_zx.game.rat.race.card.beans.Fund
 import ua.vald_zx.game.rat.race.card.shared.BusinessType
+import ua.vald_zx.game.rat.race.card.shared.Debt
+import ua.vald_zx.game.rat.race.card.shared.resolved
+import ua.vald_zx.game.rat.race.card.shared.totalPrincipal
 import ua.vald_zx.game.rat.race.card.beans.Land as OfflineLand
 import ua.vald_zx.game.rat.race.card.beans.Shares as OfflineShares
 import ua.vald_zx.game.rat.race.card.shared.FinancialAccount
@@ -10,17 +13,25 @@ import ua.vald_zx.game.rat.race.card.shared.FinancialSnapshot
 import ua.vald_zx.game.rat.race.card.shared.Land
 import ua.vald_zx.game.rat.race.card.shared.Shares
 
+internal fun RatRace2CardState.resolvedDebts(): List<Debt> = debts.resolved(loan, config.loadRate)
+
+internal fun RatRace2CardState.withDebts(updated: List<Debt>): RatRace2CardState = copy(
+    loan = updated.totalPrincipal(),
+    debts = updated,
+)
+
 internal fun RatRace2CardState.financialAccount(): FinancialAccount = FinancialAccount(
     cash = cash,
     deposit = deposit,
-    loan = loan,
+    debts = resolvedDebts(),
     funds = funds.map { FinancialFund(it.rate, it.amount) },
 )
 
 internal fun RatRace2CardState.withFinancialAccount(account: FinancialAccount): RatRace2CardState = copy(
     cash = account.cash,
     deposit = account.deposit,
-    loan = account.loan,
+    loan = account.debts.totalPrincipal(),
+    debts = account.debts,
     funds = account.funds.map { Fund(it.rate, it.amount) },
 )
 

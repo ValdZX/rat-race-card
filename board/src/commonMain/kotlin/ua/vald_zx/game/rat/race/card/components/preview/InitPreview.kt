@@ -249,6 +249,9 @@ fun InitPreview(
                         override suspend fun repayLoan(amount: Long) {
                         }
 
+                        override suspend fun repayDebt(debtId: String, amount: Long) {
+                        }
+
                         override suspend fun advertiseAuction(auction: Auction) {
                         }
 

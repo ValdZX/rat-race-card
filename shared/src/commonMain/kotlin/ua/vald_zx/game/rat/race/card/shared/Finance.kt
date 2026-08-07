@@ -8,9 +8,15 @@ data class FinancialFund(
 data class FinancialAccount(
     val cash: Long,
     val deposit: Long,
-    val loan: Long,
+    val debts: List<Debt>,
     val funds: List<FinancialFund>,
 ) {
+    constructor(cash: Long, deposit: Long, loan: Long, funds: List<FinancialFund>, ratePercent: Long) :
+            this(cash, deposit, legacyCreditLine(loan, ratePercent), funds)
+
+    val loan: Long
+        get() = debts.totalPrincipal()
+
     fun canAffordVoluntaryPurchase(
         price: Long,
         loanLimit: Long,
@@ -49,7 +55,7 @@ data class FinancialSnapshot(
 
     fun totalProfit(): Long = activeProfit() + passiveProfit()
 
-    fun creditExpenses(): Long = ((account.loan / 100.0) * loanRate).toLong()
+    fun creditExpenses(): Long = account.debts.totalInterest()
 
     fun livingExpenses(): Long = applyIndex(baseExpenses.sum() + recurringExpenses.sum(), priceIndexPercent)
 
@@ -68,12 +74,15 @@ internal fun applyIndex(amount: Long, indexPercent: Long): Long {
 data class PaymentPolicy(
     val useFunds: Boolean = true,
     val loanLimit: Long? = null,
+    val creditRatePercent: Long = 0,
+    val paydayRatePercent: Long = creditRatePercent,
 )
 
 sealed interface PaymentEvent {
     data class DepositWithdrawn(val amount: Long) : PaymentEvent
     data class FundsWithdrawn(val amount: Long) : PaymentEvent
     data class LoanAdded(val amount: Long) : PaymentEvent
+    data class PaydayLoanTaken(val amount: Long) : PaymentEvent
     data object LoanLimitExceeded : PaymentEvent
 }
 
@@ -110,12 +119,14 @@ class MoneyService {
             remaining = withdrawal.remaining
         }
 
-        val updatedLoan = account.loan + remaining
+        val borrowed = borrow(account.debts, remaining, policy)
+        val updatedLoan = borrowed.debts.totalPrincipal()
         val fundsUsed = fundAmountBefore - funds.sumOf { it.amount }
         val events = buildList {
             if (depositUsed > 0) add(PaymentEvent.DepositWithdrawn(depositUsed))
             if (fundsUsed > 0) add(PaymentEvent.FundsWithdrawn(fundsUsed))
             if (remaining > 0) add(PaymentEvent.LoanAdded(remaining))
+            if (borrowed.paydayTaken > 0) add(PaymentEvent.PaydayLoanTaken(borrowed.paydayTaken))
             if (remaining > 0 && policy.loanLimit != null && updatedLoan > policy.loanLimit) {
                 add(PaymentEvent.LoanLimitExceeded)
             }
@@ -125,11 +136,49 @@ class MoneyService {
                 cash = account.cash - cashUsed,
                 deposit = account.deposit - depositUsed,
                 funds = funds,
-                loan = updatedLoan,
+                debts = borrowed.debts,
             ),
             events = events,
         )
     }
+
+    fun repay(account: FinancialAccount, debtId: String, amount: Long): FinancialAccount {
+        require(amount >= 0) { "Repayment must not be negative" }
+        val debt = account.debts.firstOrNull { it.id == debtId } ?: return account
+        val paid = minOf(amount, debt.principal, account.cash + account.deposit)
+        if (paid <= 0) return account
+        val fromCash = minOf(account.cash, paid)
+        return account.copy(
+            cash = account.cash - fromCash,
+            deposit = account.deposit - (paid - fromCash),
+            debts = account.debts.repay(debtId, paid),
+        )
+    }
+
+    private fun borrow(debts: List<Debt>, amount: Long, policy: PaymentPolicy): Borrowing {
+        if (amount <= 0) return Borrowing(debts, 0)
+        val limit = policy.loanLimit
+        val creditRoom = if (limit == null) amount else (limit - debts.totalPrincipal()).coerceIn(0, amount)
+        val onCredit = if (limit == null) amount else creditRoom
+        val onPayday = amount - onCredit
+        val withCredit = debts.borrow(
+            id = CREDIT_LINE_DEBT_ID,
+            kind = DebtKind.CREDIT_LINE,
+            amount = onCredit,
+            ratePercent = policy.creditRatePercent,
+        )
+        return Borrowing(
+            debts = withCredit.borrow(
+                id = PAYDAY_DEBT_ID,
+                kind = DebtKind.PAYDAY,
+                amount = onPayday,
+                ratePercent = policy.paydayRatePercent,
+            ),
+            paydayTaken = onPayday,
+        )
+    }
+
+    private data class Borrowing(val debts: List<Debt>, val paydayTaken: Long)
 
     fun capitalize(
         funds: List<FinancialFund>,

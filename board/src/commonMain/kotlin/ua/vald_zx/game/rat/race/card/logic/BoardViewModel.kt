@@ -151,6 +151,7 @@ sealed class BoardUiAction {
     data class InflationRaised(val index: EconomyIndex) : BoardUiAction()
     data class ScamResolved(val paid: Long, val received: Long) : BoardUiAction()
     data class MarketCrashed(val sector: String, val lostValue: Long) : BoardUiAction()
+    data class PaydayLoanTaken(val amount: Long) : BoardUiAction()
 }
 
 class BoardViewModel(
@@ -408,6 +409,10 @@ class BoardViewModel(
                         _actions.send(ScamResolved(event.paid, event.received))
                     }
 
+                    is Event.PaydayLoanTaken -> {
+                        _actions.send(PaydayLoanTaken(event.amount))
+                    }
+
                     is Event.MarketCrashed -> {
                         _actions.send(MarketCrashed(event.sector, event.lostValue))
                     }
@@ -561,6 +566,12 @@ class BoardViewModel(
             entries = serviceProvider().getLedger().filter { it.playerId == uiState.value.player.id },
         )
     }.getOrElse { GameDebrief(uiState.value.player.id, emptyList()) }
+
+    fun repayDebt(debtId: String, amount: Long) {
+        safeLaunch {
+            repayDebt(debtId, amount)
+        }
+    }
 
     fun investInScam(card: BoardCard.Chance.Scam) {
         safeLaunch {

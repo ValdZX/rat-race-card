@@ -82,6 +82,7 @@ sealed interface PresentationNotice {
     data class CashSubtracted(val amount: Long) : PresentationNotice
     data class DepositWithdrawn(val amount: Long) : PresentationNotice
     data class LoanAdded(val amount: Long) : PresentationNotice
+    data class PaydayLoanTaken(val amount: Long) : PresentationNotice
     data object LoanLimitExceeded : PresentationNotice
 }
 

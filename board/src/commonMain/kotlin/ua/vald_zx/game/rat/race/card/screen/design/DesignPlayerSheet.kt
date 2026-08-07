@@ -473,6 +473,19 @@ private fun DesignStatePage(player: Player, board: Board, onDeposit: () -> Unit)
             tone = Design.semantic.action,
             modifier = Modifier.fillMaxWidth(),
         )
+        val debts = player.resolvedDebts()
+        if (debts.size > 1) {
+            val costliest = debts.avalancheOrder().first()
+            debts.forEach { debt ->
+                ValueField(
+                    label = debt.kind.label() + " · " +
+                            stringResource(Res.string.debt_rate, debt.ratePercent.toString()),
+                    amount = -debt.principal,
+                    tone = if (debt.id == costliest.id) Design.semantic.negative else Design.semantic.action,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
         if (board.inflation.enabled) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ValueField(

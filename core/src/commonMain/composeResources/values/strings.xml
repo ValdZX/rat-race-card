@@ -424,4 +424,14 @@
     <string name="debrief_transfers">Transfers to players</string>
     <string name="debrief_other">Board events</string>
     <string name="debrief_open">Financial summary</string>
+    <string name="payday_loan">Payday loan</string>
+    <string name="payday_loan_taken">Your credit limit ran out, so %1$s was borrowed from a payday lender at a punitive rate. Repay this one first.</string>
+    <string name="debts">Debts</string>
+    <string name="debt_credit_line">Credit line</string>
+    <string name="debt_payday">Payday loan</string>
+    <string name="debt_mortgage">Mortgage</string>
+    <string name="debt_consumer">Consumer loan</string>
+    <string name="debt_rate">%1$s%% per payday</string>
+    <string name="debt_repay">Repay</string>
+    <string name="debt_costliest_first">Costliest first</string>
 </resources>
