@@ -61,9 +61,14 @@ fun DesignSalarySheet(vm: BoardViewModel) {
                 fundRate = fundRate,
                 highRiskMultiplier = player.config.highRiskMultiplier,
                 mediumRiskMultiplier = player.config.mediumRiskMultiplier,
+                canEndTurn = player.investmentPosition != null,
                 onTakeSalary = {
                     bottomSheetNavigator.hide()
                     vm.takeSalary()
+                },
+                onEndTurn = {
+                    bottomSheetNavigator.hide()
+                    vm.pass()
                 },
                 onPick = { openGame = it },
             )
@@ -94,7 +99,9 @@ private fun ColumnScope.Overview(
     fundRate: Long?,
     highRiskMultiplier: Long,
     mediumRiskMultiplier: Long,
+    canEndTurn: Boolean,
     onTakeSalary: () -> Unit,
+    onEndTurn: () -> Unit,
     onPick: (Game) -> Unit,
 ) {
     val colors = Design.colors
@@ -132,6 +139,14 @@ private fun ColumnScope.Overview(
             title = stringResource(Res.string.low_risk),
             hint = stringResource(Res.string.low_risk_hint, fundRate.toString()),
         ) { onPick(Game.Low) }
+    }
+    if (canEndTurn) {
+        DesignButton(
+            text = stringResource(Res.string.pass),
+            kind = DesignButtonKind.Tonal,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onEndTurn,
+        )
     }
 }
 

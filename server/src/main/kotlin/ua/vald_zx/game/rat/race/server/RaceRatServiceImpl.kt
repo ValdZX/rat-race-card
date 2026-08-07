@@ -332,7 +332,7 @@ class RaceRatServiceImpl(
         Storage.newPlayer(newPlayer)
         getGlobalEventBus(board.id).emit(GlobalEvent.PlayerChanged(newPlayer))
         updateBoard { copy(playerIds = playerIds + playerId) }
-        takeSalary()
+        grantSalary()
         invalidateNextPlayer(board.activePlayerId)
         return newPlayer
     }
@@ -652,6 +652,15 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun takeSalary() {
+        if (board().activePlayerId != playerId) return
+        if (player().salaryPosition == null) return
+        grantSalary()
+        if (player().investmentPosition != null) {
+            nextPlayer()
+        }
+    }
+
+    private suspend fun grantSalary() {
         updatePlayer(LedgerReason.SALARY) {
             val cashFlow = cashFlow()
             (if (cashFlow >= 0) {
@@ -1221,7 +1230,8 @@ class RaceRatServiceImpl(
         event: (InvestmentOutcome) -> Event,
     ) {
         val player = player()
-        if (player.investmentPosition == null || !board().canMakeVoluntaryPurchase(player, stake)) return
+        if (!canInvestOnSalary()) return
+        if (!board().canMakeVoluntaryPurchase(player, stake)) return
         val dice = random.nextInt(1, 7)
         val payout = if (isWin(dice)) stake * multiplier else 0L
         updatePlayer {
@@ -1233,13 +1243,22 @@ class RaceRatServiceImpl(
     }
 
     private suspend fun consumeInvestment() {
-        if (player().salaryPosition != null) takeSalary()
+        if (player().salaryPosition != null) grantSalary()
         updatePlayer { copy(investmentPosition = null) }
+        nextPlayer()
+    }
+
+    private suspend fun canInvestOnSalary(): Boolean {
+        val board = board()
+        if (board.activePlayerId != playerId) return false
+        val player = player()
+        return player.investmentPosition != null && player.location.position == player.investmentPosition
     }
 
     override suspend fun investInFund(amount: Long) {
         val player = player()
         val salaryPosition = player.investmentPosition ?: return
+        if (!canInvestOnSalary()) return
         if (!board().canBuyWithCashAndDeposit(player, amount)) return
         val rate = board().placesOf(player.location).fundRateAtSalary(
             salaryPosition,
@@ -1439,6 +1458,11 @@ suspend fun nextPlayer(board: Board) {
     val activePlayers = board.activePlayers(Storage.players(board.id))
     if (activePlayers.isEmpty()) return
     val nextPlayerId = board.nextActivePlayer(activePlayers)?.id ?: return
+    Storage.getPlayerOrNull(board.activePlayerId)?.let { outgoing ->
+        if (outgoing.salaryPosition != null || outgoing.investmentPosition != null) {
+            Storage.updatePlayer(outgoing.copy(salaryPosition = null, investmentPosition = null))
+        }
+    }
     val updatedBoard = board.discardPileB().copy(
         activePlayerId = nextPlayerId,
         moveCount = board.moveCount + 1,

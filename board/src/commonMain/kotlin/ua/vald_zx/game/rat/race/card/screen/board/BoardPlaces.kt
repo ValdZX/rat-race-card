@@ -119,8 +119,8 @@ fun BoxScope.PlaceContent(
                 )
             }
 
-            val canTakeSalary = isHere(salaryPosition)
-            val canInvest = isHere(investmentPosition)
+            val canTakeSalary = isHere(salaryPosition) && state.currentPlayerIsActive
+            val canInvest = isHere(investmentPosition) && state.currentPlayerIsActive
             val bottomSheetNavigator = LocalBottomSheetNavigator.current
             Box(
                 Modifier

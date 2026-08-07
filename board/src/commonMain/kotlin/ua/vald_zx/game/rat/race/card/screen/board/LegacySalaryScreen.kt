@@ -64,6 +64,17 @@ internal fun LegacySalaryScreen(vm: BoardViewModel) {
                 }
                 LowRiskCard(rate = fundRate, available = player.cash) { amount -> vm.investInFund(amount) }
             }
+            if (player.investmentPosition != null) {
+                OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        bottomSheetNavigator.hide()
+                        vm.pass()
+                    },
+                ) {
+                    Text(stringResource(Res.string.pass))
+                }
+            }
         }
 }
 

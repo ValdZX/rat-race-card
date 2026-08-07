@@ -99,10 +99,12 @@ fun BoxScope.DesignBoardTracks(
 
     val bottomSheetNavigator = LocalBottomSheetNavigator.current
     val onSalary = {
-        if (state.player.investmentPosition == null) {
-            vm.takeSalary()
-        } else {
-            bottomSheetNavigator.show(SalaryScreen(vm))
+        if (state.currentPlayerIsActive) {
+            if (state.player.investmentPosition == null) {
+                vm.takeSalary()
+            } else {
+                bottomSheetNavigator.show(SalaryScreen(vm))
+            }
         }
     }
     val onStart = { vm.capitalizeFunds() }

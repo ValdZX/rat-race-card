@@ -125,6 +125,7 @@ class GameEngine(
         val updated = player.copy(
             location = PlayerLocation(transition.entryCellIndex, transition.to),
             salaryPosition = null,
+            investmentPosition = null,
         ).withTrackedFinancialChanges(player)
         return Transition.Applied(
             RuleResult(
@@ -273,8 +274,23 @@ class GameEngine(
                 activeCardDefinitionId = null,
                 pendingInteractions = emptyList(),
             )
-            current = current.copy(board = updatedBoard)
+            val outgoing = current.players.firstOrNull { it.id == previousId }
+            val clearsMarkers = outgoing != null &&
+                    (outgoing.salaryPosition != null || outgoing.investmentPosition != null)
+            current = current.copy(
+                board = updatedBoard,
+                players = current.players.map { player ->
+                    if (player.id == previousId && clearsMarkers) {
+                        player.copy(salaryPosition = null, investmentPosition = null)
+                    } else {
+                        player
+                    }
+                },
+            )
             events += DomainEvent.TurnAdvanced(previousId, next.id)
+            if (clearsMarkers) {
+                events += DomainEvent.PlayerChanged(current.players.first { it.id == previousId })
+            }
             val upcoming = current.players.first { it.id == next.id }
             if (upcoming.inRest <= 0) break
             val rested = upcoming.copy(inRest = upcoming.inRest - 1).withTrackedFinancialChanges(upcoming)
