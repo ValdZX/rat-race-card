@@ -27,12 +27,13 @@ import kotlin.uuid.Uuid
 
 internal val LOGGER = KtorSimpleLogger("RaceRatService")
 
+private val DICE_ANIMATION = 4.seconds
 private const val CORRUPT_NAME_LENGTH = 48
 private const val SPEECH_LIFETIME_MS = 8_000
 private val ROLL_COMPLETION_DELAY = 4.seconds
 private val LEGACY_OUTER_ONLY_CARD_IDS = mapOf(
     BoardCardType.Chance to (121..138).toSet(),
-    BoardCardType.EventStore to setOf(107) + (111..124),
+    BoardCardType.EventStore to setOf(107) + (111..124).toSet(),
 )
 
 private val boardMutexes = ConcurrentHashMap<String, Mutex>()
@@ -155,6 +156,7 @@ class RaceRatServiceImpl(
                 scheduleRollCompletion(restoredBoard.id, "reconnect:$playerId")
             }
             invalidateNextPlayer(restoredBoard.activePlayerId)
+            recoverStuckTurn()
             return Instance(board(), player())
         }
         return Instance(board, null)
@@ -642,6 +644,24 @@ class RaceRatServiceImpl(
         if (activePlayerId.isEmpty() || active == null || !active.isActiveOn(board)) {
             nextPlayer()
         }
+    }
+
+    private suspend fun recoverStuckTurn() {
+        val current = board()
+        if (current.activePlayerId != playerId) return
+        val recovery = current.stuckTurnRecovery()
+        val command = recovery.command() ?: return
+        LOGGER.warn("Recovering stuck turn on board ${current.id} for $playerId with $recovery")
+        val execution = gameApplicationService.execute(
+            GameCommandEnvelope(
+                commandId = Uuid.random().toString(),
+                boardId = current.id,
+                playerId = current.activePlayerId,
+                expectedRevision = current.revision,
+                command = command,
+            ),
+        ) ?: return
+        publish(execution)
     }
 
     private suspend fun nextPlayer() {

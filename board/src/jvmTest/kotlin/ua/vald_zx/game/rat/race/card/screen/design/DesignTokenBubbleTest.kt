@@ -56,7 +56,12 @@ class DesignTokenBubbleTest {
         tapToken("rival")
 
         onNodeWithText("Olena", useUnmergedTree = true).assertExists()
-        assertEquals(2, onAllNodesWithText("Engineer", useUnmergedTree = true).fetchSemanticsNodes().size)
+        onNodeWithTag(tokenBubbleTag, useUnmergedTree = true).assertExists()
+        assertEquals(
+            1,
+            onAllNodesWithText("Engineer", useUnmergedTree = true).fetchSemanticsNodes().size,
+            "статус гравця показується рівно один раз — у бульбашці",
+        )
         onNodeWithText("Send", useUnmergedTree = true).assertExists()
         onNodeWithText("Send message", useUnmergedTree = true).assertExists()
 
@@ -81,7 +86,11 @@ class DesignTokenBubbleTest {
         tapToken("rival")
 
         onNodeWithText("Olena", useUnmergedTree = true).assertExists()
-        assertEquals(2, onAllNodesWithText("Unemployed", useUnmergedTree = true).fetchSemanticsNodes().size)
+        assertEquals(
+            1,
+            onAllNodesWithText("Unemployed", useUnmergedTree = true).fetchSemanticsNodes().size,
+            "звільнений гравець показує статус замість професії, і теж один раз",
+        )
         onNodeWithText("Engineer", useUnmergedTree = true).assertDoesNotExist()
 
         capture("build/design-token-bubble-fired.png")

@@ -26,7 +26,7 @@ data class AppDataStorageBean(
 
 val designV2Enabled = mutableStateOf(true)
 
-val soundEnabled = mutableStateOf(true)
+val soundEnabled = mutableStateOf(false)
 
 var storageKeyPrefix = ""
 
