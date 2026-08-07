@@ -5,6 +5,7 @@ package ua.vald_zx.game.rat.race.server
 import io.ktor.util.logging.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.*
@@ -36,10 +37,35 @@ private val LEGACY_OUTER_ONLY_CARD_IDS = mapOf(
     BoardCardType.EventStore to setOf(107) + (111..124).toSet(),
 )
 
+internal const val EVENT_BUS_CAPACITY = 256
+
 private val boardMutexes = ConcurrentHashMap<String, Mutex>()
 private val playerMutexes = ConcurrentHashMap<String, Mutex>()
 internal fun boardMutex(boardId: String): Mutex = boardMutexes.getOrPut(boardId) { Mutex() }
 private fun playerMutex(playerId: String): Mutex = playerMutexes.getOrPut(playerId) { Mutex() }
+
+private fun releaseBoardResources(boardId: String, playerIds: Collection<String>) {
+    boardMutexes.remove(boardId)
+    playerIds.forEach { playerMutexes.remove(it) }
+    stuckRollCandidates.remove(boardId)
+    releaseGlobalEventBus(boardId)
+}
+
+private fun createGameApplicationService(random: GameRandom, clock: GameClock) = GameApplicationService(
+    repository = StorageGameRepository,
+    engine = GameEngine(random),
+    transactionMutex = ::boardMutex,
+    clock = clock,
+    log = { entry ->
+        if (entry.outcome == GameCommandOutcome.APPLIED) {
+            LOGGER.info(entry.format())
+        } else {
+            LOGGER.warn(entry.format())
+        }
+    },
+)
+
+private val sharedGameApplicationService = createGameApplicationService(DefaultGameRandom, SystemGameClock)
 
 class RaceRatServiceImpl(
     private val uuidStateProvider: MutableStateFlow<String>,
@@ -50,25 +76,15 @@ class RaceRatServiceImpl(
 ) : RaceRatService, CoroutineScope by scope {
 
     private var boardIdState = MutableStateFlow("")
-    private val eventBus = MutableSharedFlow<Event>()
-    private val boardsFlow = MutableSharedFlow<List<BoardId>>(replay = 1)
+    private val eventBus = MutableSharedFlow<Event>(
+        extraBufferCapacity = EVENT_BUS_CAPACITY,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
     private val globalEventBus: MutableSharedFlow<GlobalEvent>
         get() = getGlobalEventBus(boardIdState.value)
     private var boardStateSubJob: Job? = null
     private var globalEventStateSubJob: Job? = null
-    private val gameApplicationService = GameApplicationService(
-        repository = StorageGameRepository,
-        engine = GameEngine(random),
-        transactionMutex = ::boardMutex,
-        clock = clock,
-        log = { entry ->
-            if (entry.outcome == GameCommandOutcome.APPLIED) {
-                LOGGER.info(entry.format())
-            } else {
-                LOGGER.warn(entry.format())
-            }
-        },
-    )
+    private val gameApplicationService = createGameApplicationService(random, clock)
 
     private val playerId: String
         get() = generateStableDbId(boardIdState.value, uuidStateProvider.value)
@@ -79,10 +95,6 @@ class RaceRatServiceImpl(
     init {
         checkStatusFlow
             .onEach { eventBus.emit(Event.CheckState) }
-            .launchIn(this)
-
-        Storage.observeBoards()
-            .onEach { boardsFlow.emit(getBoards()) }
             .launchIn(this)
 
         boardIdState
@@ -99,6 +111,7 @@ class RaceRatServiceImpl(
 
         globalEventStateSubJob?.cancel()
         globalEventStateSubJob = globalEventBus
+            .buffer(EVENT_BUS_CAPACITY, BufferOverflow.DROP_OLDEST)
             .onEach { event -> handleGlobalEvent(event) }
             .launchIn(this)
     }
@@ -177,39 +190,12 @@ class RaceRatServiceImpl(
         checkStatusJobs[playerId]?.cancel()
     }
 
-    override suspend fun getBoards(): List<BoardId> {
-        val now = clock.nowEpochMilliseconds()
-        return Storage.boards().map { board ->
-            val players = Storage.players(board.id)
-            val active = players.count { !it.isInactive }
-            val inactiveSince = when {
-                active == 0 && board.allInactiveSinceEpochMs == null -> now.also { timestamp ->
-                    Storage.updateBoard(board.copy(allInactiveSinceEpochMs = timestamp))
-                }
+    override suspend fun getBoards(): List<BoardId> = boardIdList(clock.nowEpochMilliseconds())
 
-                active > 0 && board.allInactiveSinceEpochMs != null -> null.also {
-                    Storage.updateBoard(board.copy(allInactiveSinceEpochMs = null))
-                }
-
-                else -> board.allInactiveSinceEpochMs
-            }
-            val deletableAfter = inactiveSince?.plus(BOARD_DELETION_INACTIVITY.inWholeMilliseconds)
-            BoardId(
-                id = board.id,
-                name = board.name,
-                createDateTime = board.createDateTime,
-                activePlayerCount = active,
-                inactivePlayerCount = players.size - active,
-                deletableAfterEpochMs = deletableAfter,
-                canDelete = active == 0 && deletableAfter != null && now >= deletableAfter,
-            )
-        }
-    }
-
-    override fun observeBoards(): Flow<List<BoardId>> = boardsFlow
+    override fun observeBoards(): Flow<List<BoardId>> = observeBoardList()
 
     override suspend fun deleteBoard(boardId: String) {
-        boardMutex(boardId).withLock {
+        val deletedPlayerIds = boardMutex(boardId).withLock {
             val board = Storage.getBoardOrNull(boardId) ?: return
             val players = Storage.players(boardId)
             check(players.none { !it.isInactive }) { "Board has active players" }
@@ -220,7 +206,9 @@ class RaceRatServiceImpl(
             }
             BoardGenerationCoordinator.cancelGeneration(boardId)
             Storage.removeBoard(boardId)
+            board.playerIds
         }
+        releaseBoardResources(boardId, deletedPlayerIds)
     }
 
     override suspend fun createBoard(
@@ -360,13 +348,13 @@ class RaceRatServiceImpl(
 
         val execution = gameApplicationService.execute(envelope)
             ?: error("Board not found: ${envelope.boardId}")
-        publish(execution)
-        if (envelope.command !is GameCommand.RollDice || execution !is GameExecution.Applied) {
-            return execution.toResponse()
+        if (envelope.command is GameCommand.RollDice &&
+            execution is GameExecution.Applied &&
+            execution.snapshot.board.diceRolling
+        ) {
+            scheduleRollCompletion(envelope.boardId, envelope.commandId)
         }
-
-        if (!execution.snapshot.board.diceRolling) return execution.toResponse()
-        scheduleRollCompletion(envelope.boardId, envelope.commandId)
+        publish(execution)
         return execution.toResponse()
     }
 
@@ -589,35 +577,13 @@ class RaceRatServiceImpl(
     }
 
     private suspend fun publish(result: RuleResult, boardId: String = boardIdState.value) {
-        val boardBus = getGlobalEventBus(boardId)
-        result.events.forEach { domainEvent ->
-            when (domainEvent) {
-                is DomainEvent.PlayerChanged -> {
-                    boardBus.emit(GlobalEvent.PlayerChanged(domainEvent.player))
-                    checkVictory(domainEvent.player)
-                }
-
-                is DomainEvent.EconomyPeriodAdvanced ->
-                    boardBus.emit(GlobalEvent.EconomyPeriodAdvanced(domainEvent.index))
-
-                is DomainEvent.CardOptionsOpened,
-                is DomainEvent.DiceRolled,
-                is DomainEvent.PaymentApplied,
-                is DomainEvent.PlayerMoved,
-                is DomainEvent.TurnAdvanced -> Unit
-            }
-        }
+        publishGlobalEvents(result, boardId)
         result.notices.forEach { notice ->
             when (notice) {
                 is PresentationNotice.BankruptBusiness -> eventBus.emit(Event.BankruptBusiness(notice.business))
-                is PresentationNotice.PlayerHadBaby ->
-                    boardBus.emit(GlobalEvent.PlayerHadBaby(notice.playerId, notice.babies))
-
-                is PresentationNotice.PlayerDivorced ->
-                    boardBus.emit(GlobalEvent.PlayerDivorced(notice.playerId))
-
-                is PresentationNotice.PlayerMarried ->
-                    boardBus.emit(GlobalEvent.PlayerMarried(notice.playerId))
+                is PresentationNotice.PlayerHadBaby,
+                is PresentationNotice.PlayerDivorced,
+                is PresentationNotice.PlayerMarried -> Unit
 
                 is PresentationNotice.Resignation -> eventBus.emit(Event.Resignation(notice.business))
                 PresentationNotice.DreamOffered -> eventBus.emit(Event.DreamOffered)
@@ -808,31 +774,18 @@ class RaceRatServiceImpl(
             val previousPlayer = player()
             val changed = previousPlayer.change()
             val newPlayer = changed.withRecentChanges(previousPlayer)
-            publishPlayerChange(newPlayer)
+            Storage.updatePlayer(newPlayer)
             updatedPlayer = newPlayer
         }
         updatedPlayer?.let { player ->
+            getGlobalEventBus(player.boardId).emit(GlobalEvent.PlayerChanged(player))
             Storage.appendLedger(player, reason, board().economy)
             checkVictory(player)
         }
     }
 
     private suspend fun checkVictory(player: Player) {
-        val board = board()
-        if (!board.hasCompletedObjective(player)) return
-        if (board.winnerId != null) return
-        var becameWinner = false
-        updateBoard {
-            if (winnerId == null) {
-                becameWinner = true
-                copy(winnerId = player.id)
-            } else {
-                this
-            }
-        }
-        if (becameWinner) {
-            globalEventBus.emit(GlobalEvent.PlayerWon(player.id, player.card.name))
-        }
+        checkVictory(boardIdState.value, player)
     }
 
     private fun Player.plusCash(value: Long): Player {
@@ -1471,10 +1424,121 @@ class RaceRatServiceImpl(
 
 private val BOARD_DELETION_INACTIVITY = 7.days
 
+internal suspend fun boardIdList(nowMillis: Long): List<BoardId> = Storage.boards().map { board ->
+    val players = Storage.players(board.id)
+    val active = players.count { !it.isInactive }
+    val deletableAfter = board.allInactiveSinceEpochMs
+        ?.takeIf { active == 0 }
+        ?.plus(BOARD_DELETION_INACTIVITY.inWholeMilliseconds)
+    BoardId(
+        id = board.id,
+        name = board.name,
+        createDateTime = board.createDateTime,
+        activePlayerCount = active,
+        inactivePlayerCount = players.size - active,
+        deletableAfterEpochMs = deletableAfter,
+        canDelete = deletableAfter != null && nowMillis >= deletableAfter,
+    )
+}
+
 internal suspend fun publishPlayerChange(player: Player) {
     Storage.updatePlayer(player)
     getGlobalEventBus(player.boardId).emit(GlobalEvent.PlayerChanged(player))
 }
+
+internal suspend fun publishGlobalEvents(result: RuleResult, boardId: String) {
+    val boardBus = getGlobalEventBus(boardId)
+    result.events.forEach { domainEvent ->
+        when (domainEvent) {
+            is DomainEvent.PlayerChanged -> {
+                boardBus.emit(GlobalEvent.PlayerChanged(domainEvent.player))
+                checkVictory(boardId, domainEvent.player)
+            }
+
+            is DomainEvent.EconomyPeriodAdvanced ->
+                boardBus.emit(GlobalEvent.EconomyPeriodAdvanced(domainEvent.index))
+
+            is DomainEvent.CardOptionsOpened,
+            is DomainEvent.DiceRolled,
+            is DomainEvent.PaymentApplied,
+            is DomainEvent.PlayerMoved,
+            is DomainEvent.TurnAdvanced -> Unit
+        }
+    }
+    result.notices.forEach { notice ->
+        when (notice) {
+            is PresentationNotice.PlayerHadBaby ->
+                boardBus.emit(GlobalEvent.PlayerHadBaby(notice.playerId, notice.babies))
+
+            is PresentationNotice.PlayerDivorced ->
+                boardBus.emit(GlobalEvent.PlayerDivorced(notice.playerId))
+
+            is PresentationNotice.PlayerMarried ->
+                boardBus.emit(GlobalEvent.PlayerMarried(notice.playerId))
+
+            is PresentationNotice.BankruptBusiness,
+            is PresentationNotice.Resignation,
+            PresentationNotice.DreamOffered,
+            is PresentationNotice.TaxInspectionPaid,
+            is PresentationNotice.CashSubtracted,
+            is PresentationNotice.DepositWithdrawn,
+            is PresentationNotice.LoanAdded,
+            is PresentationNotice.PaydayLoanTaken,
+            PresentationNotice.LoanLimitExceeded -> Unit
+        }
+    }
+}
+
+internal suspend fun checkVictory(boardId: String, player: Player) {
+    val board = Storage.getBoardOrNull(boardId) ?: return
+    if (!board.hasCompletedObjective(player)) return
+    if (board.winnerId != null) return
+    var becameWinner = false
+    boardMutex(boardId).withLock {
+        val current = Storage.getBoardOrNull(boardId) ?: return
+        if (current.winnerId == null) {
+            becameWinner = true
+            Storage.updateBoard(current.copy(winnerId = player.id))
+        }
+    }
+    if (becameWinner) {
+        getGlobalEventBus(boardId).emit(GlobalEvent.PlayerWon(player.id, player.card.name))
+    }
+}
+
+internal suspend fun recoverStuckRolls(graceMillis: Long, nowMillis: Long) {
+    val boards = Storage.boards()
+    stuckRollCandidates.keys.retainAll(boards.mapTo(mutableSetOf()) { it.id })
+    boards.forEach { board ->
+        val current = Storage.getBoardOrNull(board.id) ?: return@forEach
+        if (current.stuckTurnRecovery() != StuckTurnRecovery.COMPLETE_ROLL) {
+            stuckRollCandidates.remove(current.id)
+            return@forEach
+        }
+        val candidate = stuckRollCandidates[current.id]
+        if (candidate == null || candidate.revision != current.revision) {
+            stuckRollCandidates[current.id] = StuckRollCandidate(current.revision, nowMillis)
+            return@forEach
+        }
+        if (nowMillis - candidate.since < graceMillis) return@forEach
+        stuckRollCandidates.remove(current.id)
+        LOGGER.warn("Watchdog completing stuck roll on board ${current.id} at revision ${current.revision}")
+        val execution = sharedGameApplicationService.execute(
+            GameCommandEnvelope(
+                commandId = Uuid.random().toString(),
+                boardId = current.id,
+                playerId = current.activePlayerId,
+                expectedRevision = current.revision,
+                command = GameCommand.CompleteRoll,
+            ),
+        ) ?: return@forEach
+        if (execution is GameExecution.Applied) publishGlobalEvents(execution.result, current.id)
+    }
+}
+
+private data class StuckRollCandidate(val revision: Long, val since: Long)
+
+private val stuckRollCandidates = ConcurrentHashMap<String, StuckRollCandidate>()
 
 suspend fun nextPlayer(board: Board) {
     val activePlayers = board.activePlayers(Storage.players(board.id))

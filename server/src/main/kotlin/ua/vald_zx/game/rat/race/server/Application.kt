@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
+@file:OptIn(ExperimentalUuidApi::class, ExperimentalTime::class, FlowPreview::class)
 
 package ua.vald_zx.game.rat.race.server
 
@@ -10,13 +10,20 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.websocket.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.rpc.krpc.ktor.server.Krpc
 import kotlinx.rpc.krpc.ktor.server.rpc
 import kotlinx.rpc.krpc.serialization.json.json
+import ua.vald_zx.game.rat.race.card.shared.Board
+import ua.vald_zx.game.rat.race.card.shared.BoardId
 import ua.vald_zx.game.rat.race.card.shared.GlobalEvent
+import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.RaceRatCardService
 import ua.vald_zx.game.rat.race.card.shared.RaceRatService
 import ua.vald_zx.game.rat.race.server.data.Env
@@ -31,13 +38,27 @@ import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-val checkStatusFlow = MutableSharedFlow<String>()
+val checkStatusFlow = MutableSharedFlow<String>(
+    extraBufferCapacity = EVENT_BUS_CAPACITY,
+    onBufferOverflow = BufferOverflow.DROP_OLDEST,
+)
 internal val instanceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 val checkStatusJobs = ConcurrentHashMap<String, Job>()
 private val connectionIdsByUuid = ConcurrentHashMap<String, MutableSet<String>>()
 
 private const val STATUS_SWEEP_INTERVAL = 60
-private const val INACTIVITY_GRACE_MS = 5000L
+private const val INACTIVITY_GRACE_MS = 20_000L
+private const val STUCK_ROLL_SWEEP_INTERVAL = 10
+private const val STUCK_ROLL_GRACE_MS = 12_000L
+private const val BOARD_LIST_DEBOUNCE_MS = 300L
+
+private val boardListFlow = MutableSharedFlow<List<BoardId>>(
+    replay = 1,
+    extraBufferCapacity = 1,
+    onBufferOverflow = BufferOverflow.DROP_OLDEST,
+)
+
+internal fun observeBoardList(): Flow<List<BoardId>> = boardListFlow
 
 fun main() {
     Runtime.getRuntime().addShutdownHook(Thread {
@@ -46,18 +67,40 @@ fun main() {
                 .onFailure { LOGGER.error("Failed to flush pending writes on shutdown", it) }
         }
     })
-    instanceScope.launch {
-        while (isActive) {
-            delay(STATUS_SWEEP_INTERVAL.seconds)
-            runStatusSweep()
-        }
-    }
     embeddedServer(
         Netty,
         port = 8080,
         host = "0.0.0.0",
         module = Application::module
     ).start(wait = true)
+}
+
+private fun startBackgroundJobs() {
+    instanceScope.launch {
+        while (isActive) {
+            delay(STATUS_SWEEP_INTERVAL.seconds)
+            runCatching { runStatusSweep() }
+                .onFailure { LOGGER.error("Status sweep failed", it) }
+        }
+    }
+    instanceScope.launch {
+        while (isActive) {
+            delay(STUCK_ROLL_SWEEP_INTERVAL.seconds)
+            runCatching { recoverStuckRolls(STUCK_ROLL_GRACE_MS, System.currentTimeMillis()) }
+                .onFailure { LOGGER.error("Stuck roll sweep failed", it) }
+        }
+    }
+    instanceScope.launch {
+        projectBoardList()
+        Storage.observeBoards()
+            .debounce(BOARD_LIST_DEBOUNCE_MS)
+            .collect { projectBoardList() }
+    }
+}
+
+private suspend fun projectBoardList() {
+    runCatching { boardListFlow.emit(boardIdList(System.currentTimeMillis())) }
+        .onFailure { LOGGER.error("Board list projection failed", it) }
 }
 
 private suspend fun runStatusSweep() {
@@ -68,6 +111,7 @@ private suspend fun runStatusSweep() {
 
     Storage.boards().forEach { board ->
         val players = board.playerIds.mapNotNull { playerId -> Storage.getPlayerOrNull(playerId) }
+        reconcileBoardActivity(board, players)
         players.forEach { player ->
             if (!player.isInactive) {
                 checkStatusJobs[player.id] = instanceScope.launch {
@@ -83,14 +127,42 @@ private suspend fun runStatusSweep() {
     }
 }
 
+private suspend fun reconcileBoardActivity(board: Board, players: List<Player>) {
+    val allInactive = players.all { it.isInactive }
+    val updated = when {
+        allInactive && board.allInactiveSinceEpochMs == null ->
+            board.copy(allInactiveSinceEpochMs = System.currentTimeMillis())
+
+        !allInactive && board.allInactiveSinceEpochMs != null ->
+            board.copy(allInactiveSinceEpochMs = null)
+
+        else -> return
+    }
+    Storage.updateBoard(updated)
+}
+
 private val globalEventBusMap = ConcurrentHashMap<String, MutableSharedFlow<GlobalEvent>>()
 fun getGlobalEventBus(boardId: String): MutableSharedFlow<GlobalEvent> {
-    return globalEventBusMap.computeIfAbsent(boardId) { MutableSharedFlow() }
+    return globalEventBusMap.computeIfAbsent(boardId) {
+        MutableSharedFlow(
+            extraBufferCapacity = EVENT_BUS_CAPACITY,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
+    }
+}
+
+internal fun releaseGlobalEventBus(boardId: String) {
+    globalEventBusMap.remove(boardId)
 }
 
 fun Application.module() {
+    install(WebSockets) {
+        pingPeriodMillis = 15.seconds.inWholeMilliseconds
+        timeoutMillis = 15.seconds.inWholeMilliseconds
+    }
     install(Krpc)
     installCORS()
+    startBackgroundJobs()
     LlmSettings.logConfiguration()
     instanceScope.launch { BoardGenerationCoordinator.markPendingAsPaused() }
     monitor.subscribe(ApplicationStopping) {

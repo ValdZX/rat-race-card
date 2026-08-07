@@ -24,6 +24,7 @@ import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.MAX_LEDGER_ENTRIES
 import ua.vald_zx.game.rat.race.card.shared.ledgerEntry
 import ua.vald_zx.game.rat.race.card.shared.sameFinancialStateAs
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -39,8 +40,8 @@ object Storage {
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
-    private val players: MutableMap<String, MutableStateFlow<Player>> = mutableMapOf()
-    private val boards: MutableMap<String, MutableStateFlow<Board>> = mutableMapOf()
+    private val players: MutableMap<String, MutableStateFlow<Player>> = ConcurrentHashMap()
+    private val boards: MutableMap<String, MutableStateFlow<Board>> = ConcurrentHashMap()
 
     private val playersLock = Mutex()
     private val boardsLock = Mutex()
