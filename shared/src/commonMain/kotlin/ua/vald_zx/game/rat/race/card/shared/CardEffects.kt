@@ -61,14 +61,32 @@ class EffectHandlerRegistry(handlers: Iterable<EffectHandler>) {
 
 fun standardEffectHandlerRegistry(): EffectHandlerRegistry = EffectHandlerRegistry(standardEffectHandlers())
 
-internal fun standardEffectHandlers(): List<EffectHandler> = listOf(
+internal fun standardEffectHandlers(): List<EffectHandler> {
+    lateinit var registry: EffectHandlerRegistry
+    val handlers = listOf(
         ChangeCashEffectHandler,
         PayAmountEffectHandler,
         AcquireBusinessEffectHandler,
         AcquireShoppingEffectHandler,
         PayExpenseEffectHandler,
         EndTurnEffectHandler,
-)
+        RemoveAssetEffectHandler,
+        ChangeRecurringIncomeEffectHandler,
+        ChangeRecurringExpenseEffectHandler,
+        OfferPurchaseEffectHandler,
+        OfferSaleEffectHandler,
+        RequirePlayerPredicateEffectHandler,
+        RequireResourceEffectHandler,
+        SpendResourceEffectHandler,
+        SetCounterEffectHandler,
+        DrawCardEffectHandler,
+        StartAuctionEffectHandler,
+        EmitNoticeEffectHandler,
+        ForEachEligiblePlayerEffectHandler { registry },
+    )
+    registry = EffectHandlerRegistry(handlers)
+    return handlers
+}
 
 class CardDefinitionEngine(
     private val effects: EffectHandlerRegistry,

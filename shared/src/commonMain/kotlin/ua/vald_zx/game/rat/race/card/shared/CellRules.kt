@@ -135,6 +135,22 @@ data class TurnContext(
     }
 
     fun endTurn(): TurnContext = copy(result = result.copy(turnDirective = TurnDirective.END_TURN))
+
+    fun forPlayer(otherPlayerId: String): TurnContext = copy(playerId = otherPlayerId)
+
+    fun offer(interaction: PendingInteraction): TurnContext = copy(
+        result = result.copy(
+            snapshot = snapshot.copy(
+                board = board.copy(pendingInteractions = board.pendingInteractions + interaction),
+            ),
+        ),
+    )
+
+    fun startAuction(auction: Auction): TurnContext = copy(
+        result = result.copy(
+            snapshot = snapshot.copy(board = board.copy(auction = auction, bidList = emptyList())),
+        ),
+    )
 }
 
 fun Player.withTrackedFinancialChanges(previous: Player): Player = copy(

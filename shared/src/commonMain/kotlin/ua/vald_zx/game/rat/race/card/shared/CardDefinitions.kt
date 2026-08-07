@@ -6,6 +6,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlin.jvm.JvmInline
@@ -164,6 +165,55 @@ fun BoardCard.toCardDefinition(link: CardLink): CardDefinition? = when (this) {
         ),
     )
 
+    is BoardCard.EventStore.Reelection -> autoDefinition(
+        link = link,
+        kind = CardKindId("corruption.reelection"),
+        title = name,
+        description = description,
+        effects = listOf(
+            EffectSpec(
+                StandardEffectTypes.ForEachEligiblePlayer,
+                buildJsonObject {
+                    put(
+                        "effects",
+                        Json.encodeToJsonElement(
+                            ListSerializer(EffectSpec.serializer()),
+                            listOf(
+                                EffectSpec(
+                                    StandardEffectTypes.SetCounter,
+                                    buildJsonObject {
+                                        put("resource", PlayerResource.DEPUTIES.name)
+                                        put("value", 0L)
+                                    },
+                                ),
+                            ),
+                        ),
+                    )
+                },
+            ),
+            EffectSpec(StandardEffectTypes.EndTurn),
+        ),
+    )
+
+    is BoardCard.EventStore.BusinessExtending -> autoDefinition(
+        link = link,
+        kind = CardKindId("core.business_extending"),
+        title = name,
+        description = description,
+        effects = listOf(
+            EffectSpec(StandardEffectTypes.ChangeRecurringIncome, buildJsonObject { put("amount", profit) }),
+            EffectSpec(StandardEffectTypes.EndTurn),
+        ),
+    )
+
+    is BoardCard.EventStore.Announcement -> autoDefinition(
+        link = link,
+        kind = CardKindId("core.announcement"),
+        title = name,
+        description = description,
+        effects = listOf(EffectSpec(StandardEffectTypes.EndTurn)),
+    )
+
     is BoardCard.Chance.RandomJob -> choiceDefinition(
         link = link,
         kind = CardKindId("core.random_job"),
@@ -239,6 +289,20 @@ private fun businessDefinition(
         ),
     )
 }
+
+private fun autoDefinition(
+    link: CardLink,
+    kind: CardKindId,
+    title: String,
+    description: String,
+    effects: List<EffectSpec>,
+): CardDefinition = CardDefinition(
+    id = link.definitionId(),
+    deckId = link.type.deckId(),
+    kind = kind,
+    presentation = CardPresentation(title, description),
+    effects = effects,
+)
 
 private fun choiceDefinition(
     link: CardLink,
