@@ -60,7 +60,7 @@ fun BoxWithConstraintsScope.SmallBusinessCardFront(
         Column(modifier = Modifier.padding(padding)) {
             Row {
                 Text(
-                    text = card.type.title,
+                    text = card.name.ifBlank { card.type.title },
                     modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                     fontSize = unitTS * 14,
                     lineHeight = unitTS * 19,
@@ -186,7 +186,7 @@ fun BoxWithConstraintsScope.MediumBusinessCardFront(
         Column(modifier = Modifier.padding(padding)) {
             Row {
                 Text(
-                    text = card.type.title,
+                    text = card.name.ifBlank { card.type.title },
                     modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                     fontSize = unitTS * 14,
                     lineHeight = unitTS * 19,
@@ -311,7 +311,7 @@ fun BoxWithConstraintsScope.BigBusinessCardFront(
         Column(modifier = Modifier.padding(padding)) {
             Row {
                 Text(
-                    text = card.type.title,
+                    text = card.name.ifBlank { card.type.title },
                     modifier = Modifier.weight(1f).padding(end = padding, top = smallPadding),
                     fontSize = unitTS * 14,
                     lineHeight = unitTS * 19,
