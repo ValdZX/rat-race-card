@@ -1,3 +1,4 @@
+import org.gradle.api.provider.Provider
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
@@ -133,15 +134,14 @@ compose.desktop {
     }
 }
 
-fun gitOutput(vararg args: String): String = runCatching {
-    providers.exec {
-        commandLine("git", *args)
-        isIgnoreExitValue = true
-    }.standardOutput.asText.get().trim()
-}.getOrDefault("")
-
-val buildCommit = gitOutput("rev-parse", "--short", "HEAD").ifEmpty { "unknown" }
-val buildTime = gitOutput("show", "-s", "--format=%cI", "HEAD").ifEmpty { "unknown" }
+fun gitOutput(vararg args: String): Provider<String> = providers.provider {
+    runCatching {
+        providers.exec {
+            commandLine("git", *args)
+            isIgnoreExitValue = true
+        }.standardOutput.asText.get().trim()
+    }.getOrDefault("").ifEmpty { "unknown" }
+}
 
 buildConfig {
     // https://github.com/gmazzo/gradle-buildconfig-plugin#usage-in-kts
@@ -151,8 +151,8 @@ buildConfig {
         className("BuildConfig")
         buildConfigField("Boolean", "CARD_ONLY_MODE", cardOnly.toString())
         buildConfigField("String", "APP_VERSION", "\"${project.version}\"")
-        buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
-        buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
+        buildConfigField("String", "BUILD_COMMIT", gitOutput("rev-parse", "--short", "HEAD"))
+        buildConfigField("String", "BUILD_TIME", gitOutput("show", "-s", "--format=%cI", "HEAD"))
     }
 }
 
