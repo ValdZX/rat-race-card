@@ -61,6 +61,9 @@ data class Board(
     @EncodeDefault
     val rulesVersion: Int = CURRENT_RULES_VERSION,
     @EncodeDefault
+    @Serializable(with = ContentPackVersionsSerializer::class)
+    val contentPackVersions: Map<FeatureId, Int> = emptyMap(),
+    @EncodeDefault
     val revision: Long = 0,
     val processedCommandIds: List<String> = emptyList(),
 )
@@ -138,14 +141,18 @@ fun Board.cellsOf(trackId: TrackId): List<CellInstance> = track(trackId).cells
 fun Board.cellsOf(location: PlayerLocation): List<CellInstance> = cellsOf(location.trackId)
 
 fun Board.resolvedTracks(): List<TrackDefinition> {
-    if (tracks.isNotEmpty()) return tracks.sortedBy(TrackDefinition::order)
-    return BoardLayer.entries.map { layer ->
+    val definitions = if (tracks.isNotEmpty()) tracks.sortedBy(TrackDefinition::order) else BoardLayer.entries.map { layer ->
         trackDefinitions[layer]?.takeIf { it.cells.size == layer.places.size }
             ?: layer.defaultTrackDefinition().copy(
                 cells = placesOf(layer).mapIndexed { index, place ->
                     place.toCellInstance("${layer.name.lowercase()}-$index")
                 },
             )
+    }
+    val features = standardFeatureRegistry()
+    val activeTypes = features.runtime(resolvedContentPackVersions()).cellTypes
+    return definitions.map { track ->
+        track.copy(cells = track.cells.filter { it.type !in features.knownCellTypes || it.type in activeTypes })
     }
 }
 
@@ -177,7 +184,9 @@ fun Board.resolvedObjectives(): List<ObjectiveDefinition> = objectives.ifEmpty {
             trackId = CoreTrackIds.Outer,
             conditions = buildList {
                 add(ProgressCondition.MinimumBalance(victoryConditions.minimumAccountBalance))
-                if (victoryConditions.dreamRequired) add(ProgressCondition.RequiresSelectedDream)
+                if (victoryConditions.dreamRequired && hasFeature(StandardFeatures.Dreams)) {
+                    add(ProgressCondition.RequiresSelectedDream)
+                }
                 if (victoryConditions.planeRequired) add(ProgressCondition.RequiresPlane)
                 if (victoryConditions.estateRequired) add(ProgressCondition.RequiresEstate)
             },

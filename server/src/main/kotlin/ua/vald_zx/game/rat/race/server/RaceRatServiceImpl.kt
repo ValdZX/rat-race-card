@@ -64,7 +64,7 @@ class RaceRatServiceImpl(
         get() = generateStableDbId(boardIdState.value, uuidStateProvider.value)
 
     private suspend fun player() = Storage.getPlayer(playerId)
-    private suspend fun board() = Storage.getBoard(boardIdState.value)
+    private suspend fun board() = Storage.getBoard(boardIdState.value).requireValidFeatures()
 
     init {
         checkStatusFlow
@@ -116,7 +116,7 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun hello(helloUuid: String, boardId: String): Instance {
-        val board = Storage.getBoard(boardId)
+        val board = Storage.getBoard(boardId).requireValidFeatures()
         boardSelected(board)
         uuidStateProvider.value = helloUuid
         connectionIdentified(helloUuid)
@@ -212,8 +212,12 @@ class RaceRatServiceImpl(
         victoryConditions: VictoryConditions,
         transportMovementBonusEnabled: Boolean,
         generation: BoardGeneration,
+        contentPackVersions: Map<FeatureId, Int>,
     ): Board {
-        require(decks.keys.containsAll(BoardCardType.entries)) { "All card decks are required" }
+        require(StandardFeatures.Core in contentPackVersions) { "Core feature is required" }
+        val featureRuntime = standardFeatureRegistry().runtime(contentPackVersions)
+        val activeDecks = featureRuntime.decks.map(DeckDefinition::type).toSet()
+        require(decks.keys.containsAll(activeDecks)) { "All active feature decks are required" }
         require(decks.values.all { it in 1..500 }) { "Deck size must be between 1 and 500" }
         val world = generation.copy(
             theme = generation.theme.sanitizedWorldField(),
@@ -228,11 +232,12 @@ class RaceRatServiceImpl(
             createDateTime = kotlin.time.Instant.fromEpochMilliseconds(clock.nowEpochMilliseconds())
                 .toLocalDateTime(TimeZone.currentSystemDefault()),
             id = Uuid.random().toString(),
-            cards = decks.mapValues { (_, size) -> (1..size).toList() },
+            cards = decks.filterKeys { it in activeDecks }.mapValues { (_, size) -> (1..size).toList() },
             outerCircleConditions = outerCircleConditions,
             victoryConditions = victoryConditions,
             transportMovementBonusEnabled = transportMovementBonusEnabled,
             generation = world,
+            contentPackVersions = contentPackVersions,
             generationProgress = if (world.enabled) {
                 BoardGenerationProgress(
                     stage = BoardGenerationStage.PREPARING,
@@ -243,6 +248,7 @@ class RaceRatServiceImpl(
                 BoardGenerationProgress()
             },
         )
+        board.requireValidFeatures()
         Storage.newBoard(board)
         boardSelected(board)
         if (world.enabled) {
@@ -378,6 +384,7 @@ class RaceRatServiceImpl(
     }
 
     override suspend fun takeCard(cardType: BoardCardType) {
+        if (cardType !in board().activeDeckTypes()) return
         if (cardType == BoardCardType.Deputy) {
             buyDeputy()
             return
@@ -1374,8 +1381,20 @@ internal fun Board.prepareCardDeck(cardType: BoardCardType, trackId: TrackId): B
 }
 
 private fun Board.cardIsAvailable(cardType: BoardCardType, cardId: Int, trackId: TrackId): Boolean {
-    if (trackId != CoreTrackIds.Inner || cardType !in LEGACY_OUTER_ONLY_CARD_IDS) return true
+    if (cardType !in activeDeckTypes()) return false
     val generatedDeck = generatedCards[cardType]
+    val corruptionContent = when (generatedDeck?.get(cardId)) {
+        is BoardCard.Chance.CorruptBusiness,
+        is BoardCard.Chance.CorruptLand,
+        is BoardCard.EventStore.Reelection,
+        is BoardCard.EventStore.CorruptBusiness,
+        is BoardCard.EventStore.CorruptLand -> true
+
+        null -> generatedDeck == null && cardId in LEGACY_OUTER_ONLY_CARD_IDS[cardType].orEmpty()
+        else -> false
+    }
+    if (!hasFeature(StandardFeatures.Corruption) && corruptionContent) return false
+    if (trackId != CoreTrackIds.Inner || cardType !in LEGACY_OUTER_ONLY_CARD_IDS) return true
     return when (generatedDeck?.get(cardId)) {
         is BoardCard.Chance.CorruptBusiness,
         is BoardCard.Chance.CorruptLand,

@@ -117,12 +117,15 @@ data class TurnContext(
         }
     }
 
-    fun openCards(types: List<BoardCardType>): TurnContext = copy(
-        result = result.copy(
-            snapshot = snapshot.copy(board = board.copy(canTakeCard = types)),
-            events = result.events + DomainEvent.CardOptionsOpened(types),
-        ),
-    )
+    fun openCards(types: List<BoardCardType>): TurnContext {
+        val availableTypes = types.filter { it in board.activeDeckTypes() }
+        return copy(
+            result = result.copy(
+                snapshot = snapshot.copy(board = board.copy(canTakeCard = availableTypes)),
+                events = result.events + DomainEvent.CardOptionsOpened(availableTypes),
+            ),
+        )
+    }
 
     fun emit(notice: PresentationNotice?): TurnContext {
         return if (notice == null) this else copy(result = result.copy(notices = result.notices + notice))
@@ -138,7 +141,10 @@ fun Player.withTrackedFinancialChanges(previous: Player): Player = copy(
 )
 
 fun legacyCellRuleRegistry(): CellRuleRegistry = CellRuleRegistry(
-    listOf(
+    coreCellRules() + familyCellRules() + investmentCellRules() + corruptionCellRules() + dreamCellRules(),
+)
+
+internal fun coreCellRules(): List<CellRule> = listOf(
         StartCellRule,
         SalaryCellRule,
         CardCellRule(CoreCellTypes.Business, ::businessCardOptions),
@@ -146,17 +152,28 @@ fun legacyCellRuleRegistry(): CellRuleRegistry = CellRuleRegistry(
         CardCellRule(CoreCellTypes.Shopping) { listOf(BoardCardType.Shopping) },
         CardCellRule(CoreCellTypes.Chance) { listOf(BoardCardType.Chance) },
         CardCellRule(CoreCellTypes.Expenses) { listOf(BoardCardType.Expenses) },
-        CardCellRule(CoreCellTypes.Store) { listOf(BoardCardType.EventStore) },
-        CardCellRule(CoreCellTypes.Deputy) { listOf(BoardCardType.Deputy) },
         BankruptcyCellRule,
+        RestCellRule,
+        ResignationCellRule,
+)
+
+internal fun familyCellRules(): List<CellRule> = listOf(
         ChildCellRule,
         LoveCellRule,
-        RestCellRule,
         DivorceCellRule,
-        DesireCellRule,
+)
+
+internal fun corruptionCellRules(): List<CellRule> = listOf(
+        CardCellRule(CoreCellTypes.Deputy) { listOf(BoardCardType.Deputy) },
         TaxInspectionCellRule,
-        ResignationCellRule,
-    ),
+)
+
+internal fun investmentCellRules(): List<CellRule> = listOf(
+        CardCellRule(CoreCellTypes.Store) { listOf(BoardCardType.EventStore) },
+)
+
+internal fun dreamCellRules(): List<CellRule> = listOf(
+        DesireCellRule,
 )
 
 private object StartCellRule : CellRule {

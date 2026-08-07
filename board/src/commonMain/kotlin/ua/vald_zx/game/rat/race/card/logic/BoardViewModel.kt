@@ -158,7 +158,7 @@ class BoardViewModel(
     private val clientUuidProvider: suspend () -> String = { "" },
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(BoardState(false, board, player))
+    private val _uiState = MutableStateFlow(BoardState(false, board.requireValidFeatures(), player))
     val uiState: StateFlow<BoardState> = _uiState.asStateFlow()
 
     private val _actions = Channel<BoardUiAction>()
@@ -217,7 +217,7 @@ class BoardViewModel(
         ) {
             val actualPlayers = getPlayers()
             players.value = actualPlayers
-            val actualBoard = getBoard()
+            val actualBoard = getBoard().requireValidFeatures()
             val actualPlayer = actualPlayers.find { it.id == player.id } ?: getPlayer()
             _uiState.update {
                 it.copy(

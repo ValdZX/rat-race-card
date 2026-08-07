@@ -15,6 +15,8 @@ import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.TrackId
 import ua.vald_zx.game.rat.race.card.shared.TrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.TrackVisualHint
+import ua.vald_zx.game.rat.race.card.shared.standardContentPackVersions
+import ua.vald_zx.game.rat.race.card.shared.standardFeatureRegistry
 import ua.vald_zx.game.rat.race.card.shared.legacyLayerOrNull
 import ua.vald_zx.game.rat.race.card.shared.toCellInstance
 
@@ -66,28 +68,19 @@ private const val OUTER_RING_THICKNESS_CELLS = 4
 private const val INNER_BOARD_GAP_CELLS = 1f / 3f
 private const val INNER_CARD_AREA_MARGIN_CELLS = 4
 private const val CARD_AREA_PADDING_CELLS = 1
-private const val CARD_COLUMNS = 4
 private const val CARD_AREA_DIVIDER = 5
 private const val CARD_ASPECT_RATIO = 3f / 2f
 
-private val leftDeckTypes = listOf(
-    BoardCardType.Chance,
-    BoardCardType.BigBusiness,
-    BoardCardType.MediumBusiness,
-    BoardCardType.SmallBusiness,
-)
-
-private val rightDeckTypes = listOf(
-    BoardCardType.Expenses,
-    BoardCardType.Deputy,
-    BoardCardType.EventStore,
-    BoardCardType.Shopping,
-)
+private val defaultDeckTypes = standardFeatureRegistry()
+    .runtime(standardContentPackVersions())
+    .decks
+    .map { it.type }
 
 fun calculateBoardLayout(
     boardSize: DpSize,
     isVertical: Boolean,
     layers: BoardLayers = boardLayers,
+    deckTypes: List<BoardCardType> = defaultDeckTypes,
 ): BoardLayout? {
     val ordered = layers.layers.entries.sortedByDescending { layers.order[it.key] ?: 0 }
     if (ordered.isEmpty()) return null
@@ -126,7 +119,7 @@ fun calculateBoardLayout(
         routes = routes,
         cardDecks = CardDeckLayout(
             size = cardAreaSize,
-            slots = cardDeckSlots(cardAreaSize),
+            slots = cardDeckSlots(cardAreaSize, deckTypes),
         )
     )
 }
@@ -222,47 +215,56 @@ private fun routeLayout(
     )
 }
 
-private fun cardDeckSlots(areaSize: DpSize): List<CardDeckSlot> {
+private fun cardDeckSlots(areaSize: DpSize, deckTypes: List<BoardCardType>): List<CardDeckSlot> {
+    val middle = (deckTypes.size + 1) / 2
+    val first = deckTypes.take(middle)
+    val second = deckTypes.drop(middle)
     return if (areaSize.width < areaSize.height) {
-        verticalCardDeckSlots(areaSize)
+        verticalCardDeckSlots(areaSize, first, second)
     } else {
-        horizontalCardDeckSlots(areaSize)
+        horizontalCardDeckSlots(areaSize, first, second)
     }
 }
 
-private fun verticalCardDeckSlots(areaSize: DpSize): List<CardDeckSlot> {
+private fun verticalCardDeckSlots(
+    areaSize: DpSize,
+    first: List<BoardCardType>,
+    second: List<BoardCardType>,
+): List<CardDeckSlot> {
     val cardWidth = areaSize.width / CARD_AREA_DIVIDER
     val cardSize = DpSize(cardWidth, cardWidth * CARD_ASPECT_RATIO)
     val rowGap = cardWidth / 2
-    val xPositions = spacedPositions(areaSize.width, cardSize.width, CARD_COLUMNS)
     val topDeckY = 0.dp
     val topDiscardY = cardSize.height + rowGap
     val bottomDiscardY = areaSize.height - cardSize.height * 2 - rowGap
     val bottomDeckY = areaSize.height - cardSize.height
 
     return buildList {
-        addRowSlots(leftDeckTypes, CardDeckSlotKind.DRAW, xPositions, topDeckY, cardSize)
-        addRowSlots(leftDeckTypes, CardDeckSlotKind.DISCARD, xPositions, topDiscardY, cardSize)
-        addRowSlots(rightDeckTypes, CardDeckSlotKind.DISCARD, xPositions, bottomDiscardY, cardSize)
-        addRowSlots(rightDeckTypes, CardDeckSlotKind.DRAW, xPositions, bottomDeckY, cardSize)
+        addRowSlots(first, CardDeckSlotKind.DRAW, spacedPositions(areaSize.width, cardSize.width, first.size), topDeckY, cardSize)
+        addRowSlots(first, CardDeckSlotKind.DISCARD, spacedPositions(areaSize.width, cardSize.width, first.size), topDiscardY, cardSize)
+        addRowSlots(second, CardDeckSlotKind.DISCARD, spacedPositions(areaSize.width, cardSize.width, second.size), bottomDiscardY, cardSize)
+        addRowSlots(second, CardDeckSlotKind.DRAW, spacedPositions(areaSize.width, cardSize.width, second.size), bottomDeckY, cardSize)
     }
 }
 
-private fun horizontalCardDeckSlots(areaSize: DpSize): List<CardDeckSlot> {
+private fun horizontalCardDeckSlots(
+    areaSize: DpSize,
+    first: List<BoardCardType>,
+    second: List<BoardCardType>,
+): List<CardDeckSlot> {
     val cardHeight = areaSize.height / CARD_AREA_DIVIDER
     val cardSize = DpSize(cardHeight * CARD_ASPECT_RATIO, cardHeight)
     val columnGap = cardHeight / 2
-    val yPositions = spacedPositions(areaSize.height, cardSize.height, CARD_COLUMNS)
     val leftDeckX = 0.dp
     val leftDiscardX = cardSize.width + columnGap
     val rightDiscardX = areaSize.width - cardSize.width * 2 - columnGap
     val rightDeckX = areaSize.width - cardSize.width
 
     return buildList {
-        addColumnSlots(leftDeckTypes, CardDeckSlotKind.DRAW, leftDeckX, yPositions, cardSize)
-        addColumnSlots(leftDeckTypes, CardDeckSlotKind.DISCARD, leftDiscardX, yPositions, cardSize)
-        addColumnSlots(rightDeckTypes, CardDeckSlotKind.DISCARD, rightDiscardX, yPositions, cardSize)
-        addColumnSlots(rightDeckTypes, CardDeckSlotKind.DRAW, rightDeckX, yPositions, cardSize)
+        addColumnSlots(first, CardDeckSlotKind.DRAW, leftDeckX, spacedPositions(areaSize.height, cardSize.height, first.size), cardSize)
+        addColumnSlots(first, CardDeckSlotKind.DISCARD, leftDiscardX, spacedPositions(areaSize.height, cardSize.height, first.size), cardSize)
+        addColumnSlots(second, CardDeckSlotKind.DISCARD, rightDiscardX, spacedPositions(areaSize.height, cardSize.height, second.size), cardSize)
+        addColumnSlots(second, CardDeckSlotKind.DRAW, rightDeckX, spacedPositions(areaSize.height, cardSize.height, second.size), cardSize)
     }
 }
 
@@ -295,6 +297,7 @@ private fun spacedPositions(
     itemSize: Dp,
     count: Int,
 ): List<Dp> {
+    if (count == 0) return emptyList()
     if (count == 1) return listOf((totalSize - itemSize) / 2)
 
     val gap = (totalSize - itemSize * count) / (count - 1)

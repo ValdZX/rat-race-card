@@ -29,6 +29,7 @@ import ua.vald_zx.game.rat.race.card.screen.design.DesignBoardRoutes
 import ua.vald_zx.game.rat.race.card.screen.design.CellFocus
 import ua.vald_zx.game.rat.race.card.screen.design.TokenBubbleState
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
+import ua.vald_zx.game.rat.race.card.shared.activeDeckTypes
 
 @Composable
 fun BoxWithConstraintsScope.rememberBoardLayout(vm: BoardViewModel, isVertical: Boolean): BoardLayout? {
@@ -36,12 +37,14 @@ fun BoxWithConstraintsScope.rememberBoardLayout(vm: BoardViewModel, isVertical: 
     val maxHeight = maxHeight
     val board = vm.uiState.collectAsState().value.board
     val layers = remember(board.tracks, board.trackDefinitions, board.generatedPlaces) { boardLayersOf(board) }
-    return remember(isVertical, maxWidth, maxHeight, layers) {
+    val deckTypes = remember(board.contentPackVersions) { board.activeDeckTypes() }
+    return remember(isVertical, maxWidth, maxHeight, layers, deckTypes) {
         val contentSize = DpSize(maxWidth, maxHeight).boardContentSize()
         calculateBoardLayout(
             boardSize = contentSize,
             isVertical = isVertical,
             layers = layers,
+            deckTypes = deckTypes,
         )
     }
 }

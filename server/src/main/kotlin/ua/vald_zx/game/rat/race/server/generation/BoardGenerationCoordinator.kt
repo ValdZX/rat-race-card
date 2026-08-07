@@ -19,8 +19,11 @@ import ua.vald_zx.game.rat.race.card.shared.dreamSlotIds
 import ua.vald_zx.game.rat.race.card.shared.code
 import ua.vald_zx.game.rat.race.card.shared.defaultTrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.ratRaceDreams
-import ua.vald_zx.game.rat.race.card.shared.ValidationResult
-import ua.vald_zx.game.rat.race.card.shared.legacyCellRuleRegistry
+import ua.vald_zx.game.rat.race.card.shared.StandardFeatures
+import ua.vald_zx.game.rat.race.card.shared.activeDeckTypes
+import ua.vald_zx.game.rat.race.card.shared.hasFeature
+import ua.vald_zx.game.rat.race.card.shared.requireValidFeatures
+import ua.vald_zx.game.rat.race.card.shared.resolvedTracks
 import ua.vald_zx.game.rat.race.card.shared.toCellInstance
 import ua.vald_zx.game.rat.race.card.shared.toPlaceType
 import ua.vald_zx.game.rat.race.server.LOGGER
@@ -122,7 +125,9 @@ internal object BoardGenerationCoordinator {
                 recordRetryWait(boardId, retry)
             }
 
-            val baseUnits = 1 + 1 + BoardCardType.entries.size + 1
+            val activeDecks = initial.activeDeckTypes()
+            val dreamCount = if (initial.hasFeature(StandardFeatures.Dreams)) dreamSlotIds.size else 0
+            val baseUnits = 1 + 1 + activeDecks.size + 1
             val deckSizes = initial.cards.mapValues { it.value.size }
             val textGenerator = LlmTextGenerator(
                 chat = LlmSettings.textChat(usageRecorder, quotaRecorder, retryRecorder),
@@ -131,7 +136,7 @@ internal object BoardGenerationCoordinator {
             val textUnits = textGenerator.workUnits(
                 deckSizes = deckSizes.values,
                 professionCount = BoardGenerator.professionCount,
-                dreamCount = dreamSlotIds.size,
+                dreamCount = dreamCount,
             )
             val totalUnits = baseUnits + textUnits
 
@@ -159,7 +164,7 @@ internal object BoardGenerationCoordinator {
                 )
             }
             val generator = BoardGenerator(initial.generation, balance)
-            val dreams = generator.generateDreams()
+            val dreams = if (dreamCount > 0) generator.generateDreams() else emptyList()
 
             progress(boardId, BoardGenerationStage.PROFESSIONS, 1, totalUnits)
             val cachedProfessions = initial.generatedProfessions.takeIf { professions ->
@@ -182,7 +187,7 @@ internal object BoardGenerationCoordinator {
             val generatedCards = initial.generatedCards.filter { (type, deck) ->
                 cachedBalance != null && generatedDeckIsCurrent(type, deck, deckSizes[type] ?: 0)
             }.toMutableMap()
-            BoardCardType.entries.forEachIndexed { index, type ->
+            activeDecks.forEachIndexed { index, type ->
                 progress(boardId, BoardGenerationStage.CARDS, 2 + index, totalUnits, type.name)
                 if (type !in generatedCards) {
                     val generated = generator.generate(mapOf(type to (deckSizes[type] ?: 0)))[type].orEmpty()
@@ -200,11 +205,11 @@ internal object BoardGenerationCoordinator {
             progress(
                 boardId,
                 BoardGenerationStage.CARDS,
-                2 + BoardCardType.entries.size,
+                2 + activeDecks.size,
                 totalUnits,
             )
 
-            val textOffset = 2 + BoardCardType.entries.size
+            val textOffset = 2 + activeDecks.size
             progress(boardId, BoardGenerationStage.PLACES, textOffset, totalUnits)
             val cachedPlaces = initial.generatedPlaces.takeIf { places ->
                 cachedBalance != null && BoardLayer.entries.all { layer ->
@@ -229,8 +234,9 @@ internal object BoardGenerationCoordinator {
             }?.takeIf { definitions ->
                 BoardLayer.entries.all { layer -> definitions[layer]?.cells?.size == layer.places.size }
             } ?: generator.generateTracks()
-            val dynamicTracks = cachedDynamicTracks ?: legacyTracks.values.sortedBy(TrackDefinition::order)
-            check(legacyCellRuleRegistry().validate(dynamicTracks.flatMap { it.cells }) == ValidationResult.Valid)
+            val generatedTracks = cachedDynamicTracks ?: legacyTracks.values.sortedBy(TrackDefinition::order)
+            val dynamicTracks = initial.copy(tracks = generatedTracks).resolvedTracks()
+            initial.copy(tracks = dynamicTracks).requireValidFeatures()
             val places = legacyTracks.mapValues { (_, track) -> track.cells.map { it.toPlaceType().code() } }
             if (cachedTracks == null && cachedDynamicTracks == null) {
                 checkpoint(boardId, BoardGenerationStage.PLACES, textOffset + 1, totalUnits) {

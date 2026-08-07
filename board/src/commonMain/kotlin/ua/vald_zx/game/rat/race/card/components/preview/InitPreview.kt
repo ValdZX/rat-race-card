@@ -55,6 +55,7 @@ fun InitPreview(
                             victoryConditions: VictoryConditions,
                             transportMovementBonusEnabled: Boolean,
                             generation: BoardGeneration,
+                            contentPackVersions: Map<FeatureId, Int>,
                         ): Board {
                             error("Not for preview")
                         }

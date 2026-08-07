@@ -3,6 +3,7 @@ package ua.vald_zx.game.rat.race.card.screen.board
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
+import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.TrackDefinition
 import ua.vald_zx.game.rat.race.card.shared.TrackId
 import ua.vald_zx.game.rat.race.card.shared.TrackVisualHint
@@ -49,6 +50,20 @@ class TrackLayoutEngineTest {
         assertEquals(tracks.map { it.id }.toSet(), portrait?.routes?.map { it.trackId }?.toSet())
         assertEquals(3, landscape?.routes?.size)
         assertEquals(3, portrait?.routes?.size)
+    }
+
+    @Test
+    fun rendererUsesDeckDefinitionsProvidedByFeatureRuntime() {
+        val coreDecks = listOf(BoardCardType.Chance, BoardCardType.Expenses, BoardCardType.Shopping)
+
+        val layout = calculateBoardLayout(
+            boardSize = DpSize(1_200.dp, 800.dp),
+            isVertical = false,
+            deckTypes = coreDecks,
+        )
+
+        assertEquals(coreDecks.toSet(), layout?.cardDecks?.slots?.map { it.type }?.toSet())
+        assertEquals(coreDecks.size * 2, layout?.cardDecks?.slots?.size)
     }
 
     private fun verify(frames: List<TrackFrame>) {

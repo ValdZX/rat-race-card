@@ -54,17 +54,20 @@ class EffectHandlerRegistry(handlers: Iterable<EffectHandler>) {
 
     operator fun plus(handler: EffectHandler): EffectHandlerRegistry =
         EffectHandlerRegistry(handlersByType.values + handler)
+
+    val registeredTypes: Set<EffectTypeId>
+        get() = handlersByType.keys
 }
 
-fun standardEffectHandlerRegistry(): EffectHandlerRegistry = EffectHandlerRegistry(
-    listOf(
+fun standardEffectHandlerRegistry(): EffectHandlerRegistry = EffectHandlerRegistry(standardEffectHandlers())
+
+internal fun standardEffectHandlers(): List<EffectHandler> = listOf(
         ChangeCashEffectHandler,
         PayAmountEffectHandler,
         AcquireBusinessEffectHandler,
         AcquireShoppingEffectHandler,
         PayExpenseEffectHandler,
         EndTurnEffectHandler,
-    ),
 )
 
 class CardDefinitionEngine(

@@ -133,6 +133,7 @@ interface RaceRatService {
         victoryConditions: VictoryConditions = VictoryConditions(),
         transportMovementBonusEnabled: Boolean = true,
         generation: BoardGeneration = BoardGeneration(),
+        contentPackVersions: Map<FeatureId, Int> = standardContentPackVersions(),
     ): Board
 
     suspend fun updateAttributes(attrs: PlayerAttributes)
