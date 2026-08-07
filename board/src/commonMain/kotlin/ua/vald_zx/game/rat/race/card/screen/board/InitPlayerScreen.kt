@@ -1,5 +1,7 @@
 package ua.vald_zx.game.rat.race.card.screen.board
 
+import ua.vald_zx.game.rat.race.card.AppRoute
+import ua.vald_zx.game.rat.race.card.RoutedScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -35,7 +37,10 @@ import ua.vald_zx.game.rat.race.card.screen.board.cards.professionFor
 import ua.vald_zx.game.rat.race.card.shared.Board
 import ua.vald_zx.game.rat.race.card.shared.Gender
 
-class InitPlayerScreen(private val board: Board) : Screen {
+class InitPlayerScreen(private val board: Board) : Screen, RoutedScreen {
+
+    override val appRoute: AppRoute get() = AppRoute.Board(board.id)
+
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow

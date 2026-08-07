@@ -11,6 +11,8 @@ import kotlin.time.Duration.Companion.seconds
 import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import ua.vald_zx.game.rat.race.card.AppRoute
+import ua.vald_zx.game.rat.race.card.RoutedScreen
 import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.design.DesignMessageDialog
 import ua.vald_zx.game.rat.race.card.designV2Enabled
@@ -27,7 +29,10 @@ import ua.vald_zx.game.rat.race.card.shared.InflationSettings
 import ua.vald_zx.game.rat.race.card.shared.OuterCircleConditions
 import ua.vald_zx.game.rat.race.card.shared.VictoryConditions
 
-class BoardListScreen : Screen {
+class BoardListScreen : Screen, RoutedScreen {
+
+    override val appRoute: AppRoute get() = AppRoute.Online
+
     @Composable
     override fun Content() {
         val connection = koinInject<RaceRatConnection>()

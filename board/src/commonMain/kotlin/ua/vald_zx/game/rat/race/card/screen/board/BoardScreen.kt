@@ -1,5 +1,7 @@
 package ua.vald_zx.game.rat.race.card.screen.board
 
+import ua.vald_zx.game.rat.race.card.AppRoute
+import ua.vald_zx.game.rat.race.card.RoutedScreen
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -108,7 +110,9 @@ fun PlayerSheetContainer(
 class BoardScreen(
     private val board: Board,
     private val player: Player,
-) : Screen {
+) : Screen, RoutedScreen {
+
+    override val appRoute: AppRoute get() = AppRoute.Board(board.id)
 
     override val key: ScreenKey = "Board2Screen"
     private val exitRequested = mutableStateOf(false)

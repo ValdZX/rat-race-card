@@ -1,5 +1,7 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
+import ua.vald_zx.game.rat.race.card.AppRoute
+import ua.vald_zx.game.rat.race.card.RoutedScreen
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -26,7 +28,10 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resource.Images
 import ua.vald_zx.game.rat.race.card.shared.PlayerCard
 
-class PersonCard2Screen : Screen {
+class PersonCard2Screen : Screen, RoutedScreen {
+
+    override val appRoute: AppRoute get() = AppRoute.Card
+
     @Composable
     override fun Content() {
         val raceRate2store = koinInject<RatRace2CardStore>()

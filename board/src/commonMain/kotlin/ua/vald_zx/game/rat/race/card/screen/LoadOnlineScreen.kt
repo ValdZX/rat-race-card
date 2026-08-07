@@ -10,10 +10,18 @@ import kotlinx.coroutines.withTimeout
 import kotlin.time.Duration.Companion.seconds
 import org.koin.compose.koinInject
 import ua.vald_zx.game.rat.race.card.designV2Enabled
+import ua.vald_zx.game.rat.race.card.AppRoute
+import ua.vald_zx.game.rat.race.card.RoutedScreen
+import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.di.RaceRatConnection
+import ua.vald_zx.game.rat.race.card.screen.board.BoardScreen
+import ua.vald_zx.game.rat.race.card.screen.board.InitPlayerScreen
 import ua.vald_zx.game.rat.race.card.screen.design.DesignLoadOnline
 
-class LoadOnlineScreen : Screen {
+class LoadOnlineScreen(private val boardId: String? = null) : Screen, RoutedScreen {
+
+    override val appRoute: AppRoute get() = boardId?.let(AppRoute::Board) ?: AppRoute.Online
+
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
@@ -23,8 +31,20 @@ class LoadOnlineScreen : Screen {
         LaunchedEffect(retryKey) {
             invalidServerState.value = false
             try {
-                withTimeout(20.seconds) { connection.reconnect().getBoards() }
-                navigator.replace(BoardListScreen())
+                val service = withTimeout(20.seconds) { connection.reconnect().also { it.getBoards() } }
+                if (boardId == null) {
+                    navigator.replace(BoardListScreen())
+                } else {
+                    val helloUuid = appKStore.get()?.clientUuid.orEmpty()
+                    val instance = withTimeout(20.seconds) { service.hello(helloUuid, boardId) }
+                    val player = instance.player
+                    navigator.replace(BoardListScreen())
+                    if (player == null) {
+                        navigator.push(InitPlayerScreen(instance.board))
+                    } else {
+                        navigator.push(BoardScreen(instance.board, player))
+                    }
+                }
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Throwable) {

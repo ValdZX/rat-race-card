@@ -1,5 +1,7 @@
 package ua.vald_zx.game.rat.race.card.screen.second
 
+import ua.vald_zx.game.rat.race.card.AppRoute
+import ua.vald_zx.game.rat.race.card.RoutedScreen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -45,7 +47,10 @@ import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.tts
 import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
 
-class RaceRate2Screen : Screen {
+class RaceRate2Screen : Screen, RoutedScreen {
+
+    override val appRoute: AppRoute get() = AppRoute.Card
+
 
     @OptIn(
         ExperimentalMaterialApi::class,

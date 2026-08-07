@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.Navigator
 import io.github.aakira.napier.DebugAntilog
@@ -33,6 +34,7 @@ import ua.vald_zx.game.rat.race.card.di.coreModule
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.resources.Res
+import ua.vald_zx.game.rat.race.card.screen.LoadOnlineScreen
 import ua.vald_zx.game.rat.race.card.screen.SelectTypeScreen
 import ua.vald_zx.game.rat.race.card.screen.board.BoardScreen
 import ua.vald_zx.game.rat.race.card.screen.second.PersonCard2Screen
@@ -107,8 +109,9 @@ private fun AppWaiter() {
 
 @Composable
 private fun FullApp() {
+    val initialRoute = remember { readAppRoute() }
     Navigator(
-        screen = SelectTypeScreen(),
+        screens = initialScreens(initialRoute),
         onBackPressed = { screen ->
             if (screen is BoardScreen) {
                 screen.requestExit()
@@ -117,10 +120,21 @@ private fun FullApp() {
                 true
             }
         },
-    ) {
+    ) { navigator ->
+        LaunchedEffect(navigator.lastItem) {
+            writeAppRoute((navigator.lastItem as? RoutedScreen)?.appRoute ?: AppRoute.Start)
+        }
         CurrentScreen()
     }
 }
+
+private fun initialScreens(route: AppRoute): List<Screen> = when (route) {
+    AppRoute.Start -> listOf(SelectTypeScreen())
+    AppRoute.Card -> listOf(SelectTypeScreen(), PersonCard2Screen())
+    AppRoute.Online -> listOf(SelectTypeScreen(), LoadOnlineScreen())
+    is AppRoute.Board -> listOf(SelectTypeScreen(), LoadOnlineScreen(route.boardId))
+}
+
 
 @Composable
 private fun CardOnlyApp() {
