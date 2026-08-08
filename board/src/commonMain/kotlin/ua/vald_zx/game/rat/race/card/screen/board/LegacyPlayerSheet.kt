@@ -36,6 +36,7 @@ import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import androidx.compose.ui.text.intl.Locale
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
@@ -94,7 +95,7 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                         overflow = TextOverflow.Ellipsis,
                     )
                     SmoothRainbowText(
-                        player.total().splitDecimal(),
+                        player.total().formatAmount(),
                         rainbow = GoldRainbow,
                         style = LocalTextStyle.current.copy(fontSize = 30.sp),
                         modifier = Modifier.padding(start = 16.dp),
@@ -155,12 +156,12 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(stringResource(Res.string.cash), color = AppTheme.colors.cash)
-                        Text("${player.cash} $")
+                        Text(player.cash.formatAmount())
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(stringResource(Res.string.deposit), color = MaterialTheme.colorScheme.primary)
-                            Text("${player.deposit} $")
+                            Text(player.deposit.formatAmount())
                         }
                         if (player.cash > 0) {
                             IconButton(
@@ -175,7 +176,7 @@ fun LegacyPlayerSheet(vm: BoardViewModel, scaffoldState: BottomSheetState) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(stringResource(Res.string.loan), color = MaterialTheme.colorScheme.tertiary)
-                                Text("${player.loan} $")
+                                Text(player.loan.formatAmount())
                                 player.lastLoans.asReversed().forEach { change ->
                                     Text(
                                         text = if (change > 0) "+$change" else change.toString(),

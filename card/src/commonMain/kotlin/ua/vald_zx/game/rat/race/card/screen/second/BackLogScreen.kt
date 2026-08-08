@@ -21,6 +21,7 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.logic.total
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 class BackLogScreen : Screen {
     @Composable
@@ -33,7 +34,7 @@ class BackLogScreen : Screen {
         }
         ClosableBottomSheetContainer {
             SmoothRainbowText(
-                state.total().splitDecimal(),
+                state.total().formatAmount(),
                 rainbow = GoldRainbow,
                 style = LocalTextStyle.current.copy(fontSize = 30.sp),
                 modifier = Modifier.align(Alignment.CenterHorizontally),

@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.card
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.max
@@ -10,6 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.char
+import ua.vald_zx.game.rat.race.card.shared.DEFAULT_CURRENCY
 
 fun String.getDigits() = this.replace("\\D".toRegex(), "").toLongOrNull()?.toString().orEmpty()
 
@@ -17,9 +19,17 @@ fun Long.splitDecimal(step: Int = 3, divider: String = " "): String {
     return toString().splitDecimal(step, divider)
 }
 
+val currentCurrency = mutableStateOf(DEFAULT_CURRENCY)
+
 fun Long.formatAmount(): String {
-    return "${this.splitDecimal()} $"
+    return "${this.splitDecimal()} ${currentCurrency.value}"
 }
+
+fun String.formatAmount(): String {
+    if (toLongOrNull() == null) return this
+    return "${splitDecimal()} ${currentCurrency.value}"
+}
+
 
 fun String.splitDecimal(step: Int = 3, divider: String = " "): String {
     if (this.toLongOrNull() == null) return this

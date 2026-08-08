@@ -21,6 +21,7 @@ import ua.vald_zx.game.rat.race.card.shared.PlayerAttributes
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.Test
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @OptIn(ExperimentalTestApi::class)
 class FundsPageRenderTest {
@@ -49,8 +50,8 @@ class FundsPageRenderTest {
 
         onNodeWithText("20%").assertIsDisplayed()
         onNodeWithText("5%").assertIsDisplayed()
-        onNodeWithText("12 500").assertIsDisplayed()
-        onNodeWithText("15 500").assertIsDisplayed()
+        onNodeWithText(12_500L.formatAmount()).assertIsDisplayed()
+        onNodeWithText(15_500L.formatAmount()).assertIsDisplayed()
 
         val image = onNodeWithTag("page").captureToImage().toAwtImage()
         File("build").mkdirs()

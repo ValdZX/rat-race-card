@@ -31,6 +31,7 @@ import ua.vald_zx.game.rat.race.card.appKStore
 import ua.vald_zx.game.rat.race.card.clientVersion
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.soundEnabled
+import ua.vald_zx.game.rat.race.card.vividPaletteEnabled
 import ua.vald_zx.game.rat.race.card.components.ClosableBottomSheetContainer
 import ua.vald_zx.game.rat.race.card.design.Design
 import ua.vald_zx.game.rat.race.card.design.DesignButton
@@ -45,6 +46,7 @@ import ua.vald_zx.game.rat.race.card.resources.new_design
 import ua.vald_zx.game.rat.race.card.resources.online_settings
 import ua.vald_zx.game.rat.race.card.resources.player_token_color
 import ua.vald_zx.game.rat.race.card.resources.sound
+import ua.vald_zx.game.rat.race.card.resources.vivid_palette
 import ua.vald_zx.game.rat.race.card.shared.pointerColors
 import ua.vald_zx.game.rat.race.card.theme.LocalThemeIsDark
 
@@ -103,6 +105,19 @@ class OnlineSettingsScreen(private val vm: BoardViewModel) : Screen {
                     coroutineScope.launch {
                         appKStore.update { stored ->
                             (stored ?: AppDataStorageBean("", null)).copy(designV2 = enabled)
+                        }
+                    }
+                },
+            )
+
+            DesignToggleRow(
+                label = stringResource(Res.string.vivid_palette),
+                checked = vividPaletteEnabled.value,
+                onCheckedChange = { enabled ->
+                    vividPaletteEnabled.value = enabled
+                    coroutineScope.launch {
+                        appKStore.update { stored ->
+                            (stored ?: AppDataStorageBean("", null)).copy(vividPalette = enabled)
                         }
                     }
                 },

@@ -14,6 +14,7 @@ import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.Dream
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 fun DesignDreamDetailsDialog(
@@ -56,7 +57,7 @@ fun DesignDreamDetailsDialog(
                 color = colors.scaffold.onSurface,
             )
             Text(
-                text = dream.price.splitDecimal(),
+                text = dream.price.formatAmount(),
                 style = Design.type.amountLg,
                 color = Design.semantic.dream.edge,
                 maxLines = 1,

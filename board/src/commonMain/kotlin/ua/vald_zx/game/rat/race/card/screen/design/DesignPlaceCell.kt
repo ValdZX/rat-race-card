@@ -31,6 +31,7 @@ import ua.vald_zx.game.rat.race.card.components.optionalModifier
 import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 enum class CellFamily { Service, Card, Loss, Asset, Life }
 
@@ -266,7 +267,7 @@ private fun WaitingToken(amount: Long, textScale: Float, modifier: Modifier = Mo
 }
 
 internal fun waitingAmountLabel(amount: Long): String =
-    if (amount >= 0) "+${amount.splitDecimal()}" else "−${(-amount).splitDecimal()}"
+    if (amount >= 0) "+${amount.formatAmount()}" else "−${(-amount).formatAmount()}"
 
 private fun DrawScope.drawHatch(color: Color) {
     val step = 7.dp.toPx()

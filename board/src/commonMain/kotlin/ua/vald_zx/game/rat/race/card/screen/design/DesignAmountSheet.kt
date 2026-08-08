@@ -8,6 +8,7 @@ import ua.vald_zx.game.rat.race.card.design.DesignAmountForm
 import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 fun DesignAmountSheet(
@@ -46,8 +47,8 @@ fun DesignAmountSheet(
             hint = { amount ->
                 available?.let {
                     val left = it - amount
-                    val leftText = if (left < 0) "−${(-left).splitDecimal()}" else left.splitDecimal()
-                    "$availableWord ${it.splitDecimal()} · $remainderWord $leftText"
+                    val leftText = if (left < 0) "−${(-left).formatAmount()}" else left.formatAmount()
+                    "$availableWord ${it.formatAmount()} · $remainderWord $leftText"
                 }
             },
         )

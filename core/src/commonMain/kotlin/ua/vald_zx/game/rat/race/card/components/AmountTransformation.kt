@@ -4,6 +4,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import ua.vald_zx.game.rat.race.card.currentCurrency
 import ua.vald_zx.game.rat.race.card.getDigits
 import ua.vald_zx.game.rat.race.card.splitDecimal
 
@@ -11,13 +12,19 @@ object AmountTransformation : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
         val decimalPart = text.text.getDigits()
         val outDecimalPart = decimalPart.splitDecimal()
-        val out = outDecimalPart
+        val out = if (outDecimalPart.isEmpty()) {
+            outDecimalPart
+        } else {
+            "$outDecimalPart ${currentCurrency.value}"
+        }
 
         val offsetMapping = object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int {
                 val length = decimalPart.length
                 val startBlockSize = length % 3
-                if (offset <= startBlockSize || (startBlockSize == 0 && offset <= 3)) return offset
+                if (offset <= startBlockSize || (startBlockSize == 0 && offset <= 3)) {
+                    return offset.coerceAtMost(outDecimalPart.length)
+                }
                 val transformed = if (decimalPart.length < offset) {
                     val spaceCount = length / 3 - if (startBlockSize == 0) 1 else 0
                     offset + spaceCount
@@ -29,7 +36,7 @@ object AmountTransformation : VisualTransformation {
                     }
                     offset + spaceCountInOffset
                 }
-                return transformed
+                return transformed.coerceAtMost(outDecimalPart.length)
             }
 
             override fun transformedToOriginal(offset: Int): Int {
@@ -47,7 +54,7 @@ object AmountTransformation : VisualTransformation {
                         offset - spaceCountInOffset
                     }
                 }
-                return original
+                return original.coerceIn(0, length)
             }
         }
         return TransformedText(AnnotatedString(out), offsetMapping)

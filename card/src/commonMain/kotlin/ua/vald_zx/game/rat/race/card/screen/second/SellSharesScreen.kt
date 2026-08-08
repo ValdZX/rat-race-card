@@ -22,6 +22,7 @@ import ua.vald_zx.game.rat.race.card.label
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 class SellSharesScreen : Screen {
     @Composable
@@ -57,7 +58,7 @@ class SellSharesScreen : Screen {
             val count = inputCount.value.text
             val price = inputPrice.value.text
             Text(
-                stringResource(Res.string.total) + ": ${((count.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).splitDecimal()}",
+                stringResource(Res.string.total) + ": ${((count.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).formatAmount()}",
                 style = MaterialTheme.typography.titleSmall
             )
             NumberTextField(

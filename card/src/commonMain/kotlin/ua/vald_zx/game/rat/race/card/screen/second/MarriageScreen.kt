@@ -21,6 +21,7 @@ import ua.vald_zx.game.rat.race.card.getDigits
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 class MarriageScreen : Screen {
     @Composable
@@ -37,7 +38,7 @@ class MarriageScreen : Screen {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        "Віддати половиту готівки та депозиту\n(${((state.cash + state.deposit) / 2).splitDecimal()} $)",
+                        "Віддати половиту готівки та депозиту\n(${((state.cash + state.deposit) / 2).formatAmount()})",
                         modifier = Modifier.weight(1f)
                     )
                     Switch(halfCash, onCheckedChange = { halfCash = it })

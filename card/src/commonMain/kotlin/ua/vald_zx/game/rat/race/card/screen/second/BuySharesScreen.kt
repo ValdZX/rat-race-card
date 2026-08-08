@@ -24,6 +24,7 @@ import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.shared.emptyIfZero
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0)) : Screen {
     @Composable
@@ -49,7 +50,7 @@ class BuySharesScreen(private val shares: Shares = Shares(SharesType.SCT, 0, 0))
                 }
             }
             Text(
-                stringResource(Res.string.total) + ": ${((count.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).splitDecimal()}",
+                stringResource(Res.string.total) + ": ${((count.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).formatAmount()}",
                 style = MaterialTheme.typography.titleSmall
             )
             NumberTextField(

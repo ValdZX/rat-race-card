@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import kotlin.test.Test
+import ua.vald_zx.game.rat.race.card.screen.design.waitingAmountLabel
 
 @OptIn(ExperimentalTestApi::class)
 class DesignThemeGuardTest {
@@ -61,6 +62,6 @@ class DesignThemeGuardTest {
             }
         }
         waitForIdle()
-        onNodeWithText("+3 200").assertExists()
+        onNodeWithText(waitingAmountLabel(3_200)).assertExists()
     }
 }

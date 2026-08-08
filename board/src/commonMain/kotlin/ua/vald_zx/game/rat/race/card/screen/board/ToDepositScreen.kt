@@ -11,6 +11,7 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.design.DesignAmountSheet
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 class ToDepositScreen(private val vm: BoardViewModel) : Screen {
     @Composable
@@ -25,7 +26,7 @@ class ToDepositScreen(private val vm: BoardViewModel) : Screen {
         DesignAmountSheet(
             title = stringResource(Res.string.deposit_amount),
             available = state.player.cash,
-            confirmLabel = { amount -> "$action ${amount.splitDecimal()}" },
+            confirmLabel = { amount -> "$action ${amount.formatAmount()}" },
             onConfirm = { amount ->
                 bottomSheetNavigator.hide()
                 vm.toDeposit(amount = amount)

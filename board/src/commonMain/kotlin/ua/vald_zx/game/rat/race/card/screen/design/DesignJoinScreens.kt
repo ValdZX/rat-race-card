@@ -46,6 +46,7 @@ import ua.vald_zx.game.rat.race.card.shared.GenerationQuotaType
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @OptIn(ExperimentalTime::class)
 @Composable
@@ -598,7 +599,7 @@ private fun ExpenseRow(label: String, amount: Long) {
             overflow = TextOverflow.Ellipsis,
         )
         Text(
-            text = "−${amount.splitDecimal()}",
+            text = "−${amount.formatAmount()}",
             style = Design.type.amountMd,
             color = Design.semantic.expenses.edge,
             maxLines = 1,

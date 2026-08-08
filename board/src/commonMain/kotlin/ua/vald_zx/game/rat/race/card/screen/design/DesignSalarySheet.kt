@@ -20,6 +20,7 @@ import ua.vald_zx.game.rat.race.card.shared.cashFlow
 import ua.vald_zx.game.rat.race.card.shared.fundRateAtSalary
 import ua.vald_zx.game.rat.race.card.shared.toLayer
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 private enum class Game { High, Medium, Low }
 
@@ -118,7 +119,7 @@ private fun ColumnScope.Overview(
         ) {
             BrassToken(stringResource(Res.string.salary), salary)
             DesignButton(
-                text = "${stringResource(Res.string.take_salary)} ${salary.splitDecimal()}",
+                text = "${stringResource(Res.string.take_salary)} ${salary.formatAmount()}",
                 kind = DesignButtonKind.Brass,
                 modifier = Modifier.weight(1f),
                 onClick = onTakeSalary,
@@ -205,13 +206,13 @@ private fun ColumnScope.GameForm(
     DesignAmountForm(
         title = title,
         subtitle = subtitle,
-        confirmLabel = { amount -> "$actionWord ${amount.splitDecimal()}" },
+        confirmLabel = { amount -> "$actionWord ${amount.formatAmount()}" },
         onConfirm = { amount -> onPlay(amount, guess, even) },
         onCancel = onBack,
         cancelLabel = stringResource(Res.string.cancel),
         quickOptions = quickOptions,
         maxAmount = available,
-        hint = { "$availableWord ${available.splitDecimal()}" },
+        hint = { "$availableWord ${available.formatAmount()}" },
         validate = { amount -> amount > 0 && ready },
         extraContent = {
             when (game) {

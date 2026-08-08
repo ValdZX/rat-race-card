@@ -154,6 +154,7 @@ private val generatedBalanceFields = setOf(
     "victoryDreamRequired",
     "victoryPlaneRequired",
     "victoryEstateRequired",
+    "currency",
 )
 
 private fun boardLayoutPrompt() = buildString {
@@ -244,6 +245,7 @@ Required constraints:
 - dreamMinPrice and dreamMaxPrice bound ${dreamSlotIds.size} dreams; the server distributes the others evenly between them.
 - dreamMinPrice <= victoryMinimumAccountBalance, otherwise a required dream may be unaffordable.
 - forcedShareSalePrices: at least 3 unique positive prices, each below min sharePrices.
+- currency: the short symbol or abbreviation money is written with in this world, 1..$MAX_CURRENCY_LENGTH characters, matching the era and the location. Prefer a real symbol where the setting has one (\u0024, \u20ac, \u00a3, \u20b4, \u00a5); invent a fitting short one for a fictional or historical setting. No digits, no spaces, no explanatory words.
 - rentPercentages: 10..30; foodPercentages: 5..20; clothPercentages: 2..10; transportPercentages: 2..15; phonePercentages: 1..5.
 - smallBusinessReturnPercentages: 1..200; mediumBusinessReturnPercentages: 1..100; bigBusinessReturnPercentages: 1..60.
 - corruptBusinessReturnPercentages: 1..500, and its minimum must be at least twice the maximum bigBusinessReturnPercentages. corruptOneTimeReturnPercentages: 300..5000.
@@ -304,6 +306,7 @@ private val BALANCE_SCHEMA = """
   "outerCircleMinimumCashFlow":50000, "outerCircleMinimumAccountBalance":200000,
   "outerCircleApartmentRequired":true, "outerCircleCarRequired":true,
   "victoryMinimumAccountBalance":10000000, "victoryDreamRequired":true,
-  "victoryPlaneRequired":true, "victoryEstateRequired":true
+  "victoryPlaneRequired":true, "victoryEstateRequired":true,
+  "currency":"..."
 }
 """.trimIndent()

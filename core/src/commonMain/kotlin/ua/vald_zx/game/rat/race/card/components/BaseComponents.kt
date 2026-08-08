@@ -60,6 +60,7 @@ import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.vibrateClick
 import kotlin.math.hypot
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 fun Button(
@@ -180,12 +181,12 @@ fun SDetailsField(
         )
         Column {
             Text(
-                text = value.splitDecimal(),
+                text = value.formatAmount(),
                 style = MaterialTheme.typography.bodyMedium
             )
             additionalValue.forEach { item ->
                 Text(
-                    text = "+ ${item.splitDecimal()}",
+                    text = "+ ${item.formatAmount()}",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -211,7 +212,7 @@ fun PositiveField(
     ) {
         Text(name, color = MaterialTheme.colorScheme.primary)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(value.splitDecimal(), fontSize = fontSize)
+            Text(value.formatAmount(), fontSize = fontSize)
             if (deposit != null) {
                 IconButton(
                     onClick = deposit,
@@ -241,7 +242,7 @@ fun FundsField(
             .padding(8.dp),
     ) {
         Text(name, color = AppTheme.colors.funds)
-        Text(value.splitDecimal(), fontSize = fontSize)
+        Text(value.formatAmount(), fontSize = fontSize)
     }
     HorizontalDivider()
 }
@@ -262,7 +263,7 @@ fun NegativeField(
     ) {
         Text(name, color = MaterialTheme.colorScheme.tertiary)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(value.splitDecimal(), fontSize = fontSize)
+            Text(value.formatAmount(), fontSize = fontSize)
             if (repay != null) {
                 IconButton(
                     onClick = repay,
@@ -308,7 +309,7 @@ fun CashFlowField(
             modifier = Modifier.padding(end = 8.dp).weight(1f),
             horizontalArrangement = Arrangement.End
         ) {
-            Text(value.splitDecimal(), fontSize = fontSize)
+            Text(value.formatAmount(), fontSize = fontSize)
             Column(modifier = Modifier.padding(start = 16.dp)) {
                 lastCashFlows.forEach { diffs ->
                     val total = if (diffs > 0) {
@@ -367,7 +368,7 @@ fun BalanceField(
                     }
                 )
             }
-            Text(value.splitDecimal(), fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+            Text(value.formatAmount(), fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
             if (add != null) {
                 IconButton(
                     onClick = add,

@@ -64,6 +64,7 @@ import ua.vald_zx.game.rat.race.card.shared.moveTo
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 private val trackGap = 1.5.dp
 private val tokenRowGap = 2.dp
@@ -567,7 +568,7 @@ private fun dreamDetail(
             color = colors.scaffold.onFill,
         )
         Text(
-            text = dream.price.splitDecimal(),
+            text = dream.price.formatAmount(),
             style = metaStyle,
             color = colors.scaffold.onFill,
             maxLines = 1,

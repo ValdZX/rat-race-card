@@ -15,6 +15,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ua.vald_zx.game.rat.race.card.currentCurrency
 
 private const val MAX_DIGITS = 12
 
@@ -69,7 +70,7 @@ fun DesignAmountForm(
                 digits = filtered.trimStart('0').ifEmpty { "" }
             },
             placeholder = "0",
-            suffix = "₴",
+            suffix = currentCurrency.value,
             textStyle = type.amountLg,
             inputTestTag = "system-amount-field",
             keyboardOptions = KeyboardOptions(

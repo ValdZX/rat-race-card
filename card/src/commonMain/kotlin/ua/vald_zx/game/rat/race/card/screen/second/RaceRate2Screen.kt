@@ -46,6 +46,7 @@ import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import ua.vald_zx.game.rat.race.card.tts
 import ua.vald_zx.game.rat.race.card.ttsIsUkraineSupported
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 class RaceRate2Screen : Screen, RoutedScreen {
 
@@ -112,7 +113,7 @@ class RaceRate2Screen : Screen, RoutedScreen {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         SmoothRainbowText(
-                            state.total().splitDecimal(),
+                            state.total().formatAmount(),
                             rainbow = GoldRainbow,
                             style = LocalTextStyle.current.copy(fontSize = 30.sp),
                             modifier = Modifier.clickable {
@@ -150,20 +151,20 @@ class RaceRate2Screen : Screen, RoutedScreen {
                         salary = { raceRate2store.dispatch(RatRace2CardAction.GetSalary) })
                     BalanceField(
                         name = stringResource(Res.string.cash),
-                        value = "${state.cash} $",
+                        value = state.cash.formatAmount(),
                         add = { bottomSheetNavigator.show(SideProfitScreen()) },
                         sub = { bottomSheetNavigator.show(SideExpensesScreen()) },
                         onClick = { bottomSheetNavigator.show(CashActionsScreen()) },
                     )
                     PositiveField(
                         name = stringResource(Res.string.deposit),
-                        value = "${state.deposit} $",
+                        value = state.deposit.formatAmount(),
                         onClick = { bottomSheetNavigator.show(DepositActionsScreen()) },
                         deposit = { bottomSheetNavigator.show(ToDepositScreen()) },
                     )
                     NegativeField(
                         name = stringResource(Res.string.loan),
-                        value = "${state.loan} $",
+                        value = state.loan.formatAmount(),
                         onClick = { bottomSheetNavigator.show(LoanActionsScreen()) },
                         repay = {
                             if (state.loan > 0) {
@@ -174,7 +175,7 @@ class RaceRate2Screen : Screen, RoutedScreen {
                     if (state.config.hasFunds) {
                         FundsField(
                             name = stringResource(Res.string.funds),
-                            value = "${state.fundAmount()} $"
+                            value = state.fundAmount().formatAmount()
                         ) {
                             bottomSheetNavigator.show(BuyFundScreen())
                         }
@@ -313,7 +314,7 @@ class RaceRate2Screen : Screen, RoutedScreen {
                     title = stringResource(Res.string.profit),
                     message = stringResource(
                         Res.string.income_with_assets_and_loans,
-                        state.cashFlow().splitDecimal(),
+                        state.cashFlow().formatAmount(),
                     ),
                     onDismissRequest = { salaryApproveDialog = false },
                     confirmLabel = stringResource(Res.string.receive),

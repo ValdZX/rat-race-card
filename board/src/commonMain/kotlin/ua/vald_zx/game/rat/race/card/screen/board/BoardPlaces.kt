@@ -45,6 +45,7 @@ import ua.vald_zx.game.rat.race.card.shared.dreamById
 import ua.vald_zx.game.rat.race.card.shared.moveTo
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
 import androidx.compose.ui.text.intl.Locale
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 private fun PlaceType.text(): String {
@@ -264,8 +265,7 @@ fun BoxScope.PlaceContent(
                             else if (isSelected) append("★ ")
                             append(it.name)
                             append("\n")
-                            append(it.price)
-                            append(" $")
+                            append(it.price.formatAmount())
                         }
                     } ?: place.type.text(),
                     autoSize = TextAutoSize.StepBased(minFontSize = 1.sp),

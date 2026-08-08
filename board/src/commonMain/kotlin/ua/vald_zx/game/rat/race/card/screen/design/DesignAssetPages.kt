@@ -18,6 +18,7 @@ import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 internal fun AssetRow(
@@ -72,7 +73,7 @@ internal fun AssetRow(
             modifier = Modifier.padding(end = 12.dp),
         ) {
             Text(
-                text = amount.splitDecimal(),
+                text = amount.formatAmount(),
                 style = type.amountMd,
                 color = colors.scaffold.onSurface,
                 maxLines = 1,
@@ -161,7 +162,7 @@ internal fun DesignSharesPage(player: Player, board: Board) {
         items(player.sharesList) { shares ->
             AssetRow(
                 title = board.shareName(shares.type, locale),
-                subtitle = "$quantityWord ${shares.count} × ${shares.buyPrice.splitDecimal()}",
+                subtitle = "$quantityWord ${shares.count} × ${shares.buyPrice.formatAmount()}",
                 amount = shares.price,
                 tone = Design.semantic.funds,
             )

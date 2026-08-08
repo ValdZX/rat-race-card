@@ -20,6 +20,7 @@ import ua.vald_zx.game.rat.race.card.design.proportionalAmountOptions
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardAction
 import ua.vald_zx.game.rat.race.card.logic.RatRace2CardStore
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 class SellLandScreen : Screen {
     @Composable
@@ -40,7 +41,7 @@ class SellLandScreen : Screen {
             val area = inputArea.value.text
             val price = inputPrice.value.text
             Text(
-                stringResource(Res.string.total) + ": ${((area.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).splitDecimal()}",
+                stringResource(Res.string.total) + ": ${((area.toLongOrNull() ?: 0) * (price.toLongOrNull() ?: 0)).formatAmount()}",
                 style = MaterialTheme.typography.titleSmall
             )
             NumberTextField(

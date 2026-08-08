@@ -27,6 +27,7 @@ import ua.vald_zx.game.rat.race.card.screen.board.cards.cardOf
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.CardLink
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 fun BoxWithConstraintsScope.DeputyCardFront(
@@ -95,7 +96,7 @@ fun BoxWithConstraintsScope.DeputyCardFront(
                     onClick = { vm.buyDeputy() },
                     title = stringResource(
                         Res.string.deputy_buy_more,
-                        state.player.config.deputyCardPrice.splitDecimal(),
+                        state.player.config.deputyCardPrice.formatAmount(),
                     ),
                     unitTS = unitTS,
                     unitDp = unitDp,

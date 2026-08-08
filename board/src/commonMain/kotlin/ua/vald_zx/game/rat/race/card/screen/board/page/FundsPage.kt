@@ -20,6 +20,7 @@ import ua.vald_zx.game.rat.race.card.resources.funds
 import ua.vald_zx.game.rat.race.card.shared.Player
 import ua.vald_zx.game.rat.race.card.shared.fundAmount
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 fun FundsPage(player: Player) {
@@ -38,7 +39,7 @@ fun FundsPage(player: Player) {
                         )
                         SDetailsField(
                             name = stringResource(Res.string.amount),
-                            value = fund.amount.splitDecimal(),
+                            value = fund.amount.formatAmount(),
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -49,7 +50,7 @@ fun FundsPage(player: Player) {
         if (player.funds.isNotEmpty()) {
             SDetailsField(
                 name = stringResource(Res.string.funds),
-                value = player.fundAmount().splitDecimal(),
+                value = player.fundAmount().formatAmount(),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             )
         }

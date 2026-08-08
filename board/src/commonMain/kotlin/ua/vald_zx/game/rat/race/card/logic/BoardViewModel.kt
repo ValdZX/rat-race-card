@@ -18,6 +18,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import ua.vald_zx.game.rat.race.card.clientVersion
+import ua.vald_zx.game.rat.race.card.currentCurrency
 
 val players = MutableStateFlow(emptyList<Player>())
 private val SERVER_REQUEST_TIMEOUT = 20.seconds
@@ -180,6 +181,20 @@ class BoardViewModel(
     private var pingJob: Job? = null
     private var reconnectJob: Job? = null
     private var commandSequence = 0L
+
+    init {
+        viewModelScope.launch {
+            _uiState
+                .map { it.board.currency }
+                .distinctUntilChanged()
+                .collect { currentCurrency.value = it }
+        }
+    }
+
+    override fun onCleared() {
+        currentCurrency.value = DEFAULT_CURRENCY
+        super.onCleared()
+    }
 
     private fun safeLaunch(
         needProgress: Boolean = true,

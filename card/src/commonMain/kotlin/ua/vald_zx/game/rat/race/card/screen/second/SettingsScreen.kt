@@ -25,6 +25,7 @@ import ua.vald_zx.game.rat.race.card.clientVersion
 import ua.vald_zx.game.rat.race.card.currentAppLanguage
 import ua.vald_zx.game.rat.race.card.design.DesignLanguagePicker
 import ua.vald_zx.game.rat.race.card.soundEnabled
+import ua.vald_zx.game.rat.race.card.vividPaletteEnabled
 import ua.vald_zx.game.rat.race.card.beans.Config
 import ua.vald_zx.game.rat.race.card.components.Button
 import ua.vald_zx.game.rat.race.card.components.NumberTextField
@@ -171,6 +172,21 @@ class SettingsScreen : Screen {
                             coroutineScope.launch {
                                 appKStore.update { stored ->
                                     (stored ?: AppDataStorageBean("", null)).copy(sound = enabled)
+                                }
+                            }
+                        })
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(Res.string.vivid_palette))
+                        Switch(vividPaletteEnabled.value, onCheckedChange = { enabled ->
+                            vividPaletteEnabled.value = enabled
+                            coroutineScope.launch {
+                                appKStore.update { stored ->
+                                    (stored ?: AppDataStorageBean("", null)).copy(vividPalette = enabled)
                                 }
                             }
                         })

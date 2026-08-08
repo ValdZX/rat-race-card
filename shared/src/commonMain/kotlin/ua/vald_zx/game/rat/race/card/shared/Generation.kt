@@ -207,6 +207,7 @@ data class GeneratedBalance(
     val victoryDreamRequired: Boolean = true,
     val victoryPlaneRequired: Boolean = true,
     val victoryEstateRequired: Boolean = true,
+    val currency: String = DEFAULT_CURRENCY,
 )
 
 @Serializable

@@ -33,6 +33,7 @@ import ua.vald_zx.game.rat.race.card.shared.cashFlow
 import ua.vald_zx.game.rat.race.card.shared.status
 import ua.vald_zx.game.rat.race.card.shared.total
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 internal val tokenBubbleWidth = 220.dp
 internal const val tokenBubbleTag = "token-bubble"
@@ -154,7 +155,7 @@ private fun BubbleStat(label: String, amount: Long, color: Color) {
     Column {
         Text(label, style = Design.type.micro, color = Design.scaffold.onSurfaceMuted, maxLines = 1)
         Text(
-            text = amount.splitDecimal(),
+            text = amount.formatAmount(),
             style = Design.type.amountMd,
             color = color,
             maxLines = 1,

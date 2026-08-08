@@ -11,6 +11,7 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.screen.design.DesignAmountSheet
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 class SendMoneyScreen(
     private val vm: BoardViewModel,
@@ -30,7 +31,7 @@ class SendMoneyScreen(
         DesignAmountSheet(
             title = stringResource(Res.string.send_money_to, playerName),
             available = state.player.cash,
-            confirmLabel = { amount -> "$action ${amount.splitDecimal()}" },
+            confirmLabel = { amount -> "$action ${amount.formatAmount()}" },
             validate = { amount -> amount > 0 && amount <= state.player.cash },
             errorFor = { amount -> notEnough.takeIf { amount > state.player.cash } },
             onConfirm = { amount ->

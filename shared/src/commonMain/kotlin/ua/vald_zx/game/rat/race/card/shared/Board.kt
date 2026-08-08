@@ -75,6 +75,9 @@ data class Board(
 
 const val CURRENT_RULES_VERSION = 1
 
+val Board.currency: String
+    get() = generatedBalance?.currency?.takeIf { it.isNotBlank() } ?: DEFAULT_CURRENCY
+
 fun Board.cardOrNull(link: CardLink, locale: String = DEFAULT_LOCALE): BoardCard? {
     val card = generatedCards[link.type]?.get(link.id) ?: return null
     val text = textsFor(locale).cards[link.type]?.get(link.id) ?: return card

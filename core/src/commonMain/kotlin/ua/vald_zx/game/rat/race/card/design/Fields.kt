@@ -2,6 +2,7 @@ package ua.vald_zx.game.rat.race.card.design
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -13,6 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ua.vald_zx.game.rat.race.card.components.clickableSingle
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 fun ValueField(
@@ -70,8 +72,10 @@ fun ValueField(
     }
 }
 
-fun Long.formatSigned(signed: Boolean = true): String {
-    val body = if (this < 0) "−${(-this).splitDecimal()}" else splitDecimal()
+fun Long.formatSigned(signed: Boolean = true, withCurrency: Boolean = true): String {
+    val magnitude = if (this < 0) -this else this
+    val amount = if (withCurrency) magnitude.formatAmount() else magnitude.splitDecimal()
+    val body = if (this < 0) "−$amount" else amount
     return if (signed && this > 0) "+$body" else body
 }
 
@@ -103,7 +107,7 @@ fun BrassToken(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(label, style = Design.type.micro, color = colors.scaffold.brassInk)
-        Text("+${amount.splitDecimal()}", style = Design.type.monoMeta, color = colors.scaffold.brassInk)
+        Text("+${amount.formatAmount()}", style = Design.type.monoMeta, color = colors.scaffold.brassInk)
     }
 }
 
@@ -112,6 +116,7 @@ fun DesignChip(
     text: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
+    repeatable: Boolean = false,
     onClick: () -> Unit,
 ) {
     val colors = Design.colors
@@ -126,7 +131,10 @@ fun DesignChip(
                 color = if (selected) colors.scaffold.accent else colors.scaffold.outline,
                 shape = shape,
             )
-            .clickableSingle(onClick = onClick)
+            .then(
+                if (repeatable) Modifier.clickable(onClick = onClick)
+                else Modifier.clickableSingle(onClick = onClick)
+            )
             .padding(horizontal = 14.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {

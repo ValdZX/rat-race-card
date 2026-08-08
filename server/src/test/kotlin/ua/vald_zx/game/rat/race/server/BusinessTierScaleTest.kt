@@ -59,6 +59,16 @@ class BusinessTierScaleTest {
     }
 
     @Test
+    fun aGeneratedCurrencyIsAcceptedAndABadOneIsRejected() {
+        testBalance().copy(currency = "\u20b4").validate()
+
+        assertFailsWith<IllegalStateException> { testBalance().copy(currency = "").validate() }
+        assertFailsWith<IllegalStateException> { testBalance().copy(currency = "dollars").validate() }
+        assertFailsWith<IllegalStateException> { testBalance().copy(currency = "us d").validate() }
+        assertFailsWith<IllegalStateException> { testBalance().copy(currency = "u5").validate() }
+    }
+
+    @Test
     fun redistributionKeepsValuesDistinctAndAscending() {
         val redistributed = listOf(5L, 7, 9, 11, 13, 15).redistributedInto(100, 400)
 

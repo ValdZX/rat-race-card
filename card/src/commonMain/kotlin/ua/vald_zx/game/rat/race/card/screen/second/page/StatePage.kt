@@ -33,6 +33,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.*
 import ua.vald_zx.game.rat.race.card.screen.second.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import ua.vald_zx.game.rat.race.card.theme.AppTheme
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 val greyScaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
 
@@ -215,7 +216,7 @@ fun StateItem(
         )
         if (price > 0) {
             Text(
-                "${price.splitDecimal()} $",
+                "${price.formatAmount()}",
                 fontSize = 11.sp,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

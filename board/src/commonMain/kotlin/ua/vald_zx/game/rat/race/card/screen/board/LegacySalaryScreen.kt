@@ -18,6 +18,7 @@ import ua.vald_zx.game.rat.race.card.shared.cashFlow
 import ua.vald_zx.game.rat.race.card.shared.fundRateAtSalary
 import ua.vald_zx.game.rat.race.card.shared.toLayer
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 internal fun LegacySalaryScreen(vm: BoardViewModel) {
@@ -48,7 +49,7 @@ internal fun LegacySalaryScreen(vm: BoardViewModel) {
                         vm.takeSalary()
                     },
                 ) {
-                    Text("${stringResource(Res.string.take_salary)}  ${player.cashFlow().splitDecimal()}")
+                    Text("${stringResource(Res.string.take_salary)}  ${player.cashFlow().formatAmount()}")
                 }
             }
             if (fundRate != null) {

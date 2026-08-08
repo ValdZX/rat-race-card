@@ -21,6 +21,7 @@ import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import ua.vald_zx.game.rat.race.card.design.formatSigned
 
 @OptIn(ExperimentalTestApi::class)
 class DesignProfessionRenderTest {
@@ -49,8 +50,8 @@ class DesignProfessionRenderTest {
         }
         waitForIdle()
 
-        onNodeWithText("+2 240").assertExists()
-        onNodeWithText("−1 200").assertExists()
+        onNodeWithText(2_240L.formatSigned()).assertExists()
+        onNodeWithText((-1_200L).formatSigned()).assertExists()
 
         val image = onNodeWithTag("profession").captureToImage().toAwtImage()
         File("build").mkdirs()

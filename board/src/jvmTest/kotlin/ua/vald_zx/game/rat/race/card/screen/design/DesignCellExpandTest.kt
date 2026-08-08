@@ -258,11 +258,11 @@ class DesignCellExpandTest {
             }
         }
         waitForIdle()
-        onNodeWithText("+3 200", useUnmergedTree = true).assertDoesNotExist()
+        onNodeWithText(waitingAmountLabel(3_200), useUnmergedTree = true).assertDoesNotExist()
 
         expanded = true
         waitForIdle()
-        onNodeWithText("+3 200", useUnmergedTree = true).assertExists()
+        onNodeWithText(waitingAmountLabel(3_200), useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -283,7 +283,7 @@ class DesignCellExpandTest {
         waitForIdle()
 
         val cell = onNodeWithTag("cell").getBoundsInRoot()
-        val amount = onNodeWithText("+123 456 789", useUnmergedTree = true).getBoundsInRoot()
+        val amount = onNodeWithText(waitingAmountLabel(123_456_789), useUnmergedTree = true).getBoundsInRoot()
         assertTrue(amount.top < cell.top)
         assertTrue(amount.right > cell.right)
     }

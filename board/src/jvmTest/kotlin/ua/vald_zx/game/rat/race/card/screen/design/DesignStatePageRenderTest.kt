@@ -33,6 +33,7 @@ import ua.vald_zx.game.rat.race.card.shared.Board
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @OptIn(ExperimentalTestApi::class)
 class DesignStatePageRenderTest {
@@ -90,7 +91,7 @@ class DesignStatePageRenderTest {
         waitForIdle()
 
         onNodeWithText("Loan limit").assertIsDisplayed()
-        onNodeWithText(previewBoard.loanLimit.splitDecimal()).assertIsDisplayed()
+        onNodeWithText(previewBoard.loanLimit.formatAmount()).assertIsDisplayed()
     }
 
     @Test

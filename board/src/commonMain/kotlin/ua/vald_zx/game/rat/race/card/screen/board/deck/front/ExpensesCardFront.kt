@@ -36,6 +36,7 @@ import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardCard
 import ua.vald_zx.game.rat.race.card.shared.CardLink
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 fun BoxWithConstraintsScope.ExpensesCardFront(
@@ -78,7 +79,7 @@ fun BoxWithConstraintsScope.ExpensesCardFront(
             Text(
                 modifier = Modifier.padding(top = padding).fillMaxWidth(),
                 textAlign = TextAlign.Center,
-                text = card.priceTitle.ifBlank { "\$${card.price.splitDecimal()}" },
+                text = card.priceTitle.ifBlank { card.price.formatAmount() },
                 fontSize = unitTS * 14,
                 lineHeight = unitTS * 19,
                 fontWeight = FontWeight.Bold,

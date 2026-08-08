@@ -13,6 +13,7 @@ import ua.vald_zx.game.rat.race.card.design.*
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.Dream
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 fun DesignDreamDialog(
@@ -27,7 +28,7 @@ fun DesignDreamDialog(
         onDismissRequest = {},
         dismissOnBackOrOutside = false,
         confirmLabel = dream?.let {
-            "${stringResource(Res.string.buy)} ${it.price.splitDecimal()}"
+            "${stringResource(Res.string.buy)} ${it.price.formatAmount()}"
         } ?: stringResource(Res.string.buy),
         confirmEnabled = dream != null && canPay,
         confirmDisabledReason = stringResource(Res.string.not_enough_money),
@@ -51,7 +52,7 @@ fun DesignDreamDialog(
                 color = colors.scaffold.onSurface,
             )
             Text(
-                text = dream.price.splitDecimal(),
+                text = dream.price.formatAmount(),
                 style = Design.type.amountLg,
                 color = Design.semantic.dream.edge,
                 maxLines = 1,

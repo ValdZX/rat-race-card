@@ -47,6 +47,7 @@ import ua.vald_zx.game.rat.race.card.screen.board.page.*
 import ua.vald_zx.game.rat.race.card.shared.*
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import androidx.compose.ui.text.intl.Locale
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 private const val SHEET_SCREEN_SHARE = 0.72f
 
@@ -250,6 +251,7 @@ internal fun BalanceRow(player: Player, onRepay: () -> Unit = {}) {
             amount = player.cash,
             color = colors.semantic.cash.edge,
             changes = emptyList(),
+            withCurrency = true,
         )
         AmountBlock(
             label = stringResource(Res.string.total_assets),
@@ -304,11 +306,12 @@ private fun AmountBlock(
     amount: Long,
     color: androidx.compose.ui.graphics.Color,
     changes: List<Long>,
+    withCurrency: Boolean = false,
 ) {
     Column(horizontalAlignment = Alignment.End) {
         Text(label, style = Design.type.micro, color = Design.scaffold.onSurfaceMuted)
         Text(
-            text = amount.splitDecimal(),
+            text = if (withCurrency) amount.formatAmount() else amount.splitDecimal(),
             style = Design.type.amountMd,
             color = color,
             maxLines = 1,
@@ -325,7 +328,7 @@ private fun RecentChanges(changes: List<Long>) {
     Column(horizontalAlignment = Alignment.End) {
         recent.forEach { change ->
             Text(
-                text = change.formatSigned(),
+                text = change.formatSigned(withCurrency = false),
                 style = Design.type.monoMeta.copy(lineHeight = 11.sp),
                 color = if (change >= 0) {
                     Design.scaffold.accentDim
@@ -625,7 +628,7 @@ private fun PossessionTile(possession: Possession) {
             overflow = TextOverflow.Ellipsis,
         )
         Text(
-            text = if (possession.price != 0L) possession.price.splitDecimal() else "",
+            text = if (possession.price != 0L) possession.price.formatAmount() else "",
             style = Design.type.monoMeta,
             color = if (possession.owned) colors.scaffold.brass else colors.scaffold.onSurfaceMuted,
             maxLines = 1,
@@ -647,8 +650,8 @@ private fun ConditionsBlock(player: Player, board: Board) {
                     done = player.cashFlow() >= conditions.minimumCashFlow,
                     text = stringResource(
                         Res.string.cash_flow_progress,
-                        player.cashFlow().splitDecimal(),
-                        conditions.minimumCashFlow.splitDecimal(),
+                        player.cashFlow().formatAmount(),
+                        conditions.minimumCashFlow.formatAmount(),
                     ),
                 )
                 if (conditions.apartmentRequired) {
@@ -661,8 +664,8 @@ private fun ConditionsBlock(player: Player, board: Board) {
                     done = player.balance() >= conditions.minimumAccountBalance,
                     text = stringResource(
                         Res.string.account_balance_progress,
-                        player.balance().splitDecimal(),
-                        conditions.minimumAccountBalance.splitDecimal(),
+                        player.balance().formatAmount(),
+                        conditions.minimumAccountBalance.formatAmount(),
                     ),
                 )
             }
@@ -689,7 +692,7 @@ private fun ConditionsBlock(player: Player, board: Board) {
                     done = player.balance() >= conditions.minimumAccountBalance,
                     text = stringResource(
                         Res.string.victory_account_balance_value,
-                        conditions.minimumAccountBalance.splitDecimal(),
+                        conditions.minimumAccountBalance.formatAmount(),
                     ),
                 )
             }

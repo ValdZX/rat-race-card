@@ -29,6 +29,7 @@ import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import ua.vald_zx.game.rat.race.card.design.formatSigned
 
 @OptIn(ExperimentalTestApi::class)
 class DesignRecentChangesTest {
@@ -75,10 +76,10 @@ class DesignRecentChangesTest {
         waitForIdle()
 
         val changes = listOf(
-            "−1 400", "+9 500", "+3 200",
-            "+120", "−60", "+380",
-            "+700", "−300", "+1 500",
-        )
+            -1_400L, 9_500L, 3_200L,
+            120L, -60L, 380L,
+            700L, -300L, 1_500L,
+        ).map { it.formatSigned(withCurrency = false) }
         changes.forEach { change ->
             onNodeWithText(change, useUnmergedTree = true).assertExists()
         }
@@ -99,8 +100,8 @@ class DesignRecentChangesTest {
             assertTrue(bounds.right <= row.right, "зміну $change обрізало вбік")
         }
         assertTrue(
-            onNodeWithText("+380", useUnmergedTree = true).getBoundsInRoot().top <
-                    onNodeWithText("+120", useUnmergedTree = true).getBoundsInRoot().top,
+            onNodeWithText(380L.formatSigned(withCurrency = false), useUnmergedTree = true).getBoundsInRoot().top <
+                    onNodeWithText(120L.formatSigned(withCurrency = false), useUnmergedTree = true).getBoundsInRoot().top,
             "найновіша зміна Cash Flow має бути першою",
         )
 

@@ -58,6 +58,7 @@ import ua.vald_zx.game.rat.race.card.shared.TrackId
 import ua.vald_zx.game.rat.race.card.shared.cashFlow
 import ua.vald_zx.game.rat.race.card.shared.total
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 data class PlayerPointState(
     val position: Int,
@@ -403,12 +404,12 @@ fun PlayerTooltip(
                 CashFlowField(
                     name = stringResource(Res.string.total_assets),
                     rainbow = GoldRainbow,
-                    value = state.player.total().splitDecimal(),
+                    value = state.player.total().formatAmount(),
                     fontSize = 12.sp
                 )
                 CashFlowField(
                     name = stringResource(Res.string.cash_flow),
-                    value = state.player.cashFlow().splitDecimal(),
+                    value = state.player.cashFlow().formatAmount(),
                     fontSize = 12.sp
                 )
             }

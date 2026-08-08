@@ -28,6 +28,7 @@ import ua.vald_zx.game.rat.race.card.resource.images.Send
 import ua.vald_zx.game.rat.race.card.screen.SendScreen
 import ua.vald_zx.game.rat.race.card.shared.OfflinePlayer
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 val offlinePlayers = MutableStateFlow(emptyList<OfflinePlayer>())
 
@@ -61,13 +62,13 @@ class PlayersScreen : Screen {
                                     name = stringResource(Res.string.total_assets),
                                     lastCashFlows = player.lastTotals,
                                     rainbow = GoldRainbow,
-                                    value = player.total.splitDecimal(),
+                                    value = player.total.formatAmount(),
                                     fontSize = 12.sp
                                 )
                                 CashFlowField(
                                     name = stringResource(Res.string.cash_flow),
                                     lastCashFlows = player.lastCashFlows,
-                                    value = player.cashFlow.splitDecimal(),
+                                    value = player.cashFlow.formatAmount(),
                                     fontSize = 12.sp
                                 )
                             }

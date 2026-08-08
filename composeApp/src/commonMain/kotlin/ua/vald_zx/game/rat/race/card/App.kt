@@ -83,6 +83,7 @@ private fun WaitForAppSettings(content: @Composable () -> Unit) {
             val storage = runCatching { appKStore.get() }.getOrNull()
             forceDark = storage?.theme
             designV2Enabled.value = storage?.designV2 ?: false
+            vividPaletteEnabled.value = storage?.vividPalette ?: false
             soundEnabled.value = storage?.sound ?: true
             restoreAppLanguage(storage)
             settingsLoaded = true

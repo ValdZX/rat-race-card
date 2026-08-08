@@ -1,5 +1,7 @@
 package ua.vald_zx.game.rat.race.card.shared
 
+const val DEFAULT_CURRENCY = "$"
+
 val pointerColors = listOf(
     0xFFE6194B,
     0xFF4363D8,

@@ -173,6 +173,12 @@ internal fun GeneratedBalance.validate() {
         childBenefit,
         deputyCardPrice,
     ).all { it in 1..MAX_GENERATED_AMOUNT }) { "player economy values are invalid" }
+    check(currency.length in 1..MAX_CURRENCY_LENGTH) {
+        "currency \"$currency\" must be 1..$MAX_CURRENCY_LENGTH characters"
+    }
+    check(currency.none { it.isWhitespace() || it.isDigit() }) {
+        "currency \"$currency\" must not contain digits or whitespace"
+    }
     check(taxInspectionBribePercentage == 20L) { "taxInspectionBribePercentage must be 20" }
     check(mediumRiskMultiplier in 2..20) { "mediumRiskMultiplier is invalid" }
     check(highRiskMultiplier in 2..20 && highRiskMultiplier > mediumRiskMultiplier) {
@@ -404,6 +410,7 @@ internal fun List<Int>.requireRange(name: String, range: IntRange) {
     check(isNotEmpty() && all { it in range }) { "$name contains an out-of-range value" }
 }
 
+internal const val MAX_CURRENCY_LENGTH = 4
 internal const val SMALL_BUSINESS_ENTRY_UNITS = 2L
 internal const val SMALL_BUSINESS_MAX_UNITS = 20L
 internal const val MEDIUM_BUSINESS_MIN_UNITS = 15L

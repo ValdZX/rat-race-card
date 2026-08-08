@@ -6,6 +6,8 @@ import androidx.compose.ui.graphics.Color
 
 val DesignSeed = Color(0xFF0F7A3D)
 
+val VividDesignSeed = Color(0xFF00C853)
+
 @Immutable
 data class SemanticTone(
     val fill: Color,
@@ -164,7 +166,65 @@ private val LightSemantic = SemanticColors(
     rest = tone(0xFFD9DFE5, 0xFF767B80),
 )
 
+private val VividDarkSemantic = SemanticColors(
+    cash = tone(0xFF007A38, 0xFF2BE47E),
+    positive = tone(0xFF2A7A00, 0xFF74F03A),
+    salary = tone(0xFF6E6100, 0xFFE3D01F),
+    business = tone(0xFF00754F, 0xFF19E0A0),
+    bigBusiness = tone(0xFF007555, 0xFF00F5AE),
+    smallBusiness = tone(0xFF3F7A1F, 0xFF9BE86B),
+    negative = tone(0xFFB3001B, 0xFFFF5C6E),
+    expenses = tone(0xFFB33A00, 0xFFFF7F42),
+    bankruptcy = tone(0xFF9E0044, 0xFFFF5C96),
+    action = tone(0xFF8A5C00, 0xFFFFC61A),
+    buy = tone(0xFF9E4A00, 0xFFFF9126),
+    chance = tone(0xFF8F5000, 0xFFFFAE33),
+    start = tone(0xFF7A6A00, 0xFFFFE01F),
+    family = tone(0xFF0F4FA8, 0xFF5AA8FF),
+    store = tone(0xFF00648F, 0xFF00C2FF),
+    deputy = tone(0xFF2A2FB3, 0xFF7C86FF),
+    divorce = tone(0xFF0B47B3, 0xFF4D92FF),
+    shopping = tone(0xFF00706F, 0xFF00E5E5),
+    inspection = tone(0xFF00646E, 0xFF3FD5EC),
+    funds = tone(0xFF5A18B3, 0xFFB07AFF),
+    desire = tone(0xFF9E008F, 0xFFFF6BEC),
+    love = tone(0xFFA8004F, 0xFFFF64A8),
+    dream = tone(0xFF6E0FB3, 0xFFC97AFF),
+    exaltation = tone(0xFF4442B3, 0xFF9E9CFF),
+    rest = tone(0xFF44505C, 0xFF9FB0BE),
+)
+
+private val VividLightSemantic = SemanticColors(
+    cash = tone(0xFF17D07A, 0xFF00794A),
+    positive = tone(0xFF5DE02E, 0xFF2E7D00),
+    salary = tone(0xFFE8E11A, 0xFF8A8300),
+    business = tone(0xFF12C97E, 0xFF00734A),
+    bigBusiness = tone(0xFF00E5A0, 0xFF00875E),
+    smallBusiness = tone(0xFF8CE86B, 0xFF4F8F2E),
+    negative = tone(0xFFFF4A4A, 0xFFB3000A),
+    expenses = tone(0xFFFF6A2B, 0xFFB33000),
+    bankruptcy = tone(0xFFFF3D7F, 0xFFB0003F),
+    action = tone(0xFFFFC400, 0xFFB37A00),
+    buy = tone(0xFFFF8A00, 0xFFB35400),
+    chance = tone(0xFFFFA31A, 0xFFA85F00),
+    start = tone(0xFFFFE000, 0xFFA38A00),
+    family = tone(0xFF35B8FF, 0xFF00629E),
+    store = tone(0xFF00B4FF, 0xFF0072B3),
+    deputy = tone(0xFF6E7CFF, 0xFF2A2FB3),
+    divorce = tone(0xFF2E8BFF, 0xFF0B4FB3),
+    shopping = tone(0xFF00D8D8, 0xFF007A7A),
+    inspection = tone(0xFF3FC7E8, 0xFF00708C),
+    funds = tone(0xFFA45BFF, 0xFF5B18B3),
+    desire = tone(0xFFFF5BE0, 0xFFA8009B),
+    love = tone(0xFFFF4D94, 0xFFB3005A),
+    dream = tone(0xFFC85BFF, 0xFF7A0FB3),
+    exaltation = tone(0xFF8E8CFF, 0xFF4442B3),
+    rest = tone(0xFFB8C4CC, 0xFF5A6672),
+)
+
 val DarkDesignColors = DesignColors(DarkScaffold, DarkSemantic, isDark = true)
 val LightDesignColors = DesignColors(LightScaffold, LightSemantic, isDark = false)
+val VividDarkDesignColors = DesignColors(DarkScaffold, VividDarkSemantic, isDark = true)
+val VividLightDesignColors = DesignColors(LightScaffold, VividLightSemantic, isDark = false)
 
 val LocalDesignColors = staticCompositionLocalOf { DarkDesignColors }

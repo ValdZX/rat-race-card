@@ -7,6 +7,7 @@ import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.resources.*
 import ua.vald_zx.game.rat.race.card.shared.Dream
 import ua.vald_zx.game.rat.race.card.splitDecimal
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 internal fun LegacyDreamDialog(
@@ -20,7 +21,7 @@ internal fun LegacyDreamDialog(
             stringResource(
                 Res.string.dream_offer_message,
                 it.name,
-                it.price.splitDecimal(),
+                it.price.formatAmount(),
             ),
             it.description,
         ).filter { part -> part.isNotBlank() }.joinToString("\n\n")

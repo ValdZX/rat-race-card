@@ -68,6 +68,7 @@ import ua.vald_zx.game.rat.race.card.screen.design.*
 import ua.vald_zx.game.rat.race.card.screen.design.DesignDreamDialog
 import ua.vald_zx.game.rat.race.card.shared.*
 import kotlin.math.absoluteValue
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 val navigationBarHeightState = mutableStateOf(0.dp)
 val statusBarHeightState = mutableStateOf(0.dp)
@@ -428,11 +429,11 @@ class BoardScreen(
                 message = if (outcome.received > 0) {
                     stringResource(
                         Res.string.scam_paid,
-                        outcome.paid.splitDecimal(),
-                        outcome.received.splitDecimal(),
+                        outcome.paid.formatAmount(),
+                        outcome.received.formatAmount(),
                     )
                 } else {
-                    stringResource(Res.string.scam_lost, outcome.paid.splitDecimal())
+                    stringResource(Res.string.scam_lost, outcome.paid.formatAmount())
                 },
                 confirmLabel = stringResource(Res.string.ok),
                 onConfirm = { scamResolvedDialog = null },
@@ -442,7 +443,7 @@ class BoardScreen(
             DesignMessageDialog(
                 onDismissRequest = { paydayLoanDialog = 0 },
                 title = stringResource(Res.string.payday_loan),
-                message = stringResource(Res.string.payday_loan_taken, paydayLoanDialog.splitDecimal()),
+                message = stringResource(Res.string.payday_loan_taken, paydayLoanDialog.formatAmount()),
                 confirmLabel = stringResource(Res.string.ok),
                 onConfirm = { paydayLoanDialog = 0 },
             )
@@ -451,7 +452,7 @@ class BoardScreen(
             DesignMessageDialog(
                 onDismissRequest = { marketCrashDialog = 0 },
                 title = stringResource(Res.string.market_crash),
-                message = stringResource(Res.string.market_crash_loss, marketCrashDialog.splitDecimal()),
+                message = stringResource(Res.string.market_crash_loss, marketCrashDialog.formatAmount()),
                 confirmLabel = stringResource(Res.string.ok),
                 onConfirm = { marketCrashDialog = 0 },
             )
@@ -462,7 +463,7 @@ class BoardScreen(
                 title = stringResource(Res.string.tax_inspection),
                 message = stringResource(
                     Res.string.tax_inspection_bribe,
-                    taxInspectionBribeDialog.splitDecimal(),
+                    taxInspectionBribeDialog.formatAmount(),
                 ),
                 confirmLabel = stringResource(Res.string.ok),
                 onConfirm = { taxInspectionBribeDialog = 0 },
@@ -533,9 +534,9 @@ class BoardScreen(
             DesignMessageDialog(
                 title = stringResource(Res.string.investments),
                 message = if (amount > 0) {
-                    stringResource(Res.string.investment_win, dice.toString(), amount.splitDecimal())
+                    stringResource(Res.string.investment_win, dice.toString(), amount.formatAmount())
                 } else {
-                    stringResource(Res.string.investment_lose, dice.toString(), (-amount).splitDecimal())
+                    stringResource(Res.string.investment_lose, dice.toString(), (-amount).formatAmount())
                 },
                 onDismissRequest = { investmentResultDialog = null },
                 confirmLabel = stringResource(Res.string.ok),
@@ -545,7 +546,7 @@ class BoardScreen(
         if (capitalizedDialog != 0L) {
             DesignMessageDialog(
                 title = stringResource(Res.string.investments),
-                message = stringResource(Res.string.funds_capitalized, capitalizedDialog.splitDecimal()),
+                message = stringResource(Res.string.funds_capitalized, capitalizedDialog.formatAmount()),
                 onDismissRequest = { capitalizedDialog = 0 },
                 confirmLabel = stringResource(Res.string.ok),
                 onConfirm = { capitalizedDialog = 0 },

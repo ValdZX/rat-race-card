@@ -186,7 +186,7 @@ fun StatePage(
                     completed = player.balance() >= victoryConditions.minimumAccountBalance,
                     text = stringResource(
                         Res.string.victory_account_balance_value,
-                        victoryConditions.minimumAccountBalance.splitDecimal(),
+                        victoryConditions.minimumAccountBalance.formatAmount(),
                     ),
                 )
             }
@@ -312,7 +312,7 @@ fun StateItem(
         )
         if (price > 0) {
             Text(
-                "${price.splitDecimal()} $",
+                "${price.formatAmount()}",
                 fontSize = 11.sp,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

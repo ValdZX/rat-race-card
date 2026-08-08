@@ -26,6 +26,8 @@ import ua.vald_zx.game.rat.race.card.shared.Auction
 import ua.vald_zx.game.rat.race.card.shared.Bid
 import ua.vald_zx.game.rat.race.card.splitDecimal
 import kotlin.math.max
+import kotlin.math.min
+import ua.vald_zx.game.rat.race.card.formatAmount
 
 @Composable
 fun DesignAuctionSheet(vm: BoardViewModel, fallbackAuction: Auction) {
@@ -113,12 +115,12 @@ private fun ColumnScope.ScrollableAuctionForm(content: @Composable ColumnScope.(
 @Composable
 private fun ColumnScope.AdvertiseForm(vm: BoardViewModel, auction: Auction, minBid: Long) {
     val action = stringResource(Res.string.advertiseAuction)
-    val minText = stringResource(Res.string.min_bid, minBid.splitDecimal())
+    val minText = stringResource(Res.string.min_bid, minBid.formatAmount())
     DesignAmountForm(
         title = stringResource(Res.string.firstBid),
         subtitle = minText,
         initial = minBid,
-        confirmLabel = { amount -> "$action ${amount.splitDecimal()}" },
+        confirmLabel = { amount -> "$action ${amount.formatAmount()}" },
         validate = { it >= minBid },
         onConfirm = { amount -> vm.advertiseAuction(auction.copy(bid = amount)) },
     )
@@ -135,7 +137,7 @@ private fun ColumnScope.BidForm(
     val isShares = auction is Auction.SharesAuction
     val maxCount = (auction as? Auction.SharesAuction)?.shares?.count ?: 0
     var count by remember { mutableStateOf(if (isShares) 1L else 0L) }
-    val tooLow = stringResource(Res.string.min_bid, minBid.splitDecimal())
+    val tooLow = stringResource(Res.string.min_bid, minBid.formatAmount())
     val notEnough = stringResource(Res.string.not_enough_money)
     val action = stringResource(Res.string.placeBet)
     val quickOptions = listOf(
@@ -147,7 +149,7 @@ private fun ColumnScope.BidForm(
         title = stringResource(Res.string.bid),
         subtitle = if (isShares) stringResource(Res.string.quantity) + ": $count / $maxCount" else null,
         initial = minBid,
-        confirmLabel = { amount -> "$action ${amount.splitDecimal()}" },
+        confirmLabel = { amount -> "$action ${amount.formatAmount()}" },
         onConfirm = { amount -> onBid(amount, count) },
         onCancel = onBack,
         cancelLabel = stringResource(Res.string.cancel),
@@ -162,20 +164,51 @@ private fun ColumnScope.BidForm(
         },
         extraContent = {
             if (isShares) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    DesignChip("−", selected = false) { if (count > 1) count-- }
-                    Text(
-                        text = "$count",
-                        style = Design.type.amountMd,
-                        color = Design.scaffold.onSurface,
-                        modifier = Modifier.weight(1f),
-                    )
-                    DesignChip("+", selected = false) { if (count < maxCount) count++ }
-                    DesignChip(stringResource(Res.string.all_in), selected = false) { count = maxCount }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        DesignChip("−", selected = false, repeatable = true) {
+                            count = max(1, count - 1)
+                        }
+                        Text(
+                            text = "$count",
+                            style = Design.type.amountMd,
+                            color = Design.scaffold.onSurface,
+                            modifier = Modifier.weight(1f),
+                        )
+                        DesignChip("+", selected = false, repeatable = true) {
+                            count = min(maxCount, count + 1)
+                        }
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        DesignChip(
+                            text = "+10",
+                            selected = false,
+                            modifier = Modifier.weight(1f),
+                            repeatable = true,
+                        ) { count = min(maxCount, count + 10) }
+                        DesignChip(
+                            text = "+100",
+                            selected = false,
+                            modifier = Modifier.weight(1f),
+                            repeatable = true,
+                        ) { count = min(maxCount, count + 100) }
+                        DesignChip(
+                            text = stringResource(Res.string.all_in),
+                            selected = false,
+                            modifier = Modifier.weight(1f),
+                        ) { count = maxCount }
+                    }
                 }
             }
         },
@@ -200,18 +233,29 @@ private fun LotHeader(auction: Auction, minBid: Long) {
             color = colors.scaffold.onSurfaceMuted,
         )
         Text(
-            text = minBid.splitDecimal(),
+            text = minBid.formatAmount(),
             style = Design.type.amountLg,
             color = colors.scaffold.brass,
             maxLines = 1,
             softWrap = false,
         )
         Text(
-            text = stringResource(Res.string.min_bid, minBid.splitDecimal()),
+            text = stringResource(Res.string.min_bid, minBid.formatAmount()),
             style = Design.type.monoMeta,
             color = colors.scaffold.onSurfaceMuted,
         )
     }
+}
+
+@Composable
+internal fun DesignAuctionBidFormForTest(auction: Auction, minBid: Long) = Column {
+    BidForm(
+        auction = auction,
+        minBid = minBid,
+        canPay = { true },
+        onBack = {},
+        onBid = { _, _ -> },
+    )
 }
 
 @Composable
@@ -278,9 +322,9 @@ private fun BidRow(bid: Bid, auction: Auction, sellEnabled: Boolean, onSell: (Bi
             )
             Text(
                 text = if (bid.count > 0) {
-                    "${bid.bid.splitDecimal()} × ${bid.count}"
+                    "${bid.bid.formatAmount()} × ${bid.count}"
                 } else {
-                    bid.bid.splitDecimal()
+                    bid.bid.formatAmount()
                 },
                 style = Design.type.monoMeta,
                 color = colors.scaffold.onSurfaceMuted,
