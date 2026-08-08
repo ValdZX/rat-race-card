@@ -176,6 +176,28 @@ class BalanceLlmTest {
     }
 
     @Test
+    fun corruptLandAreasOverlappingRegularOnesAreLiftedInsteadOfRejected() = runTest {
+        val overlapping = testBalance().copy(
+            landAreas = listOf(6, 12, 20, 30, 50, 100),
+            corruptLandAreas = listOf(40, 60, 100, 300, 500),
+        )
+        assertFailsWith<IllegalStateException> { overlapping.validate() }
+        val chat = ChatCompletion { _, _ -> balanceJson.encodeToString(overlapping) }
+
+        val generated = LlmBalanceGenerator(chat).generate(world, deckSizes)
+
+        assertEquals(listOf(101L, 102L, 103L, 300L, 500L), generated.corruptLandAreas)
+        generated.validate()
+    }
+
+    @Test
+    fun corruptLandAreasAlreadyAboveRegularOnesAreLeftUntouched() {
+        val balance = testBalance()
+
+        assertEquals(balance.corruptLandAreas, balance.withCorruptLandAreasAboveRegular().corruptLandAreas)
+    }
+
+    @Test
     fun aSalaryThatCannotCoverItsOwnExpensesIsRejected() {
         val invalid = testBalance().copy(salaries = testBalance().salaries + 40)
 
@@ -217,6 +239,42 @@ class BalanceLlmTest {
         val invalid = testBalance().copy(corruptLandSalePercentages = listOf(150, 160, 170))
 
         assertFailsWith<IllegalStateException> { invalid.validate() }
+    }
+
+    @Test
+    fun anUnprofitableCorruptLandSaleIsLiftedInsteadOfRejected() = runTest {
+        val unprofitable = testBalance().copy(corruptLandSalePercentages = listOf(150, 160, 170))
+        assertFailsWith<IllegalStateException> { unprofitable.validate() }
+        val chat = ChatCompletion { _, _ -> balanceJson.encodeToString(unprofitable) }
+
+        val generated = LlmBalanceGenerator(chat).generate(world, deckSizes)
+
+        assertEquals(testBalance().corruptLandPricePerUnit, generated.corruptLandPricePerUnit)
+        assertEquals(listOf(427L, 428L, 429L), generated.corruptLandSalePercentages)
+        generated.validate()
+    }
+
+    @Test
+    fun aCorruptLandPriceBandTooWideForAnyProfitableSaleIsNarrowed() = runTest {
+        val wide = testBalance().copy(
+            corruptLandPricePerUnit = listOf(1_000, 5_000, 9_000),
+            corruptLandSalePercentages = listOf(200, 300, 400),
+        )
+        assertFailsWith<IllegalStateException> { wide.validate() }
+        val chat = ChatCompletion { _, _ -> balanceJson.encodeToString(wide) }
+
+        val generated = LlmBalanceGenerator(chat).generate(world, deckSizes)
+
+        assertEquals(listOf(1_000L, 2_995L, 4_990L), generated.corruptLandPricePerUnit)
+        assertEquals(listOf(998L, 999L, 1_000L), generated.corruptLandSalePercentages)
+        generated.validate()
+    }
+
+    @Test
+    fun aProfitableCorruptLandSaleIsLeftUntouched() {
+        val balance = testBalance()
+
+        assertEquals(balance, balance.withProfitableCorruptLandSale())
     }
 
     @Test

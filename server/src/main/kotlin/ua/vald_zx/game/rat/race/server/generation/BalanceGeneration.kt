@@ -35,6 +35,8 @@ internal class LlmBalanceGenerator(
                     .withoutDuplicateOptions()
                     .withBoundedAssetPrices()
                     .withBusinessTiersOnSalaryScale()
+                    .withCorruptLandAreasAboveRegular()
+                    .withProfitableCorruptLandSale()
             }
                 .onFailure {
                     lastError = it

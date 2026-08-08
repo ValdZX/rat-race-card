@@ -84,6 +84,7 @@ private fun WaitForAppSettings(content: @Composable () -> Unit) {
             forceDark = storage?.theme
             designV2Enabled.value = storage?.designV2 ?: false
             vividPaletteEnabled.value = storage?.vividPalette ?: false
+            autoTakeCardEnabled.value = storage?.autoTakeCard ?: false
             soundEnabled.value = storage?.sound ?: true
             restoreAppLanguage(storage)
             settingsLoaded = true

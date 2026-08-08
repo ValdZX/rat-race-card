@@ -28,6 +28,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.AppDataStorageBean
 import ua.vald_zx.game.rat.race.card.appKStore
+import ua.vald_zx.game.rat.race.card.autoTakeCardEnabled
 import ua.vald_zx.game.rat.race.card.clientVersion
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.soundEnabled
@@ -45,6 +46,7 @@ import ua.vald_zx.game.rat.race.card.resources.language
 import ua.vald_zx.game.rat.race.card.resources.new_design
 import ua.vald_zx.game.rat.race.card.resources.online_settings
 import ua.vald_zx.game.rat.race.card.resources.player_token_color
+import ua.vald_zx.game.rat.race.card.resources.auto_take_card
 import ua.vald_zx.game.rat.race.card.resources.sound
 import ua.vald_zx.game.rat.race.card.resources.vivid_palette
 import ua.vald_zx.game.rat.race.card.shared.pointerColors
@@ -118,6 +120,19 @@ class OnlineSettingsScreen(private val vm: BoardViewModel) : Screen {
                     coroutineScope.launch {
                         appKStore.update { stored ->
                             (stored ?: AppDataStorageBean("", null)).copy(vividPalette = enabled)
+                        }
+                    }
+                },
+            )
+
+            DesignToggleRow(
+                label = stringResource(Res.string.auto_take_card),
+                checked = autoTakeCardEnabled.value,
+                onCheckedChange = { enabled ->
+                    autoTakeCardEnabled.value = enabled
+                    coroutineScope.launch {
+                        appKStore.update { stored ->
+                            (stored ?: AppDataStorageBean("", null)).copy(autoTakeCard = enabled)
                         }
                     }
                 },

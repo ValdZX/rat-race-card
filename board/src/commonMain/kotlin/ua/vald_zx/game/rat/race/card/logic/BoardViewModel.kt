@@ -1,5 +1,6 @@
 package ua.vald_zx.game.rat.race.card.logic
 
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.aakira.napier.Napier
@@ -11,6 +12,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import ua.vald_zx.game.rat.race.card.logic.BoardUiAction.*
 import ua.vald_zx.game.rat.race.card.GameSound
+import ua.vald_zx.game.rat.race.card.autoTakeCardEnabled
 import ua.vald_zx.game.rat.race.card.play
 import ua.vald_zx.game.rat.race.card.shared.*
 import kotlin.coroutines.CoroutineContext
@@ -77,6 +79,17 @@ data class BoardState(
                 !isProgress &&
                 board.takenCard == null &&
                 board.canTakeCard == listOf(BoardCardType.Deputy)
+
+    val singleAvailableDeck: BoardCardType?
+        get() = board.canTakeCard
+            .singleOrNull()
+            ?.takeIf { it != BoardCardType.Deputy }
+            ?.takeIf {
+                currentPlayerIsActive &&
+                        !isProgress &&
+                        board.takenCard == null &&
+                        connectionState == BoardConnectionState.Connected
+            }
 
     fun canMakeBid(): Boolean {
         if (!currentPlayerIsConnected || connectionState != BoardConnectionState.Connected) return false
@@ -181,6 +194,7 @@ class BoardViewModel(
     private var pingJob: Job? = null
     private var reconnectJob: Job? = null
     private var commandSequence = 0L
+    private var autoTakenDeck: BoardCardType? = null
 
     init {
         viewModelScope.launch {
@@ -189,6 +203,22 @@ class BoardViewModel(
                 .distinctUntilChanged()
                 .collect { currentCurrency.value = it }
         }
+        viewModelScope.launch {
+            combine(_uiState, snapshotFlow { autoTakeCardEnabled.value }) { state, enabled ->
+                if (enabled) state else null
+            }.collect { state -> state?.let(::autoTakeSingleDeck) }
+        }
+    }
+
+    private fun autoTakeSingleDeck(state: BoardState) {
+        if (state.board.canTakeCard.isEmpty()) {
+            autoTakenDeck = null
+            return
+        }
+        val cardType = state.singleAvailableDeck ?: return
+        if (cardType == autoTakenDeck) return
+        autoTakenDeck = cardType
+        selectCard(cardType)
     }
 
     override fun onCleared() {

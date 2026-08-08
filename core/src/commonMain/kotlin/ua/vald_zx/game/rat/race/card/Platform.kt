@@ -23,11 +23,14 @@ data class AppDataStorageBean(
     val sound: Boolean = true,
     val language: String? = null,
     val vividPalette: Boolean = false,
+    val autoTakeCard: Boolean = false,
 )
 
 val designV2Enabled = mutableStateOf(true)
 
 val vividPaletteEnabled = mutableStateOf(false)
+
+val autoTakeCardEnabled = mutableStateOf(false)
 
 val soundEnabled = mutableStateOf(false)
 

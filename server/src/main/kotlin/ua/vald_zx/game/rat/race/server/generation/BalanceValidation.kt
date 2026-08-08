@@ -149,9 +149,12 @@ internal fun GeneratedBalance.validate() {
     check(landAreas.max() < corruptLandAreas.min()) {
         "Corrupt land areas must be larger than regular land areas"
     }
-    corruptLandSalePercentages.requireRange("corruptLandSalePercentages", 150L..1_000L)
+    corruptLandSalePercentages.requireRange(
+        "corruptLandSalePercentages",
+        MIN_CORRUPT_LAND_SALE_PERCENTAGE..MAX_CORRUPT_LAND_SALE_PERCENTAGE,
+    )
     val cheapestCorruptLandSale = corruptLandPricePerUnit.min() * corruptLandSalePercentages.min() / 100
-    check(cheapestCorruptLandSale >= corruptLandPricePerUnit.max() * 2) {
+    check(cheapestCorruptLandSale >= corruptLandPricePerUnit.max() * CORRUPT_LAND_SALE_PROFIT) {
         "Corrupt land sale must pay at least twice the highest corrupt land purchase price"
     }
     corruptLandDeputies.requireRange("corruptLandDeputies", 1..20)
@@ -349,6 +352,43 @@ internal fun GeneratedBalance.withBoundedAssetPrices(): GeneratedBalance = copy(
     landPricePerUnit = landPricePerUnit.withinSaleSpread(eventLandPricePercentages),
 )
 
+internal fun GeneratedBalance.withCorruptLandAreasAboveRegular(): GeneratedBalance {
+    val regularCeiling = landAreas.maxOrNull() ?: return this
+    val corrupt = corruptLandAreas.sorted()
+    if (corrupt.isEmpty() || corrupt.first() > regularCeiling) return this
+    if (MAX_GENERATED_AMOUNT - regularCeiling < corrupt.size) return this
+    return copy(
+        corruptLandAreas = corrupt.mapIndexed { index, area ->
+            maxOf(area, regularCeiling + 1 + index)
+        }
+    )
+}
+
+internal fun GeneratedBalance.withProfitableCorruptLandSale(): GeneratedBalance {
+    val cheapestUnit = corruptLandPricePerUnit.minOrNull() ?: return this
+    val percentages = corruptLandSalePercentages.sorted()
+    if (percentages.isEmpty() || cheapestUnit <= 0) return this
+    if (cheapestUnit * percentages.first() / 100 >= corruptLandPricePerUnit.max() * CORRUPT_LAND_SALE_PROFIT) {
+        return this
+    }
+
+    val affordableCeiling = cheapestUnit *
+            (MAX_CORRUPT_LAND_SALE_PERCENTAGE - percentages.lastIndex) /
+            (100 * CORRUPT_LAND_SALE_PROFIT)
+    val units = corruptLandPricePerUnit.redistributedInto(cheapestUnit, affordableCeiling)
+    val lowestProfitable = ceilingDivision(units.max() * 100 * CORRUPT_LAND_SALE_PROFIT, units.min())
+    if (lowestProfitable + percentages.lastIndex > MAX_CORRUPT_LAND_SALE_PERCENTAGE) return this
+
+    return copy(
+        corruptLandPricePerUnit = units,
+        corruptLandSalePercentages = percentages.mapIndexed { index, percentage ->
+            maxOf(percentage, lowestProfitable + index)
+        },
+    )
+}
+
+private fun ceilingDivision(dividend: Long, divisor: Long): Long = (dividend + divisor - 1) / divisor
+
 internal fun GeneratedBalance.withBusinessTiersOnSalaryScale(): GeneratedBalance {
     if (salaries.isEmpty()) return this
     val unit = salaries.median()
@@ -418,6 +458,9 @@ internal const val MEDIUM_BUSINESS_MAX_UNITS = 1_500L
 internal const val BIG_BUSINESS_MIN_UNITS = 500L
 internal const val BIG_BUSINESS_MAX_UNITS = 15_000L
 internal const val MIN_SHARE_SECTORS = 3
+internal const val MIN_CORRUPT_LAND_SALE_PERCENTAGE = 150L
+internal const val MAX_CORRUPT_LAND_SALE_PERCENTAGE = 1_000L
+internal const val CORRUPT_LAND_SALE_PROFIT = 2L
 internal const val MIN_SCAM_RETURN = 150L
 internal const val MAX_SCAM_RETURN = 900L
 internal const val MAX_SCAM_SUCCESS = 20
