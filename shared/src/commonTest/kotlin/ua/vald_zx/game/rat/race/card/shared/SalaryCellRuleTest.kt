@@ -30,6 +30,36 @@ class SalaryCellRuleTest {
     }
 
     @Test
+    fun passingSalaryWithNegativeCashFlowDeductsItAutomatically() {
+        val initial = snapshot(
+            trackCells = track(landingOn = CoreCellTypes.Chance),
+            players = listOf(indebtedPlayer("first"), player("second")),
+        )
+        val before = initial.players.first { it.id == "first" }
+        assertTrue(before.cashFlow() < 0, "гравець має мати відємний кешфлов")
+
+        val moved = execute(initial, "move", GameCommand.MoveTo(2))
+
+        val after = moved.players.first { it.id == "first" }
+        assertNull(after.salaryPosition, "відємна получка списується без кліку")
+        assertEquals(before.cash + before.cashFlow(), after.cash)
+    }
+
+    @Test
+    fun landingOnSalaryWithNegativeCashFlowDeductsItButKeepsTheTurn() {
+        val initial = snapshot(players = listOf(indebtedPlayer("first"), player("second")))
+        val before = initial.players.first { it.id == "first" }
+
+        val moved = execute(initial, "move", GameCommand.MoveTo(1))
+
+        val after = moved.players.first { it.id == "first" }
+        assertNull(after.salaryPosition)
+        assertEquals(1, after.investmentPosition, "інвестиції лишаються доступними")
+        assertEquals(before.cash + before.cashFlow(), after.cash)
+        assertEquals("first", moved.board.activePlayerId)
+    }
+
+    @Test
     fun advancingTheTurnClearsSalaryAndInvestmentMarkers() {
         val moved = moveToSalary()
         val ended = execute(moved, "end", GameCommand.EndTurn("done"))
@@ -93,7 +123,10 @@ class SalaryCellRuleTest {
         return assertIs<GameExecution.Applied>(execution).result.snapshot
     }
 
-    private fun snapshot(trackCells: List<CellInstance> = track(landingOn = CoreCellTypes.Chance)): GameSnapshot {
+    private fun snapshot(
+        trackCells: List<CellInstance> = track(landingOn = CoreCellTypes.Chance),
+        players: List<Player> = listOf(player("first"), player("second")),
+    ): GameSnapshot {
         val board = Board(
             id = "board",
             name = "Board",
@@ -112,10 +145,7 @@ class SalaryCellRuleTest {
                 ),
             ),
         )
-        return GameSnapshot(
-            board = board,
-            players = listOf(player("first"), player("second")),
-        )
+        return GameSnapshot(board = board, players = players)
     }
 
     private fun track(landingOn: CellTypeId): List<CellInstance> = listOf(
@@ -131,5 +161,15 @@ class SalaryCellRuleTest {
         location = PlayerLocation(position = 0),
         card = PlayerCard(name = id, profession = "Engineer", salary = 5_000, rent = 800, food = 400),
         businesses = listOf(Business(BusinessType.WORK, "Робота", 0, 5_000)),
+    )
+
+    private fun indebtedPlayer(id: String) = Player(
+        id = id,
+        boardId = "board",
+        attrs = PlayerAttributes(color = 0),
+        location = PlayerLocation(position = 0),
+        card = PlayerCard(name = id, profession = "Engineer", salary = 1_000, rent = 5_000, food = 2_000),
+        businesses = listOf(Business(BusinessType.WORK, "Робота", 0, 1_000)),
+        cash = 100_000,
     )
 }

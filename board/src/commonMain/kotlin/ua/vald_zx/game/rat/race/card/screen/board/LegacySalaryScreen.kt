@@ -44,7 +44,7 @@ internal fun LegacySalaryScreen(vm: BoardViewModel) {
                 ElevatedButton(
                     modifier = Modifier.widthIn(min = 220.dp),
                     onClick = {
-                        bottomSheetNavigator.hide()
+                        if (fundRate == null) bottomSheetNavigator.hide()
                         vm.takeSalary()
                     },
                 ) {

@@ -208,6 +208,14 @@ private val PRIMARY_LLM_PROVIDER = LlmProviderDefaults(
 
 private val FREE_LLM_PROVIDERS = listOf(
     LlmProviderDefaults(
+        prefix = "CEREBRAS_",
+        apiKey = "CEREBRAS_API_KEY",
+        name = "cerebras",
+        url = "https://api.cerebras.ai/v1/chat/completions",
+        balanceModel = "gpt-oss-120b",
+        textModel = "gpt-oss-120b",
+    ),
+    LlmProviderDefaults(
         prefix = "GROQ_",
         apiKey = "GROQ_API_KEY",
         name = "groq",
@@ -217,20 +225,12 @@ private val FREE_LLM_PROVIDERS = listOf(
         textExtra = """{"reasoning_effort":"none"}""",
     ),
     LlmProviderDefaults(
-        prefix = "CEREBRAS_",
-        apiKey = "CEREBRAS_API_KEY",
-        name = "cerebras",
-        url = "https://api.cerebras.ai/v1/chat/completions",
-        balanceModel = "gpt-oss-120b",
-        textModel = "gpt-oss-120b",
-    ),
-    LlmProviderDefaults(
         prefix = "NVIDIA_",
         apiKey = "NVIDIA_API_KEY",
         name = "nvidia",
         url = "https://integrate.api.nvidia.com/v1/chat/completions",
         balanceModel = "meta/llama-3.3-70b-instruct",
-        textModel = "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+        textModel = "meta/llama-3.3-70b-instruct",
     ),
     LlmProviderDefaults(
         prefix = "OPENROUTER_",

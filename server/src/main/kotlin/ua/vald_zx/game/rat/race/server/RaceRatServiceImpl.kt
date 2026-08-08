@@ -617,7 +617,7 @@ class RaceRatServiceImpl(
     private suspend fun recoverStuckTurn() {
         val current = board()
         if (current.activePlayerId != playerId) return
-        val recovery = current.stuckTurnRecovery()
+        val recovery = current.stuckTurnRecovery(Storage.getPlayerOrNull(current.activePlayerId))
         val command = recovery.command() ?: return
         LOGGER.warn("Recovering stuck turn on board ${current.id} for $playerId with $recovery")
         val execution = gameApplicationService.execute(
@@ -643,9 +643,6 @@ class RaceRatServiceImpl(
         if (board().activePlayerId != playerId) return
         if (player().salaryPosition == null) return
         grantSalary()
-        if (player().investmentPosition != null) {
-            nextPlayer()
-        }
     }
 
     private suspend fun grantSalary() {

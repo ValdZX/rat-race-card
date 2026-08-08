@@ -20,11 +20,11 @@ class LlmSettingsTest {
 
         val providers = configuredLlmProviders(keys::get)
 
-        assertEquals(listOf("groq", "cerebras", "nvidia", "openrouter"), providers.map { it.name })
+        assertEquals(listOf("cerebras", "groq", "nvidia", "openrouter"), providers.map { it.name })
         assertEquals(
             listOf(
-                "https://api.groq.com/openai/v1/chat/completions",
                 "https://api.cerebras.ai/v1/chat/completions",
+                "https://api.groq.com/openai/v1/chat/completions",
                 "https://integrate.api.nvidia.com/v1/chat/completions",
                 "https://openrouter.ai/api/v1/chat/completions",
             ),
@@ -32,8 +32,8 @@ class LlmSettingsTest {
         )
         assertEquals(
             listOf(
-                "openai/gpt-oss-120b",
                 "gpt-oss-120b",
+                "openai/gpt-oss-120b",
                 "meta/llama-3.3-70b-instruct",
                 "nvidia/nemotron-3-super-120b-a12b:free",
             ),
@@ -41,9 +41,9 @@ class LlmSettingsTest {
         )
         assertEquals(
             listOf(
-                "qwen/qwen3.6-27b",
                 "gpt-oss-120b",
-                "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+                "qwen/qwen3.6-27b",
+                "meta/llama-3.3-70b-instruct",
                 "google/gemma-4-31b-it:free",
             ),
             providers.map { it.textModel },

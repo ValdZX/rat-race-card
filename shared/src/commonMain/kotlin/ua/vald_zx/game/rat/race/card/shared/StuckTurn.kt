@@ -6,7 +6,9 @@ enum class StuckTurnRecovery {
     ADVANCE_TURN,
 }
 
-fun Board.stuckTurnRecovery(): StuckTurnRecovery = when {
+fun Player.awaitsSalaryDecision(): Boolean = salaryPosition != null || investmentPosition != null
+
+fun Board.stuckTurnRecovery(activePlayer: Player? = null): StuckTurnRecovery = when {
     winnerId != null -> StuckTurnRecovery.NONE
     activePlayerId.isEmpty() -> StuckTurnRecovery.NONE
     diceRolling -> StuckTurnRecovery.COMPLETE_ROLL
@@ -15,6 +17,7 @@ fun Board.stuckTurnRecovery(): StuckTurnRecovery = when {
     takenCard != null -> StuckTurnRecovery.NONE
     pendingInteractions.isNotEmpty() -> StuckTurnRecovery.NONE
     auction != null -> StuckTurnRecovery.NONE
+    activePlayer?.awaitsSalaryDecision() == true -> StuckTurnRecovery.NONE
     else -> StuckTurnRecovery.ADVANCE_TURN
 }
 
