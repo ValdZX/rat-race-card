@@ -5,18 +5,25 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.stringResource
 import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.design.DesignIconButton
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
+import ua.vald_zx.game.rat.race.card.resources.Res
+import ua.vald_zx.game.rat.race.card.resources.collapse
 import ua.vald_zx.game.rat.race.card.screen.board.deck.front.BoardCardFront
 import ua.vald_zx.game.rat.race.card.shared.Auction
 
@@ -26,7 +33,10 @@ private const val EXIT_MS = 160
 internal val LocalAuctionPanelToggle = staticCompositionLocalOf<(Auction) -> Unit> { {} }
 
 @Composable
-fun BoxWithConstraintsScope.DesignCardDialog(vm: BoardViewModel) {
+fun BoxWithConstraintsScope.DesignCardDialog(
+    vm: BoardViewModel,
+    onCollapse: () -> Unit,
+) {
     val state by vm.uiState.collectAsState()
     val takenCard = state.board.takenCard
     var shownCard by remember { mutableStateOf(takenCard) }
@@ -100,5 +110,18 @@ fun BoxWithConstraintsScope.DesignCardDialog(vm: BoardViewModel) {
                 )
             }
         }
+    }
+    if (showAuction.not()) {
+        DesignIconButton(
+            icon = Icons.Default.KeyboardArrowDown,
+            contentDescription = stringResource(Res.string.collapse),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(12.dp)
+                .alpha(progress)
+                .testTag("card-collapse"),
+            onClick = onCollapse,
+        )
     }
 }

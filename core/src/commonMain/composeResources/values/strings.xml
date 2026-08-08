@@ -317,6 +317,7 @@
     <string name="new_design">New design (beta)</string>
     <string name="vivid_palette">Vivid palette</string>
     <string name="auto_take_card">Draw the card automatically when only one deck is available</string>
+    <string name="open_card">Open the card</string>
     <string name="you">YOU</string>
     <string name="cell">cell</string>
     <string name="available">available</string>

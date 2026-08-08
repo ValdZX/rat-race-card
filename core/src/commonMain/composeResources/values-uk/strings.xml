@@ -322,6 +322,7 @@
     <string name="new_design">Новий дизайн (бета)</string>
     <string name="vivid_palette">Яскрава палітра</string>
     <string name="auto_take_card">Тягнути картку автоматично, коли доступна лише одна колода</string>
+    <string name="open_card">Відкрити картку</string>
     <string name="you">ТИ</string>
     <string name="cell">клітинка</string>
     <string name="available">доступно</string>

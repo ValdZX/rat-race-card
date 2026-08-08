@@ -2,28 +2,47 @@ package ua.vald_zx.game.rat.race.card.screen.board.deck
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.BoxWithConstraintsScope
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.constraintlayout.compose.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import ua.vald_zx.game.rat.race.card.screen.design.DesignCardDialog
+import org.jetbrains.compose.resources.stringResource
+import ua.vald_zx.game.rat.race.card.components.clickableSingle
+import ua.vald_zx.game.rat.race.card.design.Design
+import ua.vald_zx.game.rat.race.card.design.DesignIconButton
+import ua.vald_zx.game.rat.race.card.design.DesignShapes
 import ua.vald_zx.game.rat.race.card.designV2Enabled
 import ua.vald_zx.game.rat.race.card.isVertical
 import ua.vald_zx.game.rat.race.card.logic.BoardViewModel
 import ua.vald_zx.game.rat.race.card.max
+import ua.vald_zx.game.rat.race.card.resources.Res
+import ua.vald_zx.game.rat.race.card.resources.collapse
+import ua.vald_zx.game.rat.race.card.resources.open_card
 import ua.vald_zx.game.rat.race.card.screen.board.INNER_LAYER_SCALE
 import ua.vald_zx.game.rat.race.card.screen.board.deck.front.BoardCardFront
 import ua.vald_zx.game.rat.race.card.screen.board.deckCoordinatesMap
 import ua.vald_zx.game.rat.race.card.screen.board.discardPilesCoordinatesMap
+import ua.vald_zx.game.rat.race.card.screen.design.DesignCardDialog
+import ua.vald_zx.game.rat.race.card.screen.design.icon
+import ua.vald_zx.game.rat.race.card.screen.design.shortLabel
+import ua.vald_zx.game.rat.race.card.screen.design.tone
+import ua.vald_zx.game.rat.race.card.shared.CardLink
 import ua.vald_zx.game.rat.race.card.shared.CoreTrackIds
 
 const val cardMoveAnimationDuration = 2000
@@ -33,16 +52,73 @@ fun BoxWithConstraintsScope.CardDialog(vm: BoardViewModel) {
     val state by vm.uiState.collectAsState()
     val interaction = state.board.pendingInteractions.firstOrNull { it.playerId == state.player.id }
     if (interaction != null && !cardInteractionRendererRegistry.hasSpecializedRenderer(interaction)) return
+    val takenCard = state.board.takenCard
+    var collapsed by remember { mutableStateOf(false) }
+    LaunchedEffect(takenCard) {
+        collapsed = false
+    }
+    if (takenCard != null && collapsed) {
+        CollapsedCardChip(card = takenCard, onExpand = { collapsed = false })
+        return
+    }
+    val onCollapse = { collapsed = true }
     if (designV2Enabled.value) {
-        DesignCardDialog(vm)
+        DesignCardDialog(vm, onCollapse)
     } else {
-        LegacyCardDialog(vm)
+        LegacyCardDialog(vm, onCollapse)
+    }
+}
+
+@Composable
+private fun BoxScope.CollapsedCardChip(
+    card: CardLink,
+    onExpand: () -> Unit,
+) {
+    val colors = Design.colors
+    val tone = card.type.tone()
+    Row(
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .padding(bottom = 12.dp)
+            .clip(DesignShapes.full)
+            .background(colors.scaffold.surface1)
+            .border(2.dp, tone.edge, DesignShapes.full)
+            .clickableSingle(
+                onClickLabel = stringResource(Res.string.open_card),
+                role = Role.Button,
+                onClick = onExpand,
+            )
+            .testTag("collapsed-card-chip")
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            painter = card.type.icon(),
+            contentDescription = null,
+            tint = tone.edge,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = card.type.shortLabel(),
+            style = Design.type.label,
+            color = colors.scaffold.onSurface,
+        )
+        Icon(
+            imageVector = Icons.Default.KeyboardArrowUp,
+            contentDescription = stringResource(Res.string.open_card),
+            tint = colors.scaffold.onSurfaceMuted,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 
 @OptIn(ExperimentalMotionApi::class)
 @Composable
-private fun BoxWithConstraintsScope.LegacyCardDialog(vm: BoardViewModel) {
+private fun BoxWithConstraintsScope.LegacyCardDialog(
+    vm: BoardViewModel,
+    onCollapse: () -> Unit,
+) {
     val state by vm.uiState.collectAsState()
     val takenCard = state.board.takenCard
     var showDialog by remember { mutableStateOf(false) }
@@ -245,6 +321,18 @@ private fun BoxWithConstraintsScope.LegacyCardDialog(vm: BoardViewModel) {
                 LaunchedEffect(Unit) {
                     showDialog = false
                 }
+            }
+            if (takenCard != null) {
+                DesignIconButton(
+                    icon = Icons.Default.KeyboardArrowDown,
+                    contentDescription = stringResource(Res.string.collapse),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .statusBarsPadding()
+                        .padding(12.dp)
+                        .testTag("card-collapse"),
+                    onClick = onCollapse,
+                )
             }
         }
     }
