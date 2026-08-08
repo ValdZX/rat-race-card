@@ -11,7 +11,7 @@ import ua.vald_zx.game.rat.race.card.shared.generatedLocales
 import ua.vald_zx.game.rat.race.card.shared.shopTiers
 
 internal fun GeneratedBalance.validate() {
-    salaries.requireAmounts("salaries", 10)
+    salaries.requireAmounts("salaries", MIN_SALARY_COUNT)
     rentPercentages.requirePercentages("rentPercentages")
     foodPercentages.requirePercentages("foodPercentages")
     clothPercentages.requirePercentages("clothPercentages")
@@ -176,12 +176,7 @@ internal fun GeneratedBalance.validate() {
         childBenefit,
         deputyCardPrice,
     ).all { it in 1..MAX_GENERATED_AMOUNT }) { "player economy values are invalid" }
-    check(currency.length in 1..MAX_CURRENCY_LENGTH) {
-        "currency \"$currency\" must be 1..$MAX_CURRENCY_LENGTH characters"
-    }
-    check(currency.none { it.isWhitespace() || it.isDigit() }) {
-        "currency \"$currency\" must not contain digits or whitespace"
-    }
+    currency.requireCurrency()
     check(taxInspectionBribePercentage == 20L) { "taxInspectionBribePercentage must be 20" }
     check(mediumRiskMultiplier in 2..20) { "mediumRiskMultiplier is invalid" }
     check(highRiskMultiplier in 2..20 && highRiskMultiplier > mediumRiskMultiplier) {
@@ -432,6 +427,15 @@ internal fun List<Long>.withinSaleSpread(salePercentages: List<Long>): List<Long
     }
 }
 
+internal fun String.requireCurrency() {
+    check(length in 1..MAX_CURRENCY_LENGTH) {
+        "currency \"$this\" must be 1..$MAX_CURRENCY_LENGTH characters"
+    }
+    check(none { it.isWhitespace() || it.isDigit() }) {
+        "currency \"$this\" must not contain digits or whitespace"
+    }
+}
+
 internal fun List<Long>.requireAmounts(name: String, minimumSize: Int = 3) {
     requireRange(name, 1L..MAX_GENERATED_AMOUNT, minimumSize)
 }
@@ -450,6 +454,7 @@ internal fun List<Int>.requireRange(name: String, range: IntRange) {
     check(isNotEmpty() && all { it in range }) { "$name contains an out-of-range value" }
 }
 
+internal const val MIN_SALARY_COUNT = 10
 internal const val MAX_CURRENCY_LENGTH = 4
 internal const val SMALL_BUSINESS_ENTRY_UNITS = 2L
 internal const val SMALL_BUSINESS_MAX_UNITS = 20L

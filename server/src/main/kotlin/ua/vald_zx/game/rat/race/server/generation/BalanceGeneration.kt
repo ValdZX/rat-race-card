@@ -2,7 +2,15 @@ package ua.vald_zx.game.rat.race.server.generation
 
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import ua.vald_zx.game.rat.race.card.shared.BoardCardType
 import ua.vald_zx.game.rat.race.card.shared.BoardGeneration
 import ua.vald_zx.game.rat.race.card.shared.BoardLayer
@@ -10,28 +18,72 @@ import ua.vald_zx.game.rat.race.card.shared.GeneratedBalance
 import ua.vald_zx.game.rat.race.card.shared.PlaceType
 import ua.vald_zx.game.rat.race.card.shared.dreamSlotIds
 
+internal data class GeneratedSalaryScale(
+    val salaries: List<Long>,
+    val currency: String,
+)
+
+internal fun llmBalanceGenerator(
+    onUsage: suspend (LlmTokenUsage) -> Unit = {},
+    onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
+    onRetry: suspend (LlmRetryWait) -> Unit = {},
+) = LlmBalanceGenerator(
+    chat = LlmSettings.balanceChat(balanceResponseFormat, onUsage, onQuota, onRetry),
+    scaleChat = LlmSettings.balanceChat(salaryScaleResponseFormat, onUsage, onQuota, onRetry),
+)
+
 internal class LlmBalanceGenerator(
-    private val chat: ChatCompletion = LlmSettings.balanceChat(),
+    private val chat: ChatCompletion,
+    private val scaleChat: ChatCompletion = chat,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun generate(world: BoardGeneration, deckSizes: Map<BoardCardType, Int>): GeneratedBalance {
+    suspend fun generate(world: BoardGeneration, deckSizes: Map<BoardCardType, Int>): GeneratedBalance =
+        generateEconomy(world, deckSizes, generateSalaryScale(world))
+
+    private suspend fun generateSalaryScale(world: BoardGeneration): GeneratedSalaryScale {
+        var lastError: Throwable? = null
+        repeat(MAX_SCALE_ATTEMPTS) { attempt ->
+            val answer = scaleChat.complete(SCALE_SYSTEM_PROMPT, scaleUserPrompt(world, lastError?.message))
+            if (answer == null) {
+                lastError = IllegalStateException("LLM did not return a salary scale")
+                balanceLogger.warn("Salary scale attempt ${attempt + 1} returned no response")
+                return@repeat
+            }
+            val scale = runCatching {
+                json.parseToJsonElement(answer.jsonObject()).jsonObject.toSalaryScale().also { it.validate() }
+            }
+                .onFailure {
+                    lastError = it
+                    balanceLogger.warn("Salary scale attempt ${attempt + 1} rejected: ${it.message}")
+                }
+                .getOrNull() ?: return@repeat
+            return scale
+        }
+        throw generationFailure("salary scale", lastError)
+    }
+
+    private suspend fun generateEconomy(
+        world: BoardGeneration,
+        deckSizes: Map<BoardCardType, Int>,
+        scale: GeneratedSalaryScale,
+    ): GeneratedBalance {
         var lastError: Throwable? = null
         repeat(MAX_BALANCE_ATTEMPTS) { attempt ->
-            val answer = chat.complete(systemPrompt(), userPrompt(world, deckSizes, lastError?.message))
+            val answer = chat.complete(SYSTEM_PROMPT, economyUserPrompt(world, deckSizes, scale, lastError?.message))
             if (answer == null) {
                 lastError = IllegalStateException("LLM did not return a balance")
                 balanceLogger.warn("Balance attempt ${attempt + 1} returned no response")
                 return@repeat
             }
             val generated = runCatching {
-                val response = answer.jsonObject()
-                val fields = json.parseToJsonElement(response).jsonObject.keys
-                val missingFields = generatedBalanceFields - fields
+                val response = json.parseToJsonElement(answer.jsonObject()).jsonObject
+                val anchored = JsonObject(response + scale.asJsonFields())
+                val missingFields = generatedBalanceFields - anchored.keys
                 check(missingFields.isEmpty()) {
                     "Balance response misses ${missingFields.sorted().joinToString()}"
                 }
-                json.decodeFromString<GeneratedBalance>(response)
+                json.decodeFromJsonElement<GeneratedBalance>(anchored)
                     .withoutDuplicateOptions()
                     .withBoundedAssetPrices()
                     .withBusinessTiersOnSalaryScale()
@@ -51,51 +103,42 @@ internal class LlmBalanceGenerator(
                 .isSuccess
             if (valid) return generated
         }
-        val reason = lastError?.message?.substringBefore('\n').orEmpty()
-        throw IllegalStateException(
-            "LLM failed to generate a valid balance${reason.takeIf { it.isNotBlank() }?.let { ": $it" }.orEmpty()}",
-            lastError,
+        throw generationFailure("balance", lastError)
+    }
+
+    private fun generationFailure(what: String, cause: Throwable?): IllegalStateException {
+        val reason = cause?.message?.substringBefore('\n').orEmpty()
+        return IllegalStateException(
+            "LLM failed to generate a valid $what${reason.takeIf { it.isNotBlank() }?.let { ": $it" }.orEmpty()}",
+            cause,
         )
     }
 
-    private fun systemPrompt() = buildString {
-        append("You design economic board games. Build a coherent economy for the described world. ")
-        append("Return one JSON object only, without markdown. All values must be positive, diverse integers suited to a long game. ")
-        append("Small, medium, and big businesses must form three distinct capital tiers. ")
-        append("Anchor every price to the salary scale: treat the median salary as one unit and express every price as a multiple of it. ")
-        append("The sum of the maximum household expense percentages must be below 95. ")
-        append("Weights are positive relative card frequencies. Light contextual humor is welcome in company names. ")
-        append("Generate unique world-specific companies with stable ASCII ids, short tickers, and natural names in every requested language.")
+    private fun scaleUserPrompt(world: BoardGeneration, previousError: String?) = buildString {
+        append(SCALE_PROMPT_PREFIX)
+        append(balanceWorldPrompt(world))
+        append(previousErrorPrompt(previousError))
+        append("Return the salary scale of this world as the JSON object described above.\n")
     }
 
-    private fun userPrompt(
+    private fun economyUserPrompt(
         world: BoardGeneration,
         deckSizes: Map<BoardCardType, Int>,
+        scale: GeneratedSalaryScale,
         previousError: String?,
     ) = buildString {
-        val described = listOfNotNull(
-            world.theme.ifBlank { null }?.let { "Theme: $it." },
-            world.locality.ifBlank { null }?.let { "Location: $it." },
-            world.epoch.ifBlank { null }?.let { "Era: $it." },
-        )
-        if (described.isEmpty()) {
-            appendLine("World: an ordinary modern city.")
-        } else {
-            described.forEach(::appendLine)
-        }
-        append("World seed: ${world.seed}.\n")
-        append("Currency and the scale of salaries, prices, land, share bundles, and profits must fit this world naturally.\n")
-        append(GAME_MECHANICS)
-        append(boardLayoutPrompt())
-        append(tempoPrompt())
+        append(ECONOMY_PROMPT_PREFIX)
+        append(balanceWorldPrompt(world))
+        append(salaryScalePrompt(scale))
         append(deckSizesPrompt(deckSizes))
-        append(BALANCE_REQUIREMENTS)
-        previousError?.takeIf { it.isNotBlank() }?.let { error ->
-            append("Previous response rejected: ${error.substringBefore('\n')}. Fix it in a new complete response.\n")
-        }
-        append("Return every field in this structure:\n")
-        append(BALANCE_SCHEMA)
+        append(previousErrorPrompt(previousError))
+        append("Return the economy of this world as the JSON object described above, with every field present.\n")
     }
+
+    private fun previousErrorPrompt(previousError: String?) =
+        previousError?.takeIf { it.isNotBlank() }?.let { error ->
+            "Previous response rejected: ${error.substringBefore('\n')}. Fix it in a new complete response.\n"
+        }.orEmpty()
 
     private fun String.jsonObject(): String {
         val start = indexOf('{')
@@ -105,6 +148,74 @@ internal class LlmBalanceGenerator(
     }
 }
 
+private fun JsonObject.toSalaryScale(): GeneratedSalaryScale {
+    val salaries = checkNotNull(this["salaries"]) { "Salary scale response misses salaries" }
+        .jsonArray.map { it.jsonPrimitive.long }
+    val currency = checkNotNull(this["currency"]?.jsonPrimitive?.contentOrNull) {
+        "Salary scale response misses currency"
+    }
+    return GeneratedSalaryScale(salaries.distinct().sorted(), currency)
+}
+
+private fun GeneratedSalaryScale.validate() {
+    salaries.requireAmounts("salaries", MIN_SALARY_COUNT)
+    currency.requireCurrency()
+}
+
+private fun GeneratedSalaryScale.asJsonFields() = mapOf(
+    "salaries" to JsonArray(salaries.map(::JsonPrimitive)),
+    "currency" to JsonPrimitive(currency),
+)
+
+private val SCALE_PROMPT_PREFIX: String by lazy {
+    buildString {
+        append(SCALE_REQUIREMENTS)
+        append("Return exactly this structure:\n")
+        appendLine(SCALE_SCHEMA)
+    }
+}
+
+private val ECONOMY_PROMPT_PREFIX: String by lazy {
+    buildString {
+        append(GAME_MECHANICS)
+        append(boardLayoutPrompt())
+        append(tempoPrompt())
+        append(BALANCE_REQUIREMENTS)
+        append("Return every field in this structure:\n")
+        appendLine(BALANCE_SCHEMA)
+    }
+}
+
+private fun balanceWorldPrompt(world: BoardGeneration) = buildString {
+    val described = listOfNotNull(
+        world.theme.ifBlank { null }?.let { "Theme: $it." },
+        world.locality.ifBlank { null }?.let { "Location: $it." },
+        world.epoch.ifBlank { null }?.let { "Era: $it." },
+    )
+    if (described.isEmpty()) {
+        appendLine("World: an ordinary modern city.")
+    } else {
+        described.forEach(::appendLine)
+    }
+    append("World seed: ${world.seed}.\n")
+}
+
+private fun salaryScalePrompt(scale: GeneratedSalaryScale) = buildString {
+    val unit = scale.salaries.median()
+    append("The salary scale of this world is already fixed; price everything against it:\n")
+    append("- Salaries: ${scale.salaries.sorted().joinToString()} ${scale.currency}.\n")
+    append("- One unit is the median salary: $unit ${scale.currency}. Every price is a round multiple of it.\n")
+    append("- smallBusinessPrices: at most ${unit * SMALL_BUSINESS_MAX_UNITS}, ")
+    append("the cheapest at most ${unit * SMALL_BUSINESS_ENTRY_UNITS} so the first business is reachable early.\n")
+    append("- mediumBusinessPrices: ${unit * MEDIUM_BUSINESS_MIN_UNITS}..${unit * MEDIUM_BUSINESS_MAX_UNITS}, ")
+    append("the cheapest strictly above the dearest small business.\n")
+    append("- bigBusinessPrices: ${unit * BIG_BUSINESS_MIN_UNITS}..${unit * BIG_BUSINESS_MAX_UNITS}, ")
+    append("the cheapest strictly above the cheapest medium business.\n")
+    append("- The lowest salary ${scale.salaries.min()} must still cover its own rent, food, cloth, ")
+    append("transport, and phone percentages.\n")
+}
+
+private const val MAX_SCALE_ATTEMPTS = 3
 private const val MAX_BALANCE_ATTEMPTS = 3
 private const val AVERAGE_STEP = 3.5
 private val balanceLogger = KtorSimpleLogger("BalanceLlm")
@@ -156,8 +267,22 @@ private val generatedBalanceFields = setOf(
     "victoryDreamRequired",
     "victoryPlaneRequired",
     "victoryEstateRequired",
-    "currency",
 )
+
+private val SCALE_SYSTEM_PROMPT = buildString {
+    append("You design economic board games. Choose the money scale of the described world. ")
+    append("Return one JSON object only, without markdown. ")
+    append("Salary is the player's recurring income and the unit every other price will be derived from.")
+}
+
+private val SYSTEM_PROMPT = buildString {
+    append("You design economic board games. Build a coherent economy for the described world. ")
+    append("Return one JSON object only, without markdown. All values must be positive, diverse integers suited to a long game. ")
+    append("Small, medium, and big businesses must form three distinct capital tiers. ")
+    append("The sum of the maximum household expense percentages must be below 95. ")
+    append("Weights are positive relative card frequencies. Light contextual humor is welcome in company names. ")
+    append("Generate unique world-specific companies with stable ASCII ids, short tickers, and natural names in every requested language.")
+}
 
 private fun boardLayoutPrompt() = buildString {
     append("Fixed board layout; account for it in card frequencies and amounts:\n")
@@ -181,8 +306,6 @@ private fun tempoPrompt() = buildString {
         append(".\n")
     }
     append("- Players start with no cash; salary is their first income.\n")
-    append("- The median salary is the economy's unit: every price should be a round multiple of it, so prices never jump scale.\n")
-    append("- The cheapest small business must be reachable within a few salary passes; early turns must be meaningful.\n")
 }
 
 private fun deckSizesPrompt(deckSizes: Map<BoardCardType, Int>) = buildString {
@@ -193,18 +316,30 @@ private fun deckSizesPrompt(deckSizes: Map<BoardCardType, Int>) = buildString {
     }
 }
 
+private val SCALE_REQUIREMENTS = """
+Players earn a salary once per lap and start with no cash. Every other price in this economy will be derived from these salaries, so their scale must fit this world naturally.
+Required constraints:
+- salaries: at least $MIN_SALARY_COUNT unique positive amounts, from a modest profession to a wealthy one, all in the same currency.
+- The lowest salary must comfortably cover its own rent, food, cloth, transport, and phone, which together take up to 90 percent of it, so keep it well above a handful of coins.
+- currency: the short symbol or abbreviation money is written with in this world, 1..$MAX_CURRENCY_LENGTH characters, matching the era and the location. Prefer a real symbol where the setting has one (${'$'}, €, £, ₴, ¥); invent a fitting short one for a fictional or historical setting. No digits, no spaces, no explanatory words.
+""".trimIndent() + "\n"
+
+private val SCALE_SCHEMA = """
+{"salaries":[...],"currency":"..."}
+""".trimIndent()
+
 private val GAME_MECHANICS = """
 Mechanics the balance must support:
 - On the inner circle, players receive salary; buy small/medium businesses, land, real estate, goods, and shares; and pay general or conditional expenses.
 - A profession defines gender, salary, and recurring expenses. Gender, marriage, children, and owned assets affect events and conditional payers.
 - Chance cards sell shares in bundles. A regular market event lets owners sell any quantity or decline.
-- Some market events force every owner to sell all shares of one company. forcedShareSalePrices are always below every sharePrices purchase price: a loss, but never zero.
+- Some market events force every owner to sell all shares of one company at forcedShareSalePrices: a loss, but never zero.
 - Corrupt deals from Chance require deputies and are substantially better than regular assets. A corrupt business yields either recurring profit or one immediate payout, never both. Market corruption events let owners sell previously acquired recurring corrupt businesses or corrupt land at a profit; they never sell a new asset to the player.
 - Business extension raises one small business's recurring profit. Reelection changes the deputies.
 - Every company belongs to one sector. A market crash event marks down every holding at once: companies in the struck sector lose crashSectorDropPercentages, all other companies lose the smaller crashMarketDropPercentages. Nobody may opt out, so a concentrated portfolio is punished and a spread one survives.
 - A Chance scam promises an implausible immediate return for an upfront payment, but pays out only scamSuccessPercentage of the time. It must be a losing bet on average; players are meant to learn to refuse it.
 - Deposits yield depositRate percent income; the credit line adds loanRate percent expense. Anything borrowed past loanLimit becomes a payday loan at paydayRate, which must be clearly punitive: at least twice loanRate.
-- Deposits yield depositRate percent income; loans add loanRate percent expense. Children, cars, apartments, houses, yachts, and planes add their recurring costs.
+- Children, cars, apartments, houses, yachts, and planes add their recurring costs.
 - Marriage marries the player; a man pays marriageCost. Child adds a child to a woman or married man, pays childBenefit, and raises recurring expenses.
 - Divorce ends marriage; a man keeps divorceAssetRetentionPercentage of his cash and deposit but loses his children. Bankruptcy removes a random business, resignation removes the job, and rest skips restTurnCount turns.
 - Passing Salary pays current cash flow. Salary spaces offer the descending salaryFundRates. Start capitalizes funds at their own rates into fundBaseRate; landing exactly uses fundStartRate.
@@ -216,11 +351,6 @@ Mechanics the balance must support:
 
 private val BALANCE_REQUIREMENTS = """
 Required constraints:
-- salaries: at least 10 unique amounts.
-- Anchor every price to the salary scale. One unit is the median salary: sort the salaries ascending and take the middle value, or the average of the two middle values when their count is even. State that number to yourself before pricing anything, then express every price below as a round multiple of it, so the economy never mixes scales.
-- smallBusinessPrices: every value at most $SMALL_BUSINESS_MAX_UNITS units, and the cheapest value at most $SMALL_BUSINESS_ENTRY_UNITS units so the first business is reachable after a few salary passes.
-- mediumBusinessPrices: every value between $MEDIUM_BUSINESS_MIN_UNITS and $MEDIUM_BUSINESS_MAX_UNITS units, and the cheapest medium business costs strictly more than the dearest small one.
-- bigBusinessPrices: every value between $BIG_BUSINESS_MIN_UNITS and $BIG_BUSINESS_MAX_UNITS units, and the cheapest big business costs strictly more than the cheapest medium one.
 - shares: at least 6 unique companies; every id, ticker, uk name, and en name is unique.
 - Every share carries a sector from exactly this list: core.energy, core.industry, core.consumer, core.realty, core.agro, core.tech. Use at least 3 different sectors, and never put all but one company in the same sector.
 - scamPromisedReturnPercentages: 150..900, the promised payout as a percentage of the amount staked. scamSuccessPercentage: 1..20.
@@ -234,20 +364,17 @@ Required constraints:
 - shoppingPrices medians strictly increase in this order: ANIMAL < AUTO < APARTMENT < HOUSE < YACHT < FLY.
 - An animal is a meaningful but cheapest shop purchase and adds animalRecurringCost each turn.
 - landPricePerUnit is the price of ONE area unit. Total land price = area × unit price, so keep it low relative to businesses.
-- eventLandPricePercentages: 30..180, the market sale price as a percentage of landPricePerUnit. Below 100 is a loss; above 100 is profitable.
-- Land sales are optional, so max landPricePerUnit × max eventLandPricePercentages / 100 <= min landPricePerUnit × 3. Keep unit prices narrow.
-- estatePrices is one Chance-card property's purchase price. estateSalePercentages: 30..180, the market sale price as a percentage of the same base.
-- Real estate follows the same cap: max estatePrices × max estateSalePercentages / 100 <= min estatePrices × 3. Example: if min price is 20000 and max sale percentage is 140, max price is 42857.
+- estatePrices is one Chance-card property's purchase price. corruptLandPricePerUnit works like landPricePerUnit.
+- eventLandPricePercentages and estateSalePercentages: 30..180, the market sale price as a percentage of the purchase price. Below 100 is a loss; above 100 is profitable.
+- Keep both price bands narrow: within landPricePerUnit and within estatePrices, the dearest is at most three times the cheapest.
 - randomJobProfits is immediate income, not an asset price. Keep it well below estatePrices so random jobs do not trivialize real estate.
-- corruptLandPricePerUnit works the same way for corrupt land.
-- Every corruptLandAreas value must be larger than every regular landAreas value, so saved corrupt land remains distinguishable from regular land.
+- Every corruptLandAreas value is larger than every landAreas value.
 - corruptBusinessSalePercentages: 200..1000. A market event pays this percentage of the selected corrupt business's purchase price.
-- corruptLandSalePercentages: 150..1000. The lowest generated corrupt-land market price must be at least twice the highest corruptLandPricePerUnit, so every such sale is substantially profitable.
+- corruptLandSalePercentages: 150..1000, and the lowest must pay at least twice the highest corruptLandPricePerUnit.
 - strayAnimalPercentage: 1..30, the share of expense cards where the player pays for and adopts a stray or rescued animal.
 - dreamMinPrice and dreamMaxPrice bound ${dreamSlotIds.size} dreams; the server distributes the others evenly between them.
 - dreamMinPrice <= victoryMinimumAccountBalance, otherwise a required dream may be unaffordable.
 - forcedShareSalePrices: at least 3 unique positive prices, each below min sharePrices.
-- currency: the short symbol or abbreviation money is written with in this world, 1..$MAX_CURRENCY_LENGTH characters, matching the era and the location. Prefer a real symbol where the setting has one (\u0024, \u20ac, \u00a3, \u20b4, \u00a5); invent a fitting short one for a fictional or historical setting. No digits, no spaces, no explanatory words.
 - rentPercentages: 10..30; foodPercentages: 5..20; clothPercentages: 2..10; transportPercentages: 2..15; phonePercentages: 1..5.
 - smallBusinessReturnPercentages: 1..200; mediumBusinessReturnPercentages: 1..100; bigBusinessReturnPercentages: 1..60.
 - corruptBusinessReturnPercentages: 1..500, and its minimum must be at least twice the maximum bigBusinessReturnPercentages. corruptOneTimeReturnPercentages: 300..5000.
@@ -255,7 +382,6 @@ Required constraints:
 - corruptDeputyPercentage and corruptOneTimePercentage: 1..99.
 - forcedShareSalePercentage: 5..40; forced sales should matter without dominating the deck.
 - depositRate: 1..20; loanRate: 1..50.
-- The lowest salary must cover rent+food+cloth+transport+phone, calculated as percentages and rounded to tens; tiny salaries may fail.
 - babyRecurringCost, carRecurringCost, apartmentRecurringCost, houseRecurringCost, yachtRecurringCost, planeRecurringCost, animalRecurringCost, marriageCost, childBenefit, and deputyCardPrice are positive amounts consistent with salaries and asset prices.
 - taxInspectionBribePercentage is exactly 20.
 - mediumRiskMultiplier: 2..20; highRiskMultiplier: 2..20 and greater than mediumRiskMultiplier.
@@ -272,7 +398,6 @@ Required constraints:
 
 private val BALANCE_SCHEMA = """
 {
-  "salaries":[...],
   "rentPercentages":[...], "foodPercentages":[...], "clothPercentages":[...],
   "transportPercentages":[...], "phonePercentages":[...],
   "smallBusinessPrices":[...], "smallBusinessReturnPercentages":[...],
@@ -308,7 +433,6 @@ private val BALANCE_SCHEMA = """
   "outerCircleMinimumCashFlow":50000, "outerCircleMinimumAccountBalance":200000,
   "outerCircleApartmentRequired":true, "outerCircleCarRequired":true,
   "victoryMinimumAccountBalance":10000000, "victoryDreamRequired":true,
-  "victoryPlaneRequired":true, "victoryEstateRequired":true,
-  "currency":"..."
+  "victoryPlaneRequired":true, "victoryEstateRequired":true
 }
 """.trimIndent()

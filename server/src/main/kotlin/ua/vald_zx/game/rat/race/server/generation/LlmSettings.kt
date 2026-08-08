@@ -30,12 +30,14 @@ internal object LlmSettings {
     }
 
     fun balanceChat(
+        responseFormat: JsonObject? = null,
         onUsage: suspend (LlmTokenUsage) -> Unit = {},
         onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
         onRetry: suspend (LlmRetryWait) -> Unit = {},
     ): ChatCompletion = pool(
         model = { it.balanceModel },
         extraBody = { it.balanceExtra },
+        responseFormat = responseFormat,
         maxOutputTokens = MAX_BALANCE_COMPLETION_TOKENS,
         onUsage = onUsage,
         onQuota = onQuota,
@@ -74,6 +76,7 @@ internal object LlmSettings {
     private fun pool(
         model: (LlmProviderSettings) -> String,
         extraBody: (LlmProviderSettings) -> JsonObject?,
+        responseFormat: JsonObject? = null,
         maxOutputTokens: Int,
         onUsage: suspend (LlmTokenUsage) -> Unit,
         onQuota: suspend (LlmQuotaSnapshot) -> Unit,
@@ -88,6 +91,7 @@ internal object LlmSettings {
                     provider = provider,
                     model = model(provider),
                     extraBody = extraBody(provider),
+                    responseFormat = responseFormat,
                     maxOutputTokens = maxOutputTokens,
                     onUsage = onUsage,
                     onQuota = onQuota,

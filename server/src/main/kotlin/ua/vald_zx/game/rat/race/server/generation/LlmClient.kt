@@ -131,6 +131,7 @@ internal class HttpChatCompletion(
     private val provider: LlmProviderSettings,
     private val model: String,
     private val extraBody: JsonObject? = null,
+    private val responseFormat: JsonObject? = null,
     private val maxOutputTokens: Int = MAX_BALANCE_COMPLETION_TOKENS,
     private val onUsage: suspend (LlmTokenUsage) -> Unit = {},
     private val onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
@@ -146,7 +147,7 @@ internal class HttpChatCompletion(
     private var extrasRejected = false
 
     override suspend fun complete(system: String, user: String): String? = withContext(Dispatchers.IO) {
-        var withExtras = extraBody != null && !extrasRejected
+        var withExtras = (extraBody != null || responseFormat != null) && !extrasRejected
         var failedAttempts = 0
         while (true) {
             val payload = payload(system, user, withExtras)
@@ -234,7 +235,10 @@ internal class HttpChatCompletion(
             add(message("system", system))
             add(message("user", user))
         })
-        if (withExtras) extraBody?.forEach { (field, value) -> put(field, value) }
+        if (withExtras) {
+            extraBody?.forEach { (field, value) -> put(field, value) }
+            responseFormat?.let { put("response_format", it) }
+        }
     }
 
     private fun message(role: String, content: String) = buildJsonObject {

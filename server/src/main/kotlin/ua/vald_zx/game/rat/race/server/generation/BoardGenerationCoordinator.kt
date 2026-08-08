@@ -145,7 +145,7 @@ internal object BoardGenerationCoordinator {
                 runCatching { balance.validate() }.isSuccess
             }
             val balance = cachedBalance
-                ?: LlmBalanceGenerator(LlmSettings.balanceChat(usageRecorder, quotaRecorder, retryRecorder))
+                ?: llmBalanceGenerator(usageRecorder, quotaRecorder, retryRecorder)
                     .generate(initial.generation, deckSizes)
             checkpoint(boardId, BoardGenerationStage.BALANCE, 1, totalUnits) {
                 copy(

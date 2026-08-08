@@ -40,22 +40,103 @@ class BalanceLlmTest {
         val generated = LlmBalanceGenerator(chat).generate(world, deckSizes)
 
         assertEquals(testBalance(), generated)
-        assertTrue(prompts.single().contains("підводна цивілізація"))
-        assertTrue(prompts.single().contains("Маріанська западина"))
-        assertTrue(prompts.single().contains("2600 рік"))
-        assertTrue(prompts.single().contains("shares"))
-        assertTrue(prompts.single().contains("forcedShareSalePrices"))
-        assertTrue(prompts.single().contains("force every owner to sell all shares"))
-        assertTrue(prompts.single().contains("INNER:"))
-        assertTrue(prompts.single().contains("OUTER:"))
-        assertTrue(prompts.single().contains("victoryMinimumAccountBalance"))
-        assertTrue(prompts.single().contains("childBenefit"))
-        assertTrue(prompts.single().contains("deputyCardPrice"))
-        assertTrue(prompts.single().contains("taxInspectionBribePercentage"))
-        assertTrue(prompts.single().contains("Market corruption events let owners sell"))
-        assertTrue(prompts.single().contains("corruptBusinessSalePercentages"))
-        assertTrue(prompts.single().contains("corruptLandSalePercentages"))
-        assertTrue(prompts.single().contains("salaryFundRates"))
+        assertEquals(2, prompts.size)
+        val (scalePrompt, economyPrompt) = prompts
+        assertTrue(scalePrompt.contains("підводна цивілізація"))
+        assertTrue(scalePrompt.contains("Маріанська западина"))
+        assertTrue(scalePrompt.contains("2600 рік"))
+        assertTrue(scalePrompt.contains("salaries"))
+        assertTrue(scalePrompt.contains("currency"))
+        assertTrue(economyPrompt.contains("підводна цивілізація"))
+        assertTrue(economyPrompt.contains("shares"))
+        assertTrue(economyPrompt.contains("forcedShareSalePrices"))
+        assertTrue(economyPrompt.contains("force every owner to sell all shares"))
+        assertTrue(economyPrompt.contains("INNER:"))
+        assertTrue(economyPrompt.contains("OUTER:"))
+        assertTrue(economyPrompt.contains("victoryMinimumAccountBalance"))
+        assertTrue(economyPrompt.contains("childBenefit"))
+        assertTrue(economyPrompt.contains("deputyCardPrice"))
+        assertTrue(economyPrompt.contains("taxInspectionBribePercentage"))
+        assertTrue(economyPrompt.contains("Market corruption events let owners sell"))
+        assertTrue(economyPrompt.contains("corruptBusinessSalePercentages"))
+        assertTrue(economyPrompt.contains("corruptLandSalePercentages"))
+        assertTrue(economyPrompt.contains("salaryFundRates"))
+    }
+
+    @Test
+    fun theEconomyPromptCarriesTheSalaryScaleAsLiteralAmounts() = runTest {
+        val prompts = mutableListOf<String>()
+        val chat = ChatCompletion { _, user ->
+            prompts += user
+            balanceJson.encodeToString(testBalance())
+        }
+
+        LlmBalanceGenerator(chat).generate(world, deckSizes)
+
+        val economyPrompt = prompts.last()
+        assertTrue(economyPrompt.contains("One unit is the median salary: 700"), economyPrompt)
+        assertTrue(economyPrompt.contains("smallBusinessPrices: at most 14000, the cheapest at most 1400"), economyPrompt)
+        assertTrue(economyPrompt.contains("mediumBusinessPrices: 10500..1050000"), economyPrompt)
+        assertTrue(economyPrompt.contains("bigBusinessPrices: 350000..10500000"), economyPrompt)
+        assertTrue(!economyPrompt.contains("\"salaries\":[...]"), "the economy call no longer asks for salaries")
+    }
+
+    @Test
+    fun everythingWorldSpecificComesAfterTheReusableStaticPrefix() = runTest {
+        val prompts = mutableListOf<String>()
+        val chat = ChatCompletion { _, user ->
+            prompts += user
+            balanceJson.encodeToString(testBalance())
+        }
+        val otherWorld = world.copy(theme = "місто на кільцях Сатурна", locality = "Титан", seed = 7)
+
+        LlmBalanceGenerator(chat).generate(world, deckSizes)
+        LlmBalanceGenerator(chat).generate(otherWorld, deckSizes)
+
+        val (firstScale, firstEconomy, secondScale, secondEconomy) = prompts
+        assertTrue(firstEconomy.startsWith("Mechanics the balance must support:"), firstEconomy.take(80))
+        assertTrue(
+            firstEconomy.indexOf("Theme:") > firstEconomy.indexOf("\"victoryEstateRequired\""),
+            "the world description must follow the schema, not precede it",
+        )
+        val sharedEconomyPrefix = firstEconomy.commonPrefixWith(secondEconomy)
+        val sharedScalePrefix = firstScale.commonPrefixWith(secondScale)
+        assertTrue(sharedEconomyPrefix.length > 9_000, "shared economy prefix: ${sharedEconomyPrefix.length}")
+        assertTrue(sharedScalePrefix.length > 800, "shared scale prefix: ${sharedScalePrefix.length}")
+    }
+
+    @Test
+    fun aSalaryScaleWithTooFewOptionsIsRegenerated() = runTest {
+        var attempts = 0
+        val chat = ChatCompletion { _, _ ->
+            attempts += 1
+            if (attempts == 1) """{"salaries":[300,400,500],"currency":"₴"}"""
+            else balanceJson.encodeToString(testBalance())
+        }
+
+        assertEquals(testBalance(), LlmBalanceGenerator(chat).generate(world, deckSizes))
+        assertEquals(3, attempts)
+    }
+
+    @Test
+    fun theEconomyAnswerCannotOverrideTheFixedSalaryScale() = runTest {
+        val scaleSalaries = testBalance().salaries
+        var attempts = 0
+        val chat = ChatCompletion { _, _ ->
+            attempts += 1
+            if (attempts == 1) {
+                """{"salaries":${scaleSalaries.joinToString(",", "[", "]")},"currency":"₴"}"""
+            } else {
+                balanceJson.encodeToString(
+                    testBalance().copy(salaries = listOf(1, 2, 3), currency = "€")
+                )
+            }
+        }
+
+        val generated = LlmBalanceGenerator(chat).generate(world, deckSizes)
+
+        assertEquals(scaleSalaries, generated.salaries)
+        assertEquals("₴", generated.currency)
     }
 
     @Test
@@ -126,11 +207,11 @@ class BalanceLlmTest {
         var attempts = 0
         val chat = ChatCompletion { _, _ ->
             attempts += 1
-            if (attempts == 1) "{}" else balanceJson.encodeToString(testBalance())
+            if (attempts == 2) "{}" else balanceJson.encodeToString(testBalance())
         }
 
         assertEquals(testBalance(), LlmBalanceGenerator(chat).generate(world, deckSizes))
-        assertEquals(2, attempts)
+        assertEquals(3, attempts)
     }
 
     @Test
@@ -139,11 +220,11 @@ class BalanceLlmTest {
         val invalid = testBalance().copy(shares = testBalance().shares.take(5))
         val chat = ChatCompletion { _, user ->
             prompts += user
-            balanceJson.encodeToString(if (prompts.size == 1) invalid else testBalance())
+            balanceJson.encodeToString(if (prompts.size == 2) invalid else testBalance())
         }
 
         assertEquals(testBalance(), LlmBalanceGenerator(chat).generate(world, deckSizes))
-        assertTrue(prompts[1].contains("shares has too few instruments"))
+        assertTrue(prompts[2].contains("shares has too few instruments"))
     }
 
     @Test
@@ -305,11 +386,11 @@ class BalanceLlmTest {
         val withoutChildBenefit = JsonObject(complete - "childBenefit").toString()
         val chat = ChatCompletion { _, _ ->
             attempts += 1
-            if (attempts == 1) withoutChildBenefit else complete.toString()
+            if (attempts <= 2) withoutChildBenefit else complete.toString()
         }
 
         assertEquals(testBalance(), LlmBalanceGenerator(chat).generate(world, deckSizes))
-        assertEquals(2, attempts)
+        assertEquals(3, attempts)
     }
 
     @Test
