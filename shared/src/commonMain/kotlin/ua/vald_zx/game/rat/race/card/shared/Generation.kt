@@ -57,6 +57,7 @@ data class BoardGenerationProgress(
     val retryAtEpochMs: Long? = null,
     val retryProvider: String = "",
     val requestCount: Long = 0,
+    val failedRequestCount: Long = 0,
     val quotaType: GenerationQuotaType = GenerationQuotaType.UNKNOWN,
     val quotaLimit: Long = 0,
     val quotaUsed: Long = 0,

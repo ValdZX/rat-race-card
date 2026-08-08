@@ -944,6 +944,162 @@ class LlmTextGeneratorTest {
             start()
         }
 
+    @Test
+    fun anEmptyCompletionIsRetriedInsteadOfFailing() = runTest {
+        val calls = AtomicInteger()
+        val server = HttpServer.create(InetSocketAddress(0), 0).apply {
+            createContext("/chat") { exchange ->
+                val attempt = calls.incrementAndGet()
+                val answer = if (attempt <= 2) {
+                    """{"choices":[]}"""
+                } else {
+                    """{"choices":[{"message":{"content":"completed"}}]}"""
+                }
+                val bytes = answer.encodeToByteArray()
+                exchange.sendResponseHeaders(200, bytes.size.toLong())
+                exchange.responseBody.use { it.write(bytes) }
+            }
+            start()
+        }
+        try {
+            val chat = HttpChatCompletion(
+                provider = testProvider(server.address.port, "openrouter"),
+                model = "model",
+                wait = {},
+            )
+
+            assertEquals("completed", chat.complete("system", "user"))
+            assertEquals(3, calls.get())
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun anEmptyCompletionFailsAfterRetriesAreExhausted() = runTest {
+        val calls = AtomicInteger()
+        val server = HttpServer.create(InetSocketAddress(0), 0).apply {
+            createContext("/chat") { exchange ->
+                calls.incrementAndGet()
+                val bytes = """{"choices":[]}""".encodeToByteArray()
+                exchange.sendResponseHeaders(200, bytes.size.toLong())
+                exchange.responseBody.use { it.write(bytes) }
+            }
+            start()
+        }
+        try {
+            val chat = HttpChatCompletion(
+                provider = testProvider(server.address.port, "openrouter"),
+                model = "model",
+                wait = {},
+            )
+
+            val failure = assertFailsWith<LlmProviderException> { chat.complete("system", "user") }
+
+            assertTrue("returned no choices" in failure.message.orEmpty())
+            assertEquals(3, calls.get())
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun failedAttemptsAreReportedToTheCallback() = runTest {
+        val failures = AtomicInteger()
+        val calls = AtomicInteger()
+        val server = HttpServer.create(InetSocketAddress(0), 0).apply {
+            createContext("/chat") { exchange ->
+                calls.incrementAndGet()
+                val bytes = "{}".encodeToByteArray()
+                exchange.sendResponseHeaders(503, bytes.size.toLong())
+                exchange.responseBody.use { it.write(bytes) }
+            }
+            start()
+        }
+        try {
+            val chat = HttpChatCompletion(
+                provider = testProvider(server.address.port, "test"),
+                model = "model",
+                onFailed = { failures.incrementAndGet() },
+                wait = {},
+            )
+
+            assertFailsWith<LlmProviderException> { chat.complete("system", "user") }
+
+            assertEquals(3, calls.get())
+            assertEquals(3, failures.get())
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun emptyCompletionsAreReportedAsFailedAttempts() = runTest {
+        val failures = AtomicInteger()
+        val calls = AtomicInteger()
+        val server = HttpServer.create(InetSocketAddress(0), 0).apply {
+            createContext("/chat") { exchange ->
+                calls.incrementAndGet()
+                val bytes = """{"choices":[]}""".encodeToByteArray()
+                exchange.sendResponseHeaders(200, bytes.size.toLong())
+                exchange.responseBody.use { it.write(bytes) }
+            }
+            start()
+        }
+        try {
+            val chat = HttpChatCompletion(
+                provider = testProvider(server.address.port, "openrouter"),
+                model = "model",
+                onFailed = { failures.incrementAndGet() },
+                wait = {},
+            )
+
+            assertFailsWith<LlmProviderException> { chat.complete("system", "user") }
+
+            assertEquals(3, calls.get())
+            assertEquals(3, failures.get())
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun aRateLimitCountsAsAFailedRequest() = runTest {
+        val failures = AtomicInteger()
+        val server = rateLimitedServer {}
+        try {
+            val chat = HttpChatCompletion(
+                provider = testProvider(server.address.port, "test"),
+                model = "model",
+                onFailed = { failures.incrementAndGet() },
+            )
+
+            assertFailsWith<LlmRateLimitException> { chat.complete("system", "user") }
+
+            assertEquals(1, failures.get())
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun aSuccessfulRequestDoesNotReportAFailure() = runTest {
+        val failures = AtomicInteger()
+        val server = echoServer(mutableListOf()) { true }
+        try {
+            val chat = HttpChatCompletion(
+                provider = testProvider(server.address.port, "test"),
+                model = "model",
+                onFailed = { failures.incrementAndGet() },
+            )
+
+            assertEquals("completed", chat.complete("system", "user"))
+            assertEquals(0, failures.get())
+        } finally {
+            server.stop(0)
+        }
+    }
+
     private fun testProvider(port: Int, name: String) = LlmProviderSettings(
         name = name,
         url = "http://127.0.0.1:$port/chat",

@@ -142,6 +142,13 @@ fun DesignBoardGenerationContent(
             style = Design.type.monoMeta,
             color = colors.scaffold.onSurfaceMuted,
         )
+        if (progress.failedRequestCount > 0) {
+            Text(
+                text = stringResource(Res.string.generation_failed_request_count, progress.failedRequestCount),
+                style = Design.type.monoMeta,
+                color = colors.scaffold.onSurfaceMuted,
+            )
+        }
         val quotaResetAt = progress.quotaResetAtEpochMs
         if (
             progress.quotaLimit > 0 &&

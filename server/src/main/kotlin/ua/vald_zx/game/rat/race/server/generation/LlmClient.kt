@@ -135,6 +135,7 @@ internal class HttpChatCompletion(
     private val maxOutputTokens: Int = MAX_BALANCE_COMPLETION_TOKENS,
     private val onUsage: suspend (LlmTokenUsage) -> Unit = {},
     private val onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
+    private val onFailed: suspend () -> Unit = {},
     private val wait: suspend (Long) -> Unit = { delay(it) },
     private val quotaTracker: LlmQuotaTracker = llmQuotaTracker,
     private val nowEpochMs: () -> Long = System::currentTimeMillis,
@@ -164,10 +165,12 @@ internal class HttpChatCompletion(
             }.getOrNull()
             if (response == null) {
                 failedAttempts += 1
+                onFailed()
                 if (failedAttempts >= MAX_LLM_REQUEST_ATTEMPTS) return@withContext null
                 continue
             }
             if (response.statusCode() == 429) {
+                onFailed()
                 val reportedRetry = response.retryDelay()
                 val quota = response.reportedQuota()?.let { reported ->
                     quotaTracker.recordLimit(
@@ -187,6 +190,7 @@ internal class HttpChatCompletion(
             if (response.statusCode() in 500..599) {
                 val message = response.errorMessage()
                 failedAttempts += 1
+                onFailed()
                 if (failedAttempts < MAX_LLM_UNAVAILABLE_ATTEMPTS) {
                     val waitMillis = UNAVAILABLE_RETRY_DELAY_MILLIS * failedAttempts
                     llmLogger.warn(
@@ -198,6 +202,7 @@ internal class HttpChatCompletion(
                 throw LlmProviderException("${provider.name}/$model is unavailable: $message")
             }
             if (response.statusCode() !in 200..299) {
+                onFailed()
                 if (withExtras) {
                     extrasRejected = true
                     withExtras = false
@@ -217,12 +222,27 @@ internal class HttpChatCompletion(
                 onUsage(usage.copy(quota = quota))
             }
             val choice = responseObject["choices"]?.jsonArray?.firstOrNull()?.jsonObject
-                ?: throw LlmProviderException("${provider.name}/$model returned no choices")
-            return@withContext choice["message"]?.jsonObject?.get("content")
-                ?.jsonPrimitive?.contentOrNull
-                ?: throw LlmProviderException(
+            if (choice == null) {
+                failedAttempts += 1
+                onFailed()
+                if (failedAttempts < MAX_LLM_UNAVAILABLE_ATTEMPTS) {
+                    val waitMillis = UNAVAILABLE_RETRY_DELAY_MILLIS * failedAttempts
+                    llmLogger.warn(
+                        "${provider.name}/$model returned an empty completion (no choices); retrying in ${waitMillis}ms"
+                    )
+                    wait(waitMillis)
+                    continue
+                }
+                throw LlmProviderException("${provider.name}/$model returned no choices")
+            }
+            val text = choice["message"]?.jsonObject?.get("content")?.jsonPrimitive?.contentOrNull
+            if (text == null) {
+                onFailed()
+                throw LlmProviderException(
                     "${provider.name}/$model returned no text (${choice["finish_reason"]?.jsonPrimitive?.contentOrNull ?: "unknown reason"})"
                 )
+            }
+            return@withContext text
         }
         @Suppress("UNREACHABLE_CODE")
         return@withContext null

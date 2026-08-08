@@ -376,6 +376,7 @@
     <string name="generation_estimated_remaining">Залишилось приблизно: %1$s</string>
     <string name="generation_token_usage">Токени: %1$s всього · %2$s вхідні · %3$s вихідні</string>
     <string name="generation_request_count">Успішні запити до LLM: %1$d</string>
+    <string name="generation_failed_request_count">Невдалі запити до LLM: %1$d</string>
     <string name="generation_rate_limit_wait">Досягнуто ліміту %1$s. Автоматичний повтор через %2$s</string>
     <string name="generation_quota_usage">%1$s: залишилось %2$s із %3$s</string>
     <string name="generation_quota_reset_in">Наступне звільнення квоти через %1$s</string>

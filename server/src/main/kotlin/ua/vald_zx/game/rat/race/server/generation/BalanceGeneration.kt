@@ -27,9 +27,10 @@ internal fun llmBalanceGenerator(
     onUsage: suspend (LlmTokenUsage) -> Unit = {},
     onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
     onRetry: suspend (LlmRetryWait) -> Unit = {},
+    onFailed: suspend () -> Unit = {},
 ) = LlmBalanceGenerator(
-    chat = LlmSettings.balanceChat(balanceResponseFormat, onUsage, onQuota, onRetry),
-    scaleChat = LlmSettings.balanceChat(salaryScaleResponseFormat, onUsage, onQuota, onRetry),
+    chat = LlmSettings.balanceChat(balanceResponseFormat, onUsage, onQuota, onRetry, onFailed),
+    scaleChat = LlmSettings.balanceChat(salaryScaleResponseFormat, onUsage, onQuota, onRetry, onFailed),
 )
 
 internal class LlmBalanceGenerator(

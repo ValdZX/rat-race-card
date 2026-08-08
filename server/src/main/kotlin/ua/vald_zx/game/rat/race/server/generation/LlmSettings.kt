@@ -34,6 +34,7 @@ internal object LlmSettings {
         onUsage: suspend (LlmTokenUsage) -> Unit = {},
         onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
         onRetry: suspend (LlmRetryWait) -> Unit = {},
+        onFailed: suspend () -> Unit = {},
     ): ChatCompletion = pool(
         model = { it.balanceModel },
         extraBody = { it.balanceExtra },
@@ -42,12 +43,14 @@ internal object LlmSettings {
         onUsage = onUsage,
         onQuota = onQuota,
         onRetry = onRetry,
+        onFailed = onFailed,
     )
 
     fun textChat(
         onUsage: suspend (LlmTokenUsage) -> Unit = {},
         onQuota: suspend (LlmQuotaSnapshot) -> Unit = {},
         onRetry: suspend (LlmRetryWait) -> Unit = {},
+        onFailed: suspend () -> Unit = {},
     ): ChatCompletion = pool(
         model = { it.textModel },
         extraBody = { it.textExtra },
@@ -55,6 +58,7 @@ internal object LlmSettings {
         onUsage = onUsage,
         onQuota = onQuota,
         onRetry = onRetry,
+        onFailed = onFailed,
     )
 
     fun textReviewer(
@@ -81,6 +85,7 @@ internal object LlmSettings {
         onUsage: suspend (LlmTokenUsage) -> Unit,
         onQuota: suspend (LlmQuotaSnapshot) -> Unit,
         onRetry: suspend (LlmRetryWait) -> Unit,
+        onFailed: suspend () -> Unit = {},
     ): ChatCompletion = LlmProviderPool(
         members = providers.map { provider ->
             LlmProviderPool.Member(
@@ -95,6 +100,7 @@ internal object LlmSettings {
                     maxOutputTokens = maxOutputTokens,
                     onUsage = onUsage,
                     onQuota = onQuota,
+                    onFailed = onFailed,
                 ),
             )
         },
