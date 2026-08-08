@@ -34,6 +34,7 @@ internal class LlmBalanceGenerator(
                 json.decodeFromString<GeneratedBalance>(response)
                     .withoutDuplicateOptions()
                     .withBoundedAssetPrices()
+                    .withBusinessTiersOnSalaryScale()
             }
                 .onFailure {
                     lastError = it
@@ -213,10 +214,10 @@ Mechanics the balance must support:
 private val BALANCE_REQUIREMENTS = """
 Required constraints:
 - salaries: at least 10 unique amounts.
-- Anchor every price to the salary scale. The median salary (the middle value of salaries) is one unit; every price below should be a round multiple of it, so the economy never mixes scales.
-- smallBusinessPrices: every value between 1 and 20 units, and the cheapest value at most 2 units so the first business is reachable after a few salary passes.
-- mediumBusinessPrices: every value between 20 and 1500 units, and the cheapest medium business costs more than the dearest small one.
-- bigBusinessPrices: every value between 500 and 15000 units.
+- Anchor every price to the salary scale. One unit is the median salary: sort the salaries ascending and take the middle value, or the average of the two middle values when their count is even. State that number to yourself before pricing anything, then express every price below as a round multiple of it, so the economy never mixes scales.
+- smallBusinessPrices: every value at most $SMALL_BUSINESS_MAX_UNITS units, and the cheapest value at most $SMALL_BUSINESS_ENTRY_UNITS units so the first business is reachable after a few salary passes.
+- mediumBusinessPrices: every value between $MEDIUM_BUSINESS_MIN_UNITS and $MEDIUM_BUSINESS_MAX_UNITS units, and the cheapest medium business costs strictly more than the dearest small one.
+- bigBusinessPrices: every value between $BIG_BUSINESS_MIN_UNITS and $BIG_BUSINESS_MAX_UNITS units, and the cheapest big business costs strictly more than the cheapest medium one.
 - shares: at least 6 unique companies; every id, ticker, uk name, and en name is unique.
 - Every share carries a sector from exactly this list: core.energy, core.industry, core.consumer, core.realty, core.agro, core.tech. Use at least 3 different sectors, and never put all but one company in the same sector.
 - scamPromisedReturnPercentages: 150..900, the promised payout as a percentage of the amount staked. scamSuccessPercentage: 1..20.

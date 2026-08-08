@@ -37,27 +37,43 @@ internal fun GeneratedBalance.validate() {
     mediumBusinessPrices.requireAmounts("mediumBusinessPrices")
     bigBusinessPrices.requireAmounts("bigBusinessPrices")
     val medianSalary = salaries.median()
-    check(smallBusinessPrices.min() <= medianSalary * 2) {
-        "The cheapest small business ${smallBusinessPrices.min()} is not affordable next to the median salary $medianSalary"
+    check(smallBusinessPrices.min() <= medianSalary * SMALL_BUSINESS_ENTRY_UNITS) {
+        "The cheapest small business ${smallBusinessPrices.min()} is above " +
+                "${medianSalary * SMALL_BUSINESS_ENTRY_UNITS} " +
+                "($SMALL_BUSINESS_ENTRY_UNITS × median salary $medianSalary)"
     }
-    check(smallBusinessPrices.max() <= medianSalary * 20) {
-        "Small businesses cost up to ${smallBusinessPrices.max()} while the median salary is $medianSalary"
+    check(smallBusinessPrices.max() <= medianSalary * SMALL_BUSINESS_MAX_UNITS) {
+        "The dearest small business ${smallBusinessPrices.max()} is above " +
+                "${medianSalary * SMALL_BUSINESS_MAX_UNITS} " +
+                "($SMALL_BUSINESS_MAX_UNITS × median salary $medianSalary)"
     }
     check(smallBusinessPrices.max() < mediumBusinessPrices.min()) {
-        "Small and medium business tiers overlap"
+        "Small and medium business tiers overlap: the dearest small business ${smallBusinessPrices.max()} " +
+                "is not below the cheapest medium business ${mediumBusinessPrices.min()}"
     }
-    check(mediumBusinessPrices.min() >= medianSalary * 20) {
-        "Medium business prices must stay on the salary scale"
+    check(mediumBusinessPrices.min() >= medianSalary * MEDIUM_BUSINESS_MIN_UNITS) {
+        "The cheapest medium business ${mediumBusinessPrices.min()} is below " +
+                "${medianSalary * MEDIUM_BUSINESS_MIN_UNITS} " +
+                "($MEDIUM_BUSINESS_MIN_UNITS × median salary $medianSalary)"
     }
-    check(mediumBusinessPrices.max() <= medianSalary * 1500) {
-        "Medium businesses cost up to ${mediumBusinessPrices.max()} while the median salary is $medianSalary"
+    check(mediumBusinessPrices.max() <= medianSalary * MEDIUM_BUSINESS_MAX_UNITS) {
+        "The dearest medium business ${mediumBusinessPrices.max()} is above " +
+                "${medianSalary * MEDIUM_BUSINESS_MAX_UNITS} " +
+                "($MEDIUM_BUSINESS_MAX_UNITS × median salary $medianSalary)"
     }
-    check(mediumBusinessPrices.min() < bigBusinessPrices.min()) { "Medium and big business tiers overlap" }
-    check(bigBusinessPrices.min() >= medianSalary * 500) {
-        "Big business prices must stay on the salary scale"
+    check(mediumBusinessPrices.min() < bigBusinessPrices.min()) {
+        "Medium and big business tiers overlap: the cheapest medium business ${mediumBusinessPrices.min()} " +
+                "is not below the cheapest big business ${bigBusinessPrices.min()}"
     }
-    check(bigBusinessPrices.max() <= medianSalary * 15000) {
-        "Big businesses cost up to ${bigBusinessPrices.max()} while the median salary is $medianSalary"
+    check(bigBusinessPrices.min() >= medianSalary * BIG_BUSINESS_MIN_UNITS) {
+        "The cheapest big business ${bigBusinessPrices.min()} is below " +
+                "${medianSalary * BIG_BUSINESS_MIN_UNITS} " +
+                "($BIG_BUSINESS_MIN_UNITS × median salary $medianSalary)"
+    }
+    check(bigBusinessPrices.max() <= medianSalary * BIG_BUSINESS_MAX_UNITS) {
+        "The dearest big business ${bigBusinessPrices.max()} is above " +
+                "${medianSalary * BIG_BUSINESS_MAX_UNITS} " +
+                "($BIG_BUSINESS_MAX_UNITS × median salary $medianSalary)"
     }
     smallBusinessReturnPercentages.requireRange("smallBusinessReturnPercentages", 1L..200L)
     mediumBusinessReturnPercentages.requireRange("mediumBusinessReturnPercentages", 1L..100L)
@@ -282,7 +298,11 @@ internal fun GeneratedBalance.playerConfig() = Config(
     planeMovementBonus = planeMovementBonus,
 )
 
-internal fun List<Long>.median(): Long = sorted()[size / 2]
+internal fun List<Long>.median(): Long {
+    val sorted = sorted()
+    val middle = size / 2
+    return if (size % 2 == 1) sorted[middle] else (sorted[middle - 1] + sorted[middle]) / 2
+}
 
 internal fun GeneratedBalance.withoutDuplicateOptions(): GeneratedBalance = copy(
     salaries = salaries.distinct(),
@@ -323,6 +343,37 @@ internal fun GeneratedBalance.withBoundedAssetPrices(): GeneratedBalance = copy(
     landPricePerUnit = landPricePerUnit.withinSaleSpread(eventLandPricePercentages),
 )
 
+internal fun GeneratedBalance.withBusinessTiersOnSalaryScale(): GeneratedBalance {
+    if (salaries.isEmpty()) return this
+    val unit = salaries.median()
+    if (unit <= 0) return this
+
+    val smallFloor = minOf(smallBusinessPrices.minOrNull() ?: 1, unit * SMALL_BUSINESS_ENTRY_UNITS)
+        .coerceAtLeast(1)
+    val small = smallBusinessPrices.redistributedInto(smallFloor, unit * SMALL_BUSINESS_MAX_UNITS)
+
+    val mediumFloor = maxOf(unit * MEDIUM_BUSINESS_MIN_UNITS, (small.maxOrNull() ?: 0) + 1)
+    val medium = mediumBusinessPrices.redistributedInto(mediumFloor, unit * MEDIUM_BUSINESS_MAX_UNITS)
+
+    val bigFloor = maxOf(unit * BIG_BUSINESS_MIN_UNITS, (medium.minOrNull() ?: 0) + 1)
+    val big = bigBusinessPrices.redistributedInto(bigFloor, unit * BIG_BUSINESS_MAX_UNITS)
+
+    return copy(
+        smallBusinessPrices = small,
+        mediumBusinessPrices = medium,
+        bigBusinessPrices = big,
+    )
+}
+
+internal fun List<Long>.redistributedInto(lowest: Long, highest: Long): List<Long> {
+    if (size < 2 || highest - lowest < lastIndex) return this
+    val sorted = sorted()
+    val first = sorted.first().coerceIn(lowest, highest - lastIndex)
+    val last = sorted.last().coerceIn(first + lastIndex, highest)
+    if (first == sorted.first() && last == sorted.last()) return this
+    return List(size) { index -> first + (last - first) * index / lastIndex }
+}
+
 internal fun List<Long>.withinSaleSpread(salePercentages: List<Long>): List<Long> {
     if (size < 2 || salePercentages.isEmpty()) return this
     val sortedPrices = sorted()
@@ -353,6 +404,12 @@ internal fun List<Int>.requireRange(name: String, range: IntRange) {
     check(isNotEmpty() && all { it in range }) { "$name contains an out-of-range value" }
 }
 
+internal const val SMALL_BUSINESS_ENTRY_UNITS = 2L
+internal const val SMALL_BUSINESS_MAX_UNITS = 20L
+internal const val MEDIUM_BUSINESS_MIN_UNITS = 15L
+internal const val MEDIUM_BUSINESS_MAX_UNITS = 1_500L
+internal const val BIG_BUSINESS_MIN_UNITS = 500L
+internal const val BIG_BUSINESS_MAX_UNITS = 15_000L
 internal const val MIN_SHARE_SECTORS = 3
 internal const val MIN_SCAM_RETURN = 150L
 internal const val MAX_SCAM_RETURN = 900L
